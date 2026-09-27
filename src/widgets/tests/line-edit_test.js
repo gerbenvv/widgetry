@@ -267,6 +267,34 @@ test.describe('LineEdit', () => {
         expect(other).toEqual([false, 'TypeError']);
     });
 
+    test('validates the text again when the validator changes', async ({ page }) => {
+        await openHarness(page);
+        await mount(page);
+
+        const result = await page.evaluate(async () => {
+            const { IntegerValidator } = await import('/src/data/validators/integer-validator.js');
+
+            const widget = globalThis.widget;
+            const validator = new IntegerValidator({ maximum: 10 });
+            const states = [];
+
+            widget.set({ validator, text: '20' });
+            states.push(widget.isValid);
+
+            validator.maximum = 30;
+            states.push(widget.isValid);
+
+            // A validator that is replaced no longer affects the line edit.
+            widget.validator = null;
+            validator.maximum = 10;
+            states.push(widget.isValid);
+
+            return states;
+        });
+
+        expect(result).toEqual([false, true, true]);
+    });
+
     test('icons emit icon-press, for example to clear the text', async ({ page }) => {
         await openHarness(page);
         await mount(page, {

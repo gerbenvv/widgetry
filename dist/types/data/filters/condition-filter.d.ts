@@ -5,19 +5,19 @@ import { Filter } from './filter.js';
 /**
  * The operators of a {@link ConditionFilter}.
  *
- * @enum {number}
+ * @enum {string}
  */
 export declare const ConditionOperator: Readonly<{
-    EQUALS: 1;
-    LESS_THAN: 2;
-    GREATER_THAN: 3;
-    LESS_THAN_EQUAL: 4;
-    GREATER_THAN_EQUAL: 5;
-    CONTAINS: 6;
-    STARTS_WITH: 7;
-    ENDS_WITH: 8;
-    NOT_EQUALS: 9;
-    MATCHES: 10;
+    EQUALS: "equals";
+    LESS_THAN: "less-than";
+    GREATER_THAN: "greater-than";
+    LESS_THAN_EQUAL: "less-than-equal";
+    GREATER_THAN_EQUAL: "greater-than-equal";
+    CONTAINS: "contains";
+    STARTS_WITH: "starts-with";
+    ENDS_WITH: "ends-with";
+    NOT_EQUALS: "not-equals";
+    MATCHES: "matches";
 }>;
 /**
  * A filter that shows the rows of which a column satisfies a condition, such as "equals 5" or
@@ -54,7 +54,7 @@ export interface ConditionFilter {
     /**
      * The operator: one of {@link ConditionOperator}.
      */
-    operator: any;
+    operator: string;
     /**
      * The value the operator compares with. For `MATCHES`, a `RegExp` or a pattern string.
      */

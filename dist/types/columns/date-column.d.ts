@@ -44,7 +44,6 @@ export declare class DateColumn extends DataColumn {
 
 /** The declared properties of {@link DateColumn}. */
 export interface DateColumn {
-    alignment: any;
     /**
      * The format: a name from {@link DATE_FORMATS} or `Intl.DateTimeFormat` options.
      */

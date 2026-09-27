@@ -75,7 +75,9 @@ export function attachButtonBehavior(widget, options) {
     }
 
     function onPointerDown(event) {
-        if (event.button !== 0 || !widget.isSensitive || pointerId !== null) {
+        // Another press of the pointer that is down means that its release got lost.
+        const busy = pointerId !== null && event.pointerId !== pointerId;
+        if (event.button !== 0 || !widget.isSensitive || busy) {
             return;
         }
 

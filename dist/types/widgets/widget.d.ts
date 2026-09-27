@@ -20,7 +20,8 @@ export declare const SELF_ALIGNMENT: Readonly<Record<string, string>>;
  */
 export declare function flushLayout(): void;
 /**
- * Counts presses for double and triple presses. Call it once per press.
+ * Counts presses for double and triple presses. Calling it again for the same event (e.g. from
+ * both a widget and a sprite) returns the same count.
  *
  * @param {PointerEvent} event
  * @returns {number} 1 for a single press, 2 for a double press and so on.
@@ -82,8 +83,6 @@ export declare class Widget extends Instance {
         leave: () => any;
         down: () => any;
     };
-    visible: boolean;
-    events: number;
     _tooltip: any;
     _parent: Widget;
     _layoutStyles: Set<any>;
@@ -106,6 +105,23 @@ export declare class Widget extends Instance {
      * @type {HTMLElement}
      */
     get focusElement(): HTMLElement;
+    /**
+     * Returns the elements that get the `aria-label` of `accessibleName`: the focus element, which
+     * is the root element for widgets without a focus element of their own. Override to name other
+     * elements.
+     *
+     * @protected
+     * @returns {Element[]}
+     */
+    protected _getAccessibleNameElements(): Element[];
+    /**
+     * Puts `accessibleName` in the `aria-label` of the elements of
+     * `_getAccessibleNameElements()`, or removes it. Widgets that compute their own `aria-label`
+     * override this to combine the two.
+     *
+     * @protected
+     */
+    protected _syncAccessibleName(): void;
     /**
      * The rendered position and size relative to the viewport, or zero if not rendered.
      *
@@ -178,7 +194,8 @@ export declare class Widget extends Instance {
      */
     focus(): boolean;
     /**
-     * Removes the keyboard focus from this widget. Its window keeps no focus widget.
+     * Removes the keyboard focus from this widget. Its window keeps no focus widget, but keeps the
+     * keyboard focus itself if it is active.
      */
     blur(): void;
     /**
@@ -230,6 +247,13 @@ export declare class Widget extends Instance {
      * @param {string} value The value, or `''` for the default.
      */
     protected _setLayoutStyle(name: string, value: string): void;
+    /**
+     * Clears all styles set with {@link Widget#_setLayoutStyle}, e.g. when the widget leaves its
+     * container.
+     *
+     * @protected
+     */
+    protected _clearLayoutStyles(): void;
     /**
      * Computes whether the widget expands in one direction. Containers also consider their
      * children.
@@ -329,13 +353,17 @@ export declare function marginToCss(margin: {
 /** The declared properties of {@link Widget}. */
 export interface Widget {
     /**
+     * Whether the widget is shown. Set last when passing several properties.
+     */
+    visible: boolean;
+    /**
      * Whether the widget is effectively visible: it is `visible` and so are its ancestors.
      */
-    readonly isVisible: any;
+    readonly isVisible: boolean;
     /**
      * Whether this is a top-level widget (a window), which cannot be put in a container.
      */
-    readonly isTopLevel: any;
+    readonly isTopLevel: boolean;
     /**
      * The window the widget is in (the widget itself for windows), or `null`.
      */
@@ -343,7 +371,7 @@ export interface Widget {
     /**
      * Whether this widget is a window.
      */
-    readonly isWindow: any;
+    readonly isWindow: boolean;
     /**
      * The parent container, or `null`.
      */
@@ -352,6 +380,13 @@ export interface Widget {
      * A name for finding the widget, also set as the `data-name` attribute.
      */
     name: string;
+    /**
+     * The accessible name, for widgets without a visible label (such as an icon button or a line
+     * edit next to a picture), or `''` for none. It is the `aria-label` of the focus element (or of
+     * the root element of widgets that have none of their own). A label whose mnemonic widget
+     * this is names the widget instead.
+     */
+    accessibleName: string;
     /**
      * The requested width in pixels, or -1 for the natural width. When the widget fills its space
      * horizontally, this is its minimum width.
@@ -367,18 +402,18 @@ export interface Widget {
      * `bottom` and `left`. Reading returns the object.
      */
     margin: any;
-    marginTop: any;
-    marginRight: any;
-    marginBottom: any;
-    marginLeft: any;
+    marginTop: number;
+    marginRight: number;
+    marginBottom: number;
+    marginLeft: number;
     /**
      * How the widget uses horizontal space: one of `Align`.
      */
-    hAlign: any;
+    hAlign: string;
     /**
      * How the widget uses vertical space: one of `Align`.
      */
-    vAlign: any;
+    vAlign: string;
     /**
      * Whether the widget takes extra horizontal space. `null` (the default) inherits it from the
      * children: a container expands when one of its children does.
@@ -391,11 +426,11 @@ export interface Widget {
     /**
      * Whether the widget effectively expands horizontally.
      */
-    readonly isHExpand: any;
+    readonly isHExpand: boolean;
     /**
      * Whether the widget effectively expands vertically.
      */
-    readonly isVExpand: any;
+    readonly isVExpand: boolean;
     /**
      * Whether the user can interact with the widget. Insensitive widgets are grayed out.
      */
@@ -403,7 +438,7 @@ export interface Widget {
     /**
      * Whether the widget is effectively sensitive: it is `sensitive` and so are its ancestors.
      */
-    readonly isSensitive: any;
+    readonly isSensitive: boolean;
     /**
      * Whether the widget can take the keyboard focus.
      */
@@ -428,6 +463,10 @@ export interface Widget {
      * The `Tooltip` of the widget, or `null`.
      */
     tooltip: any;
+    /**
+     * The mask of `Events` whose signals the widget emits.
+     */
+    events: number;
     /**
      * Whether drags can start on this widget (see the drag events).
      */

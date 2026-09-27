@@ -13,10 +13,10 @@ import { Instance } from './instance.js';
 export declare class ApplicationClass extends Instance {
     /** @type {Set<import('../widgets/abstract-window.js').AbstractWindow>} */
     _windows: Set<import('../widgets/abstract-window.js').AbstractWindow>;
+    /** @type {import('../widgets/abstract-window.js').AbstractWindow[]} */
+    _activationOrder: import('../widgets/abstract-window.js').AbstractWindow[];
     _loaded: boolean;
     _domListeners: Map<any, any>;
-    events: number;
-    activeWindow: any;
     _mainWindow: any;
     _focusWidget: any;
     _initialize(): void;
@@ -65,6 +65,16 @@ export declare class ApplicationClass extends Instance {
      */
     protected _removeWindow(window: import('../widgets/abstract-window.js').AbstractWindow): void;
     /**
+     * Activates another window after the active window was hidden or destroyed, like a desktop
+     * window manager: the most recently active window that is still shown, or else the topmost
+     * one. Does nothing if another window is active already.
+     *
+     * @protected
+     * @param {import('../widgets/abstract-window.js').AbstractWindow} window The window that
+     *     is gone.
+     */
+    protected _activateNextWindow(window: import('../widgets/abstract-window.js').AbstractWindow): void;
+    /**
      * @protected
      * @param {import('../widgets/main-window.js').MainWindow | null} mainWindow
      */
@@ -108,6 +118,10 @@ export declare const Application: ApplicationClass;
 /** The declared properties of {@link ApplicationClass}. */
 export interface ApplicationClass {
     /**
+     * The active window, which has the keyboard focus. Set `null` to deactivate it.
+     */
+    activeWindow: import("../index.js").AbstractWindow;
+    /**
      * The main window, or `null`.
      */
     readonly mainWindow: any;
@@ -116,6 +130,10 @@ export interface ApplicationClass {
      * its window.
      */
     focusWidget: any;
+    /**
+     * The mask of `Events` whose signals the application emits for events on the page.
+     */
+    events: number;
     /**
      * The color theme: `'light'` (the classic look), `'dark'` or `'auto'` (follows the system).
      */

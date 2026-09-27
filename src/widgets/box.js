@@ -51,7 +51,7 @@ export class Box extends Container {
             // The grid places children in equal cells, where both alignments apply.
             child._setLayoutStyle('flex', '');
             child._setLayoutStyle('alignSelf', crossAlignment(child.vAlign));
-            child._setLayoutStyle('margin', marginToCss(margin));
+            child._setLayoutStyle('margin', hasMargin(margin) ? marginToCss(margin) : '');
 
             return;
         }
@@ -85,6 +85,16 @@ export class Box extends Container {
         const value = sides.join(' ');
         child._setLayoutStyle('margin', value === '0px 0px 0px 0px' ? '' : value);
     }
+}
+
+/**
+ * Whether a margin has a nonzero side.
+ *
+ * @param {{top: number, right: number, bottom: number, left: number}} margin
+ * @returns {boolean}
+ */
+function hasMargin(margin) {
+    return Boolean(margin.top || margin.right || margin.bottom || margin.left);
 }
 
 /**

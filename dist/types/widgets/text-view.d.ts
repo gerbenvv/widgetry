@@ -23,7 +23,6 @@ export declare const WrapMode: Readonly<{
  * Signals: `change` (`textView`, whenever the text changed).
  */
 export declare class TextView extends Widget {
-    text: string;
     _textAreaEl: HTMLTextAreaElement;
     _isEditable: any;
     _initialize(): void;
@@ -74,7 +73,10 @@ export declare class TextView extends Widget {
 
 /** The declared properties of {@link TextView}. */
 export interface TextView {
-    canFocus: any;
+    /**
+     * The text.
+     */
+    text: string;
     /**
      * Text shown while the text view is empty, as a hint.
      */
@@ -86,11 +88,11 @@ export interface TextView {
     /**
      * Whether the user can currently change the text: it is `editable` and sensitive.
      */
-    readonly isEditable: any;
+    readonly isEditable: boolean;
     /**
      * How long lines wrap: one of `WrapMode`.
      */
-    wrapMode: any;
+    wrapMode: string;
     /**
      * Whether the text uses a monospace font, e.g. for code.
      */
@@ -104,8 +106,4 @@ export interface TextView {
      * Whether the text view has a frame.
      */
     hasFrame: boolean;
-    /**
-     * The accessible name of the text area, for text views without a visible label.
-     */
-    accessibleName: string;
 }

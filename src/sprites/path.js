@@ -10,9 +10,9 @@ import { Sprite } from './sprite.js';
  * A path, drawn from SVG path data (`'M 0 0 L 10 10 Z'`). The position translates the path.
  *
  * @example
- * new Path({ path: 'M 0 10 L 10 0 L 20 10', strokeColor: '#5699d8', strokeWidth: 2 });
+ * new PathSprite({ path: 'M 0 10 L 10 0 L 20 10', strokeColor: '#5699d8', strokeWidth: 2 });
  */
-export class Path extends Sprite {
+export class PathSprite extends Sprite {
     _render() {
         return this._createShape('path', { class: 'wy-sprite-path' });
     }
@@ -32,7 +32,7 @@ export class Path extends Sprite {
     }
 }
 
-defineProperties(Path, {
+defineProperties(PathSprite, {
     /**
      * The SVG path data.
      */
@@ -47,4 +47,4 @@ defineProperties(Path, {
     },
 });
 
-registerType('path-sprite', Path);
+registerType('path-sprite', PathSprite);

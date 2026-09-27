@@ -6,6 +6,13 @@ import { SortOrder } from '../core/enums.js';
 import { registerType } from '../core/registry.js';
 import { AbstractModel } from './abstract-model.js';
 
+/**
+ * Stands for "no id" where `null` could be an id.
+ *
+ * @type {symbol}
+ */
+const NO_ID = Symbol('no id');
+
 function checkRow(row) {
     if (row === null || typeof row !== 'object') {
         throw new TypeError('A row must be an object.');
@@ -25,6 +32,24 @@ function checkRow(row) {
  * model.appendRow({ id: 3, name: 'Indices' }); // Inserted at index 1, sorted by name.
  */
 export class ListModel extends AbstractModel {
+    _initialize() {
+        super._initialize();
+
+        /**
+         * The rows by id, kept up to date when single rows change, so checking ids stays fast.
+         *
+         * @type {Map<unknown, object> | null}
+         */
+        this._rowsById = null;
+
+        /** @type {string | null} */
+        this._rowsByIdColumn = null;
+    }
+
+    hasRowId(id) {
+        return this._getRowsById().has(id);
+    }
+
     insertRow(index, row) {
         checkRow(row);
 
@@ -45,6 +70,8 @@ export class ListModel extends AbstractModel {
         }
 
         rows.splice(index, 0, row);
+        this._updateRowsById(NO_ID, row);
+
         this._afterInsert(index, id);
 
         return index;
@@ -72,16 +99,21 @@ export class ListModel extends AbstractModel {
             return;
         }
 
-        const updated = [...rows.slice(0, index), ...newRows, ...rows.slice(index)];
+        const compare = this._createSortComparator();
+
+        // A stable sort keeps the new rows after existing rows they are equal to, like
+        // insertRow().
+        const updated = compare
+            ? [...rows, ...newRows]
+            : [...rows.slice(0, index), ...newRows, ...rows.slice(index)];
         this._validateIds(updated);
 
-        const compare = this._createSortComparator();
         if (compare) {
-            // A stable sort keeps the new rows after existing rows they are equal to.
             updated.sort(compare);
         }
 
         this._rows = updated;
+        this._rowsById = null;
         this._invalidateIndex();
 
         this.emit('rows-reorder', this);
@@ -93,6 +125,7 @@ export class ListModel extends AbstractModel {
         const id = this.idColumn ? row[this.idColumn] : null;
 
         this._rows.splice(index, 1);
+        this._updateRowsById(id, null);
         this._invalidateIndex();
 
         this.emit('row-remove', this, index, id, row);
@@ -103,6 +136,7 @@ export class ListModel extends AbstractModel {
 
     removeAllRows() {
         this._rows = [];
+        this._rowsById = null;
         this._invalidateIndex();
 
         this.emit('rows-reorder', this);
@@ -122,6 +156,7 @@ export class ListModel extends AbstractModel {
         }
 
         this._rows[index] = row;
+        this._updateRowsById(oldId, row);
 
         return this._afterChange(index, row, Object.keys({ ...oldRow, ...row }), id, oldId);
     }
@@ -151,6 +186,11 @@ export class ListModel extends AbstractModel {
             row[column] = changes[column];
         }
 
+        // Without an id column, any column may be the next id column.
+        if (!idColumn || !Object.is(id, oldId)) {
+            this._updateRowsById(oldId, row);
+        }
+
         return this._afterChange(index, row, columns, id, oldId);
     }
 
@@ -160,7 +200,7 @@ export class ListModel extends AbstractModel {
             order !== SortOrder.ASCENDING &&
             order !== SortOrder.DESCENDING
         ) {
-            throw new RangeError(`Invalid sort order ${order}.`);
+            throw new RangeError(`Invalid sort order '${order}'.`);
         }
 
         if (!column) {
@@ -205,6 +245,7 @@ export class ListModel extends AbstractModel {
         }
 
         this._rows = updated;
+        this._rowsById = null;
         this._invalidateIndex();
 
         this.emit('rows-reorder', this);
@@ -246,8 +287,70 @@ export class ListModel extends AbstractModel {
         }
     }
 
+    /**
+     * Returns the rows by id, building the map when the rows were replaced or the id column
+     * changed.
+     *
+     * @returns {Map<unknown, object>}
+     */
+    _getRowsById() {
+        const idColumn = this.idColumn;
+        if (!idColumn) {
+            throw new Error('The model has no id column.');
+        }
+
+        if (!this._rowsById || this._rowsByIdColumn !== idColumn) {
+            const rows = new Map();
+
+            for (const row of this._rows) {
+                const id = row[idColumn];
+                if (rows.has(id)) {
+                    throw new Error(`Duplicate row id ${String(id)}.`);
+                }
+
+                rows.set(id, row);
+            }
+
+            this._rowsById = rows;
+            this._rowsByIdColumn = idColumn;
+        }
+
+        return this._rowsById;
+    }
+
+    /**
+     * Keeps the rows by id up to date after a single row changed.
+     *
+     * @param {unknown} oldId The id of a removed or changed row, or `NO_ID` for an inserted row.
+     * @param {object | null} row The inserted or changed row, or `null` for a removed row.
+     */
+    _updateRowsById(oldId, row) {
+        const idColumn = this.idColumn;
+        const rowsById = this._rowsById;
+
+        // Without an id column, the map is built again once there is one.
+        if (!idColumn || !rowsById || this._rowsByIdColumn !== idColumn) {
+            this._rowsById = null;
+
+            return;
+        }
+
+        if (oldId !== NO_ID) {
+            rowsById.delete(oldId);
+        }
+
+        if (row) {
+            rowsById.set(row[idColumn], row);
+        }
+    }
+
     _afterInsert(index, id) {
-        this._invalidateIndex();
+        // Appending a row does not move the other rows, so the id index can be kept.
+        if (!this._indexDirty && this._indexById && index === this._rows.length - 1) {
+            this._indexById.set(id, index);
+        } else {
+            this._invalidateIndex();
+        }
 
         this.emit('row-insert', this, index, id);
         this.emit('rows-change', this, index, this._rows.length - 1);

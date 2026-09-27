@@ -8,10 +8,11 @@ import { CheckMenuItem } from './check-menu-item.js';
  * by setting their `group` to the same `ButtonGroup`, or with `join()`. Activating an item makes it
  * the active one; activating the active item does not deactivate it.
  *
- * Signals: `activate`, `toggle`.
+ * Signals: `activate` (`item`) when the user activates the item or `activate()` is called, also
+ * when it already was active; `toggle` (`item`) and `active-change` on every change of `active`,
+ * also from code.
  */
 export declare class RadioMenuItem extends CheckMenuItem {
-    group: ButtonGroup;
     _initialize(): void;
     _getRole(): string;
     /**
@@ -26,5 +27,8 @@ export declare class RadioMenuItem extends CheckMenuItem {
 
 /** The declared properties of {@link RadioMenuItem}. */
 export interface RadioMenuItem {
-    drawAsRadio: any;
+    /**
+     * The `ButtonGroup` of the item, or `null`. Items of the same group exclude each other.
+     */
+    group: ButtonGroup;
 }

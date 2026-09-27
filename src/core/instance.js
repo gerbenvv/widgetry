@@ -56,8 +56,8 @@ export function defineProperties(cls, specs) {
         : Object.create(baseProperties);
 
     for (const [name, override] of Object.entries(specs)) {
-        // Merge with an inherited declaration.
-        const baseSpec = findSpec(Object.getPrototypeOf(cls), name) || {};
+        // Merge with an earlier declaration of this class, or else an inherited one.
+        const baseSpec = findSpec(cls, name) || {};
         const spec = { ...baseSpec, ...override };
 
         ownSpecs[name] = spec;
@@ -303,22 +303,26 @@ export class Instance {
      *
      * @param {Record<string, unknown>} properties
      * @returns {boolean} Whether any value changed.
+     * @throws {Error} If a name is not a writable property; nothing is set then.
      */
     set(properties) {
-        let changed = false;
-
+        // Check all names first, so that a wrong name does not leave a partial change.
+        const early = [];
         const late = [];
         for (const [name, value] of Object.entries(properties)) {
             const property = this._getPropertyInfo(name);
-            if (property.late) {
-                late.push([name, value]);
-            } else if (this.setProperty(name, value)) {
-                changed = true;
+            if (!property.write) {
+                throw new Error(
+                    `${this.constructor.name} has no writable property named '${name}'.`
+                );
             }
+
+            (property.late ? late : early).push([property, value]);
         }
 
-        for (const [name, value] of late) {
-            if (this.setProperty(name, value)) {
+        let changed = false;
+        for (const [property, value] of [...early, ...late]) {
+            if (property.write.call(this, value)) {
                 changed = true;
             }
         }

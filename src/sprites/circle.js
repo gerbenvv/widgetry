@@ -10,9 +10,9 @@ import { Sprite } from './sprite.js';
  * A circle. The position is its center.
  *
  * @example
- * new Circle({ position: { x: 50, y: 50 }, radius: 10, fill: '#5699d8' });
+ * new CircleSprite({ position: { x: 50, y: 50 }, radius: 10, fill: '#5699d8' });
  */
-export class Circle extends Sprite {
+export class CircleSprite extends Sprite {
     _render() {
         return this._createShape('circle', { class: 'wy-sprite-circle' });
     }
@@ -28,7 +28,7 @@ export class Circle extends Sprite {
     }
 }
 
-defineProperties(Circle, {
+defineProperties(CircleSprite, {
     /**
      * The radius.
      */
@@ -48,4 +48,4 @@ defineProperties(Circle, {
     },
 });
 
-registerType('circle-sprite', Circle);
+registerType('circle-sprite', CircleSprite);

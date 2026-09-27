@@ -154,9 +154,9 @@ export interface DateTimeFormatter {
     /**
      * The style of preferred date formats: of `%c`, `%x` and {@link DateTimeFormatter#formatDate}.
      */
-    dateStyle: any;
+    dateStyle: string;
     /**
      * The style of preferred time formats: of `%X`, `%x` and {@link DateTimeFormatter#formatTime}.
      */
-    timeStyle: any;
+    timeStyle: string;
 }

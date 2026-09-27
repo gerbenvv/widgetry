@@ -20,6 +20,13 @@ async function openWindow(page) {
         globalThis.box = box;
     });
 
+    // Mnemonics work in the active window, which a busy browser may activate late.
+    await page.waitForFunction(async () => {
+        const { Application } = await import('/src/core/application.js');
+
+        return Application.activeWindow === globalThis.testWindow;
+    });
+
     return errors;
 }
 
@@ -264,7 +271,7 @@ test.describe('Label', () => {
 
         await page.keyboard.press('Alt+f');
         await expect.poll(() => page.evaluate(() => globalThis.check.active)).toBe(true);
-        expect(await page.evaluate(() => globalThis.check.hasFocus)).toBe(true);
+        await expect.poll(() => page.evaluate(() => globalThis.check.hasFocus)).toBe(true);
 
         // Without the modifier, or for an insensitive target, nothing happens.
         await page.keyboard.press('f');
@@ -272,6 +279,23 @@ test.describe('Label', () => {
         await page.keyboard.press('Alt+f');
         await page.waitForTimeout(200);
         expect(await page.evaluate(() => globalThis.check.active)).toBe(true);
+
+        // A destroyed mnemonic widget is forgotten, and its key is left alone.
+        const gone = await page.evaluate(() => {
+            globalThis.check.destroy();
+
+            const event = new KeyboardEvent('keydown', {
+                key: 'f',
+                code: 'KeyF',
+                altKey: true,
+                bubbles: true,
+                cancelable: true,
+            });
+            document.body.dispatchEvent(event);
+
+            return [globalThis.label.mnemonicWidget, event.defaultPrevented];
+        });
+        expect(gone).toEqual([null, false]);
     });
 
     test('mnemonics in markup and shared mnemonics cycle the focus', async ({ page }) => {

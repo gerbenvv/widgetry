@@ -40,7 +40,6 @@ export declare class AbstractSlider extends Widget {
         update: (x: any) => any;
     };
     _stopPaging: () => void;
-    adjustment: Adjustment;
     _initialize(): void;
     /**
      * Creates the default adjustment. Subclasses override this for other defaults.
@@ -137,29 +136,33 @@ export declare class AbstractSlider extends Widget {
 /** The declared properties of {@link AbstractSlider}. */
 export interface AbstractSlider {
     /**
+     * The `Adjustment` holding the value, its bounds and increments. A default one is created.
+     */
+    adjustment: Adjustment;
+    /**
      * The value, forwarded to the adjustment.
      */
-    value: any;
+    value: number;
     /**
      * The minimum value, forwarded to the adjustment.
      */
-    lower: any;
+    lower: number;
     /**
      * The maximum value, forwarded to the adjustment.
      */
-    upper: any;
+    upper: number;
     /**
      * The step of the arrow keys and the wheel, forwarded to the adjustment.
      */
-    stepIncrement: any;
+    stepIncrement: number;
     /**
      * The step of Page Up and Page Down and of paging, forwarded to the adjustment.
      */
-    pageIncrement: any;
+    pageIncrement: number;
     /**
      * The direction of the trough: one of `Orientation`.
      */
-    orientation: any;
+    orientation: string;
     /**
      * Whether the value increases towards the start (the left or top) instead of the end.
      */

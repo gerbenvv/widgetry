@@ -28,14 +28,21 @@ const ARROW_DIRECTIONS = Object.freeze({
  * Like on the desktop, a group is a single stop in the focus chain: Tab moves the focus to the
  * active radio button (or to every button while none is active), and the arrow keys move the
  * focus to the previous or next button of the group and activate it.
+ *
+ * Signals: `activate` (`button`) when the user activates the button or `activate()` is called,
+ * also when it already was active; `toggle` (`button`) and `active-change` on every change of
+ * `active`, also from code (so both for the button that became active and for the one that became
+ * inactive); and `clicked` (`button`) after a click.
  */
 export class RadioButton extends CheckBox {
     _initialize() {
         super._initialize();
 
         this._disconnectGroup = null;
+        this._mnemonicStop = false;
 
         this.el.addEventListener('keydown', (event) => this._onKeyDown(event));
+        this.el.addEventListener('focusout', () => this._setMnemonicStop(false));
     }
 
     _render() {
@@ -51,15 +58,55 @@ export class RadioButton extends CheckBox {
         return element;
     }
 
-    _onClicked() {
-        this.inconsistent = false;
+    _setAccessibleState(_state) {
+        // A radio button has no mixed state for assistive technology.
+        this.el.setAttribute('aria-checked', String(this._active));
+    }
 
-        // A click only turns a radio button on.
-        if (!this._active) {
-            this.active = true;
+    /**
+     * Activates the button, as if the user clicked it: clears `inconsistent`, makes the button
+     * active (a radio button never deactivates itself) and emits `activate`.
+     */
+    activate() {
+        this.inconsistent = false;
+        this.active = true;
+
+        this.emit('activate', this);
+    }
+
+    _onClicked() {
+        this.activate();
+
+        if (!this.destroyed) {
+            this.focus();
+        }
+    }
+
+    /**
+     * Activates the button for its mnemonic. When other widgets share the mnemonic, the button
+     * only takes the focus, also when it is not the group's stop in the focus chain; it stays a
+     * stop until the focus leaves it.
+     *
+     * @protected
+     * @param {boolean} groupCycling
+     */
+    _mnemonicActivate(groupCycling) {
+        if (groupCycling && !this._isFocusStop()) {
+            this._setMnemonicStop(true);
         }
 
-        this.focus();
+        super._mnemonicActivate(groupCycling);
+
+        if (!this.isFocus) {
+            this._setMnemonicStop(false);
+        }
+    }
+
+    _setMnemonicStop(stop) {
+        if (stop !== this._mnemonicStop) {
+            this._mnemonicStop = stop;
+            this._updateTabIndex();
+        }
     }
 
     _onGroupChange(old, group) {
@@ -98,7 +145,7 @@ export class RadioButton extends CheckBox {
         const group = this._group;
         const active = group?.active;
 
-        if (!active || active === this) {
+        if (!active || active === this || this._mnemonicStop) {
             return true;
         }
 
@@ -157,9 +204,8 @@ export class RadioButton extends CheckBox {
         const index = buttons.indexOf(this);
         const next = buttons[(index + direction + buttons.length) % buttons.length];
 
-        next.inconsistent = false;
-        next.active = true;
-        next.focus();
+        // Moving to a button clicks it, as in GTK.
+        next._click();
     }
 
     destroy() {

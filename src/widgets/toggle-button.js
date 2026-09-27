@@ -17,8 +17,9 @@ import { ButtonGroup } from './button-group.js';
  * `inconsistent` shows a third, "mixed" state, e.g. for a setting that applies to only some of
  * the selected items. Clicking the button clears it.
  *
- * Signals: `toggle` (`button`) on every change of `active`, `activate` when it becomes active and
- * `deactivate` when it becomes inactive (like the original toolkit), and `clicked` after a click.
+ * Signals: `activate` (`button`) when the user activates the button (a click, Space or Enter, or its
+ * mnemonic) or `activate()` is called, after it toggled; `toggle` (`button`) and `active-change`
+ * on every change of `active`, also from code; and `clicked` (`button`) after a click.
  */
 export class ToggleButton extends Button {
     _initialize() {
@@ -33,21 +34,18 @@ export class ToggleButton extends Button {
     }
 
     /**
-     * Makes the button active. The same as setting `active` to `true`.
+     * Activates the button, as if the user clicked it: clears `inconsistent`, toggles `active` and
+     * emits `activate`.
      */
     activate() {
-        this.active = true;
+        this.inconsistent = false;
+        this.toggle();
+
+        this.emit('activate', this);
     }
 
     /**
-     * Makes the button inactive. The same as setting `active` to `false`.
-     */
-    deactivate() {
-        this.active = false;
-    }
-
-    /**
-     * Toggles the button.
+     * Toggles `active`, without emitting `activate`.
      */
     toggle() {
         this.active = !this._active;
@@ -70,11 +68,6 @@ export class ToggleButton extends Button {
         }
 
         this._group.addButton(button);
-    }
-
-    _onClicked() {
-        this.inconsistent = false;
-        this.toggle();
     }
 
     /**
@@ -117,10 +110,9 @@ defineProperties(ToggleButton, {
     active: {
         value: false,
         coerce: Boolean,
-        changed(active) {
+        changed() {
             this._updateState();
 
-            this.emit(active ? 'activate' : 'deactivate', this);
             this.emit('toggle', this);
         },
     },

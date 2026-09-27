@@ -46,8 +46,9 @@ original error, if any, is the `cause`. The ids of a failed build are forgotten.
 
 ## Descriptions
 
-A description is an object with a `type` and optionally an `id`. The other keys are handled in
-this order of precedence:
+A description is an object with a `type` and optionally an `id`. For a class with an `id` property
+of its own, such as `TranslatedText`, `id` is that property instead, and the object has no id in
+the builder. The other keys are handled in this order of precedence:
 
 - **Builder properties** of the class: static `builderProperties` hooks, looked up along the class
   hierarchy (the most derived class wins). They run after the normal properties, in input order,
@@ -73,7 +74,8 @@ Property values are built recursively:
 - Everything else, including existing objects, is used as it is. `undefined` becomes `null`.
 
 Existing instances can also be given where descriptions are expected, e.g. as children, and so can
-references to objects built before:
+references to objects built before (builder property hooks build their values when they run, so
+their references must be to objects built earlier in the input):
 
 ```js
 builder.build([
@@ -88,7 +90,7 @@ builder.build([
 Classes whose constructor does not take a property object are registered with a factory:
 
 ```js
-registerType('matrix', Matrix, (properties, builder) => new Matrix(properties.m11, properties.m12));
+registerType('point', Point, (properties, builder) => new Point(properties.x, properties.y));
 ```
 
 The factory gets the built values of the normal keys, by camelCase name (so they cannot refer to
@@ -113,17 +115,22 @@ Grid.builderProperties = {
 };
 ```
 
-The original toolkit had these special keys, which the widget modules define:
+These classes have builder properties. The first seven are the special keys of the original
+toolkit:
 
-| Class          | Key        | Handling                                                                            |
-| -------------- | ---------- | ----------------------------------------------------------------------------------- |
-| `Fixed`        | `children` | Each child may have `x` and `y`: `fixed.addChild(child, x, y)`.                     |
-| `Paned`        | `children` | Each child may have `resize`: `paned.addChild(child, resize)`.                      |
-| `Grid`         | `children` | `row`, `column`, `rowSpan` and `columnSpan` (originally `row-span` and `col-span`). |
-| `VectorCanvas` | `sprites`  | Sprite descriptions, added with `canvas.addSprite()`.                               |
-| `ButtonGroup`  | `buttons`  | Buttons or references, added with `group.addButton()`.                              |
-| `Dialog`       | `buttons`  | Buttons, added with `dialog.addButton()`.                                           |
-| `Table`        | `columns`  | Column descriptions, added with `table.addColumn()`.                                |
+| Class                            | Key        | Handling                                                                    |
+| -------------------------------- | ---------- | --------------------------------------------------------------------------- |
+| `Fixed`                          | `children` | Each child may have `x` and `y`: `fixed.addChild(child, x, y)`.             |
+| `Paned`                          | `children` | Each child may have `resize` and `shrink`: `paned.addChild(child, ...)`.    |
+| `Grid`                           | `children` | `row`, `column`, `rowSpan` and `columnSpan` (or `row-span` and `col-span`). |
+| `VectorCanvas`                   | `sprites`  | Sprite descriptions, added with `canvas.addSprite()`.                       |
+| `ButtonGroup`                    | `buttons`  | Buttons or references, added with `group.addButton()`.                      |
+| `Dialog`                         | `buttons`  | Responses, `[response, label]` pairs or `{ response, ... }` objects.        |
+| `Table`                          | `columns`  | Column descriptions, added with `table.addColumn()`.                        |
+| `MessageDialog`                  | `buttons`  | A `ButtonsType` preset (`'ok-cancel'`), or buttons like a dialog's.         |
+| `InfoBar`                        | `buttons`  | Buttons like a dialog's.                                                    |
+| `Notebook`                       | `children` | Each page may have a `tabLabel`: a text or a widget description.            |
+| `FilteredListModel`, `TreeModel` | `filters`  | Filter descriptions, which replace the model's filters.                     |
 
 ## JSON
 

@@ -17,8 +17,6 @@ export declare class Expander extends Bin {
     _headerEl: Element;
     _labelEl: Element;
     _bodyEl: Element;
-    expanded: boolean;
-    labelWidget: any;
     _initialize(): void;
     _render(): HTMLElement;
     /**
@@ -48,12 +46,20 @@ export interface Expander {
     /**
      * Expanders take the keyboard focus on their title.
      */
-    canFocus: any;
+    canFocus: boolean;
+    /**
+     * Whether the child is shown.
+     */
+    expanded: boolean;
     /**
      * The text of the title. It is not shown while there is a `labelWidget`, and reads as `null`
      * then.
      */
     label: string;
+    /**
+     * A widget to show as the title instead of the text, or `null`. The expander owns it.
+     */
+    labelWidget: any;
     /**
      * The space between the title and the child, in pixels.
      */

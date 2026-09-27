@@ -6,7 +6,7 @@ import { formatHex, parseColor } from '../core/color.js';
 import { Align, Response } from '../core/enums.js';
 import { defineProperties } from '../core/instance.js';
 import { registerType } from '../core/registry.js';
-import { toolkitText } from '../i18n/toolkit-text.js';
+import { bindToolkitText, toolkitText } from '../i18n/toolkit-text.js';
 import { Button } from './button.js';
 import { ColorChooser, ColorSwatch } from './color-chooser.js';
 import { Dialog } from './dialog.js';
@@ -25,8 +25,8 @@ import { flushLayout } from './widget.js';
  * `color` is a CSS color, read back as a hex color (see `ColorChooser`); with `useAlpha` it can
  * be translucent.
  *
- * Signals: `color-set` (`button`) when the user chose a color, and `color-change` whenever the
- * color changed.
+ * Signals: `color-set` (`button`) when the user chose a color, `color-change` whenever the
+ * color changed, and `popup-open-change` when the chooser opened or closed.
  *
  * @example
  * const button = new ColorButton({ color: '#4e9a06', title: 'Accent Color' });
@@ -50,7 +50,8 @@ export class ColorButton extends Button {
         this._swatch.addStyleClass('wy-color-button-swatch');
         this.addChild(this._swatch);
 
-        this._syncColor();
+        // The accessible name has the translated title.
+        bindToolkitText(this, () => this._syncColor());
     }
 
     /**
@@ -95,24 +96,15 @@ export class ColorButton extends Button {
     /**
      * Opens the chooser: in a popover, or in a modal dialog with `modal`.
      */
-    openChooser() {
-        if (!this.isSensitive || this.isChooserOpen) {
-            return;
-        }
-
-        if (this._modal) {
-            this._openDialog();
-        } else {
-            this._openPopover();
-        }
+    popup() {
+        this.popupOpen = true;
     }
 
     /**
      * Closes the chooser, keeping the chosen color.
      */
-    closeChooser() {
-        this._popover?.popdown();
-        this._dialog?.response(Response.OK);
+    popdown() {
+        this.popupOpen = false;
     }
 
     destroy() {
@@ -127,7 +119,7 @@ export class ColorButton extends Button {
         if (this._popover?.isOpen) {
             this._popover.popdown();
         } else {
-            this.openChooser();
+            this.popup();
         }
 
         this.activate();
@@ -240,11 +232,20 @@ export class ColorButton extends Button {
     _setExpanded(expanded) {
         this.el.setAttribute('aria-expanded', String(expanded));
         this.el.classList.toggle('wy-active', expanded);
+
+        this.emit('popup-open-change', this);
     }
 
     _syncColor() {
         this._swatch.color = this._color;
-        this.el.setAttribute('aria-label', `${toolkitText(this._title)}: ${this._color}`);
+
+        // The accessible name, or else the title, is followed by the color.
+        const name = this._accessibleName || toolkitText(this._title);
+        this.el.setAttribute('aria-label', `${name}: ${this._color}`);
+    }
+
+    _syncAccessibleName() {
+        this._syncColor();
     }
 }
 
@@ -328,12 +329,27 @@ defineProperties(ColorButton, {
     showEditor: { value: true, coerce: Boolean },
 
     /**
-     * Whether the chooser is open.
+     * Whether the chooser is open, in its popover or dialog. Setting it opens or closes the
+     * chooser; closing it keeps the chosen color.
      */
-    isChooserOpen: {
-        readOnly: true,
+    popupOpen: {
+        signal: false,
         get() {
             return Boolean(this._dialog || this._popover?.isOpen);
+        },
+        set(open) {
+            if (open && !this.popupOpen && this.isSensitive) {
+                if (this._modal) {
+                    this._openDialog();
+                } else {
+                    this._openPopover();
+                }
+            } else if (!open) {
+                this._popover?.popdown();
+                this._dialog?.response(Response.OK);
+            }
+
+            return false;
         },
     },
 });

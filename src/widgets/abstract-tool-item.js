@@ -31,6 +31,14 @@ export class AbstractToolItem extends Container {
     }
 
     /**
+     * Called before a menu proxy of this item is destroyed, to take back what it lent to it.
+     *
+     * @protected
+     * @param {import('./abstract-menu-item.js').AbstractMenuItem} _proxy
+     */
+    _releaseMenuProxy(_proxy) {}
+
+    /**
      * Called when the tool bar's style, icon size or orientation changed, and when the item was
      * added to a tool bar.
      *

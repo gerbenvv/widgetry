@@ -20,7 +20,7 @@ export interface Box {
     /**
      * The direction children are laid out in: one of `Orientation`.
      */
-    orientation: any;
+    orientation: string;
     /**
      * Whether all children get the same size.
      */

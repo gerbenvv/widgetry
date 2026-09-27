@@ -48,4 +48,50 @@ describe('toolkitText', () => {
             }
         }
     });
+
+    test('formats texts with arguments, keeping the placeholders in every language', () => {
+        const manager = getLocaleManager();
+        const text = 'Saturation %d%%, value %d%%';
+
+        manager.locale = 'en-US';
+        assert.equal(toolkitText(text, 50, 75), 'Saturation 50%, value 75%');
+
+        manager.locale = 'nl-NL';
+        assert.equal(toolkitText(text, 50, 75), 'Verzadiging 50%, helderheid 75%');
+
+        // Texts without arguments are not formatted.
+        assert.equal(toolkitText('100%'), '100%');
+        manager.locale = 'en-US';
+
+        const placeholders = (x) => (x.match(/%(\d+\$)?[a-z%]/g) || []).length;
+        for (const [language, dictionary] of Object.entries(TOOLKIT_TRANSLATIONS)) {
+            for (const [english, translation] of Object.entries(dictionary)) {
+                assert.equal(
+                    placeholders(translation),
+                    placeholders(english),
+                    `${language}: ${english}`
+                );
+            }
+        }
+    });
+
+    test('gives the buttons that are shown together different mnemonics', () => {
+        const groups = [
+            ['_OK', '_Cancel', '_Apply', '_Help'],
+            ['_Yes', '_No', '_Cancel', '_Help'],
+            ['_Select', '_Cancel'],
+        ];
+
+        for (const [language, dictionary] of Object.entries(TOOLKIT_TRANSLATIONS)) {
+            for (const group of groups) {
+                const mnemonics = group.map((text) => {
+                    const translation = dictionary[text];
+
+                    return translation[translation.indexOf('_') + 1].toLowerCase();
+                });
+
+                assert.equal(new Set(mnemonics).size, group.length, `${language}: ${mnemonics}`);
+            }
+        }
+    });
 });

@@ -142,6 +142,7 @@ export class TreeModel extends AbstractModel {
         // Changes are batched: the shown rows are updated once at the end of a change.
         this._batch = 0;
         this._dirty = undefined;
+        this._filterStateDirty = false;
         this._queuedSignals = [];
     }
 
@@ -534,6 +535,21 @@ export class TreeModel extends AbstractModel {
      * @throws {Error} If the row is already in the model or its id is in use.
      */
     insertChild(parent, index, row) {
+        row = this._insertChild(parent, index, row);
+
+        return this.getRowIndex(row);
+    }
+
+    /**
+     * Inserts a row as a child of another row, like `insertChild()`, without looking up its
+     * index, which takes the time of building the id index when many rows are inserted.
+     *
+     * @param {object | number | null} parent
+     * @param {number} index
+     * @param {object} row
+     * @returns {object} The row.
+     */
+    _insertChild(parent, index, row) {
         parent = parent === null ? null : this._resolveRow(parent);
 
         const siblings = parent === null ? this._rootRows : this._getChildren(parent);
@@ -566,7 +582,7 @@ export class TreeModel extends AbstractModel {
             this._endBatch();
         }
 
-        return this.getRowIndex(row);
+        return row;
     }
 
     /**
@@ -671,7 +687,7 @@ export class TreeModel extends AbstractModel {
 
         this._batch += 1;
         try {
-            rows.forEach((row, i) => this.insertChild(parent, position + i, row));
+            rows.forEach((row, i) => this._insertChild(parent, position + i, row));
         } finally {
             this._endBatch();
         }
@@ -860,7 +876,7 @@ export class TreeModel extends AbstractModel {
             order !== SortOrder.ASCENDING &&
             order !== SortOrder.DESCENDING
         ) {
-            throw new RangeError(`Invalid sort order ${order}.`);
+            throw new RangeError(`Invalid sort order '${order}'.`);
         }
 
         if (!column) {
@@ -1036,6 +1052,27 @@ export class TreeModel extends AbstractModel {
         }
 
         return this._rowsById;
+    }
+
+    /**
+     * Checks that all rows of the tree, also those in collapsed rows, have a different value in
+     * a column.
+     *
+     * @protected
+     * @param {string} column
+     * @throws {Error} If two rows have the same id.
+     */
+    _checkUniqueIds(column) {
+        const ids = new Set();
+
+        for (const row of this._nodes.keys()) {
+            const id = row[column];
+            if (ids.has(id)) {
+                throw new Error(`Duplicate row id ${String(id)}.`);
+            }
+
+            ids.add(id);
+        }
     }
 
     _findRow(id) {
@@ -1425,8 +1462,9 @@ export class TreeModel extends AbstractModel {
     _onTreeChange(parent) {
         this._layout = null;
 
+        // The filter state is computed once at the end of the change, not for every row.
         if (this._filters.length) {
-            this._computeFilterState();
+            this._filterStateDirty = true;
         }
 
         this._markDirty(parent);
@@ -1466,6 +1504,11 @@ export class TreeModel extends AbstractModel {
 
         if (this._batch) {
             return;
+        }
+
+        if (this._filterStateDirty) {
+            this._computeFilterState();
+            this._layout = null;
         }
 
         if (this._dirty !== undefined) {
@@ -1664,6 +1707,7 @@ export class TreeModel extends AbstractModel {
      * Computes which rows the filters hide, and which rows they expand.
      */
     _computeFilterState() {
+        this._filterStateDirty = false;
         this._hidden = new Set();
         this._revealed = new Set();
 
@@ -1824,11 +1868,6 @@ defineProperties(TreeModel, {
         changed() {
             this._invalidateIndex();
             this._rowsById = null;
-
-            if (this._idColumn) {
-                // Validate the ids right away.
-                this._getRowsById();
-            }
         },
     },
 

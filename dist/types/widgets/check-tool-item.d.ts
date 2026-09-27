@@ -6,13 +6,15 @@ import { ToolItem } from './tool-item.js';
 /**
  * A tool item that toggles between active (drawn pressed) and inactive when activated.
  *
- * Signals: `activate` (when activated, after toggling) and `toggle` (whenever `active` changes).
+ * Signals: `activate` (`item`) when the user activates the item (a click, Space or Enter, or its
+ * proxy in the overflow menu of the tool bar) or `activate()` is called, after it toggled;
+ * `toggle` (`item`) and `active-change` on every change of `active`, also from code.
  */
 export declare class CheckToolItem extends ToolItem {
-    active: boolean;
     _initialize(): void;
     /**
-     * Activates the item: toggles it and emits `activate`. Does nothing if it is insensitive.
+     * Activates the item, as the user does: toggles `active` and emits `activate`. Does nothing if
+     * it is insensitive.
      *
      * @returns {boolean} Whether the item was activated.
      */
@@ -29,5 +31,8 @@ export declare class CheckToolItem extends ToolItem {
 
 /** The declared properties of {@link CheckToolItem}. */
 export interface CheckToolItem {
-
+    /**
+     * Whether the item is active (checked), which draws it pressed.
+     */
+    active: boolean;
 }

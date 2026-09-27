@@ -2,6 +2,7 @@
  * @module widgets/dialog
  */
 
+import { Application } from '../core/application.js';
 import { ButtonBoxStyle, Orientation, Response } from '../core/enums.js';
 import { defineProperties } from '../core/instance.js';
 import { registerType } from '../core/registry.js';
@@ -85,6 +86,9 @@ export class Dialog extends Window {
         this._responding = 0;
         this._closeAfterResponse = false;
         this._parentHandler = null;
+
+        // The window that was active when the dialog was shown, which gets the keyboard back.
+        this._previousWindow = null;
 
         this.el.classList.add('wy-dialog');
 
@@ -348,13 +352,36 @@ export class Dialog extends Window {
         this._parentHandler?.();
         this._parentHandler = null;
 
+        const wasActive = this._visible && this._active;
+
         super.destroy();
 
         this._settle(Response.NONE);
+
+        if (wasActive) {
+            this._activatePreviousWindow();
+        }
     }
 
     _onVisibleChange(visible) {
+        const wasActive = this._active;
+        if (visible) {
+            const active = Application.activeWindow;
+            this._previousWindow = active !== this ? active : null;
+        }
+
         super._onVisibleChange(visible);
+
+        if (!visible) {
+            // Hiding the dialog ends `run()`, like closing it.
+            this._settle(Response.NONE);
+
+            if (wasActive) {
+                this._activatePreviousWindow();
+            }
+
+            return;
+        }
 
         // Like GTK, focus the default button unless a widget in the content took the focus.
         const button = this._defaultResponse !== null && this._buttons.get(this._defaultResponse);
@@ -366,6 +393,22 @@ export class Dialog extends Window {
             button !== focusWidget
         ) {
             button.focus();
+        }
+    }
+
+    _activatePreviousWindow() {
+        const previous = this._previousWindow;
+        this._previousWindow = null;
+
+        // Give the keyboard back to the window the dialog was shown from, or its parent.
+        for (const window of [previous, this._transientFor]) {
+            if (window && !window.destroyed && window.visible && window !== this) {
+                if (!Application.activeWindow) {
+                    window.active = true;
+                }
+
+                return;
+            }
         }
     }
 

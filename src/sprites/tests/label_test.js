@@ -25,21 +25,32 @@ test('LabelSprite shows text at an anchor, in the theme text color', async ({ pa
             font: 'bold 12px serif',
         });
 
-        let error = null;
-        try {
-            label.anchor = 5;
-        } catch (e) {
-            error = e.constructor.name;
+        const ended = label.el.getAttribute('text-anchor');
+
+        // The anchors are the SVG words.
+        label.anchor = 'start';
+        const started = { anchor: label.anchor, attribute: label.el.getAttribute('text-anchor') };
+
+        const errors = [];
+        for (const anchor of [5, 1, 'left', null]) {
+            try {
+                label.anchor = anchor;
+            } catch (e) {
+                errors.push(e.constructor.name);
+            }
         }
 
         return {
+            values: { ...LabelAnchor },
+            started,
+            ended,
+            isStart: label.anchor === LabelAnchor.START,
             initial,
             text: [...label.el.childNodes].filter((x) => x.nodeType === 3).map((x) => x.data),
             title: label.el.querySelector('title').textContent,
-            anchor: label.el.getAttribute('text-anchor'),
             baseline: label.el.getAttribute('dominant-baseline'),
             font: label.el.style.fontWeight,
-            error,
+            errors,
         };
     });
 
@@ -52,8 +63,11 @@ test('LabelSprite shows text at an anchor, in the theme text color', async ({ pa
     });
     expect(result.text).toEqual(['50']);
     expect(result.title).toBe('Price');
-    expect(result.anchor).toBe('end');
+    expect(result.values).toEqual({ START: 'start', MIDDLE: 'middle', END: 'end' });
+    expect(result.ended).toBe('end');
+    expect(result.started).toEqual({ anchor: 'start', attribute: 'start' });
+    expect(result.isStart).toBe(true);
     expect(result.baseline).toBe('middle');
     expect(result.font).toBe('bold');
-    expect(result.error).toBe('RangeError');
+    expect(result.errors).toEqual(['RangeError', 'RangeError', 'RangeError', 'RangeError']);
 });

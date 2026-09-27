@@ -9,16 +9,24 @@
     "exports": {
         ".": {
             "types": "./dist/types/index.d.ts",
-            "import": "./dist/widgetry.js"
+            "import": "./dist/widgetry.js",
+            "default": "./dist/widgetry.js"
         },
         "./widgetry.css": "./dist/widgetry.css",
         "./dist/*": "./dist/*",
-        "./src/*": "./src/*"
+        "./src/*.js": {
+            "types": "./dist/types/*.d.ts",
+            "default": "./src/*.js"
+        },
+        "./src/*": "./src/*",
+        "./package.json": "./package.json"
     },
     "files": [
         "dist",
         "src",
-        "!src/**/tests"
+        "!src/**/tests",
+        "CHANGELOG.md",
+        "CITATION.cff"
     ],
     "sideEffects": [
         "*.css",

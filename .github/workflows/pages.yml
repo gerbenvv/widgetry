@@ -10,9 +10,10 @@ permissions:
     pages: write
     id-token: write
 
+# Let a running deployment finish, as GitHub recommends for Pages.
 concurrency:
     group: pages
-    cancel-in-progress: true
+    cancel-in-progress: false
 
 jobs:
     deploy:
@@ -26,10 +27,25 @@ jobs:
             -   name: Assemble the site
                 run: |
                     mkdir -p site
-                    cp -r demo dist site/
+                    cp -r demo site/
 
-                    # The demo references the bundle as ../dist/.
-                    printf '<meta http-equiv="refresh" content="0; url=demo/">\n' > site/index.html
+                    # The demo references the bundle as ../dist/; the declarations are not needed.
+                    mkdir -p site/dist
+                    cp dist/widgetry.css dist/widgetry.min.js dist/widgetry.min.js.map site/dist/
+
+                    # Redirect the root of the site to the demo.
+                    printf '%s\n' '<!doctype html>' '<meta charset="utf-8" />' \
+                        '<title>Widgetry demo</title>' \
+                        '<meta http-equiv="refresh" content="0; url=demo/" />' \
+                        '<a href="demo/">Widgetry demo</a>' > site/index.html
+
+                    # Check that every file the demo pages load is in the site.
+                    for page in site/demo/*.html; do
+                        grep -oE '(src|href)="[^"#:]+"' "$page" | sed -E 's/^[a-z]+="//; s/"$//' |
+                            while read -r path; do
+                                test -e "$(dirname "$page")/$path" || { echo "Missing: $path"; exit 1; }
+                            done
+                    done
 
             -   uses: actions/configure-pages@v5
 

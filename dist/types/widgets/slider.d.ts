@@ -39,7 +39,6 @@ export declare class Slider extends AbstractSlider {
     };
     _troughEl: Element;
     _thumbEl: Element;
-    marks: any[];
     _initialize(): void;
     _render(): HTMLElement;
     /**
@@ -74,7 +73,6 @@ export declare class Slider extends AbstractSlider {
 
 /** The declared properties of {@link Slider}. */
 export interface Slider {
-    canFocus: any;
     /**
      * The number of decimals of the value shown. Values set by the user are rounded to it. Use -1
      * to not round.
@@ -88,9 +86,13 @@ export interface Slider {
      * Where the value is shown: one of `Position`. On the sides along the trough it follows the
      * thumb.
      */
-    valuePos: any;
+    valuePos: string;
     /**
      * Whether the trough is filled from the lower end up to the thumb.
      */
     hasOrigin: boolean;
+    /**
+     * The marks, as objects with `value`, `position` and `label`. See `addMark()`.
+     */
+    marks: any[];
 }

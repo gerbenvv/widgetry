@@ -144,9 +144,11 @@
     background: linear-gradient(var(--wy-switch-on-top), var(--wy-switch-on-bottom));
 }
 
+/* Like GTK's, the switch is not mirrored in right-to-left text. */
 .wy-switch-trough {
     position: absolute;
     inset: 0;
+    direction: ltr;
     display: grid;
     grid-template-columns: 1fr 1fr;
     place-items: center;

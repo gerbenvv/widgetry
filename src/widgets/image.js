@@ -19,7 +19,7 @@ import { Widget } from './widget.js';
  */
 export class Image extends Widget {
     _render() {
-        const element = createElement('<span class="wy-image" role="img"></span>');
+        const element = createElement('<span class="wy-image" aria-hidden="true"></span>');
 
         this._pictureEl = null;
 
@@ -59,6 +59,21 @@ export class Image extends Widget {
         this._pictureEl = picture;
         this.el.append(picture);
         this._applyPixelSize();
+    }
+
+    _syncAccessibleName() {
+        const name = this._accessibleName || this._alternativeText;
+
+        // Without a name the image is decorative, as in GTK.
+        if (name) {
+            this.el.setAttribute('role', 'img');
+            this.el.setAttribute('aria-label', name);
+            this.el.removeAttribute('aria-hidden');
+        } else {
+            this.el.removeAttribute('role');
+            this.el.removeAttribute('aria-label');
+            this.el.setAttribute('aria-hidden', 'true');
+        }
     }
 
     _applyPixelSize() {
@@ -112,20 +127,17 @@ defineProperties(Image, {
     },
 
     /**
-     * A text alternative for assistive technology.
+     * A text alternative for assistive technology, used when `accessibleName` is not set. An image
+     * without either is decorative and hidden from assistive technology.
      */
     alternativeText: {
         value: '',
         changed(text) {
-            if (text) {
-                this.el.setAttribute('aria-label', text);
-            } else {
-                this.el.removeAttribute('aria-label');
-            }
-
             if (this._pictureEl) {
                 this._pictureEl.alt = text;
             }
+
+            this._syncAccessibleName();
         },
     },
 });

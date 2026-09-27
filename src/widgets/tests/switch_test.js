@@ -27,6 +27,7 @@ async function mount(page, properties = {}) {
         globalThis.toggle = toggle;
         globalThis.log = [];
         toggle.connect('active-change', () => globalThis.log.push(`active:${toggle.active}`));
+        toggle.connect('toggle', () => globalThis.log.push(`toggle:${toggle.active}`));
         toggle.connect('activate', () => globalThis.log.push('activate'));
     }, properties);
 
@@ -87,8 +88,44 @@ test.describe('Switch', () => {
         expect(on.sliderLeft + on.sliderWidth).toBe(on.width);
         expect(await state(page)).toEqual([true, 'true', true]);
 
-        // Setting the property from code does not emit activate.
-        expect(await page.evaluate(() => globalThis.log)).toEqual(['active:true']);
+        // Setting the property from code emits the change signals, but not activate.
+        expect(await page.evaluate(() => globalThis.log)).toEqual(['toggle:true', 'active:true']);
+        expect(errors).toEqual([]);
+    });
+
+    test('the slider covers the symbol of the other state, also in right-to-left text', async ({
+        page,
+    }) => {
+        const errors = await mount(page);
+
+        // Returns whether the slider covers the on and the off symbol.
+        const covered = () =>
+            page.evaluate(() => {
+                const element = globalThis.toggle.el;
+                const slider = element.querySelector('.wy-switch-slider').getBoundingClientRect();
+                const covers = (selector) => {
+                    const symbol = element.querySelector(selector).getBoundingClientRect();
+                    const center = symbol.left + symbol.width / 2;
+
+                    return center > slider.left && center < slider.right;
+                };
+
+                return [covers('.wy-switch-on-symbol'), covers('.wy-switch-off-symbol')];
+            });
+
+        for (const direction of ['ltr', 'rtl']) {
+            await page.evaluate((direction) => {
+                document.documentElement.dir = direction;
+                globalThis.toggle.active = false;
+            }, direction);
+
+            // The slider moves with a transition.
+            await expect.poll(covered).toEqual([true, false]);
+
+            await page.evaluate(() => (globalThis.toggle.active = true));
+            await expect.poll(covered).toEqual([false, true]);
+        }
+
         expect(errors).toEqual([]);
     });
 
@@ -104,8 +141,10 @@ test.describe('Switch', () => {
 
         expect(await page.evaluate(() => globalThis.toggle.hasFocus)).toBe(true);
         expect(await page.evaluate(() => globalThis.log)).toEqual([
+            'toggle:true',
             'active:true',
             'activate',
+            'toggle:false',
             'active:false',
             'activate',
         ]);
@@ -234,7 +273,15 @@ test.describe('Switch', () => {
             confirmed: true,
             allowed: true,
             active: false,
-            log: ['active:true', 'active:false', 'activate'],
+            // A vetoed activation is still an activation.
+            log: [
+                'activate',
+                'toggle:true',
+                'active:true',
+                'toggle:false',
+                'active:false',
+                'activate',
+            ],
         });
 
         // A vetoed click leaves the slider where it was.

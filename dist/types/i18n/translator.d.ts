@@ -11,7 +11,8 @@ export type TranslationEntry = string | Record<string, string>;
  * without translation falls back to the identifier.
  *
  * Translations are formatted with the {@link StringFormatter}, so they can contain placeholders
- * such as `%s`, `%d` and `%1$s` (to reorder arguments). A translation can also have plural forms,
+ * such as `%s`, `%d` and `%1$s` (to reorder arguments). Like gettext, a text translated without
+ * arguments is not formatted, so it can contain a plain `%` (and `%%` stays as it is). A translation can also have plural forms,
  * chosen with `Intl.PluralRules` of its language by the first argument:
  *
  * ```js
@@ -112,7 +113,7 @@ export declare class Translator extends LocaleAware {
         language: string;
     };
     _choosePluralForm(entry: any, language: any, count: any): any;
-    _format(text: any, args: any): string;
+    _format(text: any, args: any): any;
     _requestDictionaries(): void;
 }
 /**

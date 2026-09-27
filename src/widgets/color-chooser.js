@@ -30,7 +30,8 @@ import { Widget } from './widget.js';
 
 /**
  * The shades of the Tango palette, as in GTK's color chooser: a light, a medium and a dark shade
- * of each hue, and the aluminium grays.
+ * of each hue, and of the two sets of aluminium grays. The names are toolkit texts, translated
+ * when shown.
  *
  * @type {ReadonlyArray<[string, string[]]>}
  */
@@ -42,8 +43,8 @@ const TANGO_HUES = Object.freeze([
     ['Sky Blue', ['#729fcf', '#3465a4', '#204a87']],
     ['Plum', ['#ad7fa8', '#75507b', '#5c3566']],
     ['Chocolate', ['#e9b96e', '#c17d11', '#8f5902']],
-    ['Aluminium', ['#888a85', '#555753', '#2e3436']],
-    ['Light Aluminium', ['#eeeeec', '#d3d7cf', '#babdb6']],
+    ['Aluminium 2', ['#888a85', '#555753', '#2e3436']],
+    ['Aluminium 1', ['#eeeeec', '#d3d7cf', '#babdb6']],
 ]);
 
 /**
@@ -65,7 +66,8 @@ const TANGO_GRAYS = Object.freeze([
 
 /**
  * The default palette of the color chooser, row by row: the light, medium and dark shades of the
- * Tango hues, and a row of grays. It has 9 columns.
+ * Tango hues, and a row of grays. It has 9 columns. The English names are translated like the
+ * other toolkit texts (see `toolkitText`).
  *
  * @type {ReadonlyArray<Readonly<PaletteColor>>}
  */
@@ -148,7 +150,17 @@ export class ColorSwatch extends Widget {
         this.el.style.setProperty('--wy-swatch-color', formatHex(color));
         this.el.style.setProperty('--wy-swatch-opaque', formatHex(color, false));
         this.el.classList.toggle('wy-translucent', color.a < 1);
-        this.el.setAttribute('aria-label', formatHex(color));
+
+        // The accessible name, if any, is followed by the color.
+        const hex = formatHex(color);
+        this.el.setAttribute(
+            'aria-label',
+            this._accessibleName ? `${this._accessibleName}: ${hex}` : hex
+        );
+    }
+
+    _syncAccessibleName() {
+        this._syncColor();
     }
 }
 
@@ -193,6 +205,9 @@ export class ColorPalette extends Widget {
         });
 
         this._renderSwatches();
+
+        // The names of the colors are translated like the toolkit's own texts.
+        bindToolkitText(this, () => this._translateSwatches());
     }
 
     _render() {
@@ -233,8 +248,6 @@ export class ColorPalette extends Widget {
             swatch.id = `${this._listId}-${index}`;
             swatch.dataset.index = String(index);
             swatch.setAttribute('role', 'option');
-            swatch.setAttribute('aria-label', entry.name);
-            swatch.title = entry.name;
             swatch.style.setProperty('--wy-swatch-color', entry.color);
             swatch.classList.toggle('wy-light', getLuminance(color) > 0.45);
 
@@ -242,7 +255,17 @@ export class ColorPalette extends Widget {
         });
 
         this._cursor = Math.min(this._cursor, this._colors.length - 1);
+        this._translateSwatches();
         this._syncSwatches();
+    }
+
+    _translateSwatches() {
+        for (const swatch of this.el.children) {
+            const name = toolkitText(this._colors[Number(swatch.dataset.index)].name);
+
+            swatch.setAttribute('aria-label', name);
+            swatch.title = name;
+        }
     }
 
     _syncSwatches() {
@@ -420,7 +443,8 @@ export class ColorPlane extends Widget {
         this.el.addEventListener('pointercancel', (event) => this._onPointerUp(event));
         this.el.addEventListener('keydown', (event) => this._onKeyDown(event));
 
-        this._sync();
+        // The value text is translated, also when the language changes.
+        bindToolkitText(this, () => this._sync());
     }
 
     _render() {
@@ -460,7 +484,10 @@ export class ColorPlane extends Widget {
         this.el.style.setProperty('--wy-plane-x', String(this._saturation));
         this.el.style.setProperty('--wy-plane-y', String(1 - this._value));
         this.el.setAttribute('aria-valuenow', String(value));
-        this.el.setAttribute('aria-valuetext', `Saturation ${saturation}%, value ${value}%`);
+        this.el.setAttribute(
+            'aria-valuetext',
+            toolkitText('Saturation %d%%, value %d%%', saturation, value)
+        );
     }
 
     _setFromPointer(event) {
@@ -640,8 +667,9 @@ export class ColorChooser extends Box {
             hasOrigin: false,
         });
         this._hueSlider.addStyleClass('wy-color-chooser-hue');
-        bindToolkitText(this._hueSlider, () =>
-            this._hueSlider.el.setAttribute('aria-label', toolkitText('Hue'))
+        bindToolkitText(
+            this._hueSlider,
+            () => (this._hueSlider.accessibleName = toolkitText('Hue'))
         );
         this._hueSlider.connect('value-change', () => this._onHueChange());
 
@@ -656,8 +684,9 @@ export class ColorChooser extends Box {
             visible: false,
         });
         this._alphaSlider.addStyleClass('wy-color-chooser-alpha');
-        bindToolkitText(this._alphaSlider, () =>
-            this._alphaSlider.el.setAttribute('aria-label', toolkitText('Alpha'))
+        bindToolkitText(
+            this._alphaSlider,
+            () => (this._alphaSlider.accessibleName = toolkitText('Alpha'))
         );
         this._alphaSlider.connect('value-change', () => this._onAlphaChange());
 
@@ -667,9 +696,12 @@ export class ColorChooser extends Box {
         this._entry = new LineEdit({
             hExpand: true,
             widthChars: 12,
-            accessibleName: toolkitText('Color name'),
             validator: (text) => parseColor(text) !== null,
         });
+        bindToolkitText(
+            this._entry,
+            () => (this._entry.accessibleName = toolkitText('Color name'))
+        );
         this._entry.addStyleClass('wy-color-chooser-entry');
         this._entry.connect('change', () => this._onEntryChange());
         this._entry.connect('activate', () => this._onEntryActivate());
@@ -896,7 +928,8 @@ export class ColorChooser extends Box {
             return;
         }
 
-        this._setHsv({ ...this._hsv, h: this._hueSlider.value % 360 }, this._alpha);
+        // A hue of 360 degrees is the same color as 0, but keeps the thumb at the end.
+        this._setHsv({ ...this._hsv, h: this._hueSlider.value }, this._alpha);
         this._applyEditor();
     }
 

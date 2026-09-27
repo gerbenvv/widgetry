@@ -12,11 +12,11 @@
 import { settings } from '../core/settings.js';
 
 /**
- * The maximum distance in pixels between the presses of a double press.
+ * The maximum distance in pixels between the presses of a double (or triple) press.
  *
  * @type {number}
  */
-const MAX_DISTANCE = 5;
+export const MULTIPLE_PRESS_DISTANCE = 5;
 
 /**
  * Calls `handler` on every second primary button press of a double press on an element.
@@ -44,7 +44,7 @@ export function attachDoublePress(element, handler, options = {}) {
         const isDouble =
             last &&
             now - last.time <= settings.multiplePressInterval &&
-            Math.hypot(event.clientX - last.x, event.clientY - last.y) <= MAX_DISTANCE &&
+            Math.hypot(event.clientX - last.x, event.clientY - last.y) <= MULTIPLE_PRESS_DISTANCE &&
             key === last.key;
 
         if (isDouble) {

@@ -17,8 +17,8 @@ import { Popover } from './popover.js';
  * `color` is a CSS color, read back as a hex color (see `ColorChooser`); with `useAlpha` it can
  * be translucent.
  *
- * Signals: `color-set` (`button`) when the user chose a color, and `color-change` whenever the
- * color changed.
+ * Signals: `color-set` (`button`) when the user chose a color, `color-change` whenever the
+ * color changed, and `popup-open-change` when the chooser opened or closed.
  *
  * @example
  * const button = new ColorButton({ color: '#4e9a06', title: 'Accent Color' });
@@ -31,7 +31,6 @@ export declare class ColorButton extends Button {
     _dialogChooser: ColorChooser;
     _originalColor: any;
     _swatch: ColorSwatch;
-    color: any;
     hasFocus: boolean;
     _initialize(): void;
     /**
@@ -58,11 +57,11 @@ export declare class ColorButton extends Button {
     /**
      * Opens the chooser: in a popover, or in a modal dialog with `modal`.
      */
-    openChooser(): void;
+    popup(): void;
     /**
      * Closes the chooser, keeping the chosen color.
      */
-    closeChooser(): void;
+    popdown(): void;
     destroy(): void;
     _onClicked(): void;
     _getPopoverChooser(): ColorChooser;
@@ -72,12 +71,16 @@ export declare class ColorButton extends Button {
     _openDialog(): void;
     _setExpanded(expanded: any): void;
     _syncColor(): void;
+    _syncAccessibleName(): void;
 }
 
 /** The declared properties of {@link ColorButton}. */
 export interface ColorButton {
-    hAlign: any;
-    vAlign: any;
+    /**
+     * The color, as a CSS color. Reading it gives a hex color: `#rrggbb`, or `#rrggbbaa` when it
+     * is translucent (only with `useAlpha`).
+     */
+    color: string;
     /**
      * The color as channels: an object with `r`, `g` and `b` in [0, 255] and `a` in [0, 1].
      * Setting it sets `color`.
@@ -100,7 +103,8 @@ export interface ColorButton {
      */
     showEditor: any;
     /**
-     * Whether the chooser is open.
+     * Whether the chooser is open, in its popover or dialog. Setting it opens or closes the
+     * chooser; closing it keeps the chosen color.
      */
-    readonly isChooserOpen: any;
+    popupOpen: boolean;
 }

@@ -51,8 +51,9 @@ export declare class BuilderError extends Error {
  * ```
  *
  * Every description has a `type`, registered with `registerType()` (which widget modules do when
- * they are imported; the builder imports no widgets itself), and optionally an `id`. The other
- * keys are, in order of precedence:
+ * they are imported; the builder imports no widgets itself), and optionally an `id` (except for
+ * classes with an `id` property of their own, such as `TranslatedText`, which get it as that
+ * property). The other keys are, in order of precedence:
  *
  * - A builder property of the class: a static `builderProperties` hook, looked up along the class
  *   hierarchy (the most derived class wins). Hooks run after the normal properties, in input

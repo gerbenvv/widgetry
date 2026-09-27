@@ -29,11 +29,13 @@ to pursue knowledge.
   `npm run test:browser`, in Chromium and Firefox (add `PLAYWRIGHT_CHANNEL=chrome` and
   `PLAYWRIGHT_FIREFOX_CHANNEL=moz-firefox` to use an installed Chrome and Firefox; a Firefox from
   a snap also needs `TMPDIR` in a directory the snap can read, such as
-  `~/snap/firefox/common/tmp`). Tests live
-  in `tests/` directories next to the code, named `<module-name>_test.js`.
+  `~/snap/firefox/common/tmp`). Tests live in `tests/` directories next to the code, named
+  `<module-name>_test.js`. A new registered type also goes in `tests/builder-types_test.js`, which
+  builds one object of every type.
 - **Build.** `npm run build` (esbuild) writes `dist/widgetry.js`, `dist/widgetry.min.js` and
   `dist/widgetry.css`, and `npm run types` the TypeScript declarations in `dist/types/`. Commit
   the rebuilt `dist/` with source changes; CI checks that it is up to date.
+- **Changelog.** Describe user-visible changes in `CHANGELOG.md`, under the next version.
 - **Formatting.** Run `npm run format` (ESLint with Prettier) or `pre-commit run -a`.
 - **Style.** American English; JSDoc on public classes, properties and methods; empty lines to keep
   code readable; comments above the code they describe, with proper grammar and punctuation; no

@@ -32,7 +32,7 @@ test.describe('ToggleButton', () => {
             const { flushLayout } = await import('/src/widgets/widget.js');
 
             const button = globalThis.box.addChild(new ToggleButton({ label: 'Bold' }));
-            for (const name of ['toggle', 'activate', 'deactivate', 'clicked']) {
+            for (const name of ['toggle', 'active-change', 'activate', 'clicked', 'deactivate']) {
                 button.connect(name, () => globalThis.log.push(`${name}:${button.active}`));
             }
 
@@ -52,32 +52,80 @@ test.describe('ToggleButton', () => {
 
         expect(await state()).toEqual([false, false, 'false']);
 
+        // The user's activations toggle and emit `activate`, whichever way they go.
         await page.mouse.click(box.x, box.y);
         expect(await state()).toEqual([true, true, 'true']);
         expect(await page.evaluate(() => globalThis.log.splice(0))).toEqual([
-            'activate:true',
             'toggle:true',
+            'active-change:true',
+            'activate:true',
             'clicked:true',
         ]);
 
         await page.keyboard.press(' ');
         expect(await state()).toEqual([false, false, 'false']);
         expect(await page.evaluate(() => globalThis.log.splice(0))).toEqual([
-            'deactivate:false',
             'toggle:false',
+            'active-change:false',
+            'activate:false',
             'clicked:false',
         ]);
 
-        // The actions change the state without a click.
+        // `activate()` does what a click does, without `clicked`.
+        await page.evaluate(() => globalThis.button.activate());
+        expect(await page.evaluate(() => globalThis.log.splice(0))).toEqual([
+            'toggle:true',
+            'active-change:true',
+            'activate:true',
+        ]);
+
+        // Changes from code emit only the change signals.
         await page.evaluate(() => {
-            globalThis.button.activate();
             globalThis.button.toggle();
-            globalThis.button.toggle();
-            globalThis.button.deactivate();
+            globalThis.button.active = true;
+            globalThis.button.active = true;
         });
-        expect(
-            await page.evaluate(() => globalThis.log.filter((x) => x.startsWith('clicked')))
-        ).toEqual([]);
+        expect(await page.evaluate(() => globalThis.log.splice(0))).toEqual([
+            'toggle:false',
+            'active-change:false',
+            'toggle:true',
+            'active-change:true',
+        ]);
+        expect(await page.evaluate(() => 'deactivate' in globalThis.button)).toBe(false);
+        expect(errors).toEqual([]);
+    });
+
+    test('a mnemonic and Enter activate a toggle button', async ({ page }) => {
+        const errors = await openWindow(page);
+
+        await page.evaluate(async () => {
+            const { ToggleButton } = await import('/src/widgets/toggle-button.js');
+            const { flushLayout } = await import('/src/widgets/widget.js');
+
+            const button = globalThis.box.addChild(
+                new ToggleButton({ label: '_Bold', useUnderline: true })
+            );
+            for (const name of ['toggle', 'activate']) {
+                button.connect(name, () => globalThis.log.push(`${name}:${button.active}`));
+            }
+
+            globalThis.button = button;
+            flushLayout();
+        });
+
+        await page.keyboard.press('Alt+b');
+        await expect.poll(() => page.evaluate(() => globalThis.log.length)).toBe(2);
+        expect(await page.evaluate(() => globalThis.log.splice(0))).toEqual([
+            'toggle:true',
+            'activate:true',
+        ]);
+
+        await page.keyboard.press('Enter');
+        await expect.poll(() => page.evaluate(() => globalThis.log.length)).toBe(2);
+        expect(await page.evaluate(() => globalThis.log.splice(0))).toEqual([
+            'toggle:false',
+            'activate:false',
+        ]);
         expect(errors).toEqual([]);
     });
 

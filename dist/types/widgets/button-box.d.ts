@@ -60,15 +60,15 @@ export interface ButtonBox {
      * children, `spread` also puts space before the first and after the last, and `start`, `end`
      * and `center` pack the children together.
      */
-    layoutStyle: any;
+    layoutStyle: string;
     /**
      * Whether all children get the same size along the box, as in GTK.
      */
-    homogeneous: any;
+    homogeneous: boolean;
     /**
      * The space between the children, in pixels.
      */
-    spacing: any;
+    spacing: number;
     /**
      * The minimum width of the children in pixels, as in GTK.
      */

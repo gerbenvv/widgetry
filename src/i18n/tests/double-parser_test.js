@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 
 import { DoubleParser, parseDouble } from '../double-parser.js';
+import { toLatinDigits } from '../number-parser.js';
 
 describe('DoubleParser', () => {
     test('parses numbers with the separators of the locale', () => {
@@ -26,6 +27,13 @@ describe('DoubleParser', () => {
 
         assert.equal(new DoubleParser({ locale: 'de-CH' }).parse('1\u{2019}234.5'), 1234.5);
         assert.equal(new DoubleParser({ locale: 'ar-EG' }).parse('\u{661}\u{66b}\u{665}'), 1.5);
+    });
+
+    test('accepts the figure and en dashes as minus signs', () => {
+        const parser = new DoubleParser({ locale: 'en-US' });
+
+        assert.equal(parser.parse('\u{2012}1.5'), -1.5);
+        assert.equal(parser.parse('\u{2013}1.5'), -1.5);
     });
 
     test('rejects what is not a number', () => {
@@ -73,7 +81,31 @@ describe('DoubleParser', () => {
         assert.equal(parser.normalize('x'), null);
     });
 
+    test('parses what Intl formats, with bidirectional marks and any decimal digit set', () => {
+        const locales = ['en-US', 'nl-NL', 'fr-FR', 'de-CH', 'ar-EG', 'fa-IR', 'he-IL', 'ur-PK'];
+
+        for (const locale of [...locales, 'ps-AF', 'bn-BD', 'mr-IN', 'my-MM', 'th-TH-u-nu-thai']) {
+            const parser = new DoubleParser({ locale });
+            const format = new Intl.NumberFormat(locale, { maximumFractionDigits: 3 });
+
+            for (const value of [0, 12, -5, -1234.5, 1234567.891, -0.25]) {
+                assert.equal(parser.parse(format.format(value)), value, locale);
+            }
+        }
+    });
+
     test('provides a convenience function', () => {
         assert.equal(parseDouble('2.5'), 2.5);
+    });
+});
+
+describe('toLatinDigits', () => {
+    test('converts the digits of every script and removes bidirectional marks', () => {
+        assert.equal(toLatinDigits('\u{661}\u{662}\u{663}'), '123');
+        assert.equal(toLatinDigits('\u{6f4}\u{6f5}'), '45');
+        assert.equal(toLatinDigits('\u{966}\u{969}'), '03');
+        assert.equal(toLatinDigits('\u{ff17}\u{ff19}'), '79');
+        assert.equal(toLatinDigits('\u{200f}-\u{661}\u{200e}\u{61c}'), '-1');
+        assert.equal(toLatinDigits('abc 12'), 'abc 12');
     });
 });

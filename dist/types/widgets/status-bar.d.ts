@@ -130,9 +130,6 @@ export declare class StatusBar extends Box {
 
 /** The declared properties of {@link StatusBar}. */
 export interface StatusBar {
-    vExpand: any;
-    vAlign: any;
-    spacing: any;
     /**
      * The text currently shown: the message on top of the stack, or `''`.
      */
@@ -141,7 +138,7 @@ export interface StatusBar {
      * The border of the bar: one of `ShadowType`. To give only a part of the bar a border, put a
      * `Frame` in it.
      */
-    shadowType: any;
+    shadowType: string;
     /**
      * Whether the bar shows a grip at its end that resizes its window (when that is a resizable
      * `Window`).

@@ -59,4 +59,37 @@ test.describe('toolkit texts', () => {
 
         expect(label).toBe('Schließen');
     });
+
+    test('every toolkit text of the widgets has translations', async ({ page }) => {
+        await openHarness(page);
+
+        const missing = await page.evaluate(async () => {
+            const { TOOLKIT_TRANSLATIONS } = await import('/src/i18n/toolkit-text.js');
+            const { DEFAULT_PALETTE, ColorChooser } = await import('/src/widgets/color-chooser.js');
+            const { DateEdit } = await import('/src/widgets/date-edit.js');
+            const { Calendar } = await import('/src/widgets/calendar.js');
+
+            // The palette names, and the texts rendered with `data-wy-label`.
+            const texts = new Set(DEFAULT_PALETTE.map((x) => x.name));
+            for (const widget of [new ColorChooser(), new DateEdit(), new Calendar()]) {
+                for (const element of widget.el.querySelectorAll('[data-wy-label]')) {
+                    texts.add(element.dataset.wyLabel);
+                }
+
+                widget.destroy();
+            }
+
+            const missing = [];
+            for (const [language, dictionary] of Object.entries(TOOLKIT_TRANSLATIONS)) {
+                missing.push(
+                    ...[...texts].filter((x) => !(x in dictionary)).map((x) => `${language}: ${x}`)
+                );
+            }
+
+            return { missing, count: texts.size };
+        });
+
+        expect(missing.missing).toEqual([]);
+        expect(missing.count).toBeGreaterThan(40);
+    });
 });

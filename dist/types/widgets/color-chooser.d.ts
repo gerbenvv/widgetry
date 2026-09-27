@@ -17,7 +17,8 @@ export type PaletteColor = {
 };
 /**
  * The default palette of the color chooser, row by row: the light, medium and dark shades of the
- * Tango hues, and a row of grays. It has 9 columns.
+ * Tango hues, and a row of grays. It has 9 columns. The English names are translated like the
+ * other toolkit texts (see `toolkitText`).
  *
  * @type {ReadonlyArray<Readonly<PaletteColor>>}
  */
@@ -30,6 +31,7 @@ export declare class ColorSwatch extends Widget {
     _initialize(): void;
     _render(): HTMLElement;
     _syncColor(): void;
+    _syncAccessibleName(): void;
 }
 /**
  * The grid of swatches of a color chooser. It takes the focus as a whole; the arrow keys, Home
@@ -52,6 +54,7 @@ export declare class ColorPalette extends Widget {
      */
     protected _choose(index: number): void;
     _renderSwatches(): void;
+    _translateSwatches(): void;
     _syncSwatches(): void;
     _getSwatchIndex(target: any): number;
     _onPointerDown(event: any): void;
@@ -125,7 +128,6 @@ export declare class ColorChooser extends Box {
     _preview: ColorSwatch;
     _entry: LineEdit;
     _editor: Box;
-    color: string;
     _color: any;
     _initialize(): void;
     /**
@@ -217,8 +219,6 @@ export declare class ColorChooser extends Box {
 
 /** The declared properties of {@link ColorSwatch}. */
 export interface ColorSwatch {
-    hAlign: any;
-    vAlign: any;
     /**
      * The color shown, as a CSS color. It is normalized to a hex color.
      */
@@ -227,7 +227,6 @@ export interface ColorSwatch {
 
 /** The declared properties of {@link ColorPalette}. */
 export interface ColorPalette {
-    canFocus: any;
     /**
      * The colors, as palette colors with `color` and `name`.
      */
@@ -244,7 +243,6 @@ export interface ColorPalette {
 
 /** The declared properties of {@link ColorPlane}. */
 export interface ColorPlane {
-    canFocus: any;
     /**
      * The hue in degrees, which colors the plane.
      */
@@ -261,8 +259,11 @@ export interface ColorPlane {
 
 /** The declared properties of {@link ColorChooser}. */
 export interface ColorChooser {
-    orientation: any;
-    spacing: any;
+    /**
+     * The color, as a CSS color. Reading it gives a hex color: `#rrggbb`, or `#rrggbbaa` when it
+     * is translucent (only with `useAlpha`).
+     */
+    color: string;
     /**
      * The color as channels: an object with `r`, `g` and `b` in [0, 255] and `a` in [0, 1].
      * Setting it sets `color`.

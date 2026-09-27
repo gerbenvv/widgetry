@@ -296,6 +296,144 @@ test.describe('tool bar', () => {
         expect(after).toEqual({ overflow: 0, button: true });
     });
 
+    test('overflowed check and radio items show their state in the menu', async ({ page }) => {
+        await openHarness(page);
+        await setup(page, 60);
+
+        await page.evaluate(() => {
+            globalThis.t.bold.active = true;
+        });
+        await page.click('.wy-tool-bar-overflow');
+
+        const items = await page.evaluate(() =>
+            Object.fromEntries(
+                [...document.querySelectorAll('.wy-screen .wy-menu:not([hidden]) .wy-menu-item')]
+                    .filter((x) => ['Bold', 'Home', 'Indicators'].includes(x.textContent.trim()))
+                    .map((x) => [
+                        x.textContent.trim(),
+                        [x.getAttribute('role'), x.getAttribute('aria-checked')],
+                    ])
+            )
+        );
+
+        expect(items).toEqual({
+            Bold: ['menuitemcheckbox', 'true'],
+            Home: ['menuitemradio', 'true'],
+            Indicators: ['menuitemradio', 'false'],
+        });
+
+        // Activating the active radio item keeps it active.
+        await page.click('.wy-menu >> text=Home');
+        await page.click('.wy-tool-bar-overflow');
+        await page.click('.wy-menu >> text=Bold');
+
+        const state = await page.evaluate(() => ({
+            home: globalThis.t.home.active,
+            bold: globalThis.t.bold.active,
+            log: globalThis.t.log,
+        }));
+        expect(state).toEqual({ home: true, bold: false, log: ['Home', 'Bold'] });
+    });
+
+    test('check and radio items emit activate when activated and toggle on changes', async ({
+        page,
+    }) => {
+        await openHarness(page);
+        await setup(page, 60);
+
+        const log = () => page.evaluate(() => globalThis.t.log.splice(0));
+
+        await page.evaluate(() => {
+            for (const name of ['bold', 'home', 'indicators']) {
+                const item = globalThis.t[name];
+                for (const signal of ['toggle', 'active-change']) {
+                    item.connect(signal, () =>
+                        globalThis.t.log.push(`${item.label}:${signal}:${item.active}`)
+                    );
+                }
+            }
+        });
+
+        // Changes from code emit only the change signals.
+        await page.evaluate(() => {
+            globalThis.t.bold.active = true;
+            globalThis.t.indicators.active = true;
+        });
+        expect(await log()).toEqual([
+            'Bold:toggle:true',
+            'Bold:active-change:true',
+            'Indicators:toggle:true',
+            'Home:toggle:false',
+            'Home:active-change:false',
+            'Indicators:active-change:true',
+        ]);
+
+        // `activate()` toggles a check item, and makes a radio item active.
+        await page.evaluate(() => {
+            globalThis.t.bold.activate();
+            globalThis.t.home.activate();
+            globalThis.t.home.activate();
+        });
+        expect(await log()).toEqual([
+            'Bold:toggle:false',
+            'Bold:active-change:false',
+            'Bold',
+            'Home:toggle:true',
+            'Indicators:toggle:false',
+            'Indicators:active-change:false',
+            'Home:active-change:true',
+            'Home',
+            'Home',
+        ]);
+
+        // Activating the proxies in the overflow menu activates the items.
+        await page.click('.wy-tool-bar-overflow');
+        await page.click('.wy-menu >> text=Indicators');
+        await page.click('.wy-tool-bar-overflow');
+        await page.click('.wy-menu >> text=Bold');
+        expect(await log()).toEqual([
+            'Indicators:toggle:true',
+            'Home:toggle:false',
+            'Home:active-change:false',
+            'Indicators:active-change:true',
+            'Indicators',
+            'Bold:toggle:true',
+            'Bold:active-change:true',
+            'Bold',
+        ]);
+    });
+
+    test('the submenu of an overflowed item opens from the overflow menu', async ({ page }) => {
+        await openHarness(page);
+        await setup(page, 60);
+
+        expect(
+            await page.evaluate(() =>
+                globalThis.t.toolBar.overflowItems.includes(globalThis.t.open)
+            )
+        ).toBe(true);
+
+        await page.click('.wy-tool-bar-overflow');
+        await page.click('.wy-menu >> text=Open');
+        await page.click('.wy-menu >> text=report.txt');
+        await page.waitForTimeout(50);
+
+        const state = await page.evaluate(() => ({
+            log: globalThis.t.log,
+            destroyed: globalThis.t.open.submenu?.destroyed,
+            attached: globalThis.t.open.submenu?.attachWidget === globalThis.t.open,
+        }));
+        expect(state).toEqual({ log: ['report'], destroyed: false, attached: true });
+
+        // It still opens from the tool item when there is room again.
+        await page.evaluate(() => {
+            globalThis.t.host.style.width = '1000px';
+        });
+        await page.waitForTimeout(100);
+        await page.click('[aria-label="Open"] .wy-tool-item-arrow');
+        expect(await page.evaluate(() => globalThis.t.open.submenu.visible)).toBe(true);
+    });
+
     test('the arrow keys move between items and Tab leaves the tool bar', async ({ page }) => {
         await openHarness(page);
         await setup(page);

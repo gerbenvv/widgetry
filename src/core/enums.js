@@ -64,28 +64,26 @@ export const LabelStyles = Object.freeze({
 });
 
 /**
- * Sorting order of models and table columns.
+ * Sorting order of models and table columns. It is also the sort indicator of table column headers.
  *
- * @enum {number}
+ * @enum {string}
  */
 export const SortOrder = Object.freeze({
-    NONE: 0,
-    ASCENDING: 1,
-    DESCENDING: 2,
+    NONE: 'none', // Not sorted.
+    ASCENDING: 'ascending', // Smallest first.
+    DESCENDING: 'descending', // Largest first.
 });
 
 /**
- * Selection modes, as a bit mask.
+ * How the rows of tables, list boxes and selections can be selected, as in GTK.
  *
- * @enum {number}
+ * @enum {string}
  */
-export const SelectionModes = Object.freeze({
-    NONE: 0,
-    SINGLE: 1 << 1, // At most one selected row.
-    MULTI: 1 << 2, // Any number of rows, extended with shift and control.
-    TOGGLE: 1 << 3, // Clicking a selected row deselects it.
-    SINGLE_TOGGLE: (1 << 1) | (1 << 3),
-    MULTI_TOGGLE: (1 << 2) | (1 << 3),
+export const SelectionMode = Object.freeze({
+    NONE: 'none', // No row can be selected.
+    SINGLE: 'single', // At most one row; Control+click deselects it.
+    BROWSE: 'browse', // One row once there is a cursor, which the user cannot deselect.
+    MULTIPLE: 'multiple', // Any number of rows, extended with Shift and Control.
 });
 
 /**
@@ -159,13 +157,13 @@ export const ButtonBoxStyle = Object.freeze({
 /**
  * Directions in which keyboard focus can move.
  *
- * @enum {number}
+ * @enum {string}
  */
 export const FocusDirection = Object.freeze({
-    START: 1,
-    END: 2,
-    FORWARD: 3,
-    BACKWARD: 4,
+    START: 'start', // The first focusable widget.
+    END: 'end', // The last focusable widget.
+    FORWARD: 'forward', // The next focusable widget, like Tab.
+    BACKWARD: 'backward', // The previous focusable widget, like Shift+Tab.
 });
 
 /**

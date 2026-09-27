@@ -174,7 +174,7 @@ export interface Container {
     /**
      * The number of children.
      */
-    readonly childrenCount: any;
+    readonly childrenCount: number;
     /**
      * The child that is or contains the focus widget of the window, or `null`.
      */

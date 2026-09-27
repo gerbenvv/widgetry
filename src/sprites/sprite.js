@@ -12,7 +12,7 @@ import {
     ScrollEvent,
 } from '../events/events.js';
 import { Matrix } from '../data/matrix.js';
-import { countPress, EVENT_BINDINGS, getPressCount } from '../widgets/widget.js';
+import { countPress, EVENT_BINDINGS, getPressCount, getScrollDelta } from '../widgets/widget.js';
 
 /**
  * The SVG namespace.
@@ -24,12 +24,12 @@ export const SVG_NAMESPACE = 'http://www.w3.org/2000/svg';
 /**
  * Stroke styles of sprites.
  *
- * @enum {number}
+ * @enum {string}
  */
 export const StrokeStyle = Object.freeze({
-    SOLID: 0,
-    DASHED: 1,
-    DOTTED: 2,
+    SOLID: 'solid',
+    DASHED: 'dashed',
+    DOTTED: 'dotted',
 });
 
 /**
@@ -331,12 +331,14 @@ export class Sprite extends Instance {
         const parts = [];
         const { x, y } = this._position;
 
-        if (this._isPositionInTransform() && (x || y)) {
-            parts.push(`translate(${x} ${y})`);
-        }
-
+        // SVG applies the last transform first: the position, then the transformation, like for
+        // shapes with position attributes.
         if (!this._transformation.isIdentity) {
             parts.push(String(this._transformation));
+        }
+
+        if (this._isPositionInTransform() && (x || y)) {
+            parts.push(`translate(${x} ${y})`);
         }
 
         if (parts.length) {
@@ -552,17 +554,16 @@ export class Sprite extends Instance {
             case EventType.MOTION:
                 return new MotionEvent(this, modifiers, x, y, nativeEvent);
 
-            case EventType.SCROLL: {
+            case EventType.SCROLL:
                 // Lines, positive when scrolling up, like widget scroll events.
-                let lines = nativeEvent.deltaY || nativeEvent.deltaX;
-                if (nativeEvent.deltaMode === 0) {
-                    lines /= 33.3;
-                } else if (nativeEvent.deltaMode === 2) {
-                    lines *= 20;
-                }
-
-                return new ScrollEvent(this, modifiers, x, y, -lines, nativeEvent);
-            }
+                return new ScrollEvent(
+                    this,
+                    modifiers,
+                    x,
+                    y,
+                    getScrollDelta(nativeEvent),
+                    nativeEvent
+                );
 
             case EventType.BUTTON_PRESS:
             case EventType.BUTTON_RELEASE: {
@@ -832,7 +833,7 @@ defineProperties(Sprite, {
         value: StrokeStyle.SOLID,
         coerce(style) {
             if (!Object.values(StrokeStyle).includes(style)) {
-                throw new RangeError(`Invalid stroke style ${style}.`);
+                throw new RangeError(`Invalid stroke style '${style}'.`);
             }
 
             return style;

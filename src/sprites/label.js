@@ -7,25 +7,15 @@ import { registerType } from '../core/registry.js';
 import { Sprite } from './sprite.js';
 
 /**
- * Where a label is anchored horizontally, relative to its position.
+ * Where a label is anchored horizontally, relative to its position. The values are those of the
+ * SVG `text-anchor` attribute.
  *
- * @enum {number}
+ * @enum {string}
  */
 export const LabelAnchor = Object.freeze({
-    START: 0,
-    MIDDLE: 1,
-    END: 2,
-});
-
-/**
- * The SVG `text-anchor` values of anchors.
- *
- * @type {Readonly<Record<number, string>>}
- */
-const TEXT_ANCHORS = Object.freeze({
-    [LabelAnchor.START]: 'start',
-    [LabelAnchor.MIDDLE]: 'middle',
-    [LabelAnchor.END]: 'end',
+    START: 'start', // The text starts at the position.
+    MIDDLE: 'middle', // The text is centered on the position.
+    END: 'end', // The text ends at the position.
 });
 
 /**
@@ -64,7 +54,7 @@ export class LabelSprite extends Sprite {
             this.el.append(this._text);
         }
 
-        this.el.setAttribute('text-anchor', TEXT_ANCHORS[this._anchor]);
+        this.el.setAttribute('text-anchor', this._anchor);
         this.el.setAttribute('dominant-baseline', this._baseline);
         this.el.style.font = this._font;
     }
@@ -94,11 +84,11 @@ defineProperties(LabelSprite, {
     anchor: {
         value: LabelAnchor.MIDDLE,
         coerce(anchor) {
-            if (!(anchor in TEXT_ANCHORS)) {
-                throw new RangeError(`Invalid label anchor ${anchor}.`);
+            if (!Object.values(LabelAnchor).includes(anchor)) {
+                throw new RangeError(`Invalid label anchor '${anchor}'.`);
             }
 
-            return Number(anchor);
+            return anchor;
         },
         changed() {
             this._applyShape();

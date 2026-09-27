@@ -92,10 +92,13 @@ describe('StringFormatter', () => {
 
     test('formats numbers with Intl options', () => {
         assert.equal(formatter.formatNumber(1234.5), '1,234.5');
+        assert.equal(formatter.formatNumber(3, { digits: 2 }), '3.00');
         assert.equal(formatter.formatNumber(3, { decimals: 2 }), '3.00');
+        assert.equal(formatter.formatNumber(3.14159, { digits: 1, decimals: 3 }), '3.1');
         assert.equal(formatter.formatNumber(0.25, { style: 'percent' }), '25%');
         assert.equal(new StringFormatter({ locale: 'fr-FR' }).formatNumber(1234.5), '1\u202f234,5');
         assert.throws(() => formatter.formatNumber('1'), TypeError);
+        assert.throws(() => formatter.formatNumber(1, { digits: -1 }), RangeError);
         assert.throws(() => formatter.formatNumber(1, { decimals: -1 }), RangeError);
     });
 

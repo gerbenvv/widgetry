@@ -5,6 +5,7 @@
 import { Align, Orientation, Response } from '../core/enums.js';
 import { defineProperties } from '../core/instance.js';
 import { registerType } from '../core/registry.js';
+import { uniqueId } from '../core/util.js';
 import { Box } from './box.js';
 import { Dialog } from './dialog.js';
 import { Image } from './image.js';
@@ -119,6 +120,17 @@ export class MessageDialog extends Dialog {
         box.addChild(this._messageArea);
 
         this.contentArea.addChild(box);
+
+        // A message dialog is an alert, described by its texts.
+        for (const label of [this._textLabel, this._secondaryLabel]) {
+            label.el.id ||= uniqueId('wy-message-dialog-text');
+        }
+
+        this.el.setAttribute('role', 'alertdialog');
+        this.el.setAttribute(
+            'aria-describedby',
+            `${this._textLabel.el.id} ${this._secondaryLabel.el.id}`
+        );
 
         this._syncIcon();
         this._syncTexts();
@@ -341,18 +353,22 @@ export async function confirm(text, options = {}) {
 /**
  * Asks the user for a text, with a line edit and OK and Cancel buttons.
  *
- * @param {string} text
- * @param {MessageOptions & {value?: string, placeholder?: string}} [options]
+ * @example
+ * const name = await prompt('Save as', { text: 'notes.txt', placeholder: 'File name' });
+ *
+ * @param {string} message The question.
+ * @param {MessageOptions & {text?: string, value?: string, placeholder?: string}} [options] The
+ *     initial `text` of the line edit (or `value`, the same) and its `placeholder`.
  * @returns {Promise<string | null>} The text, or `null` when canceled.
  */
-export async function prompt(text, options = {}) {
-    const dialog = createMessageDialog(text, options, {
+export async function prompt(message, options = {}) {
+    const dialog = createMessageDialog(message, options, {
         messageType: MessageType.QUESTION,
         buttonsType: ButtonsType.OK_CANCEL,
     });
 
     const lineEdit = new LineEdit({
-        text: options.value ?? '',
+        text: options.text ?? options.value ?? '',
         placeholder: options.placeholder ?? '',
         hExpand: true,
     });

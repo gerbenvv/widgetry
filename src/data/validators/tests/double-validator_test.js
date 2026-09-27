@@ -24,7 +24,7 @@ describe('DoubleValidator', () => {
             locale: 'en-US',
             minimum: -1,
             maximum: 1,
-            decimals: 2,
+            digits: 2,
         });
 
         assert.equal(validator.validate('0.25'), true);
@@ -37,7 +37,7 @@ describe('DoubleValidator', () => {
     });
 
     test('fixes texts up to the notation, range and decimals', () => {
-        const validator = new DoubleValidator({ locale: 'en-US', maximum: 5000, decimals: 2 });
+        const validator = new DoubleValidator({ locale: 'en-US', maximum: 5000, digits: 2 });
 
         assert.equal(validator.fixup('3.14159'), '3.14');
         assert.equal(validator.fixup('1234.5'), '1,234.5');
@@ -46,6 +46,19 @@ describe('DoubleValidator', () => {
 
         assert.equal(new DoubleValidator({ locale: 'nl-NL' }).fixup('1234.5'), '1.234,5');
         assert.equal(new DoubleValidator({ locale: 'en-US' }).fixup('0.1'), '0.1');
+    });
+
+    test('takes decimals as an alias of digits', () => {
+        const validator = new DoubleValidator({ locale: 'en-US', decimals: 1 });
+        const changes = [];
+        validator.connect('digits-change', () => changes.push(validator.digits));
+
+        assert.equal(validator.digits, 1);
+        assert.equal(validator.validate('0.25'), false);
+
+        validator.decimals = 2;
+        assert.deepEqual([validator.digits, validator.decimals, changes], [2, 2, [2]]);
+        assert.equal(validator.validate('0.25'), true);
     });
 
     test('describes the valid input', () => {
@@ -62,6 +75,7 @@ describe('DoubleValidator', () => {
     });
 
     test('rejects invalid settings and is registered', () => {
+        assert.throws(() => new DoubleValidator({ digits: -1 }), RangeError);
         assert.throws(() => new DoubleValidator({ decimals: -1 }), RangeError);
         assert.throws(() => new DoubleValidator({ decimals: 1.5 }), RangeError);
         assert.throws(() => new DoubleValidator({ maximum: NaN }), TypeError);

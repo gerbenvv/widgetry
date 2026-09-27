@@ -19,6 +19,7 @@ export declare class ToolBar extends Box {
     _overflowItems: import('./widget.js').Widget[];
     /** @type {Menu | null} */
     _overflowMenu: Menu | null;
+    _overflowProxies: any[];
     /** @type {AbstractToolItem | null} */
     _focusItem: AbstractToolItem | null;
     _resizeObserver: ResizeObserver;
@@ -44,6 +45,7 @@ export declare class ToolBar extends Box {
     protected _updateOverflow(): void;
     _setOverflowVisible(visible: any): void;
     _toggleOverflowMenu(keyboard: any): void;
+    _destroyOverflowMenu(menu: any, proxies: any): void;
     /**
      * The focusable tool items that are shown, and the overflow button when shown, in order.
      *
@@ -57,16 +59,15 @@ export declare class ToolBar extends Box {
 
 /** The declared properties of {@link ToolBar}. */
 export interface ToolBar {
-    vExpand: any;
-    orientation: any;
+    orientation: string;
     /**
      * Whether this is a tool bar.
      */
-    readonly isToolBar: any;
+    readonly isToolBar: boolean;
     /**
      * What the items show: one of `ToolBarStyle`.
      */
-    style: any;
+    style: string;
     /**
      * The size of the items' icons in pixels.
      */

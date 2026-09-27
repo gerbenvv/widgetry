@@ -198,3 +198,84 @@ describe('SignalDispatcher', () => {
         assert.deepEqual(calls, ['a', 'b', 'b']);
     });
 });
+
+describe('SignalDispatcher disconnection', () => {
+    test('skips handlers disconnected by an earlier handler of the same emit', () => {
+        const dispatcher = new SignalDispatcher();
+        const calls = [];
+
+        let disconnectB = null;
+        dispatcher.connect('go', () => {
+            calls.push('a');
+            disconnectB();
+        });
+        disconnectB = dispatcher.connect('go', () => calls.push('b'));
+
+        dispatcher.emit('go');
+
+        assert.deepEqual(calls, ['a']);
+    });
+
+    test('skips all remaining handlers when cleared during an emit', () => {
+        const dispatcher = new SignalDispatcher();
+        const calls = [];
+
+        dispatcher.connect('go', () => {
+            calls.push('a');
+            dispatcher.clear();
+        });
+        dispatcher.connect('go', () => calls.push('b'));
+        dispatcher.connectLast('go', () => calls.push('last'));
+
+        dispatcher.emit('go');
+
+        assert.deepEqual(calls, ['a']);
+    });
+
+    test('a disconnect function removes only its own connection, once', () => {
+        const dispatcher = new SignalDispatcher();
+        const calls = [];
+
+        function handler(name) {
+            calls.push(name);
+        }
+
+        const disconnectFirst = dispatcher.connect('go', handler);
+        dispatcher.connect('go', handler);
+
+        disconnectFirst();
+        disconnectFirst();
+        dispatcher.emit('go', 'x');
+
+        assert.deepEqual(calls, ['x']);
+        assert.equal(dispatcher.hasHandlers('go'), true);
+    });
+});
+
+describe('Instance.set', () => {
+    test('changes nothing when a name is unknown or read-only', () => {
+        const animal = new Animal({ name: 'cat' });
+
+        assert.throws(() => animal.set({ name: 'dog', color: 'red' }), /no property named/);
+        assert.throws(() => animal.set({ name: 'dog', kind: 'plant' }), /no writable property/);
+
+        assert.equal(animal.name, 'cat');
+    });
+});
+
+describe('defineProperties', () => {
+    test('merges a redeclaration with an earlier one of the same class', () => {
+        const log = [];
+
+        class Fish extends Animal {}
+        defineProperties(Fish, { legs: { value: 0 } });
+        defineProperties(Fish, { legs: { changed: (legs) => log.push(legs) } });
+
+        const fish = new Fish();
+        fish.legs = 0;
+        fish.legs = 1;
+
+        assert.equal(new Fish().legs, 0);
+        assert.deepEqual(log, [1]);
+    });
+});

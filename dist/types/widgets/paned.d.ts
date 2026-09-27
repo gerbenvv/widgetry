@@ -59,7 +59,6 @@ export declare class Paned extends Container {
     _paneEls: Element[];
     _splitterEl: Element;
     _position: number;
-    position: number;
     _positionSet: boolean;
     _initialize(): void;
     _render(): HTMLElement;
@@ -183,7 +182,12 @@ export interface Paned {
      * The direction the panes are placed in: one of `Orientation`. Horizontal places them side
      * by side, with a vertical splitter.
      */
-    orientation: any;
+    orientation: string;
+    /**
+     * The position of the splitter: the size of the first pane in pixels. Reading it returns
+     * the rendered position when the paned is shown. Setting it sets `positionSet`.
+     */
+    position: number;
     /**
      * Whether `position` was set. When `false`, the panes share the space equally.
      */
@@ -191,7 +195,7 @@ export interface Paned {
     /**
      * The original toolkit's name of `position`.
      */
-    splitterPosition: any;
+    splitterPosition: number;
     /**
      * The smallest position the splitter can have, in pixels.
      */

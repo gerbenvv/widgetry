@@ -2,11 +2,12 @@
  * @module widgets/list-box
  */
 
-import { SelectionModes } from '../core/enums.js';
+import { SelectionMode } from '../core/enums.js';
 import { defineProperties } from '../core/instance.js';
 import { registerType } from '../core/registry.js';
 import { createElement } from '../core/util.js';
 import { AbstractModel } from '../data/abstract-model.js';
+import { checkSelectionMode } from '../data/selection.js';
 import { Key } from '../events/constants.js';
 import {
     attachAuxiliaryWidget,
@@ -17,53 +18,6 @@ import { Bin } from './bin.js';
 import { Container } from './container.js';
 import { attachDoublePress } from './double-press.js';
 import { Widget } from './widget.js';
-
-/**
- * How the rows of a list box can be selected, as in GTK.
- *
- * @enum {string}
- */
-export const SelectionMode = Object.freeze({
-    NONE: 'none', // No row can be selected.
-    SINGLE: 'single', // At most one row; Control+click deselects it.
-    BROWSE: 'browse', // One row, which the user cannot deselect.
-    MULTIPLE: 'multiple', // Any number of rows, extended with Shift and Control.
-});
-
-/**
- * The selection modes, for validating `selectionMode`.
- *
- * @type {ReadonlySet<string>}
- */
-const SELECTION_MODES = new Set(Object.values(SelectionMode));
-
-/**
- * Converts a selection mode, or a mask of `SelectionModes` as tables use, to a `SelectionMode`:
- * `MULTI` gives `multiple`, `SINGLE_TOGGLE` gives `single`, `SINGLE` gives `browse` and `NONE`
- * gives `none`.
- *
- * @param {string | number} mode
- * @returns {string}
- */
-function toSelectionMode(mode) {
-    if (typeof mode === 'number') {
-        if (mode & SelectionModes.MULTI) {
-            return SelectionMode.MULTIPLE;
-        }
-
-        if (mode & SelectionModes.SINGLE) {
-            return mode & SelectionModes.TOGGLE ? SelectionMode.SINGLE : SelectionMode.BROWSE;
-        }
-
-        return SelectionMode.NONE;
-    }
-
-    if (!SELECTION_MODES.has(mode)) {
-        throw new RangeError(`Invalid selection mode '${mode}'.`);
-    }
-
-    return mode;
-}
 
 /**
  * Checks an optional function value.
@@ -330,8 +284,8 @@ defineProperties(ListBoxRow, {
  * scroll area.
  *
  * Rows are `ListBoxRow`s; other widgets are wrapped in one when added. Rows can be selected
- * according to `selectionMode` and activated (`row-activate`) with a click (a double click without
- * `activateOnSingleClick`), Enter or Space.
+ * according to `selectionMode` (and `toggleSelection`) and activated (`row-activate`) with a click
+ * (a double click without `activateOnSingleClick`), Enter or Space.
  *
  * Rows can be filtered (`filterFunction`), sorted (`sortFunction`) and get headers
  * (`setHeaderFunction()`), for example section titles or separators; call `invalidateFilter()`,
@@ -340,7 +294,8 @@ defineProperties(ListBoxRow, {
  * from the rows of a model and follow its changes.
  *
  * Keyboard: Up, Down, Home, End, Page Up and Page Down move the cursor row and select it (with
- * Control only the cursor moves, and Shift extends the selection with `multiple`). Space and Enter
+ * Control only the cursor moves, except with `browse`, and Shift extends the selection with
+ * `multiple`). Space and Enter
  * select and activate the cursor row, Control+Space toggles its selection, and Control+A selects
  * all rows (Shift+Control+A deselects them).
  *
@@ -877,7 +832,12 @@ export class ListBox extends Container {
             }
 
             if (hadFocus) {
-                const next = this._getNavigableRows()[0];
+                const index = this._children.indexOf(row);
+                const rows = this._getNavigableRows();
+                const next =
+                    rows.find((x) => this._children.indexOf(x) > index) ||
+                    rows.findLast((x) => this._children.indexOf(x) < index);
+
                 if (next) {
                     this._setCursorRow(next, true);
                 } else {
@@ -1047,7 +1007,8 @@ export class ListBox extends Container {
      *
      * @protected
      * @param {ListBoxRow | null} row
-     * @param {boolean} modify Whether Control was held: only the cursor moves.
+     * @param {boolean} modify Whether Control was held: only the cursor moves (except with
+     *     `browse`).
      * @param {boolean} extend Whether Shift was held: the selection is extended (with `multiple`).
      */
     _moveCursor(row, modify, extend) {
@@ -1071,7 +1032,8 @@ export class ListBox extends Container {
                 }
 
                 this._selectRange(this._anchorRow, row, !modify);
-            } else if (!modify) {
+            } else if (!modify || mode === SelectionMode.BROWSE) {
+                // With browse, the cursor row is always selected.
                 this._unselectAllExcept(row);
                 row._setSelected(true);
                 this._anchorRow = row;
@@ -1160,7 +1122,12 @@ export class ListBox extends Container {
             return;
         }
 
-        this._updateSelection(row, event.ctrlKey || event.metaKey, event.shiftKey);
+        // With toggleSelection, a press toggles like a Control+press.
+        this._updateSelection(
+            row,
+            event.ctrlKey || event.metaKey || this._toggleSelection,
+            event.shiftKey
+        );
     }
 
     _onClick(event) {
@@ -1401,12 +1368,14 @@ export class ListBox extends Container {
 
 defineProperties(ListBox, {
     /**
-     * How rows can be selected: one of `SelectionMode`. A mask of `SelectionModes` (as tables use)
-     * is converted. Changing it keeps at most the first selected row, except with `multiple`.
+     * How rows can be selected: one of `SelectionMode`, like in GTK. `single` (the default)
+     * selects at most one row, `browse` one row that the user cannot unselect, `multiple` any
+     * number of rows, and `none` disables selecting. Changing it keeps at most the first selected
+     * row, except with `multiple`.
      */
     selectionMode: {
         value: SelectionMode.SINGLE,
-        coerce: toSelectionMode,
+        coerce: checkSelectionMode,
         changed(mode) {
             this._changeSelection(() => {
                 if (mode === SelectionMode.NONE) {
@@ -1419,6 +1388,13 @@ defineProperties(ListBox, {
             this._syncSelectionMode();
         },
     },
+
+    /**
+     * Whether a click toggles the selection of a row, as a Control+click does: a click on a
+     * selected row unselects it (except with `browse`), and with `multiple`, a click on another
+     * row adds it to the selection.
+     */
+    toggleSelection: { value: false, coerce: Boolean },
 
     /**
      * Whether a single click activates a row. Otherwise a double click does.

@@ -8,6 +8,30 @@ import { getLocaleManager } from '../../i18n/locale-manager.js';
 import { Filter } from './filter.js';
 
 /**
+ * The languages whose lower case differs from the default lower case (Turkish and Azerbaijani
+ * dotless i, Lithuanian dots).
+ *
+ * @type {ReadonlySet<string>}
+ */
+const SPECIAL_CASING_LANGUAGES = new Set(['tr', 'az', 'lt']);
+
+/**
+ * Lower-cases text for the current locale. `toLocaleLowerCase()` is much slower than
+ * `toLowerCase()`, so it is only used for the few languages whose lower case differs. Search
+ * filters and the type-ahead search of tables use it.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+export function toLowerCase(text) {
+    const localeManager = getLocaleManager();
+
+    return SPECIAL_CASING_LANGUAGES.has(localeManager.language)
+        ? text.toLocaleLowerCase(localeManager.locale)
+        : text.toLowerCase();
+}
+
+/**
  * Removes the accents (diacritics) from text, so `'é'` becomes `'e'`.
  *
  * @param {string} text
@@ -83,9 +107,9 @@ export class SearchFilter extends Filter {
      */
     _prepareValue(value) {
         const text = value === null || value === undefined ? '' : String(value);
-        const lower = text.replace(/\s+/g, ' ').toLocaleLowerCase(getLocaleManager().locale);
+        const spaced = toLowerCase(text).replace(/\s+/g, ' ');
 
-        return this._ignoreAccents ? removeAccents(lower) : lower;
+        return this._ignoreAccents ? removeAccents(spaced) : spaced;
     }
 
     _updateKeywords() {

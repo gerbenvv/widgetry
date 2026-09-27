@@ -46,7 +46,7 @@ function swatchCenter(page, index) {
 
 const isOpen = (page) =>
     page.evaluate(() => [
-        globalThis.button.isChooserOpen,
+        globalThis.button.popupOpen,
         globalThis.button.el.getAttribute('aria-expanded'),
     ]);
 
@@ -205,7 +205,7 @@ test.describe('ColorButton', () => {
                     x.textContent.trim()
                 ),
                 modal: document.querySelectorAll('.wy-overlay').length,
-                open: globalThis.button.isChooserOpen,
+                open: globalThis.button.popupOpen,
             };
         });
         expect(dialog).toEqual({
@@ -245,8 +245,8 @@ test.describe('ColorButton', () => {
         const result = await page.evaluate(async () => {
             const { Builder } = await import('/src/construction/builder.js');
 
-            globalThis.button.openChooser();
-            const opened = globalThis.button.isChooserOpen;
+            globalThis.button.popup();
+            const opened = globalThis.button.popupOpen;
 
             const [built] = new Builder().build({
                 type: 'color-button',
@@ -260,12 +260,43 @@ test.describe('ColorButton', () => {
         expect(result).toEqual({ opened: false, built: ['ColorButton', '#0000ff80'] });
     });
 
+    test('popupOpen, popup() and popdown() open and close the chooser', async ({ page }) => {
+        const errors = await mount(page, { color: '#cc0000' });
+
+        const result = await page.evaluate(() => {
+            const button = globalThis.button;
+            const states = [];
+            button.connect('popup-open-change', () => states.push(button.popupOpen));
+
+            button.popup();
+            const shown = button.popover.isOpen;
+            button.popdown();
+            button.popupOpen = true;
+            button.popupOpen = false;
+
+            button.modal = true;
+            button.popupOpen = true;
+            const dialog = document.querySelectorAll('.wy-color-button-dialog').length;
+            button.popdown();
+
+            return { states, shown, dialog, sets: globalThis.sets };
+        });
+
+        expect(result).toEqual({
+            states: [true, false, true, false, true, false],
+            shown: true,
+            dialog: 1,
+            sets: [],
+        });
+        expect(errors).toEqual([]);
+    });
+
     test('destroying the button destroys its popover', async ({ page }) => {
         const errors = await mount(page, { color: '#cc0000' });
 
         const result = await page.evaluate(() => {
             const button = globalThis.button;
-            button.openChooser();
+            button.popup();
 
             const popover = button.popover;
             button.destroy();

@@ -1,6 +1,7 @@
 /**
  * @module widgets/date-edit
  */
+import { DateTimeParser } from '../i18n/date-time-parser.js';
 import { Calendar } from './calendar.js';
 import { LineEdit } from './line-edit.js';
 import { Popover } from './popover.js';
@@ -11,49 +12,30 @@ import { Popover } from './popover.js';
  */
 export declare const DEFAULT_DATE_FORMAT: Intl.DateTimeFormatOptions;
 /**
- * Returns the order of the day, month and year fields in a locale's numeric dates, e.g.
- * `['month', 'day', 'year']` for `en-US`.
- *
- * @param {string} locale
- * @returns {string[]}
- */
-export declare function getDateFieldOrder(locale: string): string[];
-/**
- * Parses a date typed in a locale: numeric dates in the locale's field order (e.g. 9/27/2026 in
- * `en-US`, 27-9-2026 in `nl-NL`), ISO dates (2026-09-27), and dates with a month name (Sep 27,
- * 2026 or 27 september 2026). A missing year is the reference year, and two-digit years are taken
- * within 50 years of it.
- *
- * @param {string} text
- * @param {string} [locale] Defaults to the current locale.
- * @param {Date} [reference] The date that gives the default year. Defaults to today.
- * @returns {Date | null} The date at local midnight, or `null` if the text is not a valid date.
- */
-export declare function parseLocaleDate(text: string, locale?: string, reference?: Date): Date | null;
-/**
  * A line edit for dates, with a button that opens a calendar.
  *
  * The date is shown in the current locale with the `format` options of `Intl.DateTimeFormat`.
- * Typed dates are accepted in the locale's numeric order, as ISO dates (yyyy-mm-dd) and with month
- * names (see `parseLocaleDate`); the text is shown in the invalid state while it is not a date in
- * the range from `minDate` to `maxDate`. Once the date edit is activated or loses the focus, a
+ * Typed dates are read with the date parser of the locale (`DateTimeParser`, in local time): in the
+ * locale's numeric order, as ISO dates (yyyy-mm-dd), with month names and as relative dates such
+ * as "tomorrow" (see `parseDate`). The text is shown in the invalid state while it is not a date
+ * in the range from `minDate` to `maxDate`. Once the date edit is activated or loses the focus, a
  * valid text is shown in the format again.
  *
  * Keyboard: Alt+Down or F4 opens the calendar. While it is open, the arrow keys, Home, End, Page
  * Up and Page Down move through the days, Enter chooses one and Escape closes the calendar. The
  * focus stays in the entry.
  *
- * Signals: `change` (the date changed), `activate`, and those of a line edit (`text-change` and so
- * on).
+ * Signals: `date-change` and `value-change` (the date changed), `popup-open-change`, and those of
+ * a line edit: `change` and `text-change` (the text changed), `activate`, and so on.
  */
 export declare class DateEdit extends LineEdit {
     _calendar: Calendar;
     _popover: Popover;
     _formatter: Intl.DateTimeFormat;
     _updatingText: boolean;
+    _parser: DateTimeParser;
     _localeDisconnect: () => void;
     _buttonEl: HTMLElement;
-    popupOpen: boolean;
     _date: any;
     _popupOpen: boolean;
     _initialize(): void;
@@ -75,11 +57,11 @@ export declare class DateEdit extends LineEdit {
     /**
      * Opens the calendar.
      */
-    openPopup(): void;
+    popup(): void;
     /**
      * Closes the calendar.
      */
-    closePopup(): void;
+    popdown(): void;
     /**
      * Opens the calendar if it is closed, and closes it otherwise.
      */
@@ -92,10 +74,11 @@ export declare class DateEdit extends LineEdit {
      */
     formatDate(date: Date): string;
     /**
-     * Parses a typed date. Override to accept other notations.
+     * Parses a typed date with the date parser (`DateTimeParser#parseDate`) of the current locale,
+     * in local time. A missing year is this year. Override to accept other notations.
      *
      * @param {string} text
-     * @returns {Date | null}
+     * @returns {Date | null} The date at local midnight, or `null` if the text is not a date.
      */
     parseDate(text: string): Date | null;
     activate(): void;
@@ -121,22 +104,28 @@ export interface DateEdit {
      * The date, or `null` if none (or no valid date) was entered. Set a `Date`, an ISO date string
      * (yyyy-mm-dd) or `null`. Dates are days: the time is ignored.
      */
-    date: any;
+    date: Date | null;
     /**
      * The same as `date`.
      */
-    value: any;
+    value: Date | null;
     /**
      * The earliest date that can be entered, or `null`.
      */
-    minDate: any;
+    minDate: Date | null;
     /**
      * The latest date that can be entered, or `null`.
      */
-    maxDate: any;
+    maxDate: Date | null;
     /**
      * How dates are shown: options of `Intl.DateTimeFormat`, such as `{dateStyle: 'short'}` or
-     * `{year: 'numeric', month: 'long', day: 'numeric'}`.
+     * `{year: 'numeric', month: 'long', day: 'numeric'}`. Dates are shown in the Gregorian
+     * calendar, which is the one typed dates are read in, also in locales that default to another
+     * one.
      */
     format: any;
+    /**
+     * Whether the calendar is open. Setting it opens or closes the calendar.
+     */
+    popupOpen: boolean;
 }

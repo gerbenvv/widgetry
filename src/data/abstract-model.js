@@ -66,6 +66,43 @@ function getCollator(locale, caseSensitive) {
 }
 
 /**
+ * The models, weakly held, so they are sorted again when the locale changes without being kept
+ * alive by the locale manager.
+ *
+ * @type {Set<WeakRef<AbstractModel>>}
+ */
+const MODELS = new Set();
+
+/**
+ * Forgets the references to models that were garbage collected.
+ *
+ * @type {FinalizationRegistry<WeakRef<AbstractModel>>}
+ */
+const MODEL_REGISTRY = new FinalizationRegistry((reference) => MODELS.delete(reference));
+
+/**
+ * Whether the models listen to locale changes, which they do from the first model on.
+ *
+ * @type {boolean}
+ */
+let listeningToLocale = false;
+
+/**
+ * Sorts the models again that compare strings with the rules of the locale.
+ */
+function onLocaleChange() {
+    for (const reference of [...MODELS]) {
+        const model = reference.deref();
+
+        if (!model || model.destroyed) {
+            MODELS.delete(reference);
+        } else {
+            model._onLocaleChange();
+        }
+    }
+}
+
+/**
  * Converts a value to a timestamp in milliseconds, or `NaN` if it is not a point in time.
  *
  * @param {unknown} value A `Date`, a timestamp or a date string.
@@ -143,7 +180,8 @@ export class AbstractModel extends Instance {
      *     original toolkit) the initial rows, followed by the other arguments.
      * @param {string | null} [idColumn] The id column, when the rows are passed as an array.
      * @param {string | null} [sortColumn] The sort column, when the rows are passed as an array.
-     * @param {number} [sortOrder] The sort order, when the rows are passed as an array.
+     * @param {string} [sortOrder] The sort order (one of `SortOrder`), when the rows are passed as
+     *     an array.
      */
     constructor(properties, idColumn, sortColumn, sortOrder) {
         if (Array.isArray(properties)) {
@@ -170,6 +208,22 @@ export class AbstractModel extends Instance {
         this._indexDirty = true;
 
         this._columnsInfo = {};
+
+        this._modelReference = new WeakRef(this);
+        MODELS.add(this._modelReference);
+        MODEL_REGISTRY.register(this, this._modelReference, this._modelReference);
+
+        if (!listeningToLocale) {
+            listeningToLocale = true;
+            getLocaleManager().connect('locale-change', onLocaleChange);
+        }
+    }
+
+    destroy() {
+        MODELS.delete(this._modelReference);
+        MODEL_REGISTRY.unregister(this._modelReference);
+
+        super.destroy();
     }
 
     /**
@@ -330,8 +384,8 @@ export class AbstractModel extends Instance {
      * Inserts a row at an index. If the model is sorted, the row is placed at its sorted position
      * instead.
      *
-     * @param {number} index Between 0 and `rowsCount`.
-     * @param {object} row
+     * @param {number} _index Between 0 and `rowsCount`.
+     * @param {object} _row
      * @returns {number} The index the row got.
      * @throws {RangeError} If the index is invalid.
      * @throws {Error} If the model has an id column and the id is already in use.
@@ -356,8 +410,8 @@ export class AbstractModel extends Instance {
      * sorted positions. With more than one row, listeners get a single `rows-reorder` signal
      * instead of one `row-insert` per row.
      *
-     * @param {number} index
-     * @param {object[]} rows
+     * @param {number} _index
+     * @param {object[]} _rows
      */
     insertRows(_index, _rows) {
         throw new Error(`${this.constructor.name} does not implement insertRows().`);
@@ -366,7 +420,7 @@ export class AbstractModel extends Instance {
     /**
      * Removes a row.
      *
-     * @param {number} index
+     * @param {number} _index
      * @returns {object} The removed row.
      */
     removeRow(_index) {
@@ -393,8 +447,8 @@ export class AbstractModel extends Instance {
     /**
      * Replaces a row by another row object. The model stays sorted.
      *
-     * @param {number} index
-     * @param {object} row
+     * @param {number} _index
+     * @param {object} _row
      * @returns {number} The index of the new row.
      */
     replaceRow(_index, _row) {
@@ -416,8 +470,8 @@ export class AbstractModel extends Instance {
      * Changes values of a row: the given columns are assigned to the row object. The model stays
      * sorted, so the row may move.
      *
-     * @param {number} index
-     * @param {Record<string, unknown>} changes Values by column.
+     * @param {number} _index
+     * @param {Record<string, unknown>} _changes Values by column.
      * @returns {number} The index of the row after the change.
      */
     updateRow(_index, _changes) {
@@ -472,8 +526,8 @@ export class AbstractModel extends Instance {
     /**
      * Sorts the model on a column. The model keeps itself sorted when rows change.
      *
-     * @param {string | null} column The column, or `null` to stop sorting.
-     * @param {number} [order] One of `SortOrder`. `SortOrder.NONE` stops sorting.
+     * @param {string | null} _column The column, or `null` to stop sorting.
+     * @param {string} [_order] One of `SortOrder`. `SortOrder.NONE` stops sorting.
      */
     sortByColumn(_column, _order = SortOrder.ASCENDING) {
         throw new Error(`${this.constructor.name} does not implement sortByColumn().`);
@@ -574,6 +628,45 @@ export class AbstractModel extends Instance {
         }
 
         return this._indexById;
+    }
+
+    /**
+     * Checks that all rows have a different value in a column, before it becomes the id column.
+     *
+     * @protected
+     * @param {string} column
+     * @throws {Error} If two rows have the same id.
+     */
+    _checkUniqueIds(column) {
+        const ids = new Set();
+
+        for (const row of this.rows) {
+            const id = row[column];
+            if (ids.has(id)) {
+                throw new Error(`Duplicate row id ${String(id)}.`);
+            }
+
+            ids.add(id);
+        }
+    }
+
+    /**
+     * Sorts the rows again after the locale changed, when strings are compared with its rules.
+     *
+     * @protected
+     */
+    _onLocaleChange() {
+        const column = this.sortColumn;
+
+        if (
+            this.localeAware &&
+            column &&
+            this.sortOrder !== SortOrder.NONE &&
+            !this.getColumnInfo(column).compare &&
+            typeof this._onSortingChange === 'function'
+        ) {
+            this._onSortingChange();
+        }
     }
 
     /**
@@ -809,17 +902,19 @@ defineProperties(AbstractModel, {
     /**
      * The column that identifies rows, or `null`. With an id column, rows can be addressed by
      * id, and selections keep rows selected while they are sorted or filtered. Ids must be
-     * unique.
+     * unique: setting a column in which two rows have the same id throws and changes nothing.
      */
     idColumn: {
         value: null,
+        coerce(column) {
+            if (column) {
+                this._checkUniqueIds(column);
+            }
+
+            return column;
+        },
         changed() {
             this._invalidateIndex();
-
-            if (this._idColumn) {
-                // Validate the ids right away.
-                this._getIndexById();
-            }
         },
     },
 

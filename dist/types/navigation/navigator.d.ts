@@ -54,7 +54,6 @@ export declare class Navigator extends Instance {
     /** @type {NavigatorEnvironment | null} */
     _environment: NavigatorEnvironment | null;
     _onHashChange: () => void;
-    token: string;
     _initialize(): void;
     /**
      * Sets the token name and its arguments at once.
@@ -102,6 +101,12 @@ export interface Navigator {
      * events.
      */
     environment: any;
+    /**
+     * The token of the current location, the hash without `#`. It contains the whole (encoded)
+     * token, including the name and the arguments. Characters that browsers encode in the hash,
+     * such as spaces and non-ASCII characters, are encoded when it is set.
+     */
+    token: string;
     /**
      * The (decoded) token name of the current location. Setting it resets the arguments.
      */

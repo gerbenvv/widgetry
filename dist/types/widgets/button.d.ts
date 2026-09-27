@@ -94,13 +94,12 @@ export declare class Button extends Bin {
 
 /** The declared properties of {@link Button}. */
 export interface Button {
-    canFocus: any;
     /**
      * The text of the button's label, or `null`. Setting it creates a label child (next to the
      * image of `icon`) when the button has no child of its own. Reading it returns the text of a
      * label child, or `null` if there is none.
      */
-    label: any;
+    label: string | null;
     /**
      * The icon of the button: an icon name (see `Image#icon`), an `Image` widget, or `''` for
      * none. It is shown next to the label, see `imagePosition`.
@@ -109,7 +108,7 @@ export interface Button {
     /**
      * Where the image is shown relative to the label: one of `Position`.
      */
-    imagePosition: any;
+    imagePosition: string;
     /**
      * Whether an underscore in `label` marks the mnemonic (`'_Open'`), which is underlined and
      * clicks the button with Alt.
@@ -119,7 +118,7 @@ export interface Button {
      * The relief style: one of `Relief`. Buttons with `Relief.NONE` are flat and show their frame
      * only while hovered or pressed, as in tool bars.
      */
-    relief: any;
+    relief: string;
     /**
      * Whether this is the default button of its window, which Enter activates.
      */

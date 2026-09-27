@@ -25,15 +25,15 @@ export class ScrollBar extends AbstractSlider {
     _initialize() {
         super._initialize();
 
-        for (const [element, forward] of [
+        this._stepperDetaches = [
             [this._backwardEl, false],
             [this._forwardEl, true],
-        ]) {
+        ].map(([element, forward]) =>
             attachPressRepeat(element, {
                 canStart: () => this.isSensitive,
-                onStep: () => this._step(forward),
-            });
-        }
+                onStep: () => this.isSensitive && this._step(forward),
+            })
+        );
     }
 
     _render() {
@@ -63,6 +63,14 @@ export class ScrollBar extends AbstractSlider {
             pageIncrement: 10,
             pageSize: 10,
         });
+    }
+
+    destroy() {
+        for (const detach of this._stepperDetaches) {
+            detach();
+        }
+
+        super.destroy();
     }
 
     _step(forward) {

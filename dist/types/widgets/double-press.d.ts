@@ -9,6 +9,12 @@
  * @module widgets/double-press
  */
 /**
+ * The maximum distance in pixels between the presses of a double (or triple) press.
+ *
+ * @type {number}
+ */
+export declare const MULTIPLE_PRESS_DISTANCE: number;
+/**
  * Calls `handler` on every second primary button press of a double press on an element.
  *
  * @param {HTMLElement} element

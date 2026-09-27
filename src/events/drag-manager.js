@@ -96,8 +96,12 @@ export class DragManager {
         this._context = null;
         this._sourceWidget = null;
         this._targetWidget = null;
+        this._pointerId = null;
         this._iconEl = null;
         this._suppressClick = false;
+
+        // The pointer of the drag; other pointers do not move or end it.
+        this._pointerId = null;
 
         this._onPointerMove = this._onPointerMove.bind(this);
         this._onPointerUp = this._onPointerUp.bind(this);
@@ -199,7 +203,7 @@ export class DragManager {
             return;
         }
 
-        if (this._context) {
+        if (this._context && event.pointerId === this._pointerId) {
             this._move(event);
         }
     }
@@ -243,6 +247,7 @@ export class DragManager {
 
         this._context = context;
         this._sourceWidget = source;
+        this._pointerId = pending.pointerId;
 
         // The pointer may have been captured by a widget on press; release it so the widgets under
         // the pointer can be found.
@@ -329,7 +334,7 @@ export class DragManager {
             return;
         }
 
-        if (!this._context) {
+        if (!this._context || event.pointerId !== this._pointerId) {
             return;
         }
 
@@ -394,6 +399,7 @@ export class DragManager {
         this._context = null;
         this._sourceWidget = null;
         this._targetWidget = null;
+        this._pointerId = null;
 
         this._removeListeners();
         this._hideIcon();

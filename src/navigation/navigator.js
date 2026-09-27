@@ -14,6 +14,32 @@ import { defineProperties, Instance, lazySingleton } from '../core/instance.js';
  * @property {(type: string, listener: () => void, capture?: boolean) => void} [removeEventListener]
  */
 
+/**
+ * Matches the characters that browsers percent-encode in the fragment of a URL: controls, spaces,
+ * `"`, `<`, `>`, `` ` `` and everything beyond ASCII.
+ *
+ * @type {RegExp}
+ */
+const FRAGMENT_ENCODED_REGEXP = /[^!-~]|["<>`]/gu;
+
+/**
+ * Encodes a token the way browsers encode the hash, so that the token equals `location.hash`
+ * after it was set.
+ *
+ * @param {string} token
+ * @returns {string}
+ */
+function encodeFragment(token) {
+    return token.replace(FRAGMENT_ENCODED_REGEXP, (x) => {
+        try {
+            return encodeURIComponent(x);
+        } catch (_error) {
+            // A lone surrogate, which browsers encode as the replacement character.
+            return '%EF%BF%BD';
+        }
+    });
+}
+
 function decode(text) {
     try {
         return decodeURIComponent(text);
@@ -210,7 +236,8 @@ defineProperties(Navigator, {
 
     /**
      * The token of the current location, the hash without `#`. It contains the whole (encoded)
-     * token, including the name and the arguments.
+     * token, including the name and the arguments. Characters that browsers encode in the hash,
+     * such as spaces and non-ASCII characters, are encoded when it is set.
      */
     token: {
         value: '',
@@ -219,7 +246,7 @@ defineProperties(Navigator, {
                 throw new TypeError('The token must be a string.');
             }
 
-            return token.replace(/^#/, '');
+            return encodeFragment(token.replace(/^#/, ''));
         },
         changed() {
             this._onTokenChange();

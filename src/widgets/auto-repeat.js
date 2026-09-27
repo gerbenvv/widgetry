@@ -69,13 +69,16 @@ export function attachPressRepeat(element, options) {
     let stop = null;
 
     function onPointerDown(event) {
-        if (event.button !== 0 || pointerId !== null) {
+        // Another press of the pointer that is down means that its release got lost.
+        if (event.button !== 0 || (pointerId !== null && event.pointerId !== pointerId)) {
             return;
         }
 
         if (options.canStart && !options.canStart(event)) {
             return;
         }
+
+        stop?.();
 
         event.preventDefault();
 

@@ -40,12 +40,14 @@ export declare class StringFormatter extends LocaleAware {
      * manager) and digit grouping.
      *
      * @param {number | bigint} value
-     * @param {Intl.NumberFormatOptions & {decimals?: number}} [options] `Intl.NumberFormat`
-     *     options. `decimals` is a shortcut for an exact number of fraction digits.
+     * @param {Intl.NumberFormatOptions & {digits?: number, decimals?: number}} [options]
+     *     `Intl.NumberFormat` options. `digits` is a shortcut for an exact number of fraction
+     *     digits, and `decimals` is the same.
      * @returns {string}
      * @throws {TypeError} If the value is not a number.
      */
     formatNumber(value: number | bigint, options?: Intl.NumberFormatOptions & {
+        digits?: number;
         decimals?: number;
     }): string;
     _formatPlaceholder(argument: any, flags: any, width: any, precision: any, specifier: any): any;
@@ -71,12 +73,13 @@ export declare function formatString(format: string, ...args: unknown[]): string
  * @example
  * formatNumber(1234.5); // '1,234.5' in English, '1.234,5' in Dutch
  * formatNumber(0.25, { style: 'percent' }); // '25%'
- * formatNumber(3, { decimals: 2 }); // '3.00'
+ * formatNumber(3, { digits: 2 }); // '3.00'
  *
  * @param {number | bigint} value
- * @param {Intl.NumberFormatOptions & {decimals?: number}} [options]
+ * @param {Intl.NumberFormatOptions & {digits?: number, decimals?: number}} [options]
  * @returns {string}
  */
 export declare function formatNumber(value: number | bigint, options?: Intl.NumberFormatOptions & {
+    digits?: number;
     decimals?: number;
 }): string;

@@ -202,6 +202,27 @@ test.describe('core widgets', () => {
 
         const hasFocus = await page.evaluate(() => globalThis.testWindow.blocks[2].hasFocus);
         expect(hasFocus).toBe(true);
+
+        // moveFocus takes the strings of FocusDirection.
+        const moves = await page.evaluate(async () => {
+            const { FocusDirection } = await import('/src/core/enums.js');
+            const window = globalThis.testWindow;
+            const names = [];
+
+            for (const direction of ['start', 'end', 'start', FocusDirection.FORWARD, 'backward']) {
+                window.moveFocus(direction);
+                names.push(window.focusWidget.name);
+            }
+
+            try {
+                window.moveFocus(3);
+            } catch (error) {
+                names.push(error.name);
+            }
+
+            return names;
+        });
+        expect(moves).toEqual(['a', 'c', 'a', 'c', 'a', 'RangeError']);
     });
 
     test('windows remember their focus widget when activated again', async ({ page }) => {
@@ -388,5 +409,567 @@ test.describe('core widgets', () => {
         const received = await page.evaluate(() => globalThis.received);
         expect(received.slice(0, 3)).toEqual(['press:1:1', 'motion', 'release:1279']);
         expect(received).toContain('press:1:2');
+    });
+
+    test('layout styles keep the widget own inline styles', async ({ page }) => {
+        await openHarness(page);
+        await defineTestWidget(page);
+
+        const result = await page.evaluate(async () => {
+            const { Box } = await import('/src/widgets/box.js');
+            const { flushLayout } = await import('/src/widgets/widget.js');
+
+            const box = new Box();
+            const block = new globalThis.Block();
+            block.el.style.marginTop = '7px';
+
+            box.addChild(block);
+            flushLayout();
+
+            return block.el.style.marginTop;
+        });
+
+        expect(result).toBe('7px');
+    });
+
+    test('a removed child loses the layout styles of its old container', async ({ page }) => {
+        await openHarness(page);
+        await defineTestWidget(page);
+
+        const result = await page.evaluate(async () => {
+            const { Box } = await import('/src/widgets/box.js');
+            const { flushLayout } = await import('/src/widgets/widget.js');
+
+            const box = new Box();
+            const block = new globalThis.Block({ hExpand: true, hAlign: 'center', margin: 3 });
+            box.addChild(block);
+            flushLayout();
+
+            const before = [block.el.style.flex, block.el.style.marginLeft];
+
+            box.removeChild(block);
+
+            return {
+                before,
+                after: [block.el.style.flex, block.el.style.marginLeft, block.el.style.marginTop],
+            };
+        });
+
+        // The box's flex and auto margins are gone; the widget's own margin is kept.
+        expect(result.before).toEqual(['0 0 auto', 'auto']);
+        expect(result.after).toEqual(['', '3px', '3px']);
+    });
+
+    test('homogeneous boxes set no margins of their own', async ({ page }) => {
+        await openHarness(page);
+        await defineTestWidget(page);
+
+        const result = await page.evaluate(async () => {
+            const { Box } = await import('/src/widgets/box.js');
+            const { flushLayout } = await import('/src/widgets/widget.js');
+
+            const box = new Box({ homogeneous: true });
+            const plain = box.addChild(new globalThis.Block());
+            const spaced = box.addChild(new globalThis.Block({ margin: 2 }));
+            flushLayout();
+
+            return [plain.el.style.margin, spaced.el.style.margin];
+        });
+
+        expect(result).toEqual(['', '2px']);
+    });
+
+    test('closing the active window activates the window below it', async ({ page }) => {
+        await openHarness(page);
+        await defineTestWidget(page);
+
+        const result = await page.evaluate(async () => {
+            const { MainWindow } = await import('/src/widgets/main-window.js');
+            const { Window } = await import('/src/widgets/window.js');
+            const { Application } = await import('/src/core/application.js');
+
+            const main = new MainWindow();
+            const block = main.addChild(new globalThis.Block({ name: 'main-block' }));
+            main.show();
+
+            const other = new Window({ title: 'Other', x: 10, y: 10 });
+            other.addChild(new globalThis.Block());
+            other.show();
+
+            const dialog = new Window({ title: 'Dialog', transientFor: other, modal: true });
+            dialog.addChild(new globalThis.Block());
+            dialog.show();
+
+            const states = [Application.activeWindow === dialog];
+
+            // The parent of the dialog gets the focus back.
+            dialog.close();
+            states.push(Application.activeWindow === other);
+
+            // Then the topmost window that is left.
+            other.hide();
+            states.push(Application.activeWindow === main, block.hasFocus);
+
+            return states;
+        });
+
+        expect(result).toEqual([true, true, true, true]);
+    });
+
+    test('a popover that took the focus gives it back to its owner', async ({ page }) => {
+        await openHarness(page);
+        await defineTestWidget(page);
+
+        const result = await page.evaluate(async () => {
+            const { MainWindow } = await import('/src/widgets/main-window.js');
+            const { Popover } = await import('/src/widgets/popover.js');
+
+            const main = new MainWindow();
+            const owner = main.addChild(new globalThis.Block({ name: 'owner' }));
+            main.show();
+            owner.focus();
+
+            const popover = new Popover({ owner, takeFocus: true });
+            const input = document.createElement('input');
+            popover.contentElement.append(input);
+            popover.popup();
+            input.focus();
+
+            const inside = document.activeElement === input;
+
+            popover.popdown();
+            await new Promise((resolve) => setTimeout(resolve));
+
+            return [inside, document.activeElement === owner.el, owner.hasFocus];
+        });
+
+        expect(result).toEqual([true, true, true]);
+    });
+
+    test('reordering a child keeps the keyboard focus in it', async ({ page }) => {
+        await openHarness(page);
+        await defineTestWidget(page);
+
+        const result = await page.evaluate(async () => {
+            const { Box } = await import('/src/widgets/box.js');
+            const { MainWindow } = await import('/src/widgets/main-window.js');
+
+            const main = new MainWindow();
+            const box = new Box();
+            const first = box.addChild(new globalThis.Block({ name: 'first' }));
+            box.addChild(new globalThis.Block({ name: 'second' }));
+            main.addChild(box);
+            main.show();
+            first.focus();
+
+            box.reorderChild(first, 1);
+            await new Promise((resolve) => setTimeout(resolve));
+
+            return [box.indexOf(first), document.activeElement === first.el, first.hasFocus];
+        });
+
+        expect(result).toEqual([1, true, true]);
+    });
+
+    test('pressing a title bar button keeps the focus widget', async ({ page }) => {
+        await openHarness(page);
+        await defineTestWidget(page);
+
+        await page.evaluate(async () => {
+            const { Window } = await import('/src/widgets/window.js');
+
+            const window = new Window({ title: 'Window', x: 100, y: 100, width: 300 });
+            globalThis.block = window.addChild(new globalThis.Block());
+            window.show();
+            globalThis.testWindow = window;
+        });
+
+        await page.click('.wy-window-maximize');
+
+        const result = await page.evaluate(() => [
+            globalThis.testWindow.maximized,
+            document.activeElement === globalThis.block.el,
+            globalThis.block.hasFocus,
+        ]);
+
+        expect(result).toEqual([true, true, true]);
+    });
+
+    test('a press is counted once, however many listeners count it', async ({ page }) => {
+        await openHarness(page);
+
+        const result = await page.evaluate(async () => {
+            const { countPress } = await import('/src/widgets/widget.js');
+
+            const init = { button: 0, clientX: 5, clientY: 5, bubbles: true };
+            const first = new PointerEvent('pointerdown', init);
+            const counts = [countPress(first), countPress(first)];
+
+            // Like the double press of a title bar, 5 pixels away still counts.
+            const second = new PointerEvent('pointerdown', { ...init, clientX: 10 });
+            counts.push(countPress(second), countPress(second));
+
+            return counts;
+        });
+
+        expect(result).toEqual([1, 1, 2, 2]);
+    });
+
+    test('resizing or moving a maximized window applies when it is restored', async ({ page }) => {
+        await openHarness(page);
+        await defineTestWidget(page);
+
+        const result = await page.evaluate(async () => {
+            const { Window } = await import('/src/widgets/window.js');
+
+            const window = new Window({ title: 'Window', x: 10, y: 10, width: 300, height: 200 });
+            window.addChild(new globalThis.Block());
+            window.show();
+
+            window.maximized = true;
+            window.resize(350, 250);
+            window.move(40, 30);
+
+            const maximized = window.el.getBoundingClientRect().width;
+
+            window.maximized = false;
+            const rect = window.el.getBoundingClientRect();
+
+            return {
+                maximized,
+                restored: [rect.left, rect.top, rect.width, rect.height],
+            };
+        });
+
+        expect(result.maximized).toBe(1280);
+        expect(result.restored).toEqual([40, 30, 350, 250]);
+    });
+
+    test('blurring the focus widget keeps the keyboard focus in its window', async ({ page }) => {
+        await openHarness(page);
+        await defineTestWidget(page);
+
+        await page.evaluate(async () => {
+            const { MainWindow } = await import('/src/widgets/main-window.js');
+            const { Box } = await import('/src/widgets/box.js');
+
+            const window = new MainWindow();
+            const box = new Box();
+            globalThis.first = box.addChild(new globalThis.Block({ name: 'first' }));
+            box.addChild(new globalThis.Block({ name: 'second' }));
+            window.addChild(box);
+            window.show();
+            globalThis.first.focus();
+            globalThis.first.blur();
+
+            globalThis.testWindow = window;
+        });
+
+        const state = await page.evaluate(() => [
+            globalThis.testWindow.focusWidget,
+            document.activeElement === globalThis.testWindow.el,
+            globalThis.testWindow.active,
+        ]);
+        expect(state).toEqual([null, true, true]);
+
+        await page.keyboard.press('Tab');
+        expect(await page.evaluate(() => globalThis.testWindow.focusWidget?.name)).toBe('first');
+    });
+
+    test('a window shown above a modal window becomes active', async ({ page }) => {
+        await openHarness(page);
+        await defineTestWidget(page);
+
+        const result = await page.evaluate(async () => {
+            const { Window } = await import('/src/widgets/window.js');
+            const { Application } = await import('/src/core/application.js');
+
+            const modal = new Window({ title: 'Modal', modal: true });
+            modal.addChild(new globalThis.Block());
+            modal.show();
+
+            const child = new Window({ title: 'Child', transientFor: modal });
+            child.addChild(new globalThis.Block());
+            child.show();
+
+            return {
+                above: child.zIndex > modal.zIndex,
+                active: Application.activeWindow === child,
+                blinked: modal.el.classList.contains('wy-blink'),
+            };
+        });
+
+        expect(result).toEqual({ above: true, active: true, blinked: false });
+    });
+
+    test('scrolling a nested popover keeps the outer popover open', async ({ page }) => {
+        await openHarness(page);
+        await defineTestWidget(page);
+
+        const result = await page.evaluate(async () => {
+            const { MainWindow } = await import('/src/widgets/main-window.js');
+            const { Popover } = await import('/src/widgets/popover.js');
+
+            const main = new MainWindow();
+            const owner = main.addChild(new globalThis.Block());
+            main.show();
+
+            const outer = new Popover({ owner });
+            const inner = new Popover({ owner: (outer.child = new globalThis.Block()) });
+            inner.contentElement.append(document.createElement('div'));
+
+            outer.popup();
+            inner.popup();
+
+            inner.contentElement.firstChild.dispatchEvent(new Event('scroll'));
+            const whileNested = [outer.isOpen, inner.isOpen];
+
+            document.body.dispatchEvent(new Event('scroll'));
+
+            return { whileNested, after: [outer.isOpen, inner.isOpen] };
+        });
+
+        expect(result).toEqual({ whileNested: [true, true], after: [false, false] });
+    });
+
+    test('reduced motion also stops transitions of pseudo-elements', async ({ page }) => {
+        await openHarness(page);
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+
+        const emulated = await page.evaluate(
+            () => matchMedia('(prefers-reduced-motion: reduce)').matches
+        );
+        test.skip(!emulated, 'The browser does not emulate reduced motion.');
+
+        const durations = await page.evaluate(() => {
+            const style = document.createElement('style');
+            style.textContent =
+                '.probe::before, .probe::after { content: ""; transition: opacity 1s; }';
+            document.head.append(style);
+
+            const widget = document.createElement('div');
+            widget.className = 'wy-widget probe';
+            widget.innerHTML = '<span class="probe"></span>';
+            document.body.append(widget);
+
+            return [widget, widget.firstChild].flatMap((x) => [
+                getComputedStyle(x, '::before').transitionDuration,
+                getComputedStyle(x, '::after').transitionDuration,
+            ]);
+        });
+
+        expect(durations).toEqual(['0s', '0s', '0s', '0s']);
+    });
+
+    test('a press whose release got lost does not block later presses', async ({ page }) => {
+        await openHarness(page);
+        await defineTestWidget(page);
+
+        await page.evaluate(async () => {
+            const { MainWindow } = await import('/src/widgets/main-window.js');
+            const { attachButtonBehavior } = await import('/src/widgets/button-behavior.js');
+            const { attachPressRepeat } = await import('/src/widgets/auto-repeat.js');
+            const { Box } = await import('/src/widgets/box.js');
+
+            const main = new MainWindow();
+            const box = main.addChild(new Box());
+            const button = box.addChild(new globalThis.Block({ width: 100, height: 40 }));
+            const stepper = box.addChild(new globalThis.Block({ width: 100, height: 40 }));
+            main.show();
+
+            globalThis.log = [];
+            attachButtonBehavior(button, { onActivate: () => globalThis.log.push('activate') });
+            attachPressRepeat(stepper.el, {
+                onStep: (count) => {
+                    if (count === 0) {
+                        globalThis.log.push('step');
+                    }
+                },
+            });
+
+            globalThis.targets = [button.el, stepper.el];
+            document.addEventListener('pointermove', (event) => {
+                globalThis.mouseId = event.pointerId;
+            });
+        });
+
+        // Presses of the mouse whose releases never arrive, e.g. because the element was moved.
+        await page.mouse.move(300, 300);
+        await page.evaluate(() => {
+            for (const target of globalThis.targets) {
+                const init = { pointerId: globalThis.mouseId, button: 0, bubbles: true };
+                target.dispatchEvent(new PointerEvent('pointerdown', init));
+            }
+        });
+
+        await page.mouse.click(50, 20);
+        await page.mouse.click(150, 20);
+
+        expect(await page.evaluate(() => globalThis.log)).toEqual(['step', 'activate', 'step']);
+    });
+
+    test('a modal window takes back a focus that moved below it', async ({ page }) => {
+        await openHarness(page);
+        await defineTestWidget(page);
+
+        const result = await page.evaluate(async () => {
+            const { MainWindow } = await import('/src/widgets/main-window.js');
+            const { Window } = await import('/src/widgets/window.js');
+            const { Application } = await import('/src/core/application.js');
+
+            const main = new MainWindow();
+            const below = main.addChild(new globalThis.Block({ name: 'below' }));
+            main.show();
+
+            const modal = new Window({ title: 'Modal', modal: true });
+            const inside = modal.addChild(new globalThis.Block({ name: 'inside' }));
+            modal.show();
+
+            // As when tabbing into the page from outside of it.
+            below.el.focus();
+
+            return [
+                Application.activeWindow === modal,
+                document.activeElement === inside.el,
+                inside.hasFocus,
+                below.hasFocus,
+            ];
+        });
+
+        expect(result).toEqual([true, true, true, false]);
+    });
+
+    test('a layout that fails does not stop the other layouts', async ({ page }) => {
+        await openHarness(page);
+
+        const result = await page.evaluate(async () => {
+            const errors = [];
+            window.addEventListener('error', (event) => {
+                errors.push(event.error.message);
+                event.preventDefault();
+            });
+
+            const { Box } = await import('/src/widgets/box.js');
+            const { flushLayout } = await import('/src/widgets/widget.js');
+
+            class BrokenBox extends Box {
+                _updateLayout() {
+                    throw new Error('Broken layout.');
+                }
+            }
+
+            const broken = new BrokenBox();
+            const box = new Box({ spacing: 7 });
+            flushLayout();
+
+            broken.spacing = 1;
+            box.spacing = 8;
+            flushLayout();
+
+            return { gap: box.el.style.gap, errors };
+        });
+
+        // The broken box fails its first layout and the one after the change.
+        expect(result).toEqual({ gap: '8px', errors: ['Broken layout.', 'Broken layout.'] });
+    });
+
+    test('hiding the main window gives the page its scrolling back', async ({ page }) => {
+        await openHarness(page);
+
+        const result = await page.evaluate(async () => {
+            const { MainWindow } = await import('/src/widgets/main-window.js');
+
+            const window = new MainWindow();
+            window.show();
+
+            const shown = document.documentElement.classList.contains('wy-page');
+            window.hide();
+
+            return [shown, document.documentElement.classList.contains('wy-page')];
+        });
+
+        expect(result).toEqual([true, false]);
+    });
+
+    test('modal windows are marked modal for assistive technology', async ({ page }) => {
+        await openHarness(page);
+
+        const result = await page.evaluate(async () => {
+            const { Window } = await import('/src/widgets/window.js');
+
+            const window = new Window({ title: 'Modal', modal: true });
+            const states = [window.el.getAttribute('aria-modal')];
+
+            window.modal = false;
+            states.push(window.el.getAttribute('aria-modal'));
+
+            return states;
+        });
+
+        expect(result).toEqual(['true', null]);
+    });
+
+    test('every widget has an accessible name on its focus element', async ({ page }) => {
+        await openHarness(page);
+        await defineTestWidget(page);
+
+        const result = await page.evaluate(async () => {
+            const { Button } = await import('/src/widgets/button.js');
+            const { LineEdit } = await import('/src/widgets/line-edit.js');
+            const { TextView } = await import('/src/widgets/text-view.js');
+            const { ComboBox } = await import('/src/widgets/combo-box.js');
+            const { Calendar } = await import('/src/widgets/calendar.js');
+
+            const label = (element) => element.getAttribute('aria-label');
+
+            const block = new window.Block({ accessibleName: 'Block' });
+            const button = new Button({ icon: 'edit-copy', accessibleName: 'Copy' });
+            const lineEdit = new LineEdit({ accessibleName: 'Search' });
+            const textView = new TextView({ accessibleName: 'Notes' });
+            const comboBox = new ComboBox({ hasEntry: true, accessibleName: 'Country' });
+            const calendar = new Calendar({ accessibleName: 'Due date' });
+
+            const changes = [];
+            block.connect('accessible-name-change', () => changes.push(block.accessibleName));
+
+            const names = {
+                block: label(block.el),
+                button: label(button.el),
+                lineEdit: [label(lineEdit.focusElement), label(lineEdit.el)],
+                textView: label(textView.focusElement),
+                comboBox: [label(comboBox.focusElement), label(comboBox.el)],
+                calendar: [
+                    label(calendar.focusElement),
+                    calendar.focusElement
+                        .getAttribute('aria-labelledby')
+                        .startsWith(calendar.focusElement.id),
+                ],
+            };
+
+            block.accessibleName = null;
+            calendar.accessibleName = '';
+
+            return {
+                names,
+                changes,
+                cleared: [
+                    block.el.hasAttribute('aria-label'),
+                    calendar.focusElement.getAttribute('aria-labelledby').split(' ').length,
+                ],
+            };
+        });
+
+        expect(result).toEqual({
+            names: {
+                block: 'Block',
+                button: 'Copy',
+                lineEdit: ['Search', null],
+                textView: 'Notes',
+                comboBox: ['Country', 'Country'],
+                calendar: ['Due date', true],
+            },
+            changes: [''],
+            cleared: [false, 2],
+        });
     });
 });

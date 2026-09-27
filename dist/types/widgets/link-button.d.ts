@@ -11,7 +11,6 @@ import { Button } from './button.js';
  * the URI is not opened.
  */
 export declare class LinkButton extends Button {
-    visited: boolean;
     _render(): HTMLElement;
     /**
      * Activates the link: emits `activate` and, unless a handler returned `true`, opens the URI
@@ -23,9 +22,12 @@ export declare class LinkButton extends Button {
 
 /** The declared properties of {@link LinkButton}. */
 export interface LinkButton {
-    relief: any;
     /**
      * The URI the link opens.
      */
     uri: string;
+    /**
+     * Whether the link has been opened.
+     */
+    visited: boolean;
 }

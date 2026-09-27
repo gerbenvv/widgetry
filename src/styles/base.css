@@ -583,7 +583,11 @@ html.wy-cursor-override * {
 
 @media (prefers-reduced-motion: reduce) {
     .wy-widget,
+    .wy-widget::before,
+    .wy-widget::after,
     .wy-widget *,
+    .wy-widget *::before,
+    .wy-widget *::after,
     .wy-overlay {
         animation-duration: 0s !important;
         transition-duration: 0s !important;

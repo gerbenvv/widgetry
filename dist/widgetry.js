@@ -199,20 +199,22 @@ var LabelStyles = Object.freeze({
   STRIKETHROUGH: 1 << 4
 });
 var SortOrder = Object.freeze({
-  NONE: 0,
-  ASCENDING: 1,
-  DESCENDING: 2
+  NONE: "none",
+  // Not sorted.
+  ASCENDING: "ascending",
+  // Smallest first.
+  DESCENDING: "descending"
+  // Largest first.
 });
-var SelectionModes = Object.freeze({
-  NONE: 0,
-  SINGLE: 1 << 1,
-  // At most one selected row.
-  MULTI: 1 << 2,
-  // Any number of rows, extended with shift and control.
-  TOGGLE: 1 << 3,
-  // Clicking a selected row deselects it.
-  SINGLE_TOGGLE: 1 << 1 | 1 << 3,
-  MULTI_TOGGLE: 1 << 2 | 1 << 3
+var SelectionMode = Object.freeze({
+  NONE: "none",
+  // No row can be selected.
+  SINGLE: "single",
+  // At most one row; Control+click deselects it.
+  BROWSE: "browse",
+  // One row once there is a cursor, which the user cannot deselect.
+  MULTIPLE: "multiple"
+  // Any number of rows, extended with Shift and Control.
 });
 var CursorShape = Object.freeze({
   ARROW: "arrow",
@@ -259,10 +261,14 @@ var ButtonBoxStyle = Object.freeze({
   CENTER: "center"
 });
 var FocusDirection = Object.freeze({
-  START: 1,
-  END: 2,
-  FORWARD: 3,
-  BACKWARD: 4
+  START: "start",
+  // The first focusable widget.
+  END: "end",
+  // The last focusable widget.
+  FORWARD: "forward",
+  // The next focusable widget, like Tab.
+  BACKWARD: "backward"
+  // The previous focusable widget, like Shift+Tab.
 });
 var ResizeDirections = Object.freeze({
   NONE: 0,
@@ -314,8 +320,9 @@ var SignalDispatcher = class {
    * @returns {() => void} A function that disconnects the handler again.
    */
   connect(name, method, context) {
-    this._getHandlers(this._slots, name).push({ method, context });
-    return () => this.disconnect(name, method, context);
+    const handler = { method, context };
+    this._getHandlers(this._slots, name).push(handler);
+    return () => this._removeHandler(name, handler);
   }
   /**
    * Connects a handler that runs before all handlers connected so far.
@@ -326,8 +333,9 @@ var SignalDispatcher = class {
    * @returns {() => void}
    */
   connectFirst(name, method, context) {
-    this._getHandlers(this._slots, name).unshift({ method, context });
-    return () => this.disconnect(name, method, context);
+    const handler = { method, context };
+    this._getHandlers(this._slots, name).unshift(handler);
+    return () => this._removeHandler(name, handler);
   }
   /**
    * Connects a handler that runs after all other handlers, including ones connected later.
@@ -338,8 +346,9 @@ var SignalDispatcher = class {
    * @returns {() => void}
    */
   connectLast(name, method, context) {
-    this._getHandlers(this._lastSlots, name).push({ method, context });
-    return () => this.disconnect(name, method, context);
+    const handler = { method, context };
+    this._getHandlers(this._lastSlots, name).push(handler);
+    return () => this._removeHandler(name, handler);
   }
   /**
    * Disconnects a handler. Does nothing if it was not connected.
@@ -356,6 +365,7 @@ var SignalDispatcher = class {
       }
       for (let i = handlers.length - 1; i >= 0; --i) {
         if (handlers[i].method === method && handlers[i].context === context) {
+          handlers[i].disconnected = true;
           handlers.splice(i, 1);
           return;
         }
@@ -385,6 +395,9 @@ var SignalDispatcher = class {
     const handlers = [...this._slots.get(name) || [], ...this._lastSlots.get(name) || []];
     let handled = false;
     for (const handler of handlers) {
+      if (handler.disconnected) {
+        continue;
+      }
       if (handler.method.apply(handler.context, args) === true) {
         handled = true;
       }
@@ -416,8 +429,25 @@ var SignalDispatcher = class {
    * Removes all handlers.
    */
   clear() {
-    this._slots.clear();
-    this._lastSlots.clear();
+    for (const slots of [this._slots, this._lastSlots]) {
+      for (const handlers of slots.values()) {
+        for (const handler of handlers) {
+          handler.disconnected = true;
+        }
+      }
+      slots.clear();
+    }
+  }
+  _removeHandler(name, handler) {
+    for (const slots of [this._slots, this._lastSlots]) {
+      const handlers = slots.get(name);
+      const index = handlers ? handlers.indexOf(handler) : -1;
+      if (index >= 0) {
+        handler.disconnected = true;
+        handlers.splice(index, 1);
+        return;
+      }
+    }
   }
   _getHandlers(slots, name) {
     let handlers = slots.get(name);
@@ -434,10 +464,6 @@ function clamp(value, minimum, maximum) {
   return value > maximum ? maximum : value < minimum ? minimum : value;
 }
 __name(clamp, "clamp");
-function lerp(alpha, first, second) {
-  return first * (1 - alpha) + second * alpha;
-}
-__name(lerp, "lerp");
 function toCamelCase(name) {
   return name.replace(/-([a-z0-9])/g, (_match, letter) => letter.toUpperCase());
 }
@@ -483,11 +509,6 @@ function areEqual(first, second) {
   );
 }
 __name(areEqual, "areEqual");
-function parsePixels(value) {
-  const result = parseFloat(value);
-  return Number.isFinite(result) ? result : 0;
-}
-__name(parsePixels, "parsePixels");
 function createElement(html) {
   const template = document.createElement("template");
   template.innerHTML = html.trim();
@@ -501,23 +522,6 @@ function createElement(html) {
   );
 }
 __name(createElement, "createElement");
-function throttleToFrame(method) {
-  let frame = 0;
-  let latestArguments = [];
-  return (
-    /** @type {T} */
-    (function(...args) {
-      latestArguments = args;
-      if (!frame) {
-        frame = requestAnimationFrame(() => {
-          frame = 0;
-          method.apply(this, latestArguments);
-        });
-      }
-    })
-  );
-}
-__name(throttleToFrame, "throttleToFrame");
 function uniqueId(prefix = "wy") {
   uniqueId.counter = (uniqueId.counter || 0) + 1;
   return `${prefix}-${uniqueId.counter}`;
@@ -530,7 +534,7 @@ function defineProperties(cls, specs) {
   const ownSpecs = Object.hasOwn(cls, "propertySpecs") ? cls.propertySpecs : {};
   const properties = Object.hasOwn(cls, "properties") ? cls.properties : Object.create(baseProperties);
   for (const [name, override] of Object.entries(specs)) {
-    const baseSpec = findSpec(Object.getPrototypeOf(cls), name) || {};
+    const baseSpec = findSpec(cls, name) || {};
     const spec = { ...baseSpec, ...override };
     ownSpecs[name] = spec;
     properties[name] = createPropertyInfo(cls, name, spec);
@@ -736,20 +740,23 @@ var Instance = class {
    *
    * @param {Record<string, unknown>} properties
    * @returns {boolean} Whether any value changed.
+   * @throws {Error} If a name is not a writable property; nothing is set then.
    */
   set(properties) {
-    let changed = false;
+    const early = [];
     const late = [];
     for (const [name, value] of Object.entries(properties)) {
       const property = this._getPropertyInfo(name);
-      if (property.late) {
-        late.push([name, value]);
-      } else if (this.setProperty(name, value)) {
-        changed = true;
+      if (!property.write) {
+        throw new Error(
+          `${this.constructor.name} has no writable property named '${name}'.`
+        );
       }
+      (property.late ? late : early).push([property, value]);
     }
-    for (const [name, value] of late) {
-      if (this.setProperty(name, value)) {
+    let changed = false;
+    for (const [property, value] of [...early, ...late]) {
+      if (property.write.call(this, value)) {
         changed = true;
       }
     }
@@ -1177,7 +1184,11 @@ function getDefaultLocale() {
 __name(getDefaultLocale, "getDefaultLocale");
 function getNames(locale, kind, width) {
   if (kind === "month") {
-    const format2 = new Intl.DateTimeFormat(locale, { month: width, timeZone: "UTC" });
+    const format2 = new Intl.DateTimeFormat(locale, {
+      month: width,
+      timeZone: "UTC",
+      calendar: "gregory"
+    });
     return Array.from({ length: 12 }, (_x, i) => format2.format(Date.UTC(2021, i, 1)));
   }
   const format = new Intl.DateTimeFormat(locale, { weekday: width, timeZone: "UTC" });
@@ -1219,9 +1230,9 @@ var LocaleManagerClass = class extends Instance {
   }
   _applyLocale() {
     const locale = this._locale;
-    const [language, country] = locale.split(/[-_]/);
+    const { language, region } = new Intl.Locale(locale);
     this._language = (language || "en").toLowerCase();
-    this._country = (country || "").toUpperCase();
+    this._country = (region || "").toUpperCase();
     this._shortMonthNames = getNames(locale, "month", "short");
     this._longMonthNames = getNames(locale, "month", "long");
     this._shortDayNames = getNames(locale, "day", "short");
@@ -1288,12 +1299,13 @@ defineProperties(LocaleManagerClass, {
    */
   pmDesignator: { value: "PM" },
   /**
-   * The time zone dates are formatted and parsed in: an IANA time zone name such as
-   * `'Europe/Amsterdam'`, `'UTC'` (the default, like the original toolkit) or `'local'` for the
-   * time zone of the system. It does not change with the locale.
+   * The time zone dates are formatted and parsed in: `'local'` (the default) for the time zone of
+   * the system, which is the one of the dates of the calendar and the date edit (local
+   * midnight), `'UTC'` (like the original toolkit) or an IANA time zone name such as
+   * `'Europe/Amsterdam'`. It does not change with the locale.
    */
   timeZone: {
-    value: "UTC",
+    value: "local",
     coerce(timeZone) {
       if (typeof timeZone !== "string") {
         throw new TypeError("The time zone must be a string.");
@@ -1679,8 +1691,9 @@ var StringFormatter = class extends LocaleAware {
    * manager) and digit grouping.
    *
    * @param {number | bigint} value
-   * @param {Intl.NumberFormatOptions & {decimals?: number}} [options] `Intl.NumberFormat`
-   *     options. `decimals` is a shortcut for an exact number of fraction digits.
+   * @param {Intl.NumberFormatOptions & {digits?: number, decimals?: number}} [options]
+   *     `Intl.NumberFormat` options. `digits` is a shortcut for an exact number of fraction
+   *     digits, and `decimals` is the same.
    * @returns {string}
    * @throws {TypeError} If the value is not a number.
    */
@@ -1688,13 +1701,14 @@ var StringFormatter = class extends LocaleAware {
     if (typeof value !== "number" && typeof value !== "bigint") {
       throw new TypeError("The value must be a number.");
     }
-    const { decimals, ...intlOptions } = options;
-    if (decimals !== void 0) {
-      if (!Number.isInteger(decimals) || decimals < 0 || decimals > 100) {
-        throw new RangeError("The number of decimals must be an integer from 0 to 100.");
+    const { digits: ownDigits, decimals, ...intlOptions } = options;
+    const digits = ownDigits ?? decimals;
+    if (digits !== void 0) {
+      if (!Number.isInteger(digits) || digits < 0 || digits > 100) {
+        throw new RangeError("The number of digits must be an integer from 0 to 100.");
       }
-      intlOptions.minimumFractionDigits = decimals;
-      intlOptions.maximumFractionDigits = decimals;
+      intlOptions.minimumFractionDigits = digits;
+      intlOptions.maximumFractionDigits = digits;
     }
     const manager = this.effectiveLocaleManager;
     const parts = getNumberFormat(manager.locale, intlOptions).formatToParts(value);
@@ -2022,6 +2036,9 @@ var Translator = class extends LocaleAware {
     return entry[getPluralRules(language).select(count)] ?? entry.other;
   }
   _format(text, args) {
+    if (!args.length) {
+      return text;
+    }
     this._formatter.localeManager = this.effectiveLocaleManager;
     return this._formatter.format(text, ...args);
   }
@@ -2143,17 +2160,54 @@ var TOOLKIT_TRANSLATIONS = Object.freeze({
     "Saturation and value": "Verzadiging en helderheid",
     Hue: "Tint",
     Alpha: "Dekking",
-    "Color name": "Kleurnaam"
+    "Color name": "Kleurnaam",
+    "Saturation %d%%, value %d%%": "Verzadiging %d%%, helderheid %d%%",
+    "Light Scarlet Red": "Licht scharlakenrood",
+    "Scarlet Red": "Scharlakenrood",
+    "Dark Scarlet Red": "Donker scharlakenrood",
+    "Light Orange": "Licht oranje",
+    Orange: "Oranje",
+    "Dark Orange": "Donker oranje",
+    "Light Butter": "Licht botergeel",
+    Butter: "Botergeel",
+    "Dark Butter": "Donker botergeel",
+    "Light Chameleon": "Licht kameleongroen",
+    Chameleon: "Kameleongroen",
+    "Dark Chameleon": "Donker kameleongroen",
+    "Light Sky Blue": "Licht hemelsblauw",
+    "Sky Blue": "Hemelsblauw",
+    "Dark Sky Blue": "Donker hemelsblauw",
+    "Light Plum": "Licht pruimpaars",
+    Plum: "Pruimpaars",
+    "Dark Plum": "Donker pruimpaars",
+    "Light Chocolate": "Licht chocoladebruin",
+    Chocolate: "Chocoladebruin",
+    "Dark Chocolate": "Donker chocoladebruin",
+    "Light Aluminium 1": "Licht aluminium 1",
+    "Aluminium 1": "Aluminium 1",
+    "Dark Aluminium 1": "Donker aluminium 1",
+    "Light Aluminium 2": "Licht aluminium 2",
+    "Aluminium 2": "Aluminium 2",
+    "Dark Aluminium 2": "Donker aluminium 2",
+    Black: "Zwart",
+    "Very Dark Gray": "Zeer donkergrijs",
+    "Darker Gray": "Donkerder grijs",
+    "Medium Dark Gray": "Middeldonker grijs",
+    "Medium Gray": "Middelgrijs",
+    "Light Gray": "Lichtgrijs",
+    "Lighter Gray": "Lichter grijs",
+    "Very Light Gray": "Zeer lichtgrijs",
+    White: "Wit"
   }),
   de: Object.freeze({
-    _Select: "_Ausw\xE4hlen",
+    _Select: "Aus_w\xE4hlen",
     "Pick a Color": "Farbe w\xE4hlen",
     _OK: "_OK",
     _Cancel: "_Abbrechen",
     _Close: "_Schlie\xDFen",
     _Yes: "_Ja",
     _No: "_Nein",
-    _Apply: "_Anwenden",
+    _Apply: "An_wenden",
     _Help: "_Hilfe",
     Close: "Schlie\xDFen",
     Maximize: "Maximieren",
@@ -2168,7 +2222,44 @@ var TOOLKIT_TRANSLATIONS = Object.freeze({
     "Saturation and value": "S\xE4ttigung und Helligkeit",
     Hue: "Farbton",
     Alpha: "Deckkraft",
-    "Color name": "Farbname"
+    "Color name": "Farbname",
+    "Saturation %d%%, value %d%%": "S\xE4ttigung %d %%, Helligkeit %d %%",
+    "Light Scarlet Red": "Helles Scharlachrot",
+    "Scarlet Red": "Scharlachrot",
+    "Dark Scarlet Red": "Dunkles Scharlachrot",
+    "Light Orange": "Helles Orange",
+    Orange: "Orange",
+    "Dark Orange": "Dunkles Orange",
+    "Light Butter": "Helles Buttergelb",
+    Butter: "Buttergelb",
+    "Dark Butter": "Dunkles Buttergelb",
+    "Light Chameleon": "Helles Cham\xE4leongr\xFCn",
+    Chameleon: "Cham\xE4leongr\xFCn",
+    "Dark Chameleon": "Dunkles Cham\xE4leongr\xFCn",
+    "Light Sky Blue": "Helles Himmelblau",
+    "Sky Blue": "Himmelblau",
+    "Dark Sky Blue": "Dunkles Himmelblau",
+    "Light Plum": "Helles Pflaumenlila",
+    Plum: "Pflaumenlila",
+    "Dark Plum": "Dunkles Pflaumenlila",
+    "Light Chocolate": "Helles Schokoladenbraun",
+    Chocolate: "Schokoladenbraun",
+    "Dark Chocolate": "Dunkles Schokoladenbraun",
+    "Light Aluminium 1": "Helles Aluminium 1",
+    "Aluminium 1": "Aluminium 1",
+    "Dark Aluminium 1": "Dunkles Aluminium 1",
+    "Light Aluminium 2": "Helles Aluminium 2",
+    "Aluminium 2": "Aluminium 2",
+    "Dark Aluminium 2": "Dunkles Aluminium 2",
+    Black: "Schwarz",
+    "Very Dark Gray": "Sehr dunkles Grau",
+    "Darker Gray": "Dunkleres Grau",
+    "Medium Dark Gray": "Mitteldunkles Grau",
+    "Medium Gray": "Mittelgrau",
+    "Light Gray": "Hellgrau",
+    "Lighter Gray": "Helleres Grau",
+    "Very Light Gray": "Sehr helles Grau",
+    White: "Wei\xDF"
   }),
   fr: Object.freeze({
     _Select: "_S\xE9lectionner",
@@ -2178,7 +2269,7 @@ var TOOLKIT_TRANSLATIONS = Object.freeze({
     _Close: "_Fermer",
     _Yes: "_Oui",
     _No: "_Non",
-    _Apply: "_Appliquer",
+    _Apply: "A_ppliquer",
     _Help: "Ai_de",
     Close: "Fermer",
     Maximize: "Agrandir",
@@ -2193,7 +2284,44 @@ var TOOLKIT_TRANSLATIONS = Object.freeze({
     "Saturation and value": "Saturation et luminosit\xE9",
     Hue: "Teinte",
     Alpha: "Opacit\xE9",
-    "Color name": "Nom de la couleur"
+    "Color name": "Nom de la couleur",
+    "Saturation %d%%, value %d%%": "Saturation %d %%, luminosit\xE9 %d %%",
+    "Light Scarlet Red": "Rouge \xE9carlate clair",
+    "Scarlet Red": "Rouge \xE9carlate",
+    "Dark Scarlet Red": "Rouge \xE9carlate fonc\xE9",
+    "Light Orange": "Orange clair",
+    Orange: "Orange",
+    "Dark Orange": "Orange fonc\xE9",
+    "Light Butter": "Beurre clair",
+    Butter: "Beurre",
+    "Dark Butter": "Beurre fonc\xE9",
+    "Light Chameleon": "Cam\xE9l\xE9on clair",
+    Chameleon: "Cam\xE9l\xE9on",
+    "Dark Chameleon": "Cam\xE9l\xE9on fonc\xE9",
+    "Light Sky Blue": "Bleu ciel clair",
+    "Sky Blue": "Bleu ciel",
+    "Dark Sky Blue": "Bleu ciel fonc\xE9",
+    "Light Plum": "Prune clair",
+    Plum: "Prune",
+    "Dark Plum": "Prune fonc\xE9",
+    "Light Chocolate": "Chocolat clair",
+    Chocolate: "Chocolat",
+    "Dark Chocolate": "Chocolat fonc\xE9",
+    "Light Aluminium 1": "Aluminium 1 clair",
+    "Aluminium 1": "Aluminium 1",
+    "Dark Aluminium 1": "Aluminium 1 fonc\xE9",
+    "Light Aluminium 2": "Aluminium 2 clair",
+    "Aluminium 2": "Aluminium 2",
+    "Dark Aluminium 2": "Aluminium 2 fonc\xE9",
+    Black: "Noir",
+    "Very Dark Gray": "Gris tr\xE8s fonc\xE9",
+    "Darker Gray": "Gris plus fonc\xE9",
+    "Medium Dark Gray": "Gris moyennement fonc\xE9",
+    "Medium Gray": "Gris moyen",
+    "Light Gray": "Gris clair",
+    "Lighter Gray": "Gris plus clair",
+    "Very Light Gray": "Gris tr\xE8s clair",
+    White: "Blanc"
   }),
   es: Object.freeze({
     _Select: "_Seleccionar",
@@ -2203,7 +2331,7 @@ var TOOLKIT_TRANSLATIONS = Object.freeze({
     _Close: "_Cerrar",
     _Yes: "_S\xED",
     _No: "_No",
-    _Apply: "_Aplicar",
+    _Apply: "A_plicar",
     _Help: "Ay_uda",
     Close: "Cerrar",
     Maximize: "Maximizar",
@@ -2218,16 +2346,54 @@ var TOOLKIT_TRANSLATIONS = Object.freeze({
     "Saturation and value": "Saturaci\xF3n y brillo",
     Hue: "Tono",
     Alpha: "Opacidad",
-    "Color name": "Nombre del color"
+    "Color name": "Nombre del color",
+    "Saturation %d%%, value %d%%": "Saturaci\xF3n %d %%, brillo %d %%",
+    "Light Scarlet Red": "Rojo escarlata claro",
+    "Scarlet Red": "Rojo escarlata",
+    "Dark Scarlet Red": "Rojo escarlata oscuro",
+    "Light Orange": "Naranja claro",
+    Orange: "Naranja",
+    "Dark Orange": "Naranja oscuro",
+    "Light Butter": "Mantequilla claro",
+    Butter: "Mantequilla",
+    "Dark Butter": "Mantequilla oscuro",
+    "Light Chameleon": "Camale\xF3n claro",
+    Chameleon: "Camale\xF3n",
+    "Dark Chameleon": "Camale\xF3n oscuro",
+    "Light Sky Blue": "Azul cielo claro",
+    "Sky Blue": "Azul cielo",
+    "Dark Sky Blue": "Azul cielo oscuro",
+    "Light Plum": "Ciruela claro",
+    Plum: "Ciruela",
+    "Dark Plum": "Ciruela oscuro",
+    "Light Chocolate": "Chocolate claro",
+    Chocolate: "Chocolate",
+    "Dark Chocolate": "Chocolate oscuro",
+    "Light Aluminium 1": "Aluminio 1 claro",
+    "Aluminium 1": "Aluminio 1",
+    "Dark Aluminium 1": "Aluminio 1 oscuro",
+    "Light Aluminium 2": "Aluminio 2 claro",
+    "Aluminium 2": "Aluminio 2",
+    "Dark Aluminium 2": "Aluminio 2 oscuro",
+    Black: "Negro",
+    "Very Dark Gray": "Gris muy oscuro",
+    "Darker Gray": "Gris m\xE1s oscuro",
+    "Medium Dark Gray": "Gris medio oscuro",
+    "Medium Gray": "Gris medio",
+    "Light Gray": "Gris claro",
+    "Lighter Gray": "Gris m\xE1s claro",
+    "Very Light Gray": "Gris muy claro",
+    White: "Blanco"
   })
 });
-function toolkitText(text) {
+function toolkitText(text, ...args) {
   const translator = getTranslator();
   if (translator.hasEntry(text)) {
-    return translator.translate(text);
+    return translator.translate(text, ...args);
   }
   const language = getLocaleManager().language;
-  return TOOLKIT_TRANSLATIONS[language]?.[text] ?? text;
+  const translation = TOOLKIT_TRANSLATIONS[language]?.[text] ?? text;
+  return args.length ? formatString(translation, ...args) : translation;
 }
 __name(toolkitText, "toolkitText");
 function bindToolkitText(owner, update) {
@@ -2246,6 +2412,31 @@ function translateLabels(root) {
   }
 }
 __name(translateLabels, "translateLabels");
+
+// src/widgets/double-press.js
+var MULTIPLE_PRESS_DISTANCE = 5;
+function attachDoublePress(element, handler, options = {}) {
+  let last = null;
+  function onPointerDown(event) {
+    if (event.button !== 0) {
+      last = null;
+      return;
+    }
+    const key = options.key ? options.key(event) : null;
+    const now = event.timeStamp || performance.now();
+    const isDouble = last && now - last.time <= settings.multiplePressInterval && Math.hypot(event.clientX - last.x, event.clientY - last.y) <= MULTIPLE_PRESS_DISTANCE && key === last.key;
+    if (isDouble) {
+      last = null;
+      handler(event);
+    } else {
+      last = { time: now, x: event.clientX, y: event.clientY, key };
+    }
+  }
+  __name(onPointerDown, "onPointerDown");
+  element.addEventListener("pointerdown", onPointerDown);
+  return () => element.removeEventListener("pointerdown", onPointerDown);
+}
+__name(attachDoublePress, "attachDoublePress");
 
 // src/widgets/widget.js
 var WIDGET_BY_ELEMENT = /* @__PURE__ */ new WeakMap();
@@ -2273,6 +2464,7 @@ var DOM_TO_TOOLKIT_BUTTON = {
   2: MouseButton.SECONDARY
 };
 var pressState = { time: 0, button: 0, x: 0, y: 0, count: 0 };
+var PRESS_COUNTS = /* @__PURE__ */ new WeakMap();
 var LONGHANDS = Object.freeze({
   margin: ["marginTop", "marginRight", "marginBottom", "marginLeft"],
   flex: ["flexGrow", "flexShrink", "flexBasis"]
@@ -2292,8 +2484,13 @@ function flushLayoutQueue() {
     const widgets = [...LAYOUT_QUEUE];
     LAYOUT_QUEUE.clear();
     for (const widget of widgets) {
-      if (!widget.destroyed) {
+      if (widget.destroyed) {
+        continue;
+      }
+      try {
         widget._updateLayout();
+      } catch (error) {
+        reportError(error);
       }
     }
   }
@@ -2304,14 +2501,18 @@ function flushLayout() {
 }
 __name(flushLayout, "flushLayout");
 function countPress(event) {
+  if (PRESS_COUNTS.has(event)) {
+    return PRESS_COUNTS.get(event);
+  }
   const now = event.timeStamp || performance.now();
   const distance = Math.hypot(event.pageX - pressState.x, event.pageY - pressState.y);
-  if (event.button === pressState.button && now - pressState.time <= settings.multiplePressInterval && distance < 5) {
+  if (event.button === pressState.button && now - pressState.time <= settings.multiplePressInterval && distance <= MULTIPLE_PRESS_DISTANCE) {
     pressState.count += 1;
   } else {
     pressState.count = 1;
   }
   Object.assign(pressState, { time: now, button: event.button, x: event.pageX, y: event.pageY });
+  PRESS_COUNTS.set(event, pressState.count);
   return pressState.count;
 }
 __name(countPress, "countPress");
@@ -2438,6 +2639,42 @@ var Widget = class _Widget extends Instance {
     return this.el;
   }
   /**
+   * Returns the elements that get the `aria-label` of `accessibleName`: the focus element, which
+   * is the root element for widgets without a focus element of their own. Override to name other
+   * elements.
+   *
+   * @protected
+   * @returns {Element[]}
+   */
+  _getAccessibleNameElements() {
+    return [this.focusElement];
+  }
+  /**
+   * Puts `accessibleName` in the `aria-label` of the elements of
+   * `_getAccessibleNameElements()`, or removes it. Widgets that compute their own `aria-label`
+   * override this to combine the two.
+   *
+   * @protected
+   */
+  _syncAccessibleName() {
+    const name = this._accessibleName;
+    for (const element of this._getAccessibleNameElements()) {
+      if (name) {
+        if (element.hasAttribute("aria-labelledby")) {
+          element.dataset.wyLabelledby = element.getAttribute("aria-labelledby");
+          element.removeAttribute("aria-labelledby");
+        }
+        element.setAttribute("aria-label", name);
+      } else {
+        element.removeAttribute("aria-label");
+        if (element.dataset.wyLabelledby) {
+          element.setAttribute("aria-labelledby", element.dataset.wyLabelledby);
+          delete element.dataset.wyLabelledby;
+        }
+      }
+    }
+  }
+  /**
    * The rendered position and size relative to the viewport, or zero if not rendered.
    *
    * @type {{x: number, y: number, width: number, height: number}}
@@ -2558,16 +2795,24 @@ var Widget = class _Widget extends Instance {
     return true;
   }
   /**
-   * Removes the keyboard focus from this widget. Its window keeps no focus widget.
+   * Removes the keyboard focus from this widget. Its window keeps no focus widget, but keeps the
+   * keyboard focus itself if it is active.
    */
   blur() {
     if (!this.isFocus) {
       return;
     }
-    if (this.hasFocus) {
-      this.focusElement.blur();
+    const window2 = this.window;
+    const hadDomFocus = this.focusElement.contains(document.activeElement);
+    window2?._setFocusWidget(null);
+    if (hadDomFocus) {
+      if (window2?.active) {
+        window2.el.tabIndex = -1;
+        window2.el.focus({ preventScroll: true });
+      } else {
+        this.focusElement.blur();
+      }
     }
-    this.window?._setFocusWidget(null);
   }
   /**
    * Connects to a signal. Connecting to `size-allocate` starts observing the rendered size.
@@ -2627,7 +2872,12 @@ var Widget = class _Widget extends Instance {
     if (!parent && this.window && this._containsFocusWidget()) {
       this.window._onFocusWidgetGone(this);
     }
+    const oldParent = this._parent;
     this._parent = parent;
+    if (!parent && oldParent) {
+      this._clearLayoutStyles();
+      this._applyLayoutStyle();
+    }
     this._recalculateVisibility();
     this._recalculateSensitivity();
     this.emit("parent-change", this);
@@ -2662,8 +2912,8 @@ var Widget = class _Widget extends Instance {
    */
   _applyLayoutStyle() {
     const margin = this._margin;
-    const hasMargin = margin.top || margin.right || margin.bottom || margin.left;
-    this._setLayoutStyle("margin", hasMargin ? marginToCss(margin) : "");
+    const hasMargin2 = margin.top || margin.right || margin.bottom || margin.left;
+    this._setLayoutStyle("margin", hasMargin2 ? marginToCss(margin) : "");
     this._setLayoutStyle(
       "justifySelf",
       this._hAlign === Align.FILL ? "" : SELF_ALIGNMENT[this._hAlign]
@@ -2694,16 +2944,30 @@ var Widget = class _Widget extends Instance {
     if (!this._layoutStyles) {
       this._layoutStyles = /* @__PURE__ */ new Set();
     }
-    for (const longhand of LONGHANDS[name] || []) {
-      this._layoutStyles.delete(longhand);
-    }
+    const ownLonghands = (LONGHANDS[name] || []).filter((x) => this._layoutStyles.delete(x));
     if (value) {
       this.el.style[name] = value;
       this._layoutStyles.add(name);
-    } else if (this._layoutStyles.has(name) || LONGHANDS[name]?.some((x) => this.el.style[x])) {
+    } else if (this._layoutStyles.has(name)) {
       this.el.style[name] = "";
       this._layoutStyles.delete(name);
+    } else {
+      for (const longhand of ownLonghands) {
+        this.el.style[longhand] = "";
+      }
     }
+  }
+  /**
+   * Clears all styles set with {@link Widget#_setLayoutStyle}, e.g. when the widget leaves its
+   * container.
+   *
+   * @protected
+   */
+  _clearLayoutStyles() {
+    for (const name of this._layoutStyles || []) {
+      this.el.style[name] = "";
+    }
+    this._layoutStyles?.clear();
   }
   /**
    * Computes whether the widget expands in one direction. Containers also consider their
@@ -3054,6 +3318,21 @@ defineProperties(Widget, {
     }
   },
   /**
+   * The accessible name, for widgets without a visible label (such as an icon button or a line
+   * edit next to a picture), or `''` for none. It is the `aria-label` of the focus element (or of
+   * the root element of widgets that have none of their own). A label whose mnemonic widget
+   * this is names the widget instead.
+   */
+  accessibleName: {
+    value: "",
+    coerce(name) {
+      return name === null || name === void 0 ? "" : String(name);
+    },
+    changed() {
+      this._syncAccessibleName();
+    }
+  },
+  /**
    * The requested width in pixels, or -1 for the natural width. When the widget fills its space
    * horizontally, this is its minimum width.
    */
@@ -3378,7 +3657,15 @@ defineProperties(Screen, {
 var getScreen = lazySingleton(() => new Screen());
 
 // src/core/application.js
-var FOCUSABLE_SELECTOR = 'input, textarea, select, button, a[href], [contenteditable]:not([contenteditable="false"]), [tabindex]:not([tabindex="-1"])';
+var FOCUSABLE_SELECTOR = [
+  "input",
+  "textarea",
+  'select:not([tabindex="-1"])',
+  'button:not([tabindex="-1"])',
+  'a[href]:not([tabindex="-1"])',
+  '[contenteditable]:not([contenteditable="false"])',
+  '[tabindex]:not([tabindex="-1"])'
+].join(", ");
 var THEMES = ["light", "dark", "auto"];
 var ApplicationClass = class extends Instance {
   static {
@@ -3387,6 +3674,7 @@ var ApplicationClass = class extends Instance {
   _initialize() {
     super._initialize();
     this._windows = /* @__PURE__ */ new Set();
+    this._activationOrder = [];
     this._loaded = false;
     this._domListeners = /* @__PURE__ */ new Map();
     if (typeof document === "undefined") {
@@ -3466,11 +3754,37 @@ var ApplicationClass = class extends Instance {
    */
   _removeWindow(window2) {
     this._windows.delete(window2);
+    this._activationOrder = this._activationOrder.filter((x) => x !== window2);
     if (this._activeWindow === window2) {
       this.activeWindow = null;
     }
     if (this._mainWindow === window2) {
       this._setMainWindow(null);
+    }
+  }
+  /**
+   * Activates another window after the active window was hidden or destroyed, like a desktop
+   * window manager: the most recently active window that is still shown, or else the topmost
+   * one. Does nothing if another window is active already.
+   *
+   * @protected
+   * @param {import('../widgets/abstract-window.js').AbstractWindow} window The window that
+   *     is gone.
+   */
+  _activateNextWindow(window2) {
+    if (this._activeWindow) {
+      return;
+    }
+    const modal = this.modalWindow;
+    const candidates = [...this._windows].filter((x) => x !== window2 && x.visible && !x.destroyed).filter((x) => !modal || x === modal || x._isAbove(modal));
+    const recent = [...this._activationOrder].reverse().find((x) => candidates.includes(x));
+    const topmost = candidates.reduce(
+      (result, x) => !result || x._isAbove(result) ? x : result,
+      null
+    );
+    const next = recent || topmost;
+    if (next) {
+      this.activeWindow = next;
     }
   }
   /**
@@ -3617,6 +3931,10 @@ defineProperties(ApplicationClass, {
         return false;
       }
       this._activeWindow = window2;
+      if (window2) {
+        this._activationOrder = this._activationOrder.filter((x) => x !== window2);
+        this._activationOrder.push(window2);
+      }
       old?._setActive(false);
       window2?._setActive(true);
       if (!window2) {
@@ -3732,6 +4050,8 @@ var ANGLE_UNITS = Object.freeze({
 });
 var NUMBER = "[+-]?(?:\\d+\\.?\\d*|\\.\\d+)(?:e[+-]?\\d+)?";
 var COMPONENT_PATTERN = new RegExp(`^(?:(${NUMBER})(%|deg|grad|rad|turn)?|none)$`, "i");
+var CONTEXT_KEYWORD_PATTERN = /^(?:inherit|initial|unset|revert|revert-layer|currentcolor)$/i;
+var PROBE_COLORS = Object.freeze(["rgb(0, 0, 0)", "rgb(255, 255, 255)"]);
 var FUNCTION_PATTERN = /^([a-z-]+)\(\s*(.*?)\s*\)$/i;
 function parseComponent(text) {
   const match = COMPONENT_PATTERN.exec(text);
@@ -3896,30 +4216,43 @@ function parseColorSyntax(text) {
 }
 __name(parseColorSyntax, "parseColorSyntax");
 function resolveWithBrowser(text) {
-  if (typeof document === "undefined" || typeof CSS === "undefined" || typeof getComputedStyle === "undefined" || !CSS.supports("color", text)) {
+  if (typeof document === "undefined" || typeof CSS === "undefined" || typeof getComputedStyle === "undefined" || CONTEXT_KEYWORD_PATTERN.test(text) || !CSS.supports("color", text)) {
     return null;
   }
+  const parent = document.createElement("span");
   const element = document.createElement("span");
-  element.style.display = "none";
-  document.documentElement.append(element);
+  parent.style.display = "none";
+  parent.append(element);
+  document.documentElement.append(parent);
   try {
-    for (const value of [text, `color-mix(in srgb, ${text} 100%, transparent)`]) {
-      element.style.color = "";
-      element.style.color = value;
-      if (!element.style.color) {
-        continue;
-      }
-      const color = parseColorSyntax(getComputedStyle(element).color);
-      if (color) {
-        return color;
-      }
+    const [first, second] = PROBE_COLORS.map((inherited) => {
+      parent.style.color = inherited;
+      return resolveElementColor(element, text);
+    });
+    if (!first || !second || formatHex(first, true) !== formatHex(second, true)) {
+      return null;
     }
-    return null;
+    return first;
   } finally {
-    element.remove();
+    parent.remove();
   }
 }
 __name(resolveWithBrowser, "resolveWithBrowser");
+function resolveElementColor(element, text) {
+  for (const value of [text, `color-mix(in srgb, ${text} 100%, transparent)`]) {
+    element.style.color = "";
+    element.style.color = value;
+    if (!element.style.color) {
+      continue;
+    }
+    const color = parseColorSyntax(getComputedStyle(element).color);
+    if (color) {
+      return color;
+    }
+  }
+  return null;
+}
+__name(resolveElementColor, "resolveElementColor");
 function parseColor(text) {
   if (typeof text !== "string" || !text.trim()) {
     return null;
@@ -4146,6 +4479,9 @@ function pointRectangle(x, y) {
 }
 __name(pointRectangle, "pointRectangle");
 
+// src/core/version.js
+var VERSION = "1.0.0";
+
 // src/events/drag-context.js
 var DragAction = Object.freeze({
   MOVE: "move",
@@ -4289,8 +4625,10 @@ var DragManager = class {
     this._context = null;
     this._sourceWidget = null;
     this._targetWidget = null;
+    this._pointerId = null;
     this._iconEl = null;
     this._suppressClick = false;
+    this._pointerId = null;
     this._onPointerMove = this._onPointerMove.bind(this);
     this._onPointerUp = this._onPointerUp.bind(this);
     this._onKeyDown = this._onKeyDown.bind(this);
@@ -4375,7 +4713,7 @@ var DragManager = class {
       }
       return;
     }
-    if (this._context) {
+    if (this._context && event.pointerId === this._pointerId) {
       this._move(event);
     }
   }
@@ -4412,6 +4750,7 @@ var DragManager = class {
     });
     this._context = context;
     this._sourceWidget = source;
+    this._pointerId = pending.pointerId;
     try {
       pending.target.releasePointerCapture?.(pending.pointerId);
     } catch (_error) {
@@ -4478,7 +4817,7 @@ var DragManager = class {
       this._removeListeners();
       return;
     }
-    if (!this._context) {
+    if (!this._context || event.pointerId !== this._pointerId) {
       return;
     }
     this._suppressClick = true;
@@ -4531,6 +4870,7 @@ var DragManager = class {
     this._context = null;
     this._sourceWidget = null;
     this._targetWidget = null;
+    this._pointerId = null;
     this._removeListeners();
     this._hideIcon();
     getCursor().popShape("drag");
@@ -4705,8 +5045,12 @@ var Container = class _Container extends Widget {
     this._children.splice(oldIndex, 1);
     index = Math.max(0, Math.min(index, this._children.length));
     this._children.splice(index, 0, widget);
+    const focused = widget.el.contains(document.activeElement) ? document.activeElement : null;
     this._detachChildElement(widget);
     this._attachChildElement(widget, index);
+    if (focused && focused.isConnected && document.activeElement !== focused) {
+      focused.focus({ preventScroll: true });
+    }
     this._onChildrenChange();
   }
   /**
@@ -4940,16 +5284,16 @@ var AbstractMenuItem = class _AbstractMenuItem extends Container {
     return this.isVisible && this.isSensitive;
   }
   /**
-   * Whether the item and the items its menu hangs from are all sensitive, so that it can be
-   * activated, e.g. by its accelerator.
+   * Whether the item and the items its menu hangs from are all visible and sensitive, so that
+   * it can be activated, e.g. by its accelerator, like in GTK.
    *
    * @protected
    * @returns {boolean}
    */
-  _isChainSensitive() {
+  _isChainActivatable() {
     let item = this;
     while (item) {
-      if (!item.isSensitive) {
+      if (!item.visible || !item.isSensitive) {
         return false;
       }
       const shell = item.parent;
@@ -5244,12 +5588,13 @@ function attachPressRepeat(element, options) {
   let lastEvent = null;
   let stop = null;
   function onPointerDown(event) {
-    if (event.button !== 0 || pointerId !== null) {
+    if (event.button !== 0 || pointerId !== null && event.pointerId !== pointerId) {
       return;
     }
     if (options.canStart && !options.canStart(event)) {
       return;
     }
+    stop?.();
     event.preventDefault();
     pointerId = event.pointerId;
     inside = true;
@@ -5500,7 +5845,7 @@ var AbstractSlider = class extends Widget {
       const current = this._measure({ clientX: position, clientY: position });
       const before = position < current.thumbStart;
       const after = position >= current.thumbStart + current.thumbLength;
-      if (!before && !after) {
+      if (!before && !after || !this.isSensitive) {
         return false;
       }
       const adjustment = this._adjustment;
@@ -5760,6 +6105,14 @@ var AbstractToolItem = class extends Container {
     return null;
   }
   /**
+   * Called before a menu proxy of this item is destroyed, to take back what it lent to it.
+   *
+   * @protected
+   * @param {import('./abstract-menu-item.js').AbstractMenuItem} _proxy
+   */
+  _releaseMenuProxy(_proxy) {
+  }
+  /**
    * Called when the tool bar's style, icon size or orientation changed, and when the item was
    * added to a tool bar.
    *
@@ -5847,10 +6200,13 @@ var AbstractWindow = class extends Bin {
   /**
    * Moves the focus within the window.
    *
-   * @param {number} direction One of `FocusDirection`.
+   * @param {string} direction One of `FocusDirection`.
    * @returns {boolean} Whether a widget got the focus.
    */
   moveFocus(direction) {
+    if (!Object.values(FocusDirection).includes(direction)) {
+      throw new RangeError(`Invalid focus direction '${direction}'.`);
+    }
     const chain = this._getFocusChain();
     if (!chain.length) {
       return false;
@@ -5886,11 +6242,15 @@ var AbstractWindow = class extends Bin {
     return false;
   }
   destroy() {
-    if (this._active) {
+    const wasActive = this._active;
+    if (wasActive) {
       Application.activeWindow = null;
     }
     super.destroy();
     Application._removeWindow(this);
+    if (wasActive) {
+      Application._activateNextWindow(this);
+    }
   }
   /**
    * The stacking order of the window; higher is on top.
@@ -5937,6 +6297,7 @@ var AbstractWindow = class extends Bin {
       }
     } else if (this._active) {
       Application.activeWindow = null;
+      Application._activateNextWindow(this);
     }
   }
   _isShown() {
@@ -5957,20 +6318,29 @@ var AbstractWindow = class extends Bin {
     this.el.classList.toggle("wy-active", active);
     if (active) {
       this._raise();
-      if (!this.el.contains(document.activeElement) || document.activeElement === this.el) {
-        if (!this._focusWidget || !this._focusWidget.focus()) {
-          this.moveFocus(FocusDirection.START);
-        }
-      }
-      if (!this.el.contains(document.activeElement)) {
-        this.el.tabIndex = -1;
-        this.el.focus({ preventScroll: true });
-      }
+      this._takeFocus();
     } else if (this.el.contains(document.activeElement)) {
       document.activeElement.blur();
     }
     this._syncFocusStates();
     this.emit("active-change", this);
+  }
+  /**
+   * Moves the keyboard focus into the window: to its focus widget, or else the first widget that
+   * can take it, or else the window itself so that it gets key events.
+   *
+   * @protected
+   */
+  _takeFocus() {
+    if (!this.el.contains(document.activeElement) || document.activeElement === this.el) {
+      if (!this._focusWidget || !this._focusWidget.focus()) {
+        this.moveFocus(FocusDirection.START);
+      }
+    }
+    if (!this.el.contains(document.activeElement)) {
+      this.el.tabIndex = -1;
+      this.el.focus({ preventScroll: true });
+    }
   }
   /**
    * Brings the window to the front. Overridden by floating windows.
@@ -6064,6 +6434,11 @@ var AbstractWindow = class extends Bin {
   }
   _onFocusIn(event) {
     this._activateFromFocus();
+    const activeWindow = Application.activeWindow;
+    if (!this._active && activeWindow && activeWindow !== this) {
+      activeWindow._takeFocus();
+      return;
+    }
     let widget = Widget.fromElement(event.target);
     while (widget && widget !== this && !widget.focusElement.contains(event.target)) {
       widget = widget.parent;
@@ -6827,7 +7202,7 @@ var Box = class extends Container {
     if (this._homogeneous) {
       child._setLayoutStyle("flex", "");
       child._setLayoutStyle("alignSelf", crossAlignment(child.vAlign));
-      child._setLayoutStyle("margin", marginToCss(margin));
+      child._setLayoutStyle("margin", hasMargin(margin) ? marginToCss(margin) : "");
       return;
     }
     child._setLayoutStyle(
@@ -6852,6 +7227,10 @@ var Box = class extends Container {
     child._setLayoutStyle("margin", value === "0px 0px 0px 0px" ? "" : value);
   }
 };
+function hasMargin(margin) {
+  return Boolean(margin.top || margin.right || margin.bottom || margin.left);
+}
+__name(hasMargin, "hasMargin");
 function crossAlignment(align) {
   return align === Align.FILL ? "" : SELF_ALIGNMENT[align];
 }
@@ -6927,7 +7306,8 @@ function attachButtonBehavior(widget, options) {
   }
   __name(activateWithFlash, "activateWithFlash");
   function onPointerDown(event) {
-    if (event.button !== 0 || !widget.isSensitive || pointerId !== null) {
+    const busy = pointerId !== null && event.pointerId !== pointerId;
+    if (event.button !== 0 || !widget.isSensitive || busy) {
       return;
     }
     clearEnterTimer();
@@ -7415,8 +7795,8 @@ var ICON_PATHS = {
   "view-list": ["M5.5 4h8M5.5 8h8M5.5 12h8", "F2 3h2v2H2zM2 7h2v2H2zM2 11h2v2H2z"],
   "view-grid": ["M2.5 2.5h4v4h-4zM9.5 2.5h4v4h-4zM2.5 9.5h4v4h-4zM9.5 9.5h4v4h-4z"],
   "view-fullscreen": ["M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"],
-  "view-sort-ascending": ["M4.5 2v12M2 11.5l2.5 2.5 2.5-2.5", "M9 4h5M9 8h3.5M9 12h2"],
-  "view-sort-descending": ["M4.5 2v12M2 11.5l2.5 2.5 2.5-2.5", "M9 4h2M9 8h3.5M9 12h5"],
+  "view-sort-ascending": ["M4.5 2v12M2 11.5l2.5 2.5 2.5-2.5", "M9 4h2M9 8h3.5M9 12h5"],
+  "view-sort-descending": ["M4.5 2v12M2 11.5l2.5 2.5 2.5-2.5", "M9 4h5M9 8h3.5M9 12h2"],
   "zoom-in": ["M10.5 6.5a4 4 0 1 1-8 0 4 4 0 0 1 8 0z", "M9.5 9.5l5 5", "M4.5 6.5h4M6.5 4.5v4"],
   "zoom-out": ["M10.5 6.5a4 4 0 1 1-8 0 4 4 0 0 1 8 0z", "M9.5 9.5l5 5", "M4.5 6.5h4"],
   "zoom-fit-best": ["M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4", "M5.5 5.5h5v5h-5z"],
@@ -7448,8 +7828,8 @@ var ICON_PATHS = {
     "F7.05 12a0.95 0.95 0 1 0 1.9 0a0.95 0.95 0 1 0 -1.9 0z"
   ],
   "preferences-system": [
-    "M10 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0z",
-    "M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"
+    "M12.7 6.7L14.4 7v2l-1.7.3-.5 1.1 1.1 1.4-1.5 1.5-1.3-1.1-1.2.5L9 14.4H7l-.3-1.7-1.1-.5-1.4 1.1-1.5-1.5 1.1-1.4-.5-1.1L1.6 9V7l1.7-.3.5-1.2-1.1-1.3 1.5-1.5 1.3 1.1 1.2-.5L7 1.6h2l.3 1.7 1.2.5 1.3-1.1 1.5 1.5-1.1 1.3z",
+    "M10 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"
   ],
   "window-close": ["M3.5 3.5l9 9m0-9l-9 9"],
   "window-new": ["M1.5 2.5h13v11h-13z", "M1.5 5.5h13"],
@@ -7544,7 +7924,7 @@ var Image = class extends Widget {
     __name(this, "Image");
   }
   _render() {
-    const element = createElement('<span class="wy-image" role="img"></span>');
+    const element = createElement('<span class="wy-image" aria-hidden="true"></span>');
     this._pictureEl = null;
     return element;
   }
@@ -7575,6 +7955,18 @@ var Image = class extends Widget {
     this._pictureEl = picture;
     this.el.append(picture);
     this._applyPixelSize();
+  }
+  _syncAccessibleName() {
+    const name = this._accessibleName || this._alternativeText;
+    if (name) {
+      this.el.setAttribute("role", "img");
+      this.el.setAttribute("aria-label", name);
+      this.el.removeAttribute("aria-hidden");
+    } else {
+      this.el.removeAttribute("role");
+      this.el.removeAttribute("aria-label");
+      this.el.setAttribute("aria-hidden", "true");
+    }
   }
   _applyPixelSize() {
     const size = this._pixelSize > 0 ? `${this._pixelSize}px` : "";
@@ -7619,19 +8011,16 @@ defineProperties(Image, {
     }
   },
   /**
-   * A text alternative for assistive technology.
+   * A text alternative for assistive technology, used when `accessibleName` is not set. An image
+   * without either is decorative and hidden from assistive technology.
    */
   alternativeText: {
     value: "",
     changed(text) {
-      if (text) {
-        this.el.setAttribute("aria-label", text);
-      } else {
-        this.el.removeAttribute("aria-label");
-      }
       if (this._pictureEl) {
         this._pictureEl.alt = text;
       }
+      this._syncAccessibleName();
     }
   }
 });
@@ -7933,6 +8322,7 @@ var Label = class extends Widget {
     super._initialize();
     this._id = "";
     this._mnemonicKey = "";
+    this._mnemonicWidgetDisconnect = null;
     this._renderContent();
     this._applyStyles();
   }
@@ -7942,6 +8332,7 @@ var Label = class extends Widget {
   destroy() {
     MNEMONIC_LABELS.delete(this);
     this._unlinkMnemonicWidget(this._mnemonicWidget);
+    this._mnemonicWidgetDisconnect?.();
     super.destroy();
   }
   _applyLayoutStyle() {
@@ -8162,8 +8553,16 @@ defineProperties(Label, {
         throw new TypeError("The mnemonic widget must be a widget or null.");
       }
       this._unlinkMnemonicWidget(this._mnemonicWidget);
+      this._mnemonicWidgetDisconnect?.();
+      this._mnemonicWidgetDisconnect = null;
       this._mnemonicWidget = widget;
       this._linkMnemonicWidget(widget);
+      if (widget) {
+        this._mnemonicWidgetDisconnect = widget.connect(
+          "destroy",
+          () => this.mnemonicWidget = null
+        );
+      }
     }
   },
   /**
@@ -8572,31 +8971,6 @@ defineProperties(Button, {
 });
 registerType("button", Button);
 
-// src/widgets/double-press.js
-var MAX_DISTANCE = 5;
-function attachDoublePress(element, handler, options = {}) {
-  let last = null;
-  function onPointerDown(event) {
-    if (event.button !== 0) {
-      last = null;
-      return;
-    }
-    const key = options.key ? options.key(event) : null;
-    const now = event.timeStamp || performance.now();
-    const isDouble = last && now - last.time <= settings.multiplePressInterval && Math.hypot(event.clientX - last.x, event.clientY - last.y) <= MAX_DISTANCE && key === last.key;
-    if (isDouble) {
-      last = null;
-      handler(event);
-    } else {
-      last = { time: now, x: event.clientX, y: event.clientY, key };
-    }
-  }
-  __name(onPointerDown, "onPointerDown");
-  element.addEventListener("pointerdown", onPointerDown);
-  return () => element.removeEventListener("pointerdown", onPointerDown);
-}
-__name(attachDoublePress, "attachDoublePress");
-
 // src/widgets/calendar.js
 var WEEKS = 6;
 var NAVIGATION_LABELS = Object.freeze({
@@ -8748,6 +9122,17 @@ var Calendar = class extends Widget {
    */
   get focusElement() {
     return this._gridEl;
+  }
+  _syncAccessibleName() {
+    super._syncAccessibleName();
+    const grid = this._gridEl;
+    const labels = `${this._monthEl.id} ${this._yearEl.id}`;
+    if (this._accessibleName) {
+      grid.id ||= uniqueId("wy-calendar-grid");
+      grid.setAttribute("aria-labelledby", `${grid.id} ${labels}`);
+    } else {
+      grid.setAttribute("aria-labelledby", labels);
+    }
   }
   /**
    * Selects a day, as if the user did.
@@ -8985,13 +9370,13 @@ var Calendar = class extends Widget {
   }
   _onGridClick(event) {
     const cell = event.target.closest(".wy-calendar-day");
-    if (cell && this._activateOnClick && this._isInRange(this._dayFromCell(cell))) {
+    if (cell && this._activateOnSingleClick && this._isInRange(this._dayFromCell(cell))) {
       this.emit("day-activate", this);
     }
   }
   _onGridDoubleClick(event) {
     const cell = event.target.closest(".wy-calendar-day");
-    if (cell && !this._activateOnClick && this._isInRange(this._dayFromCell(cell))) {
+    if (cell && !this._activateOnSingleClick && this._isInRange(this._dayFromCell(cell))) {
       this.emit("day-activate", this);
     }
   }
@@ -9154,7 +9539,7 @@ defineProperties(Calendar, {
   /**
    * Whether a single click on a day also activates it, as in a date picker.
    */
-  activateOnClick: { value: false, coerce: Boolean }
+  activateOnSingleClick: { value: false, coerce: Boolean }
 });
 registerType("calendar", Calendar);
 
@@ -9171,19 +9556,16 @@ var ToggleButton = class extends Button {
     return createElement('<div class="wy-button wy-toggle-button" role="button"></div>');
   }
   /**
-   * Makes the button active. The same as setting `active` to `true`.
+   * Activates the button, as if the user clicked it: clears `inconsistent`, toggles `active` and
+   * emits `activate`.
    */
   activate() {
-    this.active = true;
+    this.inconsistent = false;
+    this.toggle();
+    this.emit("activate", this);
   }
   /**
-   * Makes the button inactive. The same as setting `active` to `false`.
-   */
-  deactivate() {
-    this.active = false;
-  }
-  /**
-   * Toggles the button.
+   * Toggles `active`, without emitting `activate`.
    */
   toggle() {
     this.active = !this._active;
@@ -9203,10 +9585,6 @@ var ToggleButton = class extends Button {
       this.group = new ButtonGroup();
     }
     this._group.addButton(button);
-  }
-  _onClicked() {
-    this.inconsistent = false;
-    this.toggle();
   }
   /**
    * Updates the state classes and the accessible state.
@@ -9245,9 +9623,8 @@ defineProperties(ToggleButton, {
   active: {
     value: false,
     coerce: Boolean,
-    changed(active) {
+    changed() {
       this._updateState();
-      this.emit(active ? "activate" : "deactivate", this);
       this.emit("toggle", this);
     }
   },
@@ -9389,7 +9766,7 @@ var MenuItem = class _MenuItem extends AbstractMenuItem {
    * @returns {boolean} Whether it was activated.
    */
   _activateByAccelerator() {
-    if (!this.visible || !this._isChainSensitive()) {
+    if (!this._isChainActivatable()) {
       return false;
     }
     this._flashTopLevelItem();
@@ -9631,7 +10008,8 @@ var CheckMenuItem = class extends MenuItem {
     return "menuitemcheckbox";
   }
   /**
-   * Activates the item: toggles it and emits `activate`. Does nothing if it is insensitive.
+   * Activates the item, as the user does: clears `inconsistent`, toggles `active` and emits
+   * `activate`. Does nothing if it is insensitive.
    *
    * @returns {boolean} Whether the item was activated.
    */
@@ -9697,6 +10075,59 @@ defineProperties(CheckMenuItem, {
   }
 });
 registerType("check-menu-item", CheckMenuItem);
+
+// src/widgets/radio-menu-item.js
+var RadioMenuItem = class extends CheckMenuItem {
+  static {
+    __name(this, "RadioMenuItem");
+  }
+  _initialize() {
+    super._initialize();
+    this.el.classList.add("wy-radio-menu-item");
+  }
+  _getRole() {
+    return "menuitemradio";
+  }
+  /**
+   * Joins another item to this item's group. The group is created on first use.
+   *
+   * @param {RadioMenuItem | import('./widget.js').Widget} button
+   */
+  join(button) {
+    if (!this._group) {
+      this.group = new ButtonGroup();
+    }
+    this._group.addButton(button);
+  }
+  _toggleOnActivate() {
+    this.inconsistent = false;
+    this.active = true;
+  }
+  destroy() {
+    this.group = null;
+    super.destroy();
+  }
+};
+defineProperties(RadioMenuItem, {
+  drawAsRadio: { value: true },
+  /**
+   * The `ButtonGroup` of the item, or `null`. Items of the same group exclude each other.
+   */
+  group: {
+    value: null,
+    set(group) {
+      const old = this._group;
+      this._group = group;
+      if (old && old.buttons.includes(this)) {
+        old.removeButton(this);
+      }
+      if (group && !group.buttons.includes(this)) {
+        group.addButton(this);
+      }
+    }
+  }
+});
+registerType("radio-menu-item", RadioMenuItem);
 
 // src/widgets/tool-item.js
 var ToolItem = class extends AbstractToolItem {
@@ -9805,8 +10236,22 @@ var ToolItem = class extends AbstractToolItem {
       icon: this._icon,
       sensitive: this.sensitive
     });
-    proxy.connect("activate", () => this._onUserActivate());
+    if (this._submenu) {
+      proxy._setSubmenu(this._submenu, false);
+    } else {
+      proxy.connect("activate", () => this._onUserActivate());
+    }
     return proxy;
+  }
+  _releaseMenuProxy(proxy) {
+    const submenu = this._submenu;
+    if (!submenu || proxy.submenu !== submenu) {
+      return;
+    }
+    proxy._setSubmenu(null, false);
+    if (!submenu.destroyed) {
+      submenu._setAttachWidget(this);
+    }
   }
   _onToolBarChange() {
     const toolBar = this.toolBar;
@@ -9914,8 +10359,12 @@ var ToolItem = class extends AbstractToolItem {
     renderMnemonicLabel(this._labelEl, this._label, this._useUnderline);
     const text = parseMnemonic(this._label, this._useUnderline).text;
     this.el.classList.toggle("wy-has-label", Boolean(text));
-    if (text) {
-      this.el.setAttribute("aria-label", text);
+    this._syncAccessibleName();
+  }
+  _syncAccessibleName() {
+    const name = this._accessibleName || parseMnemonic(this._label, this._useUnderline).text;
+    if (name) {
+      this.el.setAttribute("aria-label", name);
     } else {
       this.el.removeAttribute("aria-label");
     }
@@ -10024,7 +10473,8 @@ var CheckToolItem = class extends ToolItem {
     this._updateActiveState();
   }
   /**
-   * Activates the item: toggles it and emits `activate`. Does nothing if it is insensitive.
+   * Activates the item, as the user does: toggles `active` and emits `activate`. Does nothing if
+   * it is insensitive.
    *
    * @returns {boolean} Whether the item was activated.
    */
@@ -10045,11 +10495,11 @@ var CheckToolItem = class extends ToolItem {
     this.active = !this._active;
   }
   _createMenuProxy() {
-    const proxy = new CheckMenuItem({
+    const ProxyClass = this._getRole() === "radio" ? RadioMenuItem : CheckMenuItem;
+    const proxy = new ProxyClass({
       label: this._getMenuLabel(),
       useUnderline: this._useUnderline,
       active: this._active,
-      drawAsRadio: this._getRole() === "radio",
       sensitive: this.sensitive
     });
     proxy.connect("activate", () => this._onUserActivate());
@@ -10102,6 +10552,7 @@ var LineEdit = class extends Widget {
   }
   _initialize() {
     super._initialize();
+    this._validatorDisconnect = null;
     this._inputEl.addEventListener("input", () => this._onInput());
     this._inputEl.addEventListener("keydown", (event) => this._onInputKeyDown(event));
     this._inputEl.addEventListener("blur", () => this._onInputBlur());
@@ -10151,6 +10602,11 @@ var LineEdit = class extends Widget {
   activate() {
     this._fixup();
     this.emit("activate", this);
+  }
+  destroy() {
+    this._validatorDisconnect?.();
+    this._validatorDisconnect = null;
+    super.destroy();
   }
   /**
    * Selects a range of characters. The selection is kept when the line edit gets the focus.
@@ -10570,11 +11026,18 @@ defineProperties(LineEdit, {
   /**
    * The validator of the text, or `null`: an object with a `validate(text)` method (and
    * optionally `fixup(text)`), or a function. An invalid text is shown in the invalid state.
+   * The text is validated again when a validator with a `change` signal (such as the
+   * validators of `data/validators`) emits it.
    */
   validator: {
     value: null,
     coerce: checkValidator,
-    changed() {
+    changed(validator) {
+      this._validatorDisconnect?.();
+      this._validatorDisconnect = null;
+      if (typeof validator?.connect === "function") {
+        this._validatorDisconnect = validator.connect("change", () => this._revalidate());
+      }
       this._revalidate();
     }
   },
@@ -10652,19 +11115,6 @@ defineProperties(LineEdit, {
       const index = Math.max(0, Math.min(Number(position) || 0, this._inputEl.value.length));
       this._inputEl.setSelectionRange(index, index);
       return false;
-    }
-  },
-  /**
-   * The accessible name of the input, for line edits without a visible label.
-   */
-  accessibleName: {
-    value: "",
-    changed(name) {
-      if (name) {
-        this._inputEl.setAttribute("aria-label", name);
-      } else {
-        this._inputEl.removeAttribute("aria-label");
-      }
     }
   }
 });
@@ -10932,8 +11382,8 @@ var TANGO_HUES = Object.freeze([
   ["Sky Blue", ["#729fcf", "#3465a4", "#204a87"]],
   ["Plum", ["#ad7fa8", "#75507b", "#5c3566"]],
   ["Chocolate", ["#e9b96e", "#c17d11", "#8f5902"]],
-  ["Aluminium", ["#888a85", "#555753", "#2e3436"]],
-  ["Light Aluminium", ["#eeeeec", "#d3d7cf", "#babdb6"]]
+  ["Aluminium 2", ["#888a85", "#555753", "#2e3436"]],
+  ["Aluminium 1", ["#eeeeec", "#d3d7cf", "#babdb6"]]
 ]);
 var TANGO_GRAYS = Object.freeze([
   ["Black", "#000000"],
@@ -10996,7 +11446,14 @@ var ColorSwatch = class extends Widget {
     this.el.style.setProperty("--wy-swatch-color", formatHex(color));
     this.el.style.setProperty("--wy-swatch-opaque", formatHex(color, false));
     this.el.classList.toggle("wy-translucent", color.a < 1);
-    this.el.setAttribute("aria-label", formatHex(color));
+    const hex = formatHex(color);
+    this.el.setAttribute(
+      "aria-label",
+      this._accessibleName ? `${this._accessibleName}: ${hex}` : hex
+    );
+  }
+  _syncAccessibleName() {
+    this._syncColor();
   }
 };
 defineProperties(ColorSwatch, {
@@ -11028,6 +11485,7 @@ var ColorPalette = class extends Widget {
       key: /* @__PURE__ */ __name((event) => this._getSwatchIndex(event.target), "key")
     });
     this._renderSwatches();
+    bindToolkitText(this, () => this._translateSwatches());
   }
   _render() {
     return createElement(
@@ -11061,14 +11519,20 @@ var ColorPalette = class extends Widget {
       swatch.id = `${this._listId}-${index}`;
       swatch.dataset.index = String(index);
       swatch.setAttribute("role", "option");
-      swatch.setAttribute("aria-label", entry.name);
-      swatch.title = entry.name;
       swatch.style.setProperty("--wy-swatch-color", entry.color);
       swatch.classList.toggle("wy-light", getLuminance(color) > 0.45);
       this.el.append(swatch);
     });
     this._cursor = Math.min(this._cursor, this._colors.length - 1);
+    this._translateSwatches();
     this._syncSwatches();
+  }
+  _translateSwatches() {
+    for (const swatch of this.el.children) {
+      const name = toolkitText(this._colors[Number(swatch.dataset.index)].name);
+      swatch.setAttribute("aria-label", name);
+      swatch.title = name;
+    }
   }
   _syncSwatches() {
     const selected = this._selected;
@@ -11206,7 +11670,7 @@ var ColorPlane = class extends Widget {
     this.el.addEventListener("pointerup", (event) => this._onPointerUp(event));
     this.el.addEventListener("pointercancel", (event) => this._onPointerUp(event));
     this.el.addEventListener("keydown", (event) => this._onKeyDown(event));
-    this._sync();
+    bindToolkitText(this, () => this._sync());
   }
   _render() {
     return createElement(`
@@ -11239,7 +11703,10 @@ var ColorPlane = class extends Widget {
     this.el.style.setProperty("--wy-plane-x", String(this._saturation));
     this.el.style.setProperty("--wy-plane-y", String(1 - this._value));
     this.el.setAttribute("aria-valuenow", String(value));
-    this.el.setAttribute("aria-valuetext", `Saturation ${saturation}%, value ${value}%`);
+    this.el.setAttribute(
+      "aria-valuetext",
+      toolkitText("Saturation %d%%, value %d%%", saturation, value)
+    );
   }
   _setFromPointer(event) {
     const rect = this.el.getBoundingClientRect();
@@ -11371,7 +11838,7 @@ var ColorChooser = class extends Box {
     this._hueSlider.addStyleClass("wy-color-chooser-hue");
     bindToolkitText(
       this._hueSlider,
-      () => this._hueSlider.el.setAttribute("aria-label", toolkitText("Hue"))
+      () => this._hueSlider.accessibleName = toolkitText("Hue")
     );
     this._hueSlider.connect("value-change", () => this._onHueChange());
     this._alphaSlider = new Slider({
@@ -11387,7 +11854,7 @@ var ColorChooser = class extends Box {
     this._alphaSlider.addStyleClass("wy-color-chooser-alpha");
     bindToolkitText(
       this._alphaSlider,
-      () => this._alphaSlider.el.setAttribute("aria-label", toolkitText("Alpha"))
+      () => this._alphaSlider.accessibleName = toolkitText("Alpha")
     );
     this._alphaSlider.connect("value-change", () => this._onAlphaChange());
     this._preview = new ColorSwatch();
@@ -11395,9 +11862,12 @@ var ColorChooser = class extends Box {
     this._entry = new LineEdit({
       hExpand: true,
       widthChars: 12,
-      accessibleName: toolkitText("Color name"),
       validator: /* @__PURE__ */ __name((text) => parseColor(text) !== null, "validator")
     });
+    bindToolkitText(
+      this._entry,
+      () => this._entry.accessibleName = toolkitText("Color name")
+    );
     this._entry.addStyleClass("wy-color-chooser-entry");
     this._entry.connect("change", () => this._onEntryChange());
     this._entry.connect("activate", () => this._onEntryActivate());
@@ -11583,7 +12053,7 @@ var ColorChooser = class extends Box {
     if (this._syncing) {
       return;
     }
-    this._setHsv({ ...this._hsv, h: this._hueSlider.value % 360 }, this._alpha);
+    this._setHsv({ ...this._hsv, h: this._hueSlider.value }, this._alpha);
     this._applyEditor();
   }
   _onAlphaChange() {
@@ -11829,6 +12299,9 @@ var Window = class extends AbstractWindow {
   resize(width, height) {
     this._userSize = { width, height };
     this._applySize();
+    if (this._restoreRect) {
+      this._restoreRect.size = { width, height };
+    }
     this._constrain();
     this.emit("size-change", this);
   }
@@ -11878,11 +12351,11 @@ var Window = class extends AbstractWindow {
   _onVisibleChange(visible) {
     if (visible) {
       getScreen().layer.append(this.el);
+      this._raise();
+      this._syncOverlay();
     }
     super._onVisibleChange(visible);
     if (visible) {
-      this._raise();
-      this._syncOverlay();
       if (!this._placed) {
         this._placed = true;
         if (this._x < 0 || this._y < 0) {
@@ -12117,6 +12590,10 @@ defineProperties(Window, {
         return false;
       }
       this._placed = this._visible || this._placed;
+      if (this._restoreRect) {
+        this._restoreRect.x = position.x;
+        this._restoreRect.y = position.y;
+      }
       if (this._visible) {
         this._setPosition(position.x, position.y);
         this._constrain();
@@ -12220,7 +12697,12 @@ defineProperties(Window, {
   destroyOnClose: { value: true },
   modal: {
     value: false,
-    changed() {
+    changed(modal) {
+      if (modal) {
+        this.el.setAttribute("aria-modal", "true");
+      } else {
+        this.el.removeAttribute("aria-modal");
+      }
       this._syncOverlay();
       this._raise();
     }
@@ -12282,6 +12764,7 @@ var Dialog = class extends Window {
     this._responding = 0;
     this._closeAfterResponse = false;
     this._parentHandler = null;
+    this._previousWindow = null;
     this.el.classList.add("wy-dialog");
     this._vbox = new Box({ orientation: Orientation.VERTICAL });
     this._vbox.addStyleClass("wy-dialog-vbox");
@@ -12494,15 +12977,43 @@ var Dialog = class extends Window {
     }
     this._parentHandler?.();
     this._parentHandler = null;
+    const wasActive = this._visible && this._active;
     super.destroy();
     this._settle(Response.NONE);
+    if (wasActive) {
+      this._activatePreviousWindow();
+    }
   }
   _onVisibleChange(visible) {
+    const wasActive = this._active;
+    if (visible) {
+      const active = Application.activeWindow;
+      this._previousWindow = active !== this ? active : null;
+    }
     super._onVisibleChange(visible);
+    if (!visible) {
+      this._settle(Response.NONE);
+      if (wasActive) {
+        this._activatePreviousWindow();
+      }
+      return;
+    }
     const button = this._defaultResponse !== null && this._buttons.get(this._defaultResponse);
     const focusWidget = this._focusWidget;
     if (visible && button && (!focusWidget || this._actionArea.isAncestorOf(focusWidget)) && button !== focusWidget) {
       button.focus();
+    }
+  }
+  _activatePreviousWindow() {
+    const previous = this._previousWindow;
+    this._previousWindow = null;
+    for (const window2 of [previous, this._transientFor]) {
+      if (window2 && !window2.destroyed && window2.visible && window2 !== this) {
+        if (!Application.activeWindow) {
+          window2.active = true;
+        }
+        return;
+      }
     }
   }
   _settle(response) {
@@ -12742,8 +13253,12 @@ var Popover = class _Popover extends Bin {
       return;
     }
     this._isOpen = false;
+    const hadFocus = this.el.contains(document.activeElement);
     this._listen(false);
     this.el.remove();
+    if (hadFocus) {
+      this._restoreFocus();
+    }
     this._recalculateVisibility();
     this.emit("is-open-change", this);
     this.emit("close", this, reason);
@@ -12783,7 +13298,17 @@ var Popover = class _Popover extends Bin {
     if (!node) {
       return false;
     }
-    if (this.el.contains(node) || this._owner?.el.contains(node)) {
+    return Boolean(this._owner?.el.contains(node)) || this._containsPopupElement(node);
+  }
+  /**
+   * Whether an element is in the popover, or in a nested popover whose owner is in it (such as
+   * the list of a combo box in the popover).
+   *
+   * @param {Node} node
+   * @returns {boolean}
+   */
+  _containsPopupElement(node) {
+    if (this.el.contains(node)) {
       return true;
     }
     let popover = Widget.fromElement(node);
@@ -12791,7 +13316,7 @@ var Popover = class _Popover extends Bin {
       popover = popover.parent;
     }
     const owner = popover && popover !== this ? popover.owner : null;
-    return Boolean(owner && this.el.contains(owner.el));
+    return Boolean(owner && this._containsPopupElement(owner.el));
   }
   destroy() {
     this.popdown(PopoverCloseReason.OWNER);
@@ -12800,6 +13325,21 @@ var Popover = class _Popover extends Bin {
   }
   _isShown() {
     return this._visible && this._isOpen;
+  }
+  /**
+   * Gives the keyboard focus back to the owner (or its window) after the popover had it.
+   */
+  _restoreFocus() {
+    const owner = this._owner;
+    const window2 = owner && !owner.destroyed ? owner.window : null;
+    if (!window2?.active) {
+      return;
+    }
+    if (owner.focus() || window2.focusWidget?.focus()) {
+      return;
+    }
+    window2.el.tabIndex = -1;
+    window2.el.focus({ preventScroll: true });
   }
   _getAnchorTarget() {
     const anchor = this._anchor || this._owner;
@@ -12859,7 +13399,7 @@ var Popover = class _Popover extends Bin {
     this.popdown(PopoverCloseReason.ESCAPE);
   }
   _onDocumentScroll(event) {
-    if (this._closeOnScroll && !this.el.contains(event.target)) {
+    if (this._closeOnScroll && !this._containsPopupElement(event.target)) {
       this.popdown(PopoverCloseReason.SCROLL);
     }
   }
@@ -12977,7 +13517,7 @@ var ColorButton = class extends Button {
     this._swatch = new ColorSwatch({ hAlign: Align.CENTER });
     this._swatch.addStyleClass("wy-color-button-swatch");
     this.addChild(this._swatch);
-    this._syncColor();
+    bindToolkitText(this, () => this._syncColor());
   }
   /**
    * The chooser of the open popover or dialog, or of the popover when nothing is open. It is
@@ -13016,22 +13556,14 @@ var ColorButton = class extends Button {
   /**
    * Opens the chooser: in a popover, or in a modal dialog with `modal`.
    */
-  openChooser() {
-    if (!this.isSensitive || this.isChooserOpen) {
-      return;
-    }
-    if (this._modal) {
-      this._openDialog();
-    } else {
-      this._openPopover();
-    }
+  popup() {
+    this.popupOpen = true;
   }
   /**
    * Closes the chooser, keeping the chosen color.
    */
-  closeChooser() {
-    this._popover?.popdown();
-    this._dialog?.response(Response.OK);
+  popdown() {
+    this.popupOpen = false;
   }
   destroy() {
     this._dialog?.destroy();
@@ -13042,7 +13574,7 @@ var ColorButton = class extends Button {
     if (this._popover?.isOpen) {
       this._popover.popdown();
     } else {
-      this.openChooser();
+      this.popup();
     }
     this.activate();
   }
@@ -13128,10 +13660,15 @@ var ColorButton = class extends Button {
   _setExpanded(expanded) {
     this.el.setAttribute("aria-expanded", String(expanded));
     this.el.classList.toggle("wy-active", expanded);
+    this.emit("popup-open-change", this);
   }
   _syncColor() {
     this._swatch.color = this._color;
-    this.el.setAttribute("aria-label", `${toolkitText(this._title)}: ${this._color}`);
+    const name = this._accessibleName || toolkitText(this._title);
+    this.el.setAttribute("aria-label", `${name}: ${this._color}`);
+  }
+  _syncAccessibleName() {
+    this._syncColor();
   }
 };
 defineProperties(ColorButton, {
@@ -13204,12 +13741,26 @@ defineProperties(ColorButton, {
    */
   showEditor: { value: true, coerce: Boolean },
   /**
-   * Whether the chooser is open.
+   * Whether the chooser is open, in its popover or dialog. Setting it opens or closes the
+   * chooser; closing it keeps the chosen color.
    */
-  isChooserOpen: {
-    readOnly: true,
+  popupOpen: {
+    signal: false,
     get() {
       return Boolean(this._dialog || this._popover?.isOpen);
+    },
+    set(open) {
+      if (open && !this.popupOpen && this.isSensitive) {
+        if (this._modal) {
+          this._openDialog();
+        } else {
+          this._openPopover();
+        }
+      } else if (!open) {
+        this._popover?.popdown();
+        this._dialog?.response(Response.OK);
+      }
+      return false;
     }
   }
 });
@@ -13288,6 +13839,16 @@ var ComboBox = class extends Widget {
    */
   get focusElement() {
     return this._hasEntry ? this._entryEl : this.el;
+  }
+  /**
+   * Returns both the root element and the entry, which are the focus element without and with
+   * `hasEntry`.
+   *
+   * @protected
+   * @returns {Element[]}
+   */
+  _getAccessibleNameElements() {
+    return [this.el, this._entryEl];
   }
   /**
    * The popover showing the list.
@@ -13386,13 +13947,13 @@ var ComboBox = class extends Widget {
   /**
    * Opens the list.
    */
-  openPopup() {
+  popup() {
     this.popupOpen = true;
   }
   /**
    * Closes the list.
    */
-  closePopup() {
+  popdown() {
     this.popupOpen = false;
   }
   /**
@@ -13479,8 +14040,8 @@ var ComboBox = class extends Widget {
     const item = this._items[index] || null;
     this._textEl.textContent = item ? item.label : "";
     this._buttonEl.classList.toggle("wy-empty", !item);
-    if (this._hasEntry && item && this._entryEl.value !== item.label) {
-      this._entryEl.value = item.label;
+    if (this._hasEntry && item) {
+      this._setEntryText(item.label);
     }
     this._syncList();
     if (changed) {
@@ -13505,12 +14066,25 @@ var ComboBox = class extends Widget {
       return;
     }
     if (this._hasEntry) {
-      this._entryEl.value = item.label;
-      this._entryText = item.label;
-      this.emit("text-change", this);
+      this._setEntryText(item.label);
     }
     if (index !== this._activeIndex) {
       this._setActiveIndex(index, true);
+    }
+  }
+  /**
+   * Puts a text in the entry, as the text of the combo box.
+   *
+   * @protected
+   * @param {string} text
+   */
+  _setEntryText(text) {
+    if (this._entryEl.value !== text) {
+      this._entryEl.value = text;
+    }
+    if (text !== this._entryText) {
+      this._entryText = text;
+      this.emit("text-change", this);
     }
   }
   _findSensitive(start, step) {
@@ -13592,6 +14166,8 @@ var ComboBox = class extends Widget {
   }
   _updateEntryMode() {
     const hasEntry = this._hasEntry;
+    const focused = this.el.contains(document.activeElement);
+    this._hidePopup();
     this.el.classList.toggle("wy-has-entry", hasEntry);
     this._entryEl.hidden = !hasEntry;
     if (hasEntry) {
@@ -13604,7 +14180,10 @@ var ComboBox = class extends Widget {
       this._entryEl.setAttribute("aria-autocomplete", "list");
       this._entryEl.setAttribute("aria-expanded", String(this._popupOpen));
       const item = this._items[this._activeIndex];
-      this._entryEl.value = item ? item.label : this._entryText;
+      this._entryEl.value = this._entryText;
+      if (item) {
+        this._setEntryText(item.label);
+      }
     } else {
       this._entryEl.tabIndex = -1;
       this.el.setAttribute("role", "combobox");
@@ -13612,6 +14191,9 @@ var ComboBox = class extends Widget {
       this.el.setAttribute("aria-expanded", String(this._popupOpen));
     }
     this._updateTabIndex();
+    if (focused) {
+      this.focusElement.focus({ preventScroll: true });
+    }
   }
   _connectModel(model) {
     for (const disconnect of this._modelDisconnects) {
@@ -13861,9 +14443,11 @@ defineProperties(ComboBox, {
     }
   },
   /**
-   * The index of the active item, or -1 if there is none.
+   * The index of the active item, or -1 if there is none. It is set after the items, so both can
+   * be given to the constructor in any order (the same holds for `activeId` and `text`).
    */
   activeIndex: {
+    late: true,
     value: -1,
     signal: false,
     coerce(index) {
@@ -13879,22 +14463,10 @@ defineProperties(ComboBox, {
     }
   },
   /**
-   * The same as `activeIndex`.
-   */
-  active: {
-    signal: false,
-    get() {
-      return this._activeIndex;
-    },
-    set(index) {
-      this.activeIndex = index;
-      return false;
-    }
-  },
-  /**
    * The id of the active item, or `null` if there is none or it has no id.
    */
   activeId: {
+    late: true,
     signal: false,
     get() {
       return this._items[this._activeIndex]?.id ?? null;
@@ -13917,6 +14489,7 @@ defineProperties(ComboBox, {
    * it without an entry makes the first item with that label active.
    */
   text: {
+    late: true,
     signal: false,
     get() {
       if (this._hasEntry) {
@@ -13949,7 +14522,7 @@ defineProperties(ComboBox, {
     }
   },
   /**
-   * Whether the list is open.
+   * Whether the list is open. Setting it opens or closes the list.
    */
   popupOpen: {
     value: false,
@@ -13972,139 +14545,1276 @@ defineProperties(ComboBox, {
       this._entryEl.placeholder = placeholder || "";
       this._textEl.dataset.placeholder = placeholder || "";
     }
-  },
-  /**
-   * The accessible name of the combo box, for combo boxes without a visible label.
-   */
-  accessibleName: {
-    value: "",
-    changed(name) {
-      for (const element of [this.el, this._entryEl]) {
-        if (name) {
-          element.setAttribute("aria-label", name);
-        } else {
-          element.removeAttribute("aria-label");
-        }
-      }
-    }
   }
 });
 registerType("combo-box", ComboBox);
 
-// src/widgets/date-edit.js
-var DEFAULT_DATE_FORMAT = Object.freeze({ dateStyle: "medium" });
-function getDateFieldOrder(locale) {
-  const format = new Intl.DateTimeFormat(locale, {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    timeZone: "UTC"
+// src/i18n/number-parser.js
+var NON_LATIN_DIGIT_REGEXP = /(?![0-9])\p{Nd}/gu;
+var DIGIT_REGEXP = /^\p{Nd}$/u;
+var BIDI_MARK_REGEXP = /[\u200e\u200f\u061c]/g;
+var MINUS_REGEXP = /[\u2212\u2012\u2013\uff0d\ufe63]/g;
+var WHITESPACE_REGEXP = /\s+/gu;
+var PLACEHOLDERS = { group: "", decimal: "" };
+function toLatinDigits(text) {
+  return String(text).replace(BIDI_MARK_REGEXP, "").replace(NON_LATIN_DIGIT_REGEXP, (digit) => {
+    const code = digit.codePointAt(0);
+    let count = 0;
+    while (DIGIT_REGEXP.test(String.fromCodePoint(code - count - 1))) {
+      count += 1;
+    }
+    return String(count % 10);
   });
-  return format.formatToParts(Date.UTC(2006, 10, 22)).map((x) => x.type).filter((x) => x === "day" || x === "month" || x === "year");
 }
-__name(getDateFieldOrder, "getDateFieldOrder");
-function toFullYear(year, digits, referenceYear) {
-  if (digits > 2) {
-    return year;
+__name(toLatinDigits, "toLatinDigits");
+var NumberParser = class extends LocaleAware {
+  static {
+    __name(this, "NumberParser");
   }
-  let result = Math.floor(referenceYear / 100) * 100 + year;
-  if (result > referenceYear + 50) {
-    result -= 100;
-  } else if (result <= referenceYear - 50) {
-    result += 100;
+  /**
+   * Parses a text to a number.
+   *
+   * @param {string} input
+   * @returns {number | null} The number, or `null` if the text is not a valid number.
+   * @throws {TypeError} If the input is not a string.
+   */
+  parse(input) {
+    const normalized = this.normalize(input);
+    return normalized === null ? null : this._toNumber(normalized);
   }
-  return result;
-}
-__name(toFullYear, "toFullYear");
-function findMonth(word, locale) {
-  const manager = getLocaleManager();
-  const normalize = /* @__PURE__ */ __name((text) => text.toLocaleLowerCase(locale).normalize("NFD").replace(/[\u0300-\u036f.]/g, ""), "normalize");
-  const target = normalize(word);
-  if (!target) {
-    return -1;
+  /**
+   * Checks whether a text is a valid number.
+   *
+   * @param {string} input
+   * @returns {boolean}
+   */
+  isValid(input) {
+    return this.parse(input) !== null;
   }
-  const names = [manager.longMonthNames, manager.shortMonthNames];
-  if (locale !== manager.locale) {
-    const format = /* @__PURE__ */ __name((month) => Array.from(
-      { length: 12 },
-      (_x, i) => new Intl.DateTimeFormat(locale, { month, timeZone: "UTC" }).format(
-        Date.UTC(2021, i, 1)
-      )
-    ), "format");
-    names.splice(0, 2, format("long"), format("short"));
-  }
-  for (const list of names) {
-    const index = list.findIndex((x) => normalize(x) === target);
-    if (index >= 0) {
-      return index;
+  /**
+   * Converts a text to the canonical notation of JavaScript: without group separators, with a
+   * period as decimal separator and Latin digits, e.g. `'-1234.5'` for `'-1.234,5'` in Dutch.
+   *
+   * @param {string} input
+   * @returns {string | null} The canonical text, or `null` if the text is not a valid number.
+   * @throws {TypeError} If the input is not a string.
+   */
+  normalize(input) {
+    if (typeof input !== "string") {
+      throw new TypeError("The input must be a string.");
     }
-  }
-  if (target.length >= 3) {
-    const matches = names[0].map((x, i) => normalize(x).startsWith(target) ? i : -1).filter((x) => x >= 0);
-    if (matches.length === 1) {
-      return matches[0];
+    const manager = this.effectiveLocaleManager;
+    const group = manager.groupSeparator;
+    const decimal = manager.decimalSeparator;
+    let text = toLatinDigits(input).trim().replace(MINUS_REGEXP, "-");
+    if (/^\s$/u.test(group)) {
+      text = text.replace(WHITESPACE_REGEXP, PLACEHOLDERS.group);
+    } else if (this._lenient) {
+      text = text.replace(WHITESPACE_REGEXP, "");
     }
-  }
-  return -1;
-}
-__name(findMonth, "findMonth");
-function parseLocaleDate(text, locale, reference) {
-  locale = locale || getLocaleManager().locale;
-  const referenceYear = (reference || /* @__PURE__ */ new Date()).getFullYear();
-  const trimmed = String(text).trim();
-  if (!trimmed) {
-    return null;
-  }
-  const tokens = trimmed.match(/\p{L}+|\d+/gu) || [];
-  const numbers = [];
-  let month = -1;
-  for (const token of tokens) {
-    if (/^\d+$/.test(token)) {
-      numbers.push({ value: Number(token), digits: token.length });
-    } else if (month < 0) {
-      month = findMonth(token, locale);
+    if (group === "\u2019") {
+      text = text.replace(/'/g, PLACEHOLDERS.group);
     }
-  }
-  let fields;
-  const order = getDateFieldOrder(locale);
-  if (month >= 0) {
-    const rest = order.filter((x) => x !== "month");
-    if (numbers.length < 1 || numbers.length > 2) {
+    text = text.replace(new RegExp(escapeRegExp(group), "g"), PLACEHOLDERS.group).replace(new RegExp(escapeRegExp(decimal), "g"), PLACEHOLDERS.decimal);
+    const canonical = this._toCanonical(text, false);
+    if (canonical !== null) {
+      return canonical;
+    }
+    if (!this._lenient) {
       return null;
     }
-    fields = { month: month + 1 };
-    const yearIndex = numbers.findIndex((x) => x.digits >= 3);
-    if (numbers.length === 2 && yearIndex >= 0) {
-      fields.year = numbers[yearIndex];
-      fields.day = numbers[1 - yearIndex];
-    } else if (numbers.length === 2) {
-      rest.forEach((name, i) => fields[name] = numbers[i]);
-    } else {
-      fields.day = numbers[0];
+    return this._toCanonical(text, true);
+  }
+  _toCanonical(text, swap) {
+    let candidate = text.replaceAll(PLACEHOLDERS.group, ",").replaceAll(PLACEHOLDERS.decimal, ".");
+    if (swap) {
+      candidate = candidate.replace(/[.,]/g, (x) => x === "." ? "," : ".");
     }
-  } else if (numbers.length === 3) {
-    const names = numbers[0].digits >= 3 ? ["year", "month", "day"] : order;
-    fields = {};
-    names.forEach((name, i) => fields[name] = numbers[i]);
-  } else if (numbers.length === 2) {
-    const names = order.filter((x) => x !== "year");
-    fields = {};
-    names.forEach((name, i) => fields[name] = numbers[i]);
-  } else {
-    return null;
+    if (!this._lenient && /[.,]/.test(text)) {
+      return null;
+    }
+    if (!this._getRegExp().test(candidate)) {
+      return null;
+    }
+    return candidate.replace(/,/g, "");
   }
-  const day = typeof fields.day === "object" ? fields.day.value : fields.day;
-  const monthNumber = typeof fields.month === "object" ? fields.month.value : fields.month;
-  const year = fields.year ? toFullYear(fields.year.value, fields.year.digits, referenceYear) : referenceYear;
-  if (!(monthNumber >= 1 && monthNumber <= 12)) {
-    return null;
+  /**
+   * Returns the regular expression a canonical candidate (with `,` for groups and `.` as
+   * decimal separator) must match.
+   *
+   * @protected
+   * @abstract
+   * @returns {RegExp}
+   */
+  _getRegExp() {
+    throw new Error(`${this.constructor.name} does not implement '_getRegExp'.`);
   }
-  if (!(day >= 1 && day <= getDaysInMonth2(year, monthNumber - 1))) {
-    return null;
+  /**
+   * Converts a canonical text to a number, or `null` if it is out of range.
+   *
+   * @protected
+   * @abstract
+   * @param {string} _text
+   * @returns {number | null}
+   */
+  _toNumber(_text) {
+    throw new Error(`${this.constructor.name} does not implement '_toNumber'.`);
   }
-  return makeDate(year, monthNumber - 1, day);
+};
+defineProperties(NumberParser, {
+  /**
+   * Whether whitespace is ignored and swapped decimal and group separators are accepted.
+   */
+  lenient: { value: true, coerce: Boolean }
+});
+var INTEGER_DIGITS_PATTERN = "(?:\\d+|\\d{1,3}(?:,\\d{3})+|\\d{1,2}(?:,\\d{2})+,\\d{3})";
+
+// src/i18n/date-time-parser.js
+var ENGLISH_MONTH_NAMES = [
+  "january",
+  "february",
+  "march",
+  "april",
+  "may",
+  "june",
+  "july",
+  "august",
+  "september",
+  "october",
+  "november",
+  "december"
+];
+var ENGLISH_DAY_NAMES = [
+  "sunday",
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday"
+];
+var MONTH_PREFIX_LENGTH = 3;
+var DAY_PREFIX_LENGTH = 2;
+var ORDINAL_SUFFIXES = /* @__PURE__ */ new Set(["st", "nd", "rd", "th", "er", "e", "ste", "de"]);
+var MARKERS = { \u5E74: "y", \u6708: "m", \u65E5: "d", \uB144: "y", \uC6D4: "m", \uC77C: "d", \u0433: "y", \u0440: "y" };
+var FILLER_WORDS = /* @__PURE__ */ new Set(["of", "the", "de", "del", "den", "der", "le"]);
+var UNITS = ["day", "week", "month", "year"];
+var ENGLISH_RELATIVE_DAYS = [
+  [/^(the )?day before (y(ester)?day|(the )?(past|last) day)$/, -2],
+  [/^(y(ester)?day|(the )?(past|prev(ious)?|last) day)$/, -1],
+  [/^(today|(the )?(present|current) day)$/, 0],
+  [/^(tom+or+ow|(the )?(next|coming) day)$/, 1],
+  [/^(the )?day after (tom+or+ow|(the )?(next|coming) day)$/, 2]
+];
+var ENGLISH_DIRECTIONS = [
+  [/^(the )?(past|prev(ious)?|last) (.+)$/, -1],
+  [/^(the )?(next|coming) (.+)$/, 1],
+  [/^(this|the (present|current)) (.+)$/, 0]
+];
+var ENGLISH_COUNTED = [
+  [/^(\d+) (day|week|month|year)s? ago$/, -1],
+  [/^in (\d+) (day|week|month|year)s?$/, 1],
+  [/^(\d+) (day|week|month|year)s? from now$/, 1]
+];
+var ENGLISH_TIMES = { noon: 12 * 60, midday: 12 * 60, midnight: 0 };
+var ISO_REGEXP = /^(\d{4})-(\d{2})-(\d{2})(?:[t ](\d{2}):(\d{2})(?::(\d{2})(?:[.,](\d+))?)?\s*(z|[+-]\d{2}(?::?\d{2})?)?)?$/;
+var TOKEN_REGEXP = /(\d+)|('\d{2})|([\p{L}\p{M}]+(?:(?:[-'’]|[.\u05f3\u0970]+)[\p{L}\p{M}]+)*[.\u05f3\u0970]?)|([-/.\\:])|(\s+)|(.)/gu;
+var WORD_PUNCTUATION_REGEXP = /[-.'’\u05f3\u0970]/g;
+var LOCALE_DATA = /* @__PURE__ */ new Map();
+function normalizeText(text, locale) {
+  return normalizeFragment(text, locale).trim();
 }
-__name(parseLocaleDate, "parseLocaleDate");
+__name(normalizeText, "normalizeText");
+function normalizeFragment(text, locale) {
+  return toLatinDigits(text).toLocaleLowerCase(locale).normalize("NFD").replace(/[\u0300-\u036f\u0654]/g, "").normalize("NFC").replace(/[\u200e\u200f\u061c]/g, "").replace(/[,\u060c\s]+/gu, " ");
+}
+__name(normalizeFragment, "normalizeFragment");
+function escapePattern(text) {
+  return text.replace(/[\\^$.*+?()[\]{}|/]/g, "\\$&");
+}
+__name(escapePattern, "escapePattern");
+function normalizeName(name, locale) {
+  return normalizeText(name, locale).replace(WORD_PUNCTUATION_REGEXP, "");
+}
+__name(normalizeName, "normalizeName");
+function getLocaleData(locale) {
+  let data = LOCALE_DATA.get(locale);
+  if (data) {
+    return data;
+  }
+  const sample = utcTimestamp(2013, 7, 10, 14, 5, 9);
+  const options = { timeZone: "UTC", calendar: "gregory", numberingSystem: "latn" };
+  const dateOrder = getDateTimeFormat(locale, { ...options, dateStyle: "short" }).formatToParts(sample).map((part) => ({ day: "d", month: "m", year: "y" })[part.type]).filter(Boolean).join("");
+  const monthNames = Array.from({ length: 12 }, () => []);
+  for (const month of ["long", "short"]) {
+    const format = getDateTimeFormat(locale, { ...options, day: "numeric", month });
+    for (let i = 0; i < 12; i++) {
+      const part = format.formatToParts(utcTimestamp(2013, i, 10)).find((x) => x.type === "month");
+      if (part && !/\d/.test(part.value)) {
+        monthNames[i].push(normalizeName(part.value, locale));
+      }
+    }
+  }
+  const monthWords = /* @__PURE__ */ new Set();
+  for (const month of ["long", "short"]) {
+    const format = getDateTimeFormat(locale, { ...options, day: "numeric", month });
+    const part = format.formatToParts(sample).find((x) => x.type === "month");
+    if (part && /\d/.test(part.value)) {
+      for (const word of normalizeName(part.value, locale).split(" ")) {
+        if (/^[\p{L}\p{M}]+$/u.test(word)) {
+          monthWords.add(word);
+        }
+      }
+    }
+  }
+  const fillers = new Set(monthWords);
+  for (const dateStyle of ["medium", "long", "full"]) {
+    const parts = getDateTimeFormat(locale, { ...options, dateStyle }).formatToParts(sample);
+    for (const part of parts) {
+      if (part.type !== "literal" && part.type !== "era") {
+        continue;
+      }
+      for (const word of normalizeName(part.value, locale).split(" ")) {
+        if (/^[\p{L}\p{M}]+$/u.test(word)) {
+          fillers.add(word);
+        }
+      }
+    }
+  }
+  data = {
+    dateOrder: dateOrder.length === 3 ? dateOrder : "mdy",
+    monthNames,
+    fillers,
+    ...getRelativeData(locale),
+    ...getTimeData(locale, sample, options)
+  };
+  LOCALE_DATA.set(locale, data);
+  return data;
+}
+__name(getLocaleData, "getLocaleData");
+function getRelativeData(locale) {
+  const relativeWords = /* @__PURE__ */ new Map();
+  const automatic = getRelativeTimeFormat(locale, { numeric: "auto" });
+  relativeWords.set(normalizeText(automatic.format(0, "second"), locale), {
+    unit: "now",
+    offset: 0
+  });
+  for (const unit of UNITS) {
+    for (const offset of unit === "day" ? [-2, -1, 0, 1, 2] : [-1, 0, 1]) {
+      const phrase = normalizeText(automatic.format(offset, unit), locale);
+      if (!/\d/.test(phrase) && !relativeWords.has(phrase)) {
+        relativeWords.set(phrase, { unit, offset });
+      }
+    }
+  }
+  const relativeTemplates = [];
+  const sources = /* @__PURE__ */ new Set();
+  const numeric = getRelativeTimeFormat(locale, { numeric: "always" });
+  for (const unit of UNITS) {
+    for (const sign of [-1, 1]) {
+      for (const count of [1, 2, 3, 5, 11, 21, 22, 100, 101]) {
+        const pattern = numeric.formatToParts(sign * count, unit).map(
+          (part) => part.type === "integer" ? "(\\d+)" : escapePattern(normalizeFragment(part.value, locale))
+        ).join("");
+        const source = `^${pattern.trim().replace(/ /g, "\\s?")}$`;
+        if (!sources.has(source)) {
+          sources.add(source);
+          relativeTemplates.push({ regexp: new RegExp(source, "u"), unit, sign });
+        }
+      }
+    }
+  }
+  return { relativeWords, relativeTemplates };
+}
+__name(getRelativeData, "getRelativeData");
+function getTimeData(locale, sample, options) {
+  const timeParts = getDateTimeFormat(locale, { ...options, timeStyle: "short" }).formatToParts(
+    sample
+  );
+  const hourIndex = timeParts.findIndex((x) => x.type === "hour");
+  const separator = timeParts[hourIndex + 1]?.value.trim();
+  const timeSeparators = [":"];
+  if (separator && separator.length === 1 && separator !== ":") {
+    timeSeparators.push(separator);
+  }
+  const connectors = ["at"];
+  const dateTimeParts = getDateTimeFormat(locale, {
+    ...options,
+    dateStyle: "long",
+    timeStyle: "short"
+  }).formatToParts(sample);
+  for (const part of dateTimeParts) {
+    const word = normalizeName(part.value, locale);
+    if (part.type === "literal" && /^[\p{L}\p{M}]+$/u.test(word) && !connectors.includes(word)) {
+      connectors.push(word);
+    }
+  }
+  return { timeSeparators, connectors };
+}
+__name(getTimeData, "getTimeData");
+function matchName(word, names, prefixLength) {
+  const exact = names.findIndex((list) => list.includes(word));
+  if (exact >= 0 || word.length < prefixLength) {
+    return exact;
+  }
+  const matches = /* @__PURE__ */ new Set();
+  names.forEach((list, index) => {
+    if (list.some((name) => name.startsWith(word))) {
+      matches.add(index);
+    }
+  });
+  return matches.size === 1 ? [...matches][0] : -1;
+}
+__name(matchName, "matchName");
+function tokenize(text) {
+  const tokens = [];
+  for (const match of text.matchAll(TOKEN_REGEXP)) {
+    const [value, number, shortYear, word, separator, space] = match;
+    if (number !== void 0) {
+      tokens.push({ type: "number", value: Number(number), digits: number.length });
+    } else if (shortYear !== void 0) {
+      tokens.push({ type: "short-year", value: Number(shortYear.slice(1)) });
+    } else if (word !== void 0) {
+      tokens.push({ type: "word", text: word.replace(WORD_PUNCTUATION_REGEXP, "") });
+    } else if (separator !== void 0) {
+      tokens.push({ type: "separator", text: separator });
+    } else if (space !== void 0) {
+      tokens.push({ type: "space" });
+    } else {
+      tokens.push({ type: "other", text: value });
+    }
+  }
+  return tokens;
+}
+__name(tokenize, "tokenize");
+var DateTimeParser = class extends LocaleAware {
+  static {
+    __name(this, "DateTimeParser");
+  }
+  /**
+   * The time zone dates are in: `timeZone`, or else the locale manager's.
+   *
+   * @type {string}
+   */
+  get effectiveTimeZone() {
+    return this._timeZone || this._getDefaultTimeZone();
+  }
+  /**
+   * Parses a date.
+   *
+   * @param {string} input
+   * @returns {Date | null} The date at midnight (or the current time for `now`), or `null` if the
+   *     text is not a valid date.
+   * @throws {TypeError} If the input is not a string.
+   */
+  parseDate(input) {
+    const text = this._prepareInput(input);
+    if (this._isNow(text)) {
+      return new Date(this._getNow());
+    }
+    const date = this._parseDateText(text);
+    return date ? this._toDate(date, 0) : null;
+  }
+  /**
+   * Parses a time of day.
+   *
+   * @param {string} input
+   * @returns {number | null} The time as milliseconds since midnight, or `null` if the text is
+   *     not a valid time.
+   * @throws {TypeError} If the input is not a string.
+   */
+  parseTime(input) {
+    const text = this._prepareInput(input);
+    if (this._isNow(text)) {
+      const fields = getZonedFields(this._getNow(), this.effectiveTimeZone);
+      return ((fields.hours * 60 + fields.minutes) * 60 + fields.seconds) * 1e3 + fields.milliseconds;
+    }
+    return this._parseTimeText(text, true);
+  }
+  /**
+   * Parses a date and a time, in either order (`10 aug 2013 14:05` or `2 pm tomorrow`), or only
+   * one of them: a date alone is at midnight, and a time alone is today. ISO 8601 date-times
+   * (`2013-08-10T14:05:09Z`) are understood too, including their time zone.
+   *
+   * @param {string} input
+   * @returns {Date | null}
+   * @throws {TypeError} If the input is not a string.
+   */
+  parseDateTime(input) {
+    const text = this._prepareInput(input);
+    if (this._isNow(text)) {
+      return new Date(this._getNow());
+    }
+    const iso = this._parseIso(text);
+    if (iso !== void 0) {
+      return iso;
+    }
+    const data = getLocaleData(this.effectiveLocale);
+    const words = text.split(" ");
+    for (let count = 1; count <= Math.min(words.length, 3); count++) {
+      for (const timeAtEnd of [true, false]) {
+        const timeWords = timeAtEnd ? words.slice(-count) : words.slice(0, count);
+        const dateWords = timeAtEnd ? words.slice(0, -count) : words.slice(count);
+        const time = this._parseTimeText(timeWords.join(" "), false);
+        if (time === null) {
+          continue;
+        }
+        const connectorIndex = timeAtEnd ? dateWords.length - 1 : 0;
+        if (data.connectors.includes(dateWords[connectorIndex]?.replace(/\./g, ""))) {
+          dateWords.splice(connectorIndex, 1);
+        }
+        const date2 = dateWords.length ? this._parseDateText(dateWords.join(" ")) : this._getToday();
+        if (date2) {
+          return this._toDate(date2, time);
+        }
+      }
+    }
+    const date = this._parseDateText(text);
+    return date ? this._toDate(date, 0) : null;
+  }
+  /**
+   * Parses a text in a `strftime` format of the {@link DateTimeFormatter}, e.g. `'%d-%m-%Y'`.
+   * Numbers may omit their padding, names may be abbreviated and whitespace may vary. Fields
+   * missing from the format are taken from today (when the format has no date at all) or are
+   * the first month and day. The preferred formats `%c`, `%x` and `%X` can only be used alone;
+   * they parse like {@link DateTimeParser#parseDate}, {@link DateTimeParser#parseDateTime} and
+   * a time today.
+   *
+   * @param {string} input
+   * @param {string} format
+   * @returns {Date | null}
+   * @throws {TypeError} If the input or format is not a string.
+   * @throws {Error} If the format uses `%c`, `%x` or `%X` with other specifiers.
+   */
+  parseExact(input, format) {
+    if (typeof format !== "string") {
+      throw new TypeError("The format must be a string.");
+    }
+    const text = this._prepareInput(input);
+    if (format === "%c") {
+      return this.parseDate(input);
+    }
+    if (format === "%x") {
+      return this.parseDateTime(input);
+    }
+    if (format === "%X") {
+      const time = this.parseTime(input);
+      return time === null ? null : this._toDate(this._getToday(), time);
+    }
+    const { regexp, fields } = this._compileFormat(format);
+    const matches = regexp.exec(text);
+    if (!matches) {
+      return null;
+    }
+    return this._buildExact(fields, matches.slice(1));
+  }
+  _prepareInput(input) {
+    if (typeof input !== "string") {
+      throw new TypeError("The input must be a string.");
+    }
+    return normalizeText(input, this.effectiveLocale);
+  }
+  _isNow(text) {
+    return text === "now" || this._getRelativeWord(text)?.unit === "now";
+  }
+  _getNow() {
+    return this._referenceTime ?? Date.now();
+  }
+  _getToday() {
+    const { year, month, day, weekDay } = getZonedFields(
+      this._getNow(),
+      this.effectiveTimeZone
+    );
+    return { year, month, day, weekDay };
+  }
+  _toDate({ year, month, day }, time) {
+    const timestamp = fromZonedFields({ year, month, day }, this.effectiveTimeZone);
+    if (!time) {
+      return new Date(timestamp);
+    }
+    const minutes = Math.floor(time / MINUTE);
+    return new Date(
+      fromZonedFields(
+        {
+          year,
+          month,
+          day,
+          hours: Math.floor(minutes / 60),
+          minutes: minutes % 60,
+          seconds: Math.floor(time % MINUTE / 1e3),
+          milliseconds: time % 1e3
+        },
+        this.effectiveTimeZone
+      )
+    );
+  }
+  _getRelativeWord(text) {
+    return getLocaleData(this.effectiveLocale).relativeWords.get(text) || null;
+  }
+  _parseIso(text) {
+    const matches = ISO_REGEXP.exec(text);
+    if (!matches) {
+      return void 0;
+    }
+    const [, year, month, day, hours, minutes, seconds, fraction, zone] = matches;
+    const fields = {
+      year: Number(year),
+      month: Number(month) - 1,
+      day: Number(day),
+      hours: Number(hours || 0),
+      minutes: Number(minutes || 0),
+      seconds: Number(seconds || 0),
+      milliseconds: fraction ? Math.floor(Number(`0.${fraction}`) * 1e3) : 0
+    };
+    if (!this._isValidDate(fields) || fields.hours > 23 || fields.minutes > 59 || fields.seconds > 59) {
+      return null;
+    }
+    if (!zone) {
+      return new Date(fromZonedFields(fields, this.effectiveTimeZone));
+    }
+    const wallClock = utcTimestamp(
+      fields.year,
+      fields.month,
+      fields.day,
+      fields.hours,
+      fields.minutes,
+      fields.seconds,
+      fields.milliseconds
+    );
+    return new Date(wallClock - this._parseOffset(zone) * MINUTE);
+  }
+  _parseOffset(zone) {
+    if (zone === "z" || zone === "utc" || zone === "gmt") {
+      return 0;
+    }
+    const matches = /^([+-])(\d{2}):?(\d{2})?$/.exec(zone);
+    if (!matches) {
+      return null;
+    }
+    const offset = Number(matches[2]) * 60 + Number(matches[3] || 0);
+    return matches[1] === "-" ? -offset : offset;
+  }
+  _isValidDate({ year, month, day }) {
+    return Number.isInteger(year) && year >= 1 && year <= 9999 && month >= 0 && month <= 11 && day >= 1 && day <= getDaysInMonth(year, month);
+  }
+  /**
+   * Parses a normalized date text to its fields.
+   *
+   * @param {string} text
+   * @returns {{year: number, month: number, day: number} | null}
+   */
+  _parseDateText(text) {
+    if (!text) {
+      return null;
+    }
+    const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(text);
+    if (iso) {
+      const date = { year: Number(iso[1]), month: Number(iso[2]) - 1, day: Number(iso[3]) };
+      return this._isValidDate(date) ? date : null;
+    }
+    const relative = this._parseRelativeDate(text);
+    if (relative !== void 0) {
+      return relative;
+    }
+    return this._parseAbsoluteDate(tokenize(this._joinNames(text)));
+  }
+  /**
+   * Removes the spaces from the month and day names of more than one word in a text, such as
+   * `יום שבת` (Hebrew) and `thu bay` (Vietnamese), so they are single words like their names in
+   * {@link DateTimeParser#_getMonthNames} and {@link DateTimeParser#_getDayNames}.
+   *
+   * @param {string} text A normalized text.
+   * @returns {string}
+   */
+  _joinNames(text) {
+    const manager = this.effectiveLocaleManager;
+    const names = [
+      ...manager.longMonthNames,
+      ...manager.shortMonthNames,
+      ...manager.longDayNames,
+      ...manager.shortDayNames,
+      ...getLocaleData(manager.locale).monthNames.flat()
+    ].map((x) => normalizeText(x, manager.locale)).filter((x) => x.includes(" ")).sort((a, b) => b.length - a.length);
+    for (const name of names) {
+      const pattern = escapePattern(name).replace(/ /g, "\\s");
+      text = text.replace(
+        new RegExp(`(?<!\\p{L})${pattern}(?!\\p{L})`, "gu"),
+        name.replace(/ /g, "")
+      );
+    }
+    return text;
+  }
+  /**
+   * Parses a relative date.
+   *
+   * @param {string} text
+   * @returns {{year: number, month: number, day: number} | null | undefined} `undefined` if
+   *     the text is not a relative date.
+   */
+  _parseRelativeDate(text) {
+    const today = this._getToday();
+    const data = getLocaleData(this.effectiveLocale);
+    for (const [regexp, offset] of ENGLISH_RELATIVE_DAYS) {
+      if (regexp.test(text)) {
+        return this._addDays(today, offset);
+      }
+    }
+    const word = this._getRelativeWord(text);
+    if (word) {
+      return this._moveToUnit(today, word.unit, word.offset);
+    }
+    for (const [regexp, sign] of ENGLISH_COUNTED) {
+      const matches = regexp.exec(text);
+      if (matches) {
+        return this._addUnits(today, matches[2], sign * Number(matches[1]));
+      }
+    }
+    for (const { regexp, unit, sign } of data.relativeTemplates) {
+      const matches = regexp.exec(text);
+      if (matches) {
+        return this._addUnits(today, unit, sign * Number(matches[1]));
+      }
+    }
+    for (const [regexp, direction] of ENGLISH_DIRECTIONS) {
+      const matches = regexp.exec(text);
+      if (!matches) {
+        continue;
+      }
+      const rest = matches[matches.length - 1];
+      if (UNITS.includes(rest)) {
+        return this._moveToUnit(today, rest, direction);
+      }
+      const named = this._parseNamedRelative(rest, today, direction);
+      return named === void 0 ? null : named;
+    }
+    return this._parseNamedRelative(text, today, 1);
+  }
+  /**
+   * Parses a day or month name relative to today: the next one (`direction` 1 or 0) or the
+   * last one (-1).
+   */
+  _parseNamedRelative(text, today, direction) {
+    if (!/^\p{L}+\.?$/u.test(text)) {
+      return void 0;
+    }
+    const word = text.replace(/\./g, "");
+    const past = direction < 0;
+    const weekDay = matchName(word, this._getDayNames(), DAY_PREFIX_LENGTH);
+    if (weekDay >= 0) {
+      let offset = weekDay - today.weekDay;
+      if (past ? offset >= 0 : offset <= 0) {
+        offset += past ? -7 : 7;
+      }
+      return this._addDays(today, offset);
+    }
+    const month = matchName(word, this._getMonthNames(), MONTH_PREFIX_LENGTH);
+    if (month >= 0) {
+      let year = today.year;
+      if (past ? month >= today.month : month <= today.month) {
+        year += past ? -1 : 1;
+      }
+      return { year, month, day: 1 };
+    }
+    return void 0;
+  }
+  _addDays({ year, month, day }, days) {
+    const date = new Date(utcTimestamp(year, month, day + days));
+    return { year: date.getUTCFullYear(), month: date.getUTCMonth(), day: date.getUTCDate() };
+  }
+  _addUnits(date, unit, count) {
+    if (unit === "day") {
+      return this._addDays(date, count);
+    }
+    if (unit === "week") {
+      return this._addDays(date, 7 * count);
+    }
+    const months = date.year * 12 + date.month + (unit === "year" ? 12 * count : count);
+    const year = Math.floor(months / 12);
+    const month = months - year * 12;
+    return { year, month, day: Math.min(date.day, getDaysInMonth(year, month)) };
+  }
+  /**
+   * Moves to the first day of the day, week, month or year some units from today, e.g. the
+   * first day of the last month for `('month', -1)`.
+   */
+  _moveToUnit(today, unit, offset) {
+    if (unit === "now") {
+      return today;
+    }
+    if (unit === "day") {
+      return this._addDays(today, offset);
+    }
+    if (unit === "week") {
+      const firstDay = this.effectiveLocaleManager.firstDayOfWeek;
+      const start = -((today.weekDay - firstDay + 7) % 7);
+      return this._addDays(today, start + 7 * offset);
+    }
+    if (unit === "month") {
+      return this._addUnits({ ...today, day: 1 }, "month", offset);
+    }
+    return { year: today.year + offset, month: 0, day: 1 };
+  }
+  _getMonthNames() {
+    const manager = this.effectiveLocaleManager;
+    const locale = manager.locale;
+    const data = getLocaleData(locale);
+    return ENGLISH_MONTH_NAMES.map(
+      (name, i) => [
+        normalizeName(manager.longMonthNames[i], locale),
+        normalizeName(manager.shortMonthNames[i], locale),
+        ...data.monthNames[i],
+        name,
+        name.slice(0, 3)
+      ].map((x) => x.replace(/ /g, ""))
+    );
+  }
+  _getDayNames() {
+    const manager = this.effectiveLocaleManager;
+    const locale = manager.locale;
+    return ENGLISH_DAY_NAMES.map(
+      (name, i) => [
+        normalizeName(manager.longDayNames[i], locale),
+        normalizeName(manager.shortDayNames[i], locale),
+        name
+      ].map((x) => x.replace(/ /g, ""))
+    );
+  }
+  /**
+   * Splits a word that is a month name, day name or marker with a filler word or marker attached
+   * to it, such as `באוגוסט` (Hebrew, "in August"), `วันเสาร์ที่` (Thai, "Saturday the") and
+   * `日土曜日` (Japanese, a day marker and "Saturday").
+   *
+   * @param {string} word
+   * @param {Set<string>} fillers The filler words of the locale.
+   * @param {string[][]} monthNames
+   * @param {string[][]} dayNames
+   * @returns {string[] | null} The two words, or `null` if the word cannot be split.
+   */
+  _splitWord(word, fillers, monthNames, dayNames) {
+    const isKnown = /* @__PURE__ */ __name((x) => Object.hasOwn(MARKERS, x) || matchName(x, monthNames, MONTH_PREFIX_LENGTH) >= 0 || matchName(x, dayNames, DAY_PREFIX_LENGTH) >= 0, "isKnown");
+    for (const affix of [...Object.keys(MARKERS), ...FILLER_WORDS, ...fillers]) {
+      if (affix.length >= word.length) {
+        continue;
+      }
+      if (word.startsWith(affix) && isKnown(word.slice(affix.length))) {
+        return [affix, word.slice(affix.length)];
+      }
+      if (word.endsWith(affix) && isKnown(word.slice(0, -affix.length))) {
+        return [word.slice(0, -affix.length), affix];
+      }
+    }
+    return null;
+  }
+  _expandYear(value, digits) {
+    if (digits > 2) {
+      return value;
+    }
+    return value > this._twoDigitYearMax ? 1900 + value : 2e3 + value;
+  }
+  /**
+   * Parses the tokens of an absolute date.
+   *
+   * @param {object[]} tokens
+   * @returns {{year: number, month: number, day: number} | null}
+   */
+  _parseAbsoluteDate(tokens) {
+    tokens = [...tokens];
+    const date = { year: null, month: null, day: null };
+    let weekDay = null;
+    const numbers = [];
+    const components = [];
+    const monthNames = this._getMonthNames();
+    const dayNames = this._getDayNames();
+    const { fillers } = getLocaleData(this.effectiveLocale);
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i];
+      const previous = tokens[i - 1];
+      if (token.type === "space" || token.type === "separator") {
+        continue;
+      }
+      if (token.type === "other") {
+        return null;
+      }
+      if (token.type === "number") {
+        if (token.digits > 4) {
+          return null;
+        }
+        const number = { ...token, role: null };
+        numbers.push(number);
+        components.push(number);
+        continue;
+      }
+      if (token.type === "short-year") {
+        if (date.year !== null) {
+          return null;
+        }
+        date.year = this._expandYear(token.value, 2);
+        components.push({ role: "y", digits: 2 });
+        continue;
+      }
+      const word = token.text;
+      const previousNumber = previous?.type === "number" ? numbers[numbers.length - 1] : null;
+      if (previousNumber && !previousNumber.role && ORDINAL_SUFFIXES.has(word)) {
+        previousNumber.role = "d";
+        continue;
+      }
+      const marker = MARKERS[word];
+      if (marker) {
+        const number = previousNumber || (previous?.type === "space" && tokens[i - 2]?.type === "number" ? numbers[numbers.length - 1] : null);
+        if (!number || number.role) {
+          return null;
+        }
+        number.role = marker;
+        continue;
+      }
+      if (FILLER_WORDS.has(word)) {
+        continue;
+      }
+      const month = matchName(word, monthNames, MONTH_PREFIX_LENGTH);
+      if (month >= 0) {
+        if (date.month !== null) {
+          return null;
+        }
+        date.month = month;
+        components.push({ role: "m" });
+        continue;
+      }
+      const day = matchName(word, dayNames, DAY_PREFIX_LENGTH);
+      if (day >= 0 && weekDay === null) {
+        weekDay = day;
+        continue;
+      }
+      if (fillers.has(word)) {
+        continue;
+      }
+      const split = this._splitWord(word, fillers, monthNames, dayNames);
+      if (split) {
+        tokens = [
+          ...tokens.slice(0, i),
+          ...split.map((text) => ({ type: "word", text })),
+          ...tokens.slice(i + 1)
+        ];
+        i -= 1;
+        continue;
+      }
+      return null;
+    }
+    if (!this._assignNumbers(date, numbers, components)) {
+      return null;
+    }
+    const today = this._getToday();
+    if (date.day === null && date.month === null) {
+      if (date.year === null) {
+        return null;
+      }
+      date.month = 0;
+      date.day = 1;
+    } else if (date.day === null) {
+      if (date.year === null) {
+        return null;
+      }
+      date.day = 1;
+    }
+    if (date.month === null) {
+      date.month = today.month;
+    }
+    if (date.year === null) {
+      date.year = today.year;
+    }
+    if (!this._isValidDate(date)) {
+      return null;
+    }
+    if (weekDay !== null && new Date(utcTimestamp(date.year, date.month, date.day)).getUTCDay() !== weekDay) {
+      return null;
+    }
+    return date;
+  }
+  _assignNumbers(date, numbers, components) {
+    const assign = /* @__PURE__ */ __name((role, number) => {
+      const key = { y: "year", m: "month", d: "day" }[role];
+      if (date[key] !== null) {
+        return false;
+      }
+      if (role === "y") {
+        date.year = this._expandYear(number.value, number.digits);
+      } else {
+        date[key] = role === "m" ? number.value - 1 : number.value;
+      }
+      return true;
+    }, "assign");
+    for (const number of numbers) {
+      if (number.role && !assign(number.role, number)) {
+        return false;
+      }
+    }
+    let unassigned = numbers.filter((x) => !x.role);
+    for (const number of unassigned) {
+      if (number.digits > 2 || number.value > 31) {
+        number.role = "y";
+        if (!assign("y", number)) {
+          return false;
+        }
+      }
+    }
+    unassigned = unassigned.filter((x) => !x.role);
+    if (!unassigned.length) {
+      return true;
+    }
+    const first = components[0];
+    let order = getLocaleData(this.effectiveLocale).dateOrder;
+    if (first?.role === "y" && first.digits > 2) {
+      order = "ymd";
+    }
+    let missing = [...order].filter((role) => {
+      return date[{ y: "year", m: "month", d: "day" }[role]] === null;
+    });
+    if (unassigned.length < missing.length && missing.includes("y")) {
+      missing = missing.filter((role) => role !== "y");
+    }
+    if (unassigned.length === 1 && date.day === null && missing.length > 1) {
+      missing = ["d"];
+    }
+    if (unassigned.length !== missing.length) {
+      return false;
+    }
+    return unassigned.every((number, i) => assign(missing[i], number));
+  }
+  _getDesignatorRegExp() {
+    const manager = this.effectiveLocaleManager;
+    const locale = manager.locale;
+    const toPattern = /* @__PURE__ */ __name((designator) => escapePattern(normalizeText(designator, locale)).replace(/\\\./g, "\\.?").replace(/ /g, "\\s?"), "toPattern");
+    return {
+      am: `(?:${toPattern(manager.amDesignator)}|a\\.?\\s?m\\.?)`,
+      pm: `(?:${toPattern(manager.pmDesignator)}|p\\.?\\s?m\\.?)`
+    };
+  }
+  /**
+   * Parses a normalized time text.
+   *
+   * @param {string} text
+   * @param {boolean} alone Whether the text is only a time, which allows more separators.
+   * @returns {number | null} Milliseconds since midnight.
+   */
+  _parseTimeText(text, alone) {
+    if (Object.hasOwn(ENGLISH_TIMES, text)) {
+      return ENGLISH_TIMES[text] * MINUTE;
+    }
+    const data = getLocaleData(this.effectiveLocale);
+    const separators = alone ? [":", ".", ...data.timeSeparators] : data.timeSeparators;
+    const separator = `(?:${separators.map(escapePattern).join("|")})`;
+    const { am, pm } = this._getDesignatorRegExp();
+    const designator = `(${am}|${pm})`;
+    const clock = `(\\d{1,2})(?:(?:${separator}|\\s?h\\s?)(\\d{2})(?:${separator}(\\d{2})(?:[.,](\\d{1,3}))?)?)?(h)?`;
+    const regexp = new RegExp(`^(?:${designator}\\s?)?${clock}(?:\\s?${designator})?$`, "u");
+    const matches = regexp.exec(text);
+    if (!matches) {
+      return null;
+    }
+    const [, before, hoursText, minutesText, secondsText, fraction, hourMark, after] = matches;
+    if (before && after || hourMark && minutesText !== void 0) {
+      return null;
+    }
+    const period = before || after;
+    if (minutesText === void 0 && !period && !hourMark) {
+      return null;
+    }
+    let hours = Number(hoursText);
+    const minutes = Number(minutesText || 0);
+    const seconds = Number(secondsText || 0);
+    const milliseconds = fraction ? Number(fraction.padEnd(3, "0")) : 0;
+    if (minutes > 59 || seconds > 59) {
+      return null;
+    }
+    if (period) {
+      if (hours < 1 || hours > 12) {
+        return null;
+      }
+      const isPm = new RegExp(`^${pm}$`, "u").test(period);
+      hours = hours % 12 + (isPm ? 12 : 0);
+    } else if (hours > 23) {
+      return null;
+    }
+    return ((hours * 60 + minutes) * 60 + seconds) * 1e3 + milliseconds;
+  }
+  _compileFormat(format) {
+    const fields = [];
+    let source = "";
+    const expanded = format.replace(/%([-_0^]*)([rRTDF])/g, (_match, _flags, character) => {
+      return {
+        r: "%I:%M:%S %p",
+        R: "%H:%M",
+        T: "%H:%M:%S",
+        D: "%m/%d/%y",
+        F: "%Y-%m-%d"
+      }[character];
+    });
+    const { am, pm } = this._getDesignatorRegExp();
+    const word = "([\\p{L}\\p{M}][\\p{L}\\p{M}.'\u2019\\-\\u05f3\\u0970]*)";
+    const patterns = {
+      a: word,
+      A: word,
+      b: word,
+      B: word,
+      h: word,
+      d: "(\\d{1,2})",
+      e: "(\\d{1,2})",
+      j: "(\\d{1,3})",
+      u: "(\\d)",
+      w: "(\\d)",
+      U: "(\\d{1,2})",
+      V: "(\\d{1,2})",
+      W: "(\\d{1,2})",
+      m: "(\\d{1,2})",
+      C: "(\\d{1,2})",
+      g: "(\\d{2})",
+      G: "(\\d{4})",
+      y: "(\\d{2})",
+      Y: "(\\d{4})",
+      H: "(\\d{1,2})",
+      k: "(\\d{1,2})",
+      I: "(\\d{1,2})",
+      l: "(\\d{1,2})",
+      M: "(\\d{2})",
+      S: "(\\d{2})",
+      L: "(\\d{3})",
+      p: `(${am}|${pm})`,
+      P: `(${am}|${pm})`,
+      z: "(z|[+-]\\d{2}:?\\d{2})",
+      Z: "([\\p{L}\\d+\\-:/_]+)",
+      s: "(-?\\d+)"
+    };
+    let position = 0;
+    for (const match of expanded.matchAll(/%[-_0^]*([a-zA-Z%])/g)) {
+      source += this._literalPattern(expanded.slice(position, match.index));
+      position = match.index + match[0].length;
+      const character = match[1];
+      if (character === "%") {
+        source += "%";
+      } else if (character === "n" || character === "t") {
+        source += "\\s*";
+      } else if (patterns[character]) {
+        source += (/[eklIH]/.test(character) ? "\\s?" : "") + patterns[character];
+        fields.push(character);
+      } else if ("cxX".includes(character)) {
+        throw new Error(`'%${character}' can only be used alone in a format to parse.`);
+      } else {
+        source += escapePattern("%" + match[1]);
+      }
+    }
+    source += this._literalPattern(expanded.slice(position));
+    return { regexp: new RegExp(`^${source}$`, "u"), fields };
+  }
+  _literalPattern(text) {
+    return normalizeFragment(text, this.effectiveLocale).split(" ").map((x) => escapePattern(x)).join("\\s*");
+  }
+  _buildExact(specifiers, values) {
+    const fields = { year: null, month: null, day: null };
+    let hours = 0;
+    let minutes = 0;
+    let seconds = 0;
+    let milliseconds = 0;
+    let period = null;
+    let hour12 = false;
+    let weekDay = null;
+    let offset = null;
+    let dayOfYear = null;
+    const { pm } = this._getDesignatorRegExp();
+    for (let i = 0; i < specifiers.length; i++) {
+      const character = specifiers[i];
+      const value = values[i];
+      const number = Number(value);
+      switch (character) {
+        case "a":
+        case "A": {
+          weekDay = matchName(
+            value.replace(WORD_PUNCTUATION_REGEXP, ""),
+            this._getDayNames(),
+            2
+          );
+          if (weekDay < 0) {
+            return null;
+          }
+          break;
+        }
+        case "b":
+        case "B":
+        case "h": {
+          const month = matchName(
+            value.replace(WORD_PUNCTUATION_REGEXP, ""),
+            this._getMonthNames(),
+            3
+          );
+          if (month < 0) {
+            return null;
+          }
+          fields.month = month;
+          break;
+        }
+        case "d":
+        case "e":
+          fields.day = number;
+          break;
+        case "j":
+          dayOfYear = number;
+          break;
+        case "u":
+          weekDay = number % 7;
+          break;
+        case "w":
+          weekDay = number;
+          break;
+        case "m":
+          fields.month = number - 1;
+          break;
+        case "y":
+          fields.year = this._expandYear(number, 2);
+          break;
+        case "Y":
+          fields.year = number;
+          break;
+        case "H":
+        case "k":
+          hours = number;
+          break;
+        case "I":
+        case "l":
+          hours = number;
+          hour12 = true;
+          break;
+        case "M":
+          minutes = number;
+          break;
+        case "S":
+          seconds = number;
+          break;
+        case "L":
+          milliseconds = number;
+          break;
+        case "p":
+        case "P":
+          period = new RegExp(`^${pm}$`, "u").test(value) ? "pm" : "am";
+          break;
+        case "z":
+          offset = this._parseOffset(value);
+          break;
+        case "Z":
+          if (value === "utc" || value === "gmt" || value === "z") {
+            offset = 0;
+          }
+          break;
+        case "s":
+          return new Date(number * 1e3);
+        // The week-based fields are checked by the other fields.
+        default:
+          break;
+      }
+    }
+    if (period !== null || hour12) {
+      if (hours < 1 || hours > 12) {
+        return null;
+      }
+      hours = hours % 12 + (period === "pm" ? 12 : 0);
+    }
+    if (hours > 23 || minutes > 59 || seconds > 59) {
+      return null;
+    }
+    const today = this._getToday();
+    if (fields.year === null && fields.month === null && fields.day === null && dayOfYear === null) {
+      Object.assign(fields, { year: today.year, month: today.month, day: today.day });
+    }
+    fields.year ??= today.year;
+    if (dayOfYear !== null && fields.month === null && fields.day === null) {
+      const date = new Date(utcTimestamp(fields.year, 0, dayOfYear));
+      if (date.getUTCFullYear() !== fields.year || dayOfYear < 1) {
+        return null;
+      }
+      fields.month = date.getUTCMonth();
+      fields.day = date.getUTCDate();
+    }
+    fields.month ??= 0;
+    fields.day ??= 1;
+    if (!this._isValidDate(fields)) {
+      return null;
+    }
+    if (weekDay !== null && new Date(utcTimestamp(fields.year, fields.month, fields.day)).getUTCDay() !== weekDay) {
+      return null;
+    }
+    const all = { ...fields, hours, minutes, seconds, milliseconds };
+    if (offset !== null) {
+      const wallClock = utcTimestamp(
+        all.year,
+        all.month,
+        all.day,
+        hours,
+        minutes,
+        seconds,
+        milliseconds
+      );
+      return new Date(wallClock - offset * MINUTE);
+    }
+    return new Date(fromZonedFields(all, this.effectiveTimeZone));
+  }
+};
+defineProperties(DateTimeParser, {
+  /**
+   * The time zone dates are parsed in (an IANA name, `'UTC'` or `'local'`), or `null` (the
+   * default) for the time zone of the locale manager.
+   */
+  timeZone: {
+    value: null,
+    coerce(timeZone) {
+      if (timeZone === null || timeZone === void 0 || timeZone === "local") {
+        return timeZone ?? null;
+      }
+      return new Intl.DateTimeFormat("en-US", { timeZone }).resolvedOptions().timeZone;
+    }
+  },
+  /**
+   * The largest two-digit year that is in this century: with 29, `'29` is 2029 and `'30` is
+   * 1930.
+   */
+  twoDigitYearMax: {
+    value: 29,
+    coerce(year) {
+      if (!Number.isInteger(year) || year < 0 || year > 99) {
+        throw new RangeError("The two-digit year maximum must be an integer from 0 to 99.");
+      }
+      return year;
+    }
+  },
+  /**
+   * The time relative dates (`today`, `next week`) are relative to, as a timestamp, or `null`
+   * (the default) for the current time.
+   */
+  referenceTime: {
+    value: null,
+    coerce(time) {
+      if (time instanceof Date) {
+        time = time.getTime();
+      }
+      if (time !== null && !Number.isFinite(time)) {
+        throw new TypeError("The reference time must be a timestamp, a Date or null.");
+      }
+      return time;
+    }
+  }
+});
+var getDateTimeParser = lazySingleton(() => new DateTimeParser());
+function parseDate(input) {
+  return getDateTimeParser().parseDate(input);
+}
+__name(parseDate, "parseDate");
+function parseDateTime(input) {
+  return getDateTimeParser().parseDateTime(input);
+}
+__name(parseDateTime, "parseDateTime");
+function parseTime(input) {
+  return getDateTimeParser().parseTime(input);
+}
+__name(parseTime, "parseTime");
+
+// src/widgets/date-edit.js
+var DEFAULT_DATE_FORMAT = Object.freeze({ dateStyle: "medium" });
 function checkDate2(date) {
   if (date === null || date === void 0 || date === "") {
     return null;
@@ -14140,6 +15850,9 @@ var DateEdit = class extends LineEdit {
     this._popover = null;
     this._formatter = null;
     this._updatingText = false;
+    this._parser = new DateTimeParser({ timeZone: "local" });
+    this._inputEl.setAttribute("role", "combobox");
+    this._inputEl.setAttribute("aria-autocomplete", "none");
     this._inputEl.setAttribute("aria-haspopup", "grid");
     this._inputEl.setAttribute("aria-expanded", "false");
     this._buttonEl.addEventListener("pointerdown", (event) => this._onButtonPointerDown(event));
@@ -14166,7 +15879,7 @@ var DateEdit = class extends LineEdit {
    */
   get calendar() {
     if (!this._calendar) {
-      this._calendar = new Calendar({ activateOnClick: true });
+      this._calendar = new Calendar({ activateOnSingleClick: true });
       this._calendar.connect("day-activate", () => this._onCalendarActivate());
       this._popover = new Popover({ owner: this, align: "end" });
       this._popover.addStyleClass("wy-date-edit-popover");
@@ -14199,13 +15912,13 @@ var DateEdit = class extends LineEdit {
   /**
    * Opens the calendar.
    */
-  openPopup() {
+  popup() {
     this.popupOpen = true;
   }
   /**
    * Closes the calendar.
    */
-  closePopup() {
+  popdown() {
     this.popupOpen = false;
   }
   /**
@@ -14222,18 +15935,23 @@ var DateEdit = class extends LineEdit {
    */
   formatDate(date) {
     if (!this._formatter) {
-      this._formatter = new Intl.DateTimeFormat(getLocaleManager().locale, this._format);
+      this._formatter = new Intl.DateTimeFormat(getLocaleManager().locale, {
+        calendar: "gregory",
+        ...this._format
+      });
     }
     return this._formatter.format(date);
   }
   /**
-   * Parses a typed date. Override to accept other notations.
+   * Parses a typed date with the date parser (`DateTimeParser#parseDate`) of the current locale,
+   * in local time. A missing year is this year. Override to accept other notations.
    *
    * @param {string} text
-   * @returns {Date | null}
+   * @returns {Date | null} The date at local midnight, or `null` if the text is not a date.
    */
   parseDate(text) {
-    return parseLocaleDate(text, getLocaleManager().locale, this._date || /* @__PURE__ */ new Date());
+    const date = this._parser.parseDate(text);
+    return date && startOfDay(date);
   }
   activate() {
     this._normalizeText();
@@ -14241,6 +15959,7 @@ var DateEdit = class extends LineEdit {
   }
   destroy() {
     this._localeDisconnect();
+    this._parser.destroy();
     this._popover?.destroy();
     super.destroy();
   }
@@ -14258,6 +15977,7 @@ var DateEdit = class extends LineEdit {
     return (!this._minDate || compareDays(date, this._minDate) >= 0) && (!this._maxDate || compareDays(date, this._maxDate) <= 0);
   }
   _onTextChange(text) {
+    super._onTextChange(text);
     if (this._updatingText) {
       return;
     }
@@ -14277,7 +15997,6 @@ var DateEdit = class extends LineEdit {
     }
     this.emit("date-change", this);
     this.emit("value-change", this);
-    this.emit("change", this);
   }
   _updateText() {
     this._updatingText = true;
@@ -14433,7 +16152,9 @@ defineProperties(DateEdit, {
   },
   /**
    * How dates are shown: options of `Intl.DateTimeFormat`, such as `{dateStyle: 'short'}` or
-   * `{year: 'numeric', month: 'long', day: 'numeric'}`.
+   * `{year: 'numeric', month: 'long', day: 'numeric'}`. Dates are shown in the Gregorian
+   * calendar, which is the one typed dates are read in, also in locales that default to another
+   * one.
    */
   format: {
     value: DEFAULT_DATE_FORMAT,
@@ -14450,7 +16171,7 @@ defineProperties(DateEdit, {
     }
   },
   /**
-   * Whether the calendar is open.
+   * Whether the calendar is open. Setting it opens or closes the calendar.
    */
   popupOpen: {
     value: false,
@@ -15360,6 +17081,14 @@ var MessageDialog = class extends Dialog {
     box.addChild(this._image);
     box.addChild(this._messageArea);
     this.contentArea.addChild(box);
+    for (const label of [this._textLabel, this._secondaryLabel]) {
+      label.el.id ||= uniqueId("wy-message-dialog-text");
+    }
+    this.el.setAttribute("role", "alertdialog");
+    this.el.setAttribute(
+      "aria-describedby",
+      `${this._textLabel.el.id} ${this._secondaryLabel.el.id}`
+    );
     this._syncIcon();
     this._syncTexts();
   }
@@ -15530,13 +17259,13 @@ async function confirm(text, options = {}) {
   return response === Response.OK || response === Response.YES;
 }
 __name(confirm, "confirm");
-async function prompt(text, options = {}) {
-  const dialog = createMessageDialog(text, options, {
+async function prompt(message, options = {}) {
+  const dialog = createMessageDialog(message, options, {
     messageType: MessageType.QUESTION,
     buttonsType: ButtonsType.OK_CANCEL
   });
   const lineEdit = new LineEdit({
-    text: options.value ?? "",
+    text: options.text ?? options.value ?? "",
     placeholder: options.placeholder ?? "",
     hExpand: true
   });
@@ -15597,6 +17326,7 @@ var InfoBar = class extends Bin {
     this._box.addChild(this._actionArea);
     this._box.addChild(this._closeButton);
     super.insertChild(this._box, 0);
+    this.el.addEventListener("keydown", (event) => this._onKeyDown(event));
     this.el.addEventListener("transitionend", (event) => {
       if (event.target === this.el) {
         this._finishTransition();
@@ -15767,6 +17497,24 @@ var InfoBar = class extends Bin {
   }
   _getFocusChain() {
     return this._revealed ? super._getFocusChain() : [];
+  }
+  _onKeyDown(event) {
+    if (event.key !== Key.ESCAPE || event.defaultPrevented || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey || !this._revealed) {
+      return;
+    }
+    const cancel = this._buttons.get(Response.CANCEL);
+    let response = null;
+    if (cancel && cancel.isVisible && cancel.isSensitive) {
+      response = Response.CANCEL;
+    } else if (this._showCloseButton) {
+      response = Response.CLOSE;
+    }
+    if (response === null) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    this.response(response);
   }
   _computeExpand(direction) {
     return direction === "h" && super._computeExpand(direction);
@@ -15995,6 +17743,20 @@ function getCollator(locale, caseSensitive) {
   return collator;
 }
 __name(getCollator, "getCollator");
+var MODELS = /* @__PURE__ */ new Set();
+var MODEL_REGISTRY = new FinalizationRegistry((reference) => MODELS.delete(reference));
+var listeningToLocale = false;
+function onLocaleChange() {
+  for (const reference of [...MODELS]) {
+    const model = reference.deref();
+    if (!model || model.destroyed) {
+      MODELS.delete(reference);
+    } else {
+      model._onLocaleChange();
+    }
+  }
+}
+__name(onLocaleChange, "onLocaleChange");
 function toTimestamp(value) {
   if (value instanceof Date) {
     return value.getTime();
@@ -16023,7 +17785,8 @@ var AbstractModel = class extends Instance {
    *     original toolkit) the initial rows, followed by the other arguments.
    * @param {string | null} [idColumn] The id column, when the rows are passed as an array.
    * @param {string | null} [sortColumn] The sort column, when the rows are passed as an array.
-   * @param {number} [sortOrder] The sort order, when the rows are passed as an array.
+   * @param {string} [sortOrder] The sort order (one of `SortOrder`), when the rows are passed as
+   *     an array.
    */
   constructor(properties, idColumn, sortColumn, sortOrder) {
     if (Array.isArray(properties)) {
@@ -16042,6 +17805,18 @@ var AbstractModel = class extends Instance {
     this._indexById = null;
     this._indexDirty = true;
     this._columnsInfo = {};
+    this._modelReference = new WeakRef(this);
+    MODELS.add(this._modelReference);
+    MODEL_REGISTRY.register(this, this._modelReference, this._modelReference);
+    if (!listeningToLocale) {
+      listeningToLocale = true;
+      getLocaleManager().connect("locale-change", onLocaleChange);
+    }
+  }
+  destroy() {
+    MODELS.delete(this._modelReference);
+    MODEL_REGISTRY.unregister(this._modelReference);
+    super.destroy();
   }
   /**
    * Sets several properties. The sort column and order are applied together, so the rows are
@@ -16181,8 +17956,8 @@ var AbstractModel = class extends Instance {
    * Inserts a row at an index. If the model is sorted, the row is placed at its sorted position
    * instead.
    *
-   * @param {number} index Between 0 and `rowsCount`.
-   * @param {object} row
+   * @param {number} _index Between 0 and `rowsCount`.
+   * @param {object} _row
    * @returns {number} The index the row got.
    * @throws {RangeError} If the index is invalid.
    * @throws {Error} If the model has an id column and the id is already in use.
@@ -16205,8 +17980,8 @@ var AbstractModel = class extends Instance {
    * sorted positions. With more than one row, listeners get a single `rows-reorder` signal
    * instead of one `row-insert` per row.
    *
-   * @param {number} index
-   * @param {object[]} rows
+   * @param {number} _index
+   * @param {object[]} _rows
    */
   insertRows(_index, _rows) {
     throw new Error(`${this.constructor.name} does not implement insertRows().`);
@@ -16214,7 +17989,7 @@ var AbstractModel = class extends Instance {
   /**
    * Removes a row.
    *
-   * @param {number} index
+   * @param {number} _index
    * @returns {object} The removed row.
    */
   removeRow(_index) {
@@ -16238,8 +18013,8 @@ var AbstractModel = class extends Instance {
   /**
    * Replaces a row by another row object. The model stays sorted.
    *
-   * @param {number} index
-   * @param {object} row
+   * @param {number} _index
+   * @param {object} _row
    * @returns {number} The index of the new row.
    */
   replaceRow(_index, _row) {
@@ -16259,8 +18034,8 @@ var AbstractModel = class extends Instance {
    * Changes values of a row: the given columns are assigned to the row object. The model stays
    * sorted, so the row may move.
    *
-   * @param {number} index
-   * @param {Record<string, unknown>} changes Values by column.
+   * @param {number} _index
+   * @param {Record<string, unknown>} _changes Values by column.
    * @returns {number} The index of the row after the change.
    */
   updateRow(_index, _changes) {
@@ -16310,8 +18085,8 @@ var AbstractModel = class extends Instance {
   /**
    * Sorts the model on a column. The model keeps itself sorted when rows change.
    *
-   * @param {string | null} column The column, or `null` to stop sorting.
-   * @param {number} [order] One of `SortOrder`. `SortOrder.NONE` stops sorting.
+   * @param {string | null} _column The column, or `null` to stop sorting.
+   * @param {string} [_order] One of `SortOrder`. `SortOrder.NONE` stops sorting.
    */
   sortByColumn(_column, _order = SortOrder.ASCENDING) {
     throw new Error(`${this.constructor.name} does not implement sortByColumn().`);
@@ -16401,6 +18176,34 @@ var AbstractModel = class extends Instance {
       this._indexDirty = false;
     }
     return this._indexById;
+  }
+  /**
+   * Checks that all rows have a different value in a column, before it becomes the id column.
+   *
+   * @protected
+   * @param {string} column
+   * @throws {Error} If two rows have the same id.
+   */
+  _checkUniqueIds(column) {
+    const ids = /* @__PURE__ */ new Set();
+    for (const row of this.rows) {
+      const id = row[column];
+      if (ids.has(id)) {
+        throw new Error(`Duplicate row id ${String(id)}.`);
+      }
+      ids.add(id);
+    }
+  }
+  /**
+   * Sorts the rows again after the locale changed, when strings are compared with its rules.
+   *
+   * @protected
+   */
+  _onLocaleChange() {
+    const column = this.sortColumn;
+    if (this.localeAware && column && this.sortOrder !== SortOrder.NONE && !this.getColumnInfo(column).compare && typeof this._onSortingChange === "function") {
+      this._onSortingChange();
+    }
   }
   /**
    * Marks the id index as outdated.
@@ -16597,15 +18400,18 @@ defineProperties(AbstractModel, {
   /**
    * The column that identifies rows, or `null`. With an id column, rows can be addressed by
    * id, and selections keep rows selected while they are sorted or filtered. Ids must be
-   * unique.
+   * unique: setting a column in which two rows have the same id throws and changes nothing.
    */
   idColumn: {
     value: null,
+    coerce(column) {
+      if (column) {
+        this._checkUniqueIds(column);
+      }
+      return column;
+    },
     changed() {
       this._invalidateIndex();
-      if (this._idColumn) {
-        this._getIndexById();
-      }
     }
   },
   /**
@@ -16646,34 +18452,573 @@ defineProperties(AbstractModel, {
   }
 });
 
-// src/widgets/list-box.js
-var SelectionMode = Object.freeze({
-  NONE: "none",
-  // No row can be selected.
-  SINGLE: "single",
-  // At most one row; Control+click deselects it.
-  BROWSE: "browse",
-  // One row, which the user cannot deselect.
-  MULTIPLE: "multiple"
-  // Any number of rows, extended with Shift and Control.
-});
+// src/data/selection.js
 var SELECTION_MODES = new Set(Object.values(SelectionMode));
-function toSelectionMode(mode) {
-  if (typeof mode === "number") {
-    if (mode & SelectionModes.MULTI) {
-      return SelectionMode.MULTIPLE;
-    }
-    if (mode & SelectionModes.SINGLE) {
-      return mode & SelectionModes.TOGGLE ? SelectionMode.SINGLE : SelectionMode.BROWSE;
-    }
-    return SelectionMode.NONE;
-  }
+function checkSelectionMode(mode) {
   if (!SELECTION_MODES.has(mode)) {
     throw new RangeError(`Invalid selection mode '${mode}'.`);
   }
   return mode;
 }
-__name(toSelectionMode, "toSelectionMode");
+__name(checkSelectionMode, "checkSelectionMode");
+var Selection = class extends Instance {
+  static {
+    __name(this, "Selection");
+  }
+  _initialize() {
+    super._initialize();
+    this._keys = /* @__PURE__ */ new Set();
+    this._batch = 0;
+    this._batchChanged = false;
+  }
+  destroy() {
+    this._connectModel(null);
+    this._keys.clear();
+    super.destroy();
+  }
+  /**
+   * Whether rows are selected by id (the model has row ids, see `AbstractModel#hasRowIds`).
+   *
+   * @type {boolean}
+   */
+  get byId() {
+    return Boolean(this._model?.hasRowIds);
+  }
+  /**
+   * Returns the key of the row at an index: its id, or the index itself.
+   *
+   * @param {number} index
+   * @returns {unknown}
+   */
+  getKey(index) {
+    const model = this._requireModel();
+    return this.byId ? model.getRowIdByIndex(index) : (model.getRow(index), index);
+  }
+  /**
+   * Returns the index of the row with a key, or -1 if it is not in the model.
+   *
+   * @param {unknown} key
+   * @returns {number}
+   */
+  getIndex(key) {
+    const model = this._model;
+    if (!model) {
+      return -1;
+    }
+    if (this.byId) {
+      return model.hasRowId(key) ? model.getRowIndexById(key) : -1;
+    }
+    return Number.isInteger(key) && key >= 0 && key < model.rowsCount ? key : -1;
+  }
+  /**
+   * Selects a row by key. With `single` and `browse`, the other rows are unselected.
+   *
+   * @param {unknown} key
+   * @returns {boolean} Whether the selection changed.
+   */
+  selectRow(key) {
+    this._checkKey(key);
+    if (this._selectionMode === SelectionMode.NONE) {
+      return false;
+    }
+    if (this._isSingle()) {
+      return this.selectOnlyRow(key);
+    }
+    return this._run(() => this._add(key));
+  }
+  /**
+   * Selects only one row, unselecting all others.
+   *
+   * @param {unknown} key
+   * @returns {boolean} Whether the selection changed.
+   */
+  selectOnlyRow(key) {
+    this._checkKey(key);
+    if (this._selectionMode === SelectionMode.NONE) {
+      return false;
+    }
+    return this._run(() => {
+      for (const other of [...this._keys]) {
+        if (!Object.is(other, key)) {
+          this._delete(other);
+        }
+      }
+      this._add(key);
+    });
+  }
+  /**
+   * Selects all rows. Only with `multiple`; otherwise this does nothing.
+   *
+   * @returns {boolean} Whether the selection changed.
+   */
+  selectAllRows() {
+    const model = this._requireModel();
+    if (this._selectionMode !== SelectionMode.MULTIPLE) {
+      return false;
+    }
+    return this._run(() => {
+      for (let i = 0; i < model.rowsCount; ++i) {
+        this._add(this.getKey(i));
+      }
+    });
+  }
+  /**
+   * Unselects a row by key.
+   *
+   * @param {unknown} key
+   * @returns {boolean} Whether the selection changed.
+   */
+  deselectRow(key) {
+    return this._run(() => this._delete(key));
+  }
+  /**
+   * Unselects all rows.
+   *
+   * @returns {boolean} Whether the selection changed.
+   */
+  deselectAllRows() {
+    return this._run(() => {
+      for (const key of [...this._keys]) {
+        this._delete(key);
+      }
+    });
+  }
+  /**
+   * Toggles the selection of a row by key.
+   *
+   * @param {unknown} key
+   * @returns {boolean} Whether the selection changed.
+   */
+  toggleRow(key) {
+    return this._keys.has(key) ? this.deselectRow(key) : this.selectRow(key);
+  }
+  /**
+   * Whether a row is selected, by key.
+   *
+   * @param {unknown} key
+   * @returns {boolean}
+   */
+  isRowSelected(key) {
+    return this._keys.has(key);
+  }
+  /**
+   * Calls a function for every selected row key, in selection order.
+   *
+   * @param {(key: unknown, index: number) => void} method Receives the key and its position in
+   *     the selection.
+   * @param {object} [context]
+   */
+  forEachRow(method, context) {
+    let i = 0;
+    for (const key of [...this._keys]) {
+      method.call(context, key, i++);
+    }
+  }
+  /**
+   * Returns a selected row key, in selection order.
+   *
+   * @param {number} [index]
+   * @returns {unknown}
+   * @throws {RangeError} If there is no such selected row.
+   */
+  getSelectedRowId(index = 0) {
+    if (!Number.isInteger(index) || index < 0 || index >= this._keys.size) {
+      throw new RangeError("The selected row could not be found.");
+    }
+    let i = 0;
+    for (const key of this._keys) {
+      if (i++ === index) {
+        return key;
+      }
+    }
+    return void 0;
+  }
+  /**
+   * Returns a selected row, in selection order.
+   *
+   * @param {number} [index]
+   * @returns {object}
+   */
+  getSelectedRow(index = 0) {
+    return this._rowOf(this.getSelectedRowId(index));
+  }
+  /**
+   * Selects the row at an index.
+   *
+   * @param {number} index
+   * @returns {boolean} Whether the selection changed.
+   */
+  select(index) {
+    return this.selectRow(this.getKey(index));
+  }
+  /**
+   * Selects only the row at an index.
+   *
+   * @param {number} index
+   * @returns {boolean} Whether the selection changed.
+   */
+  selectOnly(index) {
+    return this.selectOnlyRow(this.getKey(index));
+  }
+  /**
+   * Unselects the row at an index.
+   *
+   * @param {number} index
+   * @returns {boolean} Whether the selection changed.
+   */
+  unselect(index) {
+    return this.deselectRow(this.getKey(index));
+  }
+  /**
+   * Toggles the selection of the row at an index.
+   *
+   * @param {number} index
+   * @returns {boolean} Whether the selection changed.
+   */
+  toggle(index) {
+    return this.toggleRow(this.getKey(index));
+  }
+  /**
+   * Whether the row at an index is selected.
+   *
+   * @param {number} index
+   * @returns {boolean}
+   */
+  isSelected(index) {
+    const model = this._model;
+    if (!model || !this._keys.size || !Number.isInteger(index) || index < 0 || index >= model.rowsCount) {
+      return false;
+    }
+    return this._keys.has(this.byId ? model.getRowIdByIndex(index) : index);
+  }
+  /**
+   * Selects the rows from one index to another (in either order). Without `multiple`, only the
+   * row at `to` is selected.
+   *
+   * @param {number} from
+   * @param {number} to
+   * @param {boolean} [extend] Whether to keep the rows that are already selected.
+   * @returns {boolean} Whether the selection changed.
+   */
+  selectRange(from, to, extend = false) {
+    const model = this._requireModel();
+    const count = model.rowsCount;
+    if (!Number.isInteger(from) || !Number.isInteger(to)) {
+      throw new TypeError("Range indices must be integers.");
+    }
+    if (from < 0 || to < 0 || from >= count || to >= count) {
+      throw new RangeError(`Invalid row range ${from} to ${to}.`);
+    }
+    if (this._selectionMode === SelectionMode.NONE) {
+      return false;
+    }
+    if (this._selectionMode !== SelectionMode.MULTIPLE) {
+      return this.selectOnly(to);
+    }
+    const start = Math.min(from, to);
+    const end = Math.max(from, to);
+    return this._run(() => {
+      if (!extend) {
+        const keep = /* @__PURE__ */ new Set();
+        for (let i = start; i <= end; ++i) {
+          keep.add(this.getKey(i));
+        }
+        for (const key of [...this._keys]) {
+          if (!keep.has(key)) {
+            this._delete(key);
+          }
+        }
+      }
+      for (let i = start; i <= end; ++i) {
+        this._add(this.getKey(i));
+      }
+    });
+  }
+  /**
+   * Selects all rows.
+   *
+   * @returns {boolean} Whether the selection changed.
+   */
+  selectAll() {
+    return this.selectAllRows();
+  }
+  /**
+   * Unselects all rows.
+   *
+   * @returns {boolean} Whether the selection changed.
+   */
+  unselectAll() {
+    return this.deselectAllRows();
+  }
+  _requireModel() {
+    if (!this._model) {
+      throw new Error("The selection is not connected to a model.");
+    }
+    return this._model;
+  }
+  _checkKey(key) {
+    if (this.getIndex(key) < 0) {
+      this._requireModel();
+      throw new RangeError(`There is no row ${String(key)}.`);
+    }
+  }
+  _rowOf(key) {
+    const model = this._requireModel();
+    return this.byId ? model.getRowById(key) : model.getRow(key);
+  }
+  _isSingle() {
+    return this._selectionMode === SelectionMode.SINGLE || this._selectionMode === SelectionMode.BROWSE;
+  }
+  /**
+   * Runs a change, emitting `change` once at the end if anything changed.
+   *
+   * @param {() => void} method
+   * @returns {boolean} Whether the selection changed.
+   */
+  _run(method) {
+    this._batch += 1;
+    const before = this._batchChanged;
+    this._batchChanged = false;
+    let changed;
+    try {
+      method();
+    } finally {
+      changed = this._batchChanged;
+      this._batchChanged = before || changed;
+      this._batch -= 1;
+    }
+    if (!this._batch && this._batchChanged) {
+      this._batchChanged = false;
+      this.emit("change", this);
+    }
+    return changed;
+  }
+  _add(key) {
+    if (this._keys.has(key)) {
+      return;
+    }
+    this._keys.add(key);
+    this._batchChanged = true;
+    this.emit("row-select", this, key);
+  }
+  _delete(key) {
+    if (!this._keys.delete(key)) {
+      return;
+    }
+    this._batchChanged = true;
+    this.emit("row-deselect", this, key);
+  }
+  _connectModel(model) {
+    const old = this._model;
+    if (old) {
+      old.disconnect("row-insert", this._onRowInsert, this);
+      old.disconnect("row-remove", this._onRowRemove, this);
+      old.disconnect("row-move", this._onRowMove, this);
+      old.disconnect("row-update", this._onRowUpdate, this);
+      old.disconnect("rows-reorder", this._onRowsReorder, this);
+      old.disconnect("id-column-change", this._onIdColumnChange, this);
+      old.disconnect("destroy", this._onModelDestroy, this);
+    }
+    this._model = model;
+    if (model) {
+      model.connect("row-insert", this._onRowInsert, this);
+      model.connect("row-remove", this._onRowRemove, this);
+      model.connect("row-move", this._onRowMove, this);
+      model.connect("row-update", this._onRowUpdate, this);
+      model.connect("rows-reorder", this._onRowsReorder, this);
+      model.connect("id-column-change", this._onIdColumnChange, this);
+      model.connect("destroy", this._onModelDestroy, this);
+    }
+  }
+  /**
+   * Replaces the index keys after rows shifted, without selecting or unselecting anything.
+   *
+   * @param {(index: number) => number} map Returns the new index, or -1 to drop the key.
+   */
+  _remapIndices(map) {
+    const keys = /* @__PURE__ */ new Set();
+    const dropped = [];
+    for (const key of this._keys) {
+      const index = map(key);
+      if (index < 0) {
+        dropped.push(key);
+      } else {
+        keys.add(index);
+      }
+    }
+    this._keys = keys;
+    if (dropped.length) {
+      this._run(() => {
+        this._batchChanged = true;
+        for (const key of dropped) {
+          this.emit("row-deselect", this, key);
+        }
+      });
+    }
+  }
+  _onRowInsert(_model, index) {
+    if (!this.byId && this._keys.size) {
+      this._remapIndices((key) => key >= index ? key + 1 : key);
+    }
+  }
+  _onRowRemove(_model, index, id) {
+    if (this.byId) {
+      this.deselectRow(id);
+    } else if (this._keys.size) {
+      this._remapIndices((key) => key === index ? -1 : key > index ? key - 1 : key);
+    }
+  }
+  _onRowMove(_model, from, to) {
+    if (this.byId || !this._keys.size) {
+      return;
+    }
+    this._remapIndices((key) => {
+      if (key === from) {
+        return to;
+      }
+      if (from < to && key > from && key <= to) {
+        return key - 1;
+      }
+      if (to < from && key >= to && key < from) {
+        return key + 1;
+      }
+      return key;
+    });
+  }
+  _onRowUpdate(_model, _index, id, oldId) {
+    if (!this.byId || Object.is(id, oldId) || !this._keys.has(oldId)) {
+      return;
+    }
+    this._keys = new Set([...this._keys].map((key) => Object.is(key, oldId) ? id : key));
+    this._run(() => {
+      this._batchChanged = true;
+      this.emit("row-deselect", this, oldId);
+      this.emit("row-select", this, id);
+    });
+  }
+  _onRowsReorder() {
+    if (!this._keys.size) {
+      return;
+    }
+    if (this.byId) {
+      this._run(() => {
+        for (const key of [...this._keys]) {
+          if (!this._model.hasRowId(key)) {
+            this._delete(key);
+          }
+        }
+      });
+    } else {
+      this.deselectAllRows();
+    }
+  }
+  _onIdColumnChange() {
+    this.deselectAllRows();
+  }
+  _onModelDestroy() {
+    this.model = null;
+  }
+};
+defineProperties(Selection, {
+  /**
+   * The model the selection is of. Changing it clears the selection.
+   */
+  model: {
+    value: null,
+    set(model) {
+      if (model !== null && !(model instanceof AbstractModel)) {
+        throw new TypeError("A selection needs a model.");
+      }
+      this.deselectAllRows();
+      this._connectModel(model);
+    }
+  },
+  /**
+   * How rows can be selected: one of `SelectionMode`. With `none` nothing can be selected; with
+   * `single` and `browse` at most one row. Changing it keeps at most the last selected row,
+   * except with `multiple`, and nothing with `none`.
+   */
+  selectionMode: {
+    value: SelectionMode.SINGLE,
+    coerce: checkSelectionMode,
+    changed(mode) {
+      if (mode === SelectionMode.NONE) {
+        this.deselectAllRows();
+      } else if (this._isSingle() && this._keys.size > 1) {
+        const last = [...this._keys].pop();
+        this.selectOnlyRow(last);
+      }
+    }
+  },
+  /**
+   * Whether a click toggles the selection of a row in the tables that use the selection, as a
+   * Control+click does: a click on a selected row unselects it (except with `browse`), and with
+   * `multiple`, a click on another row adds it to the selection. The table sets it from its own
+   * `toggleSelection`.
+   */
+  toggleSelection: { value: false, coerce: Boolean },
+  /**
+   * The keys (ids, or indices without an id column) of the selected rows, in selection order.
+   * Setting it selects exactly those rows.
+   */
+  selectedRowIds: {
+    signal: false,
+    get() {
+      return [...this._keys];
+    },
+    set(keys) {
+      if (!Array.isArray(keys)) {
+        throw new TypeError("Selected row ids must be an array.");
+      }
+      keys.forEach((key) => this._checkKey(key));
+      const wanted = this._selectionMode === SelectionMode.NONE ? [] : this._isSingle() ? keys.slice(-1) : keys;
+      this._run(() => {
+        const keep = new Set(wanted);
+        for (const key of [...this._keys]) {
+          if (!keep.has(key)) {
+            this._delete(key);
+          }
+        }
+        for (const key of wanted) {
+          this._add(key);
+        }
+      });
+      return false;
+    }
+  },
+  /**
+   * The selected rows, in selection order.
+   */
+  selectedRows: {
+    readOnly: true,
+    get() {
+      return [...this._keys].map((key) => this._rowOf(key));
+    }
+  },
+  /**
+   * The indices of the selected rows, in ascending order.
+   */
+  selectedIndices: {
+    readOnly: true,
+    get() {
+      const indices = [...this._keys].map((key) => this.getIndex(key)).filter((x) => x >= 0);
+      return indices.sort((first, second) => first - second);
+    }
+  },
+  /**
+   * The number of selected rows.
+   */
+  selectedRowsCount: {
+    readOnly: true,
+    get() {
+      return this._keys.size;
+    }
+  }
+});
+registerType("selection", Selection);
+registerType("selection-model", Selection);
+
+// src/widgets/list-box.js
 function checkFunction(value, name) {
   if (value !== null && value !== void 0 && typeof value !== "function") {
     throw new TypeError(`The ${name} must be a function or null.`);
@@ -17294,7 +19639,9 @@ var ListBox = class extends Container {
         this._cursorRow = null;
       }
       if (hadFocus) {
-        const next = this._getNavigableRows()[0];
+        const index = this._children.indexOf(row);
+        const rows = this._getNavigableRows();
+        const next = rows.find((x) => this._children.indexOf(x) > index) || rows.findLast((x) => this._children.indexOf(x) < index);
         if (next) {
           this._setCursorRow(next, true);
         } else {
@@ -17431,7 +19778,8 @@ var ListBox = class extends Container {
    *
    * @protected
    * @param {ListBoxRow | null} row
-   * @param {boolean} modify Whether Control was held: only the cursor moves.
+   * @param {boolean} modify Whether Control was held: only the cursor moves (except with
+   *     `browse`).
    * @param {boolean} extend Whether Shift was held: the selection is extended (with `multiple`).
    */
   _moveCursor(row, modify, extend) {
@@ -17450,7 +19798,7 @@ var ListBox = class extends Container {
           this._anchorRow = previous || row;
         }
         this._selectRange(this._anchorRow, row, !modify);
-      } else if (!modify) {
+      } else if (!modify || mode === SelectionMode.BROWSE) {
         this._unselectAllExcept(row);
         row._setSelected(true);
         this._anchorRow = row;
@@ -17517,7 +19865,11 @@ var ListBox = class extends Container {
     if (!row || !row.isSensitive) {
       return;
     }
-    this._updateSelection(row, event.ctrlKey || event.metaKey, event.shiftKey);
+    this._updateSelection(
+      row,
+      event.ctrlKey || event.metaKey || this._toggleSelection,
+      event.shiftKey
+    );
   }
   _onClick(event) {
     const row = this._getRowFromTarget(event.target, true);
@@ -17700,12 +20052,14 @@ var ListBox = class extends Container {
 };
 defineProperties(ListBox, {
   /**
-   * How rows can be selected: one of `SelectionMode`. A mask of `SelectionModes` (as tables use)
-   * is converted. Changing it keeps at most the first selected row, except with `multiple`.
+   * How rows can be selected: one of `SelectionMode`, like in GTK. `single` (the default)
+   * selects at most one row, `browse` one row that the user cannot unselect, `multiple` any
+   * number of rows, and `none` disables selecting. Changing it keeps at most the first selected
+   * row, except with `multiple`.
    */
   selectionMode: {
     value: SelectionMode.SINGLE,
-    coerce: toSelectionMode,
+    coerce: checkSelectionMode,
     changed(mode) {
       this._changeSelection(() => {
         if (mode === SelectionMode.NONE) {
@@ -17717,6 +20071,12 @@ defineProperties(ListBox, {
       this._syncSelectionMode();
     }
   },
+  /**
+   * Whether a click toggles the selection of a row, as a Control+click does: a click on a
+   * selected row unselects it (except with `browse`), and with `multiple`, a click on another
+   * row adds it to the selection.
+   */
+  toggleSelection: { value: false, coerce: Boolean },
   /**
    * Whether a single click activates a row. Otherwise a double click does.
    */
@@ -17855,6 +20215,14 @@ var MainWindow = class extends AbstractWindow {
       document.documentElement.classList.remove("wy-page");
     }
   }
+  _syncAccessibleName() {
+    const name = this._accessibleName || this._title;
+    if (name) {
+      this.el.setAttribute("aria-label", name);
+    } else {
+      this.el.removeAttribute("aria-label");
+    }
+  }
   _onVisibleChange(visible) {
     if (visible) {
       const host = this.hostElement;
@@ -17865,6 +20233,9 @@ var MainWindow = class extends AbstractWindow {
     super._onVisibleChange(visible);
     if (!visible) {
       this.el.remove();
+      if (!this._host) {
+        document.documentElement.classList.remove("wy-page");
+      }
     }
   }
 };
@@ -17886,7 +20257,7 @@ defineProperties(MainWindow, {
       if (!this._host) {
         document.title = title;
       }
-      this.el.setAttribute("aria-label", title);
+      this._syncAccessibleName();
     }
   }
 });
@@ -17966,12 +20337,14 @@ var MenuBar = class extends Box {
     if (item) {
       manager._addShell(this);
       item._setSelected(true);
+      this.el.setAttribute("aria-activedescendant", item.el.id);
       if (item.submenu) {
         this._popupSubmenu(item, keyboard);
       } else {
         this.el.focus({ preventScroll: true });
       }
     } else {
+      this.el.removeAttribute("aria-activedescendant");
       manager._removeShell(this);
     }
     this.emit("selected-change", this);
@@ -19512,6 +21885,9 @@ var Notebook = class extends Container {
     return widget;
   }
   removeChild(widget) {
+    if (this._drag?.child === widget) {
+      this._endDrag();
+    }
     const wasCurrent = widget === this._current;
     const index = super.removeChild(widget);
     const tab = this._tabs.get(widget);
@@ -19522,7 +21898,6 @@ var Notebook = class extends Container {
     tab.pageEl.remove();
     this.emit("page-remove", this, widget, index);
     if (wasCurrent) {
-      this._current = null;
       this._setCurrent(this._findVisible(index, 1) || this._findVisible(index - 1, -1));
     } else {
       this._syncCurrent();
@@ -19674,7 +22049,9 @@ var Notebook = class extends Container {
       this.focus();
     }
     this.emit("current-page-change", this);
-    this.emit("switch-page", this, this._current, this._currentPage);
+    if (this._current) {
+      this.emit("switch-page", this, this._current, this._currentPage);
+    }
   }
   _findVisible(start, step) {
     for (let i = start; i >= 0 && i < this._children.length; i += step) {
@@ -20752,7 +23129,9 @@ var RadioButton = class _RadioButton extends CheckBox {
   _initialize() {
     super._initialize();
     this._disconnectGroup = null;
+    this._mnemonicStop = false;
     this.el.addEventListener("keydown", (event) => this._onKeyDown(event));
+    this.el.addEventListener("focusout", () => this._setMnemonicStop(false));
   }
   _render() {
     const element = createElement(`
@@ -20764,12 +23143,46 @@ var RadioButton = class _RadioButton extends CheckBox {
     this._bodyEl = element.querySelector(".wy-check-box-body");
     return element;
   }
-  _onClicked() {
+  _setAccessibleState(_state) {
+    this.el.setAttribute("aria-checked", String(this._active));
+  }
+  /**
+   * Activates the button, as if the user clicked it: clears `inconsistent`, makes the button
+   * active (a radio button never deactivates itself) and emits `activate`.
+   */
+  activate() {
     this.inconsistent = false;
-    if (!this._active) {
-      this.active = true;
+    this.active = true;
+    this.emit("activate", this);
+  }
+  _onClicked() {
+    this.activate();
+    if (!this.destroyed) {
+      this.focus();
     }
-    this.focus();
+  }
+  /**
+   * Activates the button for its mnemonic. When other widgets share the mnemonic, the button
+   * only takes the focus, also when it is not the group's stop in the focus chain; it stays a
+   * stop until the focus leaves it.
+   *
+   * @protected
+   * @param {boolean} groupCycling
+   */
+  _mnemonicActivate(groupCycling) {
+    if (groupCycling && !this._isFocusStop()) {
+      this._setMnemonicStop(true);
+    }
+    super._mnemonicActivate(groupCycling);
+    if (!this.isFocus) {
+      this._setMnemonicStop(false);
+    }
+  }
+  _setMnemonicStop(stop) {
+    if (stop !== this._mnemonicStop) {
+      this._mnemonicStop = stop;
+      this._updateTabIndex();
+    }
   }
   _onGroupChange(old, group) {
     this._disconnectGroup?.();
@@ -20802,7 +23215,7 @@ var RadioButton = class _RadioButton extends CheckBox {
   _isFocusStop() {
     const group = this._group;
     const active = group?.active;
-    if (!active || active === this) {
+    if (!active || active === this || this._mnemonicStop) {
       return true;
     }
     return !(active instanceof Widget) || !active.isVisible || !active.isSensitive || !active._canFocus;
@@ -20836,9 +23249,7 @@ var RadioButton = class _RadioButton extends CheckBox {
     event.preventDefault();
     const index = buttons.indexOf(this);
     const next = buttons[(index + direction + buttons.length) % buttons.length];
-    next.inconsistent = false;
-    next.active = true;
-    next.focus();
+    next._click();
   }
   destroy() {
     this._disconnectGroup?.();
@@ -20858,59 +23269,6 @@ defineProperties(RadioButton, {
   }
 });
 registerType("radio-button", RadioButton);
-
-// src/widgets/radio-menu-item.js
-var RadioMenuItem = class extends CheckMenuItem {
-  static {
-    __name(this, "RadioMenuItem");
-  }
-  _initialize() {
-    super._initialize();
-    this.el.classList.add("wy-radio-menu-item");
-  }
-  _getRole() {
-    return "menuitemradio";
-  }
-  /**
-   * Joins another item to this item's group. The group is created on first use.
-   *
-   * @param {RadioMenuItem | import('./widget.js').Widget} button
-   */
-  join(button) {
-    if (!this._group) {
-      this.group = new ButtonGroup();
-    }
-    this._group.addButton(button);
-  }
-  _toggleOnActivate() {
-    this.inconsistent = false;
-    this.active = true;
-  }
-  destroy() {
-    this.group = null;
-    super.destroy();
-  }
-};
-defineProperties(RadioMenuItem, {
-  drawAsRadio: { value: true },
-  /**
-   * The `ButtonGroup` of the item, or `null`. Items of the same group exclude each other.
-   */
-  group: {
-    value: null,
-    set(group) {
-      const old = this._group;
-      this._group = group;
-      if (old && old.buttons.includes(this)) {
-        old.removeButton(this);
-      }
-      if (group && !group.buttons.includes(this)) {
-        group.addButton(this);
-      }
-    }
-  }
-});
-registerType("radio-menu-item", RadioMenuItem);
 
 // src/widgets/radio-tool-item.js
 var RadioToolItem = class extends CheckToolItem {
@@ -21780,15 +24138,15 @@ var ScrollBar = class extends AbstractSlider {
   }
   _initialize() {
     super._initialize();
-    for (const [element, forward] of [
+    this._stepperDetaches = [
       [this._backwardEl, false],
       [this._forwardEl, true]
-    ]) {
-      attachPressRepeat(element, {
+    ].map(
+      ([element, forward]) => attachPressRepeat(element, {
         canStart: /* @__PURE__ */ __name(() => this.isSensitive, "canStart"),
-        onStep: /* @__PURE__ */ __name(() => this._step(forward), "onStep")
-      });
-    }
+        onStep: /* @__PURE__ */ __name(() => this.isSensitive && this._step(forward), "onStep")
+      })
+    );
   }
   _render() {
     const element = createElement(`
@@ -21814,6 +24172,12 @@ var ScrollBar = class extends AbstractSlider {
       pageIncrement: 10,
       pageSize: 10
     });
+  }
+  destroy() {
+    for (const detach of this._stepperDetaches) {
+      detach();
+    }
+    super.destroy();
   }
   _step(forward) {
     const adjustment = this._adjustment;
@@ -22031,30 +24395,30 @@ var Spacer = class extends Widget {
 };
 registerType("spacer", Spacer);
 
+// src/i18n/double-parser.js
+var DOUBLE_REGEXP = new RegExp(
+  `^[+-]?(?:${INTEGER_DIGITS_PATTERN}(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$`
+);
+var DoubleParser = class extends NumberParser {
+  static {
+    __name(this, "DoubleParser");
+  }
+  _getRegExp() {
+    return DOUBLE_REGEXP;
+  }
+  _toNumber(text) {
+    const value = Number(text);
+    return Number.isFinite(value) ? value : null;
+  }
+};
+var getDoubleParser = lazySingleton(() => new DoubleParser());
+function parseDouble(input) {
+  return getDoubleParser().parse(input);
+}
+__name(parseDouble, "parseDouble");
+
 // src/widgets/spin-button.js
 var CLIMB_REPEATS = 5;
-function parseLocaleNumber(text, locale) {
-  const manager = getLocaleManager();
-  let decimal = manager.decimalSeparator;
-  let group = manager.groupSeparator;
-  if (locale && locale !== manager.locale) {
-    const parts = new Intl.NumberFormat(locale).formatToParts(12345.6);
-    decimal = parts.find((x) => x.type === "decimal")?.value || ".";
-    group = parts.find((x) => x.type === "group")?.value || ",";
-  }
-  let value = String(text).trim().replace(/[\u2212\u2012\u2013]/g, "-").replace(/[\s\u00a0\u202f]/g, "");
-  if (group !== decimal && (value.includes(decimal) || group !== ".")) {
-    value = value.split(group).join("");
-  }
-  if (decimal !== ".") {
-    value = value.replace(decimal, ".");
-  }
-  if (!/^[+-]?(\d+\.?\d*|\.\d+)$/.test(value)) {
-    return null;
-  }
-  return Number(value);
-}
-__name(parseLocaleNumber, "parseLocaleNumber");
 var SpinButton = class extends LineEdit {
   static {
     __name(this, "SpinButton");
@@ -22068,14 +24432,16 @@ var SpinButton = class extends LineEdit {
     this._inputEl.inputMode = "decimal";
     this._inputEl.addEventListener("beforeinput", (event) => this._onBeforeInput(event));
     this.el.addEventListener("wheel", (event) => this._onWheel(event), { passive: false });
+    this._stepperDetaches = [];
     for (const [element, direction] of [
       [this._upEl, 1],
       [this._downEl, -1]
     ]) {
-      attachPressRepeat(element, {
+      const detach = attachPressRepeat(element, {
         canStart: /* @__PURE__ */ __name(() => this.isSensitive, "canStart"),
         onStep: /* @__PURE__ */ __name((count) => this._onStepperStep(direction, count), "onStep")
       });
+      this._stepperDetaches.push(detach);
       element.addEventListener("mousedown", (event) => {
         event.preventDefault();
         this.focus();
@@ -22163,11 +24529,15 @@ var SpinButton = class extends LineEdit {
   }
   /**
    * Applies typed text to the value. Text that is not a number is replaced by the current value.
+   * The text that shows the current value leaves it alone, so a value with more decimals than
+   * `digits` is not rounded unless the user typed another one.
    */
   update() {
-    const value = parseLocaleNumber(this._text);
-    if (value !== null) {
-      this._setValueFromUser(value);
+    if (this._text !== this.formatValue(this._adjustment.value)) {
+      const value = this.parseValue(this._text);
+      if (value !== null) {
+        this._setValueFromUser(value);
+      }
     }
     this._updateText();
   }
@@ -22192,13 +24562,27 @@ var SpinButton = class extends LineEdit {
     }
     return this._formatter.format(value);
   }
+  /**
+   * Parses typed text to a value with the double parser (`parseDouble`), which follows the
+   * locale manager: with the locale's separators (or swapped ones), in any digit set and with any
+   * minus sign. Override to accept other notations; it must accept what `formatValue` returns.
+   *
+   * @param {string} text
+   * @returns {number | null} The value, or `null` if the text is not a number.
+   */
+  parseValue(text) {
+    return parseDouble(text);
+  }
   destroy() {
+    for (const detach of this._stepperDetaches) {
+      detach();
+    }
     this._localeDisconnect();
     this._connectAdjustment(null);
     super.destroy();
   }
   _validate(text) {
-    return super._validate(text) && (text.trim() === "" || parseLocaleNumber(text) !== null);
+    return super._validate(text) && (text.trim() === "" || this.parseValue(text) !== null);
   }
   _setValueFromUser(value) {
     const adjustment = this._adjustment;
@@ -22301,7 +24685,7 @@ var SpinButton = class extends LineEdit {
     const manager = getLocaleManager();
     const allowed = /* @__PURE__ */ new Set(["-", "+", ".", manager.decimalSeparator, "\u2212"]);
     for (const character of event.data) {
-      if (!/\d/.test(character) && !allowed.has(character)) {
+      if (!/\p{Nd}/u.test(character) && !allowed.has(character)) {
         event.preventDefault();
         return;
       }
@@ -22355,9 +24739,16 @@ defineProperties(SpinButton, {
     }
   },
   /**
-   * The value, forwarded to the adjustment.
+   * The value, forwarded to the adjustment. Setting it also shows it, replacing typed text.
    */
-  value: adjustmentProperty2("value"),
+  value: {
+    ...adjustmentProperty2("value"),
+    set(value) {
+      this._adjustment.value = value;
+      this._updateText();
+      return false;
+    }
+  },
   /**
    * The minimum value, forwarded to the adjustment.
    */
@@ -22721,8 +25112,8 @@ var Switch = class extends Widget {
     return element;
   }
   /**
-   * Toggles the switch as if the user clicked it: emits `state-set`, and changes `active` unless
-   * a handler vetoed it.
+   * Activates the switch as if the user clicked it: emits `state-set`, changes `active` unless a
+   * handler vetoed it, and emits `activate`. Does nothing if the switch is insensitive.
    *
    * @returns {boolean} Whether `active` changed.
    */
@@ -22730,7 +25121,8 @@ var Switch = class extends Widget {
     return this._requestState(!this._active);
   }
   /**
-   * Asks for a new state on behalf of the user, as described for `state-set`.
+   * Asks for a new state on behalf of the user, as described for `state-set`, and emits
+   * `activate`.
    *
    * @protected
    * @param {boolean} state
@@ -22740,13 +25132,19 @@ var Switch = class extends Widget {
     if (!this.isSensitive || this.destroyed) {
       return false;
     }
-    if (this.emit("state-set", this, state) || this.destroyed) {
-      this._updateState();
+    const vetoed = this.emit("state-set", this, state);
+    if (this.destroyed) {
       return false;
     }
-    this.active = state;
-    this.emit("activate", this);
-    return true;
+    if (vetoed) {
+      this._updateState();
+    } else {
+      this.active = state;
+    }
+    if (!this.destroyed) {
+      this.emit("activate", this);
+    }
+    return !vetoed;
   }
   /**
    * Focuses and toggles the switch for its mnemonic, or only focuses it when other widgets share
@@ -22849,6 +25247,7 @@ defineProperties(Switch, {
     coerce: Boolean,
     changed() {
       this._updateState();
+      this.emit("toggle", this);
     }
   }
 });
@@ -23216,11 +25615,6 @@ defineProperties(AbstractColumn, {
 });
 
 // src/columns/data-column.js
-var SortIndicator = Object.freeze({
-  NONE: "none",
-  ASCENDING: "asc",
-  DESCENDING: "desc"
-});
 var DataColumn = class extends AbstractColumn {
   static {
     __name(this, "DataColumn");
@@ -23237,7 +25631,7 @@ var DataColumn = class extends AbstractColumn {
    * Sorts the model on the column. Without an order, the order is reversed when the model is
    * already sorted on this column, and ascending otherwise.
    *
-   * @param {number} [order] One of `SortOrder`.
+   * @param {string} [order] One of `SortOrder`.
    */
   sort(order) {
     const model = this.model;
@@ -23246,7 +25640,7 @@ var DataColumn = class extends AbstractColumn {
       return;
     }
     if (order === void 0) {
-      order = this.sortIndicator === SortIndicator.ASCENDING ? SortOrder.DESCENDING : SortOrder.ASCENDING;
+      order = this.sortIndicator === SortOrder.ASCENDING ? SortOrder.DESCENDING : SortOrder.ASCENDING;
     }
     model.sortByColumn(order === SortOrder.NONE ? null : key, order);
   }
@@ -23322,7 +25716,8 @@ defineProperties(DataColumn, {
     }
   },
   /**
-   * The sort indicator of the header: one of {@link SortIndicator}.
+   * The sort indicator of the header: the `SortOrder` of the model when it is sorted on this
+   * column, and `SortOrder.NONE` otherwise.
    */
   sortIndicator: {
     readOnly: true,
@@ -23330,12 +25725,9 @@ defineProperties(DataColumn, {
       const model = this.model;
       const key = this._getSortKey();
       if (!model || !key || model.sortColumn !== key) {
-        return SortIndicator.NONE;
+        return SortOrder.NONE;
       }
-      if (model.sortOrder === SortOrder.ASCENDING) {
-        return SortIndicator.ASCENDING;
-      }
-      return model.sortOrder === SortOrder.DESCENDING ? SortIndicator.DESCENDING : SortIndicator.NONE;
+      return model.sortOrder;
     }
   },
   /**
@@ -23465,556 +25857,6 @@ var TextColumn = class extends DataColumn {
 };
 registerType("text-column", TextColumn);
 
-// src/data/selection.js
-var Selection = class extends Instance {
-  static {
-    __name(this, "Selection");
-  }
-  _initialize() {
-    super._initialize();
-    this._keys = /* @__PURE__ */ new Set();
-    this._batch = 0;
-    this._batchChanged = false;
-  }
-  destroy() {
-    this._connectModel(null);
-    this._keys.clear();
-    super.destroy();
-  }
-  /**
-   * Whether rows are selected by id (the model has row ids, see `AbstractModel#hasRowIds`).
-   *
-   * @type {boolean}
-   */
-  get byId() {
-    return Boolean(this._model?.hasRowIds);
-  }
-  /**
-   * Returns the key of the row at an index: its id, or the index itself.
-   *
-   * @param {number} index
-   * @returns {unknown}
-   */
-  getKey(index) {
-    const model = this._requireModel();
-    return this.byId ? model.getRowIdByIndex(index) : (model.getRow(index), index);
-  }
-  /**
-   * Returns the index of the row with a key, or -1 if it is not in the model.
-   *
-   * @param {unknown} key
-   * @returns {number}
-   */
-  getIndex(key) {
-    const model = this._model;
-    if (!model) {
-      return -1;
-    }
-    if (this.byId) {
-      return model.hasRowId(key) ? model.getRowIndexById(key) : -1;
-    }
-    return Number.isInteger(key) && key >= 0 && key < model.rowsCount ? key : -1;
-  }
-  /**
-   * Selects a row by key. With `SelectionModes.SINGLE`, the other rows are unselected.
-   *
-   * @param {unknown} key
-   * @returns {boolean} Whether the selection changed.
-   */
-  selectRow(key) {
-    this._checkKey(key);
-    if (!this._modes) {
-      return false;
-    }
-    if (this._isSingle()) {
-      return this.selectOnlyRow(key);
-    }
-    return this._run(() => this._add(key));
-  }
-  /**
-   * Selects only one row, unselecting all others.
-   *
-   * @param {unknown} key
-   * @returns {boolean} Whether the selection changed.
-   */
-  selectOnlyRow(key) {
-    this._checkKey(key);
-    if (!this._modes) {
-      return false;
-    }
-    return this._run(() => {
-      for (const other of [...this._keys]) {
-        if (!Object.is(other, key)) {
-          this._delete(other);
-        }
-      }
-      this._add(key);
-    });
-  }
-  /**
-   * Selects all rows. With `SelectionModes.SINGLE`, this does nothing.
-   *
-   * @returns {boolean} Whether the selection changed.
-   */
-  selectAllRows() {
-    const model = this._requireModel();
-    if (!(this._modes & SelectionModes.MULTI)) {
-      return false;
-    }
-    return this._run(() => {
-      for (let i = 0; i < model.rowsCount; ++i) {
-        this._add(this.getKey(i));
-      }
-    });
-  }
-  /**
-   * Unselects a row by key.
-   *
-   * @param {unknown} key
-   * @returns {boolean} Whether the selection changed.
-   */
-  deselectRow(key) {
-    return this._run(() => this._delete(key));
-  }
-  /**
-   * Unselects all rows.
-   *
-   * @returns {boolean} Whether the selection changed.
-   */
-  deselectAllRows() {
-    return this._run(() => {
-      for (const key of [...this._keys]) {
-        this._delete(key);
-      }
-    });
-  }
-  /**
-   * Toggles the selection of a row by key.
-   *
-   * @param {unknown} key
-   * @returns {boolean} Whether the selection changed.
-   */
-  toggleRow(key) {
-    return this._keys.has(key) ? this.deselectRow(key) : this.selectRow(key);
-  }
-  /**
-   * Whether a row is selected, by key.
-   *
-   * @param {unknown} key
-   * @returns {boolean}
-   */
-  isRowSelected(key) {
-    return this._keys.has(key);
-  }
-  /**
-   * Calls a function for every selected row key, in selection order.
-   *
-   * @param {(key: unknown, index: number) => void} method Receives the key and its position in
-   *     the selection.
-   * @param {object} [context]
-   */
-  forEachRow(method, context) {
-    let i = 0;
-    for (const key of [...this._keys]) {
-      method.call(context, key, i++);
-    }
-  }
-  /**
-   * Returns a selected row key, in selection order.
-   *
-   * @param {number} [index]
-   * @returns {unknown}
-   * @throws {RangeError} If there is no such selected row.
-   */
-  getSelectedRowId(index = 0) {
-    if (!Number.isInteger(index) || index < 0 || index >= this._keys.size) {
-      throw new RangeError("The selected row could not be found.");
-    }
-    let i = 0;
-    for (const key of this._keys) {
-      if (i++ === index) {
-        return key;
-      }
-    }
-    return void 0;
-  }
-  /**
-   * Returns a selected row, in selection order.
-   *
-   * @param {number} [index]
-   * @returns {object}
-   */
-  getSelectedRow(index = 0) {
-    return this._rowOf(this.getSelectedRowId(index));
-  }
-  /**
-   * Selects the row at an index.
-   *
-   * @param {number} index
-   * @returns {boolean} Whether the selection changed.
-   */
-  select(index) {
-    return this.selectRow(this.getKey(index));
-  }
-  /**
-   * Selects only the row at an index.
-   *
-   * @param {number} index
-   * @returns {boolean} Whether the selection changed.
-   */
-  selectOnly(index) {
-    return this.selectOnlyRow(this.getKey(index));
-  }
-  /**
-   * Unselects the row at an index.
-   *
-   * @param {number} index
-   * @returns {boolean} Whether the selection changed.
-   */
-  unselect(index) {
-    return this.deselectRow(this.getKey(index));
-  }
-  /**
-   * Toggles the selection of the row at an index.
-   *
-   * @param {number} index
-   * @returns {boolean} Whether the selection changed.
-   */
-  toggle(index) {
-    return this.toggleRow(this.getKey(index));
-  }
-  /**
-   * Whether the row at an index is selected.
-   *
-   * @param {number} index
-   * @returns {boolean}
-   */
-  isSelected(index) {
-    const model = this._model;
-    if (!model || !this._keys.size || !Number.isInteger(index) || index < 0 || index >= model.rowsCount) {
-      return false;
-    }
-    return this._keys.has(this.byId ? model.getRowIdByIndex(index) : index);
-  }
-  /**
-   * Selects the rows from one index to another (in either order). With `SelectionModes.SINGLE`,
-   * only the row at `to` is selected.
-   *
-   * @param {number} from
-   * @param {number} to
-   * @param {boolean} [extend] Whether to keep the rows that are already selected.
-   * @returns {boolean} Whether the selection changed.
-   */
-  selectRange(from, to, extend = false) {
-    const model = this._requireModel();
-    const count = model.rowsCount;
-    if (!Number.isInteger(from) || !Number.isInteger(to)) {
-      throw new TypeError("Range indices must be integers.");
-    }
-    if (from < 0 || to < 0 || from >= count || to >= count) {
-      throw new RangeError(`Invalid row range ${from} to ${to}.`);
-    }
-    if (!this._modes) {
-      return false;
-    }
-    if (!(this._modes & SelectionModes.MULTI)) {
-      return this.selectOnly(to);
-    }
-    const start = Math.min(from, to);
-    const end = Math.max(from, to);
-    return this._run(() => {
-      if (!extend) {
-        const keep = /* @__PURE__ */ new Set();
-        for (let i = start; i <= end; ++i) {
-          keep.add(this.getKey(i));
-        }
-        for (const key of [...this._keys]) {
-          if (!keep.has(key)) {
-            this._delete(key);
-          }
-        }
-      }
-      for (let i = start; i <= end; ++i) {
-        this._add(this.getKey(i));
-      }
-    });
-  }
-  /**
-   * Selects all rows.
-   *
-   * @returns {boolean} Whether the selection changed.
-   */
-  selectAll() {
-    return this.selectAllRows();
-  }
-  /**
-   * Unselects all rows.
-   *
-   * @returns {boolean} Whether the selection changed.
-   */
-  unselectAll() {
-    return this.deselectAllRows();
-  }
-  _requireModel() {
-    if (!this._model) {
-      throw new Error("The selection is not connected to a model.");
-    }
-    return this._model;
-  }
-  _checkKey(key) {
-    if (this.getIndex(key) < 0) {
-      this._requireModel();
-      throw new RangeError(`There is no row ${String(key)}.`);
-    }
-  }
-  _rowOf(key) {
-    const model = this._requireModel();
-    return this.byId ? model.getRowById(key) : model.getRow(key);
-  }
-  _isSingle() {
-    return Boolean(this._modes & SelectionModes.SINGLE) && !(this._modes & SelectionModes.MULTI);
-  }
-  /**
-   * Runs a change, emitting `change` once at the end if anything changed.
-   *
-   * @param {() => void} method
-   * @returns {boolean} Whether the selection changed.
-   */
-  _run(method) {
-    this._batch += 1;
-    const before = this._batchChanged;
-    this._batchChanged = false;
-    let changed;
-    try {
-      method();
-    } finally {
-      changed = this._batchChanged;
-      this._batchChanged = before || changed;
-      this._batch -= 1;
-    }
-    if (!this._batch && this._batchChanged) {
-      this._batchChanged = false;
-      this.emit("change", this);
-    }
-    return changed;
-  }
-  _add(key) {
-    if (this._keys.has(key)) {
-      return;
-    }
-    this._keys.add(key);
-    this._batchChanged = true;
-    this.emit("row-select", this, key);
-  }
-  _delete(key) {
-    if (!this._keys.delete(key)) {
-      return;
-    }
-    this._batchChanged = true;
-    this.emit("row-deselect", this, key);
-  }
-  _connectModel(model) {
-    const old = this._model;
-    if (old) {
-      old.disconnect("row-insert", this._onRowInsert, this);
-      old.disconnect("row-remove", this._onRowRemove, this);
-      old.disconnect("row-move", this._onRowMove, this);
-      old.disconnect("row-update", this._onRowUpdate, this);
-      old.disconnect("rows-reorder", this._onRowsReorder, this);
-      old.disconnect("id-column-change", this._onIdColumnChange, this);
-      old.disconnect("destroy", this._onModelDestroy, this);
-    }
-    this._model = model;
-    if (model) {
-      model.connect("row-insert", this._onRowInsert, this);
-      model.connect("row-remove", this._onRowRemove, this);
-      model.connect("row-move", this._onRowMove, this);
-      model.connect("row-update", this._onRowUpdate, this);
-      model.connect("rows-reorder", this._onRowsReorder, this);
-      model.connect("id-column-change", this._onIdColumnChange, this);
-      model.connect("destroy", this._onModelDestroy, this);
-    }
-  }
-  /**
-   * Replaces the index keys after rows shifted, without selecting or unselecting anything.
-   *
-   * @param {(index: number) => number} map Returns the new index, or -1 to drop the key.
-   */
-  _remapIndices(map) {
-    const keys = /* @__PURE__ */ new Set();
-    const dropped = [];
-    for (const key of this._keys) {
-      const index = map(key);
-      if (index < 0) {
-        dropped.push(key);
-      } else {
-        keys.add(index);
-      }
-    }
-    this._keys = keys;
-    if (dropped.length) {
-      this._run(() => {
-        this._batchChanged = true;
-        for (const key of dropped) {
-          this.emit("row-deselect", this, key);
-        }
-      });
-    }
-  }
-  _onRowInsert(_model, index) {
-    if (!this.byId && this._keys.size) {
-      this._remapIndices((key) => key >= index ? key + 1 : key);
-    }
-  }
-  _onRowRemove(_model, index, id) {
-    if (this.byId) {
-      this.deselectRow(id);
-    } else if (this._keys.size) {
-      this._remapIndices((key) => key === index ? -1 : key > index ? key - 1 : key);
-    }
-  }
-  _onRowMove(_model, from, to) {
-    if (this.byId || !this._keys.size) {
-      return;
-    }
-    this._remapIndices((key) => {
-      if (key === from) {
-        return to;
-      }
-      if (from < to && key > from && key <= to) {
-        return key - 1;
-      }
-      if (to < from && key >= to && key < from) {
-        return key + 1;
-      }
-      return key;
-    });
-  }
-  _onRowUpdate(_model, _index, id, oldId) {
-    if (!this.byId || Object.is(id, oldId) || !this._keys.has(oldId)) {
-      return;
-    }
-    this._keys = new Set([...this._keys].map((key) => Object.is(key, oldId) ? id : key));
-    this._run(() => {
-      this._batchChanged = true;
-      this.emit("row-deselect", this, oldId);
-      this.emit("row-select", this, id);
-    });
-  }
-  _onRowsReorder() {
-    if (!this._keys.size) {
-      return;
-    }
-    if (this.byId) {
-      this._run(() => {
-        for (const key of [...this._keys]) {
-          if (!this._model.hasRowId(key)) {
-            this._delete(key);
-          }
-        }
-      });
-    } else {
-      this.deselectAllRows();
-    }
-  }
-  _onIdColumnChange() {
-    this.deselectAllRows();
-  }
-  _onModelDestroy() {
-    this.model = null;
-  }
-};
-defineProperties(Selection, {
-  /**
-   * The model the selection is of. Changing it clears the selection.
-   */
-  model: {
-    value: null,
-    set(model) {
-      if (model !== null && !(model instanceof AbstractModel)) {
-        throw new TypeError("A selection needs a model.");
-      }
-      this.deselectAllRows();
-      this._connectModel(model);
-    }
-  },
-  /**
-   * The selection modes: a mask of `SelectionModes`. With `NONE` nothing can be selected; with
-   * `SINGLE` at most one row. `TOGGLE` affects how tables handle clicks. Reducing the modes
-   * reduces the selection accordingly.
-   */
-  modes: {
-    value: SelectionModes.MULTI,
-    changed(modes) {
-      if (!modes) {
-        this.deselectAllRows();
-      } else if (this._isSingle() && this._keys.size > 1) {
-        const last = [...this._keys].pop();
-        this.selectOnlyRow(last);
-      }
-    }
-  },
-  /**
-   * The keys (ids, or indices without an id column) of the selected rows, in selection order.
-   * Setting it selects exactly those rows.
-   */
-  selectedRowIds: {
-    signal: false,
-    get() {
-      return [...this._keys];
-    },
-    set(keys) {
-      if (!Array.isArray(keys)) {
-        throw new TypeError("Selected row ids must be an array.");
-      }
-      keys.forEach((key) => this._checkKey(key));
-      const wanted = this._modes ? this._isSingle() ? keys.slice(-1) : keys : [];
-      this._run(() => {
-        const keep = new Set(wanted);
-        for (const key of [...this._keys]) {
-          if (!keep.has(key)) {
-            this._delete(key);
-          }
-        }
-        for (const key of wanted) {
-          this._add(key);
-        }
-      });
-      return false;
-    }
-  },
-  /**
-   * The selected rows, in selection order.
-   */
-  selectedRows: {
-    readOnly: true,
-    get() {
-      return [...this._keys].map((key) => this._rowOf(key));
-    }
-  },
-  /**
-   * The indices of the selected rows, in ascending order.
-   */
-  selectedIndices: {
-    readOnly: true,
-    get() {
-      const indices = [...this._keys].map((key) => this.getIndex(key)).filter((x) => x >= 0);
-      return indices.sort((first, second) => first - second);
-    }
-  },
-  /**
-   * The number of selected rows.
-   */
-  selectedRowsCount: {
-    readOnly: true,
-    get() {
-      return this._keys.size;
-    }
-  }
-});
-registerType("selection", Selection);
-registerType("selection-model", Selection);
-
 // src/data/filters/filter.js
 var Filter = class extends Instance {
   static {
@@ -24023,7 +25865,7 @@ var Filter = class extends Instance {
   /**
    * Checks whether a row passes the filter.
    *
-   * @param {object} row
+   * @param {object} _row
    * @returns {boolean}
    */
   isVisibleRow(_row) {
@@ -24038,6 +25880,116 @@ var Filter = class extends Instance {
     this.emit("change", this);
   }
 };
+
+// src/data/filters/search-filter.js
+var SPECIAL_CASING_LANGUAGES = /* @__PURE__ */ new Set(["tr", "az", "lt"]);
+function toLowerCase(text) {
+  const localeManager = getLocaleManager();
+  return SPECIAL_CASING_LANGUAGES.has(localeManager.language) ? text.toLocaleLowerCase(localeManager.locale) : text.toLowerCase();
+}
+__name(toLowerCase, "toLowerCase");
+function removeAccents(text) {
+  return text.normalize("NFD").replace(/\p{Diacritic}/gu, "");
+}
+__name(removeAccents, "removeAccents");
+var SearchFilter = class extends Filter {
+  static {
+    __name(this, "SearchFilter");
+  }
+  _initialize() {
+    super._initialize();
+    this._keywords = [];
+  }
+  /**
+   * The keywords of the query, prepared for matching.
+   *
+   * @type {string[]}
+   */
+  get keywords() {
+    return [...this._keywords];
+  }
+  isVisibleRow(row) {
+    const keywords = this._keywords;
+    if (!keywords.length) {
+      return true;
+    }
+    const columns = this._columns ?? Object.keys(row);
+    const remaining = new Set(keywords);
+    for (const column of columns) {
+      if (!(column in row)) {
+        continue;
+      }
+      const value = this._prepareValue(row[column]);
+      for (const keyword of remaining) {
+        if (value.includes(keyword)) {
+          remaining.delete(keyword);
+        }
+      }
+      if (!remaining.size) {
+        return true;
+      }
+    }
+    return false;
+  }
+  /**
+   * Prepares a value (or the query) for matching: text with single spaces, in lower case and
+   * optionally without accents.
+   *
+   * @protected
+   * @param {unknown} value
+   * @returns {string}
+   */
+  _prepareValue(value) {
+    const text = value === null || value === void 0 ? "" : String(value);
+    const spaced = toLowerCase(text).replace(/\s+/g, " ");
+    return this._ignoreAccents ? removeAccents(spaced) : spaced;
+  }
+  _updateKeywords() {
+    const query = this._prepareValue(this._query).replace(/[,\s]+/g, " ").trim();
+    this._keywords = query ? [...new Set(query.split(" "))] : [];
+  }
+};
+defineProperties(SearchFilter, {
+  /**
+   * The search text.
+   */
+  query: {
+    value: "",
+    coerce(query) {
+      return query === null || query === void 0 ? "" : String(query);
+    },
+    changed() {
+      this._updateKeywords();
+      this._changed();
+    }
+  },
+  /**
+   * The columns to search, or `null` for all columns of a row.
+   */
+  columns: {
+    value: null,
+    coerce(columns) {
+      if (columns !== null && !Array.isArray(columns)) {
+        throw new TypeError("Filter columns must be an array or null.");
+      }
+      return columns && [...columns];
+    },
+    changed() {
+      this._changed();
+    }
+  },
+  /**
+   * Whether accents are ignored, so the keyword `'cafe'` finds `'Café'`.
+   */
+  ignoreAccents: {
+    value: false,
+    changed() {
+      this._updateKeywords();
+      this._changed();
+    }
+  }
+});
+registerType("search-filter", SearchFilter);
 
 // src/data/tree-model.js
 var INCREMENTAL_LIMIT = 200;
@@ -24063,6 +26015,7 @@ var TreeModel = class extends AbstractModel {
     this._revealed = /* @__PURE__ */ new Set();
     this._batch = 0;
     this._dirty = void 0;
+    this._filterStateDirty = false;
     this._queuedSignals = [];
   }
   /**
@@ -24396,6 +26349,19 @@ var TreeModel = class extends AbstractModel {
    * @throws {Error} If the row is already in the model or its id is in use.
    */
   insertChild(parent, index, row) {
+    row = this._insertChild(parent, index, row);
+    return this.getRowIndex(row);
+  }
+  /**
+   * Inserts a row as a child of another row, like `insertChild()`, without looking up its
+   * index, which takes the time of building the id index when many rows are inserted.
+   *
+   * @param {object | number | null} parent
+   * @param {number} index
+   * @param {object} row
+   * @returns {object} The row.
+   */
+  _insertChild(parent, index, row) {
     parent = parent === null ? null : this._resolveRow(parent);
     const siblings = parent === null ? this._rootRows : this._getChildren(parent);
     if (!Number.isInteger(index) || index < 0 || index > siblings.length) {
@@ -24421,7 +26387,7 @@ var TreeModel = class extends AbstractModel {
     } finally {
       this._endBatch();
     }
-    return this.getRowIndex(row);
+    return row;
   }
   /**
    * Appends a row (with its children) to the children of another row. If the model is sorted,
@@ -24507,7 +26473,7 @@ var TreeModel = class extends AbstractModel {
     const { parent, position } = this._getInsertPosition(index);
     this._batch += 1;
     try {
-      rows.forEach((row, i) => this.insertChild(parent, position + i, row));
+      rows.forEach((row, i) => this._insertChild(parent, position + i, row));
     } finally {
       this._endBatch();
     }
@@ -24652,7 +26618,7 @@ var TreeModel = class extends AbstractModel {
   }
   sortByColumn(column, order = SortOrder.ASCENDING) {
     if (order !== SortOrder.NONE && order !== SortOrder.ASCENDING && order !== SortOrder.DESCENDING) {
-      throw new RangeError(`Invalid sort order ${order}.`);
+      throw new RangeError(`Invalid sort order '${order}'.`);
     }
     if (!column) {
       column = null;
@@ -24795,6 +26761,24 @@ var TreeModel = class extends AbstractModel {
       this._rowsById = rows;
     }
     return this._rowsById;
+  }
+  /**
+   * Checks that all rows of the tree, also those in collapsed rows, have a different value in
+   * a column.
+   *
+   * @protected
+   * @param {string} column
+   * @throws {Error} If two rows have the same id.
+   */
+  _checkUniqueIds(column) {
+    const ids = /* @__PURE__ */ new Set();
+    for (const row of this._nodes.keys()) {
+      const id = row[column];
+      if (ids.has(id)) {
+        throw new Error(`Duplicate row id ${String(id)}.`);
+      }
+      ids.add(id);
+    }
   }
   _findRow(id) {
     if (!this.idColumn) {
@@ -25106,7 +27090,7 @@ var TreeModel = class extends AbstractModel {
   _onTreeChange(parent) {
     this._layout = null;
     if (this._filters.length) {
-      this._computeFilterState();
+      this._filterStateDirty = true;
     }
     this._markDirty(parent);
   }
@@ -25140,6 +27124,10 @@ var TreeModel = class extends AbstractModel {
     }
     if (this._batch) {
       return;
+    }
+    if (this._filterStateDirty) {
+      this._computeFilterState();
+      this._layout = null;
     }
     if (this._dirty !== void 0) {
       const dirty = this._dirty;
@@ -25297,6 +27285,7 @@ var TreeModel = class extends AbstractModel {
    * Computes which rows the filters hide, and which rows they expand.
    */
   _computeFilterState() {
+    this._filterStateDirty = false;
     this._hidden = /* @__PURE__ */ new Set();
     this._revealed = /* @__PURE__ */ new Set();
     if (!this._filters.length) {
@@ -25429,9 +27418,6 @@ defineProperties(TreeModel, {
     changed() {
       this._invalidateIndex();
       this._rowsById = null;
-      if (this._idColumn) {
-        this._getRowsById();
-      }
     }
   },
   /**
@@ -25493,11 +27479,6 @@ var AUTO_SIZE_ROWS = 2e4;
 var SORT_ARROW_WIDTH = 14;
 var HORIZONTAL_STEP = 20;
 var EXPANDER_WIDTH = 16;
-var ARIA_SORT = Object.freeze({
-  [SortIndicator.NONE]: "none",
-  [SortIndicator.ASCENDING]: "ascending",
-  [SortIndicator.DESCENDING]: "descending"
-});
 var measureContext = null;
 function measureText(text, font) {
   if (!text) {
@@ -25559,7 +27540,7 @@ var Table = class extends Widget {
     this._treeColumnInUse = null;
     super._initialize();
     this._id = uniqueId("wy-table");
-    this._selection = new Selection({ modes: SelectionModes.NONE });
+    this._selection = new Selection({ selectionMode: this._selectionMode });
     this._selection.connect("change", this._onSelectionChange, this);
     this._hAdjustment = new Adjustment({ stepIncrement: HORIZONTAL_STEP });
     this._vAdjustment = new Adjustment();
@@ -26050,12 +28031,12 @@ var Table = class extends Widget {
   _updateHeaders() {
     this._headerDirty = false;
     for (const [column, cell] of this._headerEls) {
-      const indicator = column instanceof DataColumn ? column.sortIndicator : SortIndicator.NONE;
+      const indicator = column instanceof DataColumn ? column.sortIndicator : SortOrder.NONE;
       cell.firstElementChild.textContent = column.label;
       cell.title = column.label;
-      cell.className = `wy-table-column-header wy-align-${column.alignment}` + (column.isSortable ? " wy-sortable" : "") + (column.resizable ? " wy-resizable" : "") + (indicator !== SortIndicator.NONE ? ` wy-sorted wy-sort-${indicator}` : "") + (this._pressedHeader?.cell === cell && this._pressedHeader.inside ? " wy-pressed" : "");
+      cell.className = `wy-table-column-header wy-align-${column.alignment}` + (column.isSortable ? " wy-sortable" : "") + (column.resizable ? " wy-resizable" : "") + (indicator !== SortOrder.NONE ? ` wy-sorted wy-sort-${indicator}` : "") + (this._pressedHeader?.cell === cell && this._pressedHeader.inside ? " wy-pressed" : "");
       if (column.isSortable) {
-        cell.setAttribute("aria-sort", ARIA_SORT[indicator]);
+        cell.setAttribute("aria-sort", indicator);
       } else {
         cell.removeAttribute("aria-sort");
       }
@@ -26118,15 +28099,15 @@ var Table = class extends Widget {
     const height = this._rowHeight;
     this._bodyEl.style.height = `${count * height}px`;
     this.el.setAttribute("aria-rowcount", String(count + 1));
-    const placeholder = !count && Boolean(this._placeholderText);
+    const placeholder = !count && Boolean(this._placeholder);
     this._placeholderEl.hidden = !placeholder;
-    this._placeholderEl.textContent = this._placeholderText;
+    this._placeholderEl.textContent = this._placeholder;
     if (!height) {
       return;
     }
     const view = this._viewEl;
-    const scrollTop = view.scrollTop;
     const bodyHeight = Math.max(0, view.clientHeight - this._headerHeight);
+    const scrollTop = Math.min(view.scrollTop, Math.max(0, count * height - bodyHeight));
     const first = Math.max(0, Math.floor(scrollTop / height) - ROW_BUFFER);
     const last = Math.min(count - 1, Math.ceil((scrollTop + bodyHeight) / height) + ROW_BUFFER);
     for (const [index, element] of this._rowEls) {
@@ -26216,7 +28197,7 @@ var Table = class extends Widget {
     element.style.transform = `translateY(${index * this._rowHeight}px)`;
     element.setAttribute("aria-rowindex", String(index + 2));
     element.className = this._getRowClassName(index, selected);
-    if (this._selectionModes) {
+    if (this._selectionMode !== SelectionMode.NONE) {
       element.setAttribute("aria-selected", String(selected));
     } else {
       element.removeAttribute("aria-selected");
@@ -26295,7 +28276,7 @@ var Table = class extends Widget {
       }
       const selected = this._selection.isSelected(index);
       element.className = this._getRowClassName(index, selected);
-      if (this._selectionModes) {
+      if (this._selectionMode !== SelectionMode.NONE) {
         element.setAttribute("aria-selected", String(selected));
       }
     }
@@ -26398,6 +28379,7 @@ var Table = class extends Widget {
       old.disconnect("row-insert", this._onModelRowInsert, this);
       old.disconnect("row-remove", this._onModelRowRemove, this);
       old.disconnect("row-move", this._onModelRowMove, this);
+      old.disconnect("row-update", this._onModelRowUpdate, this);
       old.disconnect("rows-reorder", this._onModelRowsReorder, this);
       old.disconnect("sort-column-change", this._onModelSortChange, this);
       old.disconnect("sort-order-change", this._onModelSortChange, this);
@@ -26409,6 +28391,7 @@ var Table = class extends Widget {
       model.connect("row-insert", this._onModelRowInsert, this);
       model.connect("row-remove", this._onModelRowRemove, this);
       model.connect("row-move", this._onModelRowMove, this);
+      model.connect("row-update", this._onModelRowUpdate, this);
       model.connect("rows-reorder", this._onModelRowsReorder, this);
       model.connect("sort-column-change", this._onModelSortChange, this);
       model.connect("sort-order-change", this._onModelSortChange, this);
@@ -26434,6 +28417,7 @@ var Table = class extends Widget {
     }
     if (this._cursor >= 0) {
       this.cursor = clamp(map(this._cursor), -1, count - 1);
+      this._rememberCursorKey();
     }
   }
   _onModelRowInsert(_model, index) {
@@ -26446,6 +28430,7 @@ var Table = class extends Widget {
       const nearest = model.getNearestRowIndex(id);
       if (nearest >= 0) {
         this.cursor = nearest;
+        this._rememberCursorKey();
       }
     }
   }
@@ -26459,6 +28444,17 @@ var Table = class extends Widget {
       }
       return to < from && x >= to && x < from ? x + 1 : x;
     });
+  }
+  _onModelRowUpdate(_model, index, id, oldId) {
+    if (Object.is(id, oldId)) {
+      return;
+    }
+    if (index === this._cursor) {
+      this._rememberCursorKey();
+    }
+    if (index === this._anchor) {
+      this._rememberAnchorKey();
+    }
   }
   _onModelRowsReorder() {
     const cursor = this._findKey(this._cursorKey, this._cursor);
@@ -26482,6 +28478,9 @@ var Table = class extends Widget {
     }
     return Math.min(index, count - 1);
   }
+  _rememberCursorKey() {
+    this._cursorKey = this._cursor >= 0 && this._selection.byId ? this.model.getRowIdByIndex(this._cursor) : void 0;
+  }
   _rememberAnchorKey() {
     this._anchorKey = this._anchor >= 0 && this._selection.byId ? this.model.getRowIdByIndex(this._anchor) : void 0;
   }
@@ -26496,30 +28495,34 @@ var Table = class extends Widget {
     this._updateRowStates();
   }
   /**
-   * Handles a press on a row, selecting according to the selection modes.
+   * Handles a press on a row, selecting according to the selection mode, like GTK: with
+   * `multiple`, Shift selects the range from the anchor and Control toggles the row; with
+   * `single`, Control unselects a selected row; with `browse`, the row is always selected.
+   * With `toggleSelection`, a press toggles as a Control+press does.
    *
    * @param {number} index
    * @param {boolean} extend Whether to select a range from the anchor (Shift).
    * @param {boolean} toggle Whether to toggle the row (Control).
    */
   _pressRow(index, extend, toggle) {
-    const modes = this._selectionModes;
+    const mode = this._selectionMode;
     const selection = this._selection;
     this.cursor = index;
-    if (!modes) {
+    if (mode === SelectionMode.NONE) {
       return;
     }
-    if (modes & SelectionModes.MULTI) {
+    toggle = toggle || this._toggleSelection;
+    if (mode === SelectionMode.MULTIPLE) {
       if (extend && this._anchor >= 0) {
         selection.selectRange(this._anchor, index, toggle);
         return;
       }
-      if (toggle || modes & SelectionModes.TOGGLE) {
+      if (toggle) {
         selection.toggle(index);
       } else {
         selection.selectOnly(index);
       }
-    } else if ((toggle || modes & SelectionModes.TOGGLE) && selection.isSelected(index)) {
+    } else if (mode === SelectionMode.SINGLE && toggle && selection.isSelected(index)) {
       selection.unselectAll();
     } else {
       selection.selectOnly(index);
@@ -26532,7 +28535,7 @@ var Table = class extends Widget {
    *
    * @param {number} index
    * @param {boolean} extend Whether to extend the selection from the anchor (Shift).
-   * @param {boolean} cursorOnly Whether to move only the cursor (Control).
+   * @param {boolean} cursorOnly Whether to move only the cursor (Control), except with `browse`.
    */
   _moveCursor(index, extend, cursorOnly) {
     const count = this.model?.rowsCount || 0;
@@ -26540,18 +28543,18 @@ var Table = class extends Widget {
       return;
     }
     index = clamp(index, 0, count - 1);
-    if (extend && this._selectionModes & SelectionModes.MULTI) {
+    if (extend && this._selectionMode === SelectionMode.MULTIPLE) {
       if (this._anchor < 0) {
         this._anchor = this._cursor >= 0 ? this._cursor : index;
         this._rememberAnchorKey();
       }
       this.cursor = index;
       this._selection.selectRange(this._anchor, index, cursorOnly);
-    } else if (cursorOnly) {
+    } else if (cursorOnly && this._selectionMode !== SelectionMode.BROWSE) {
       this.cursor = index;
     } else {
       this.cursor = index;
-      if (this._selectionModes) {
+      if (this._selectionMode !== SelectionMode.NONE) {
         this._selection.selectOnly(index);
       }
       this._anchor = index;
@@ -26716,7 +28719,7 @@ var Table = class extends Widget {
     if (!column.isSortable || !this.model) {
       return;
     }
-    if (column.sortIndicator === SortIndicator.DESCENDING && this._allowUnsorted) {
+    if (column.sortIndicator === SortOrder.DESCENDING && this._allowUnsorted) {
       column.sort(SortOrder.NONE);
     } else {
       column.sort();
@@ -26793,7 +28796,7 @@ var Table = class extends Widget {
         return true;
     }
     if (control && !shift && event.key.toLowerCase() === Key.A) {
-      if (this._selectionModes & SelectionModes.MULTI) {
+      if (this._selectionMode === SelectionMode.MULTIPLE) {
         this._selection.selectAll();
       }
       return true;
@@ -26914,7 +28917,7 @@ var Table = class extends Widget {
     }
     if (!column) {
       column = this._visibleColumns.find(
-        (x) => x instanceof DataColumn && x.sortIndicator !== SortIndicator.NONE
+        (x) => x instanceof DataColumn && x.sortIndicator !== SortOrder.NONE
       ) || this._visibleColumns[0];
     }
     const cell = this._headerEls.get(column);
@@ -26952,8 +28955,7 @@ var Table = class extends Widget {
       this._searchText = "";
     }
     this._searchTime = now;
-    const locale = getLocaleManager().locale;
-    this._searchText += character.toLocaleLowerCase(locale);
+    this._searchText += toLowerCase(character);
     const text = this._searchText;
     const repeated = [...text].every((x) => x === text[0]);
     const search = repeated ? text[0] : text;
@@ -26961,7 +28963,7 @@ var Table = class extends Widget {
     const start = this._cursor < 0 ? 0 : repeated ? this._cursor + 1 : this._cursor;
     for (let offset = 0; offset < count; ++offset) {
       const index = (start + offset) % count;
-      const cellText = column.getCellText(model.getRow(index), index).toLocaleLowerCase(locale);
+      const cellText = toLowerCase(column.getCellText(model.getRow(index), index));
       if (cellText.startsWith(search)) {
         this._moveCursor(index, false, false);
         return true;
@@ -27054,14 +29056,17 @@ defineProperties(Table, {
     }
   },
   /**
-   * How rows can be selected: a mask of `SelectionModes`. `NONE` (the default) disables
-   * selecting.
+   * How rows can be selected: one of `SelectionMode`, like in GTK. `single` (the default)
+   * selects at most one row, `browse` one row that the user cannot unselect, `multiple` any
+   * number of rows, and `none` disables selecting. Changing it changes the mode of the
+   * `selection`.
    */
-  selectionModes: {
-    value: SelectionModes.NONE,
-    changed(modes) {
-      this._selection.modes = modes;
-      if (modes & SelectionModes.MULTI) {
+  selectionMode: {
+    value: SelectionMode.SINGLE,
+    coerce: checkSelectionMode,
+    changed(mode) {
+      this._selection.selectionMode = mode;
+      if (mode === SelectionMode.MULTIPLE) {
         this.el.setAttribute("aria-multiselectable", "true");
       } else {
         this.el.removeAttribute("aria-multiselectable");
@@ -27083,8 +29088,8 @@ defineProperties(Table, {
       const count = this.model?.rowsCount || 0;
       return index < 0 || !count ? -1 : Math.min(index, count - 1);
     },
-    changed(index) {
-      this._cursorKey = index >= 0 && this._selection.byId ? this.model.getRowIdByIndex(index) : void 0;
+    changed() {
+      this._rememberCursorKey();
       this._updateRowStates();
     }
   },
@@ -27150,9 +29155,21 @@ defineProperties(Table, {
     }
   },
   /**
+   * Whether a click toggles the selection of a row, as a Control+click does: a click on a
+   * selected row unselects it (except with `browse`), and with `multiple`, a click on another
+   * row adds it to the selection. It is also the `toggleSelection` of the `selection`.
+   */
+  toggleSelection: {
+    value: false,
+    coerce: Boolean,
+    changed(toggle) {
+      this._selection.toggleSelection = toggle;
+    }
+  },
+  /**
    * The text shown when the model has no rows (or there is no model).
    */
-  placeholderText: {
+  placeholder: {
     value: "",
     coerce(text) {
       return text === null || text === void 0 ? "" : String(text);
@@ -27423,19 +29440,6 @@ defineProperties(TextView, {
     changed(hasFrame) {
       this.el.classList.toggle("wy-no-frame", !hasFrame);
     }
-  },
-  /**
-   * The accessible name of the text area, for text views without a visible label.
-   */
-  accessibleName: {
-    value: "",
-    changed(name) {
-      if (name) {
-        this._textAreaEl.setAttribute("aria-label", name);
-      } else {
-        this._textAreaEl.removeAttribute("aria-label");
-      }
-    }
   }
 });
 registerType("text-view", TextView);
@@ -27516,6 +29520,7 @@ var ToolBar = class extends Box {
     super._initialize();
     this._overflowItems = [];
     this._overflowMenu = null;
+    this._overflowProxies = [];
     this._focusItem = null;
     this._resizeObserver = null;
     if (typeof ResizeObserver !== "undefined") {
@@ -27561,7 +29566,9 @@ var ToolBar = class extends Box {
   }
   destroy() {
     this._resizeObserver?.disconnect();
-    this._overflowMenu?.destroy();
+    if (this._overflowMenu) {
+      this._destroyOverflowMenu(this._overflowMenu, this._overflowProxies);
+    }
     super.destroy();
   }
   _updateLayout() {
@@ -27656,10 +29663,12 @@ var ToolBar = class extends Box {
       return;
     }
     const menu = new Menu();
+    const proxies = [];
     for (const child of this._overflowItems) {
       const proxy = child instanceof AbstractToolItem ? child._createMenuProxy() : null;
       if (proxy) {
         menu.addChild(proxy);
+        proxies.push([child, proxy]);
       }
     }
     const isSeparator = /* @__PURE__ */ __name((index) => menu.getChild(index) instanceof SeparatorMenuItem, "isSeparator");
@@ -27670,6 +29679,7 @@ var ToolBar = class extends Box {
       menu.getChild(menu.childrenCount - 1).destroy();
     }
     this._overflowMenu = menu;
+    this._overflowProxies = proxies;
     this._overflowEl.classList.add("wy-active");
     this._overflowEl.setAttribute("aria-expanded", "true");
     menu.connect("visible-change", () => {
@@ -27680,8 +29690,9 @@ var ToolBar = class extends Box {
       this._overflowEl.setAttribute("aria-expanded", "false");
       if (this._overflowMenu === menu) {
         this._overflowMenu = null;
+        this._overflowProxies = [];
       }
-      setTimeout(() => menu.destroyed || menu.destroy());
+      setTimeout(() => menu.destroyed || this._destroyOverflowMenu(menu, proxies));
     });
     const horizontal = this._orientation !== Orientation.VERTICAL;
     menu.popup(this._overflowEl, {
@@ -27690,6 +29701,14 @@ var ToolBar = class extends Box {
       owner: this._overflowEl,
       selectFirst: keyboard
     });
+  }
+  _destroyOverflowMenu(menu, proxies) {
+    for (const [child, proxy] of proxies) {
+      if (!child.destroyed && !proxy.destroyed) {
+        child._releaseMenuProxy(proxy);
+      }
+    }
+    menu.destroy();
   }
   /**
    * The focusable tool items that are shown, and the overflow button when shown, in order.
@@ -28433,9 +30452,9 @@ registerType(
 // src/sprites/sprite.js
 var SVG_NAMESPACE = "http://www.w3.org/2000/svg";
 var StrokeStyle = Object.freeze({
-  SOLID: 0,
-  DASHED: 1,
-  DOTTED: 2
+  SOLID: "solid",
+  DASHED: "dashed",
+  DOTTED: "dotted"
 });
 var SPRITE_BY_ELEMENT = /* @__PURE__ */ new WeakMap();
 var SPRITE_EVENT_TYPES = /* @__PURE__ */ new Set([
@@ -28659,11 +30678,11 @@ var Sprite = class _Sprite extends Instance {
   _applyTransform() {
     const parts = [];
     const { x, y } = this._position;
-    if (this._isPositionInTransform() && (x || y)) {
-      parts.push(`translate(${x} ${y})`);
-    }
     if (!this._transformation.isIdentity) {
       parts.push(String(this._transformation));
+    }
+    if (this._isPositionInTransform() && (x || y)) {
+      parts.push(`translate(${x} ${y})`);
     }
     if (parts.length) {
       this.el.setAttribute("transform", parts.join(" "));
@@ -28831,15 +30850,15 @@ var Sprite = class _Sprite extends Instance {
     switch (type) {
       case EventType.MOTION:
         return new MotionEvent(this, modifiers, x, y, nativeEvent);
-      case EventType.SCROLL: {
-        let lines = nativeEvent.deltaY || nativeEvent.deltaX;
-        if (nativeEvent.deltaMode === 0) {
-          lines /= 33.3;
-        } else if (nativeEvent.deltaMode === 2) {
-          lines *= 20;
-        }
-        return new ScrollEvent(this, modifiers, x, y, -lines, nativeEvent);
-      }
+      case EventType.SCROLL:
+        return new ScrollEvent(
+          this,
+          modifiers,
+          x,
+          y,
+          getScrollDelta(nativeEvent),
+          nativeEvent
+        );
       case EventType.BUTTON_PRESS:
       case EventType.BUTTON_RELEASE: {
         const press = type === EventType.BUTTON_PRESS;
@@ -29076,7 +31095,7 @@ defineProperties(Sprite, {
     value: StrokeStyle.SOLID,
     coerce(style) {
       if (!Object.values(StrokeStyle).includes(style)) {
-        throw new RangeError(`Invalid stroke style ${style}.`);
+        throw new RangeError(`Invalid stroke style '${style}'.`);
       }
       return style;
     },
@@ -29126,6 +31145,16 @@ var VectorCanvas = class extends Widget {
   _initialize() {
     this._sprites = [];
     super._initialize();
+  }
+  _syncAccessibleName() {
+    const name = this._accessibleName;
+    if (name) {
+      this._svgEl.setAttribute("aria-label", name);
+      this._svgEl.removeAttribute("aria-hidden");
+    } else {
+      this._svgEl.removeAttribute("aria-label");
+      this._svgEl.setAttribute("aria-hidden", "true");
+    }
   }
   _render() {
     const element = createElement(`
@@ -29436,18 +31465,17 @@ defineProperties(VectorCanvas, {
     }
   },
   /**
-   * A description of the drawing, for assistive technologies, or `''` if it is decorative.
+   * A description of the drawing, for assistive technologies, or `''` if it is decorative. The
+   * same as `accessibleName`.
    */
   label: {
-    value: "",
-    changed(label) {
-      if (label) {
-        this._svgEl.setAttribute("aria-label", label);
-        this._svgEl.removeAttribute("aria-hidden");
-      } else {
-        this._svgEl.removeAttribute("aria-label");
-        this._svgEl.setAttribute("aria-hidden", "true");
-      }
+    signal: false,
+    get() {
+      return this._accessibleName;
+    },
+    set(label) {
+      this.accessibleName = label;
+      return false;
     }
   }
 });
@@ -29729,9 +31757,9 @@ defineProperties(NumberColumn, {
 registerType("number-column", NumberColumn);
 
 // src/sprites/circle.js
-var Circle = class extends Sprite {
+var CircleSprite = class extends Sprite {
   static {
-    __name(this, "Circle");
+    __name(this, "CircleSprite");
   }
   _render() {
     return this._createShape("circle", { class: "wy-sprite-circle" });
@@ -29744,7 +31772,7 @@ var Circle = class extends Sprite {
     this.el.setAttribute("cy", String(this._position.y));
   }
 };
-defineProperties(Circle, {
+defineProperties(CircleSprite, {
   /**
    * The radius.
    */
@@ -29762,7 +31790,7 @@ defineProperties(Circle, {
     }
   }
 });
-registerType("circle-sprite", Circle);
+registerType("circle-sprite", CircleSprite);
 
 // src/sprites/image.js
 var MISSING_IMAGE = "data:image/svg+xml," + encodeURIComponent(
@@ -29920,14 +31948,12 @@ registerType("image-sprite", ImageSprite);
 
 // src/sprites/label.js
 var LabelAnchor = Object.freeze({
-  START: 0,
-  MIDDLE: 1,
-  END: 2
-});
-var TEXT_ANCHORS = Object.freeze({
-  [LabelAnchor.START]: "start",
-  [LabelAnchor.MIDDLE]: "middle",
-  [LabelAnchor.END]: "end"
+  START: "start",
+  // The text starts at the position.
+  MIDDLE: "middle",
+  // The text is centered on the position.
+  END: "end"
+  // The text ends at the position.
 });
 var BASELINES = Object.freeze([
   "auto",
@@ -29951,7 +31977,7 @@ var LabelSprite = class extends Sprite {
     } else {
       this.el.append(this._text);
     }
-    this.el.setAttribute("text-anchor", TEXT_ANCHORS[this._anchor]);
+    this.el.setAttribute("text-anchor", this._anchor);
     this.el.setAttribute("dominant-baseline", this._baseline);
     this.el.style.font = this._font;
   }
@@ -29977,10 +32003,10 @@ defineProperties(LabelSprite, {
   anchor: {
     value: LabelAnchor.MIDDLE,
     coerce(anchor) {
-      if (!(anchor in TEXT_ANCHORS)) {
-        throw new RangeError(`Invalid label anchor ${anchor}.`);
+      if (!Object.values(LabelAnchor).includes(anchor)) {
+        throw new RangeError(`Invalid label anchor '${anchor}'.`);
       }
-      return Number(anchor);
+      return anchor;
     },
     changed() {
       this._applyShape();
@@ -30015,9 +32041,9 @@ defineProperties(LabelSprite, {
 registerType("label-sprite", LabelSprite);
 
 // src/sprites/path.js
-var Path = class extends Sprite {
+var PathSprite = class extends Sprite {
   static {
-    __name(this, "Path");
+    __name(this, "PathSprite");
   }
   _render() {
     return this._createShape("path", { class: "wy-sprite-path" });
@@ -30035,7 +32061,7 @@ var Path = class extends Sprite {
     return true;
   }
 };
-defineProperties(Path, {
+defineProperties(PathSprite, {
   /**
    * The SVG path data.
    */
@@ -30049,7 +32075,7 @@ defineProperties(Path, {
     }
   }
 });
-registerType("path-sprite", Path);
+registerType("path-sprite", PathSprite);
 
 // src/sprites/rectangle.js
 function toLength(value) {
@@ -30060,9 +32086,9 @@ function toLength(value) {
   return number;
 }
 __name(toLength, "toLength");
-var Rectangle = class extends Sprite {
+var RectangleSprite = class extends Sprite {
   static {
-    __name(this, "Rectangle");
+    __name(this, "RectangleSprite");
   }
   _render() {
     return this._createShape("rect", { class: "wy-sprite-rectangle" });
@@ -30074,7 +32100,7 @@ var Rectangle = class extends Sprite {
     this.el.setAttribute("ry", String(this._cornerRadius));
   }
 };
-defineProperties(Rectangle, {
+defineProperties(RectangleSprite, {
   /**
    * The size, as `{width, height}`.
    */
@@ -30134,7 +32160,7 @@ defineProperties(Rectangle, {
     }
   }
 });
-registerType("rectangle-sprite", Rectangle);
+registerType("rectangle-sprite", RectangleSprite);
 
 // src/data/filtered-list-model.js
 var INCREMENTAL_LIMIT2 = 200;
@@ -30516,6 +32542,12 @@ var FilteredListModel = class extends AbstractModel {
     if (!visible) {
       return;
     }
+    if (!this.isVisibleRow(model.getRow(toIndex))) {
+      this._invalidateIndex();
+      this.emit("row-remove", this, from, id, row);
+      this.emit("rows-change", this, from, this._rows.length - 1);
+      return;
+    }
     this._rows.splice(to, 0, row);
     this._sourceIndices.splice(to, 0, toIndex);
     this._invalidateIndex();
@@ -30541,10 +32573,10 @@ var FilteredListModel = class extends AbstractModel {
       this.emit("row-insert", this, position, id);
       this.emit("rows-change", this, position, this._rows.length - 1);
     } else if (wasVisible) {
-      this._rows.splice(position, 1);
+      const [removed] = this._rows.splice(position, 1);
       this._sourceIndices.splice(position, 1);
       this._invalidateIndex();
-      this.emit("row-remove", this, position, oldId, row);
+      this.emit("row-remove", this, position, oldId, removed);
       this.emit("rows-change", this, position, this._rows.length - 1);
     }
   }
@@ -30651,17 +32683,17 @@ registerType("filtered-list-model", FilteredListModel);
 
 // src/data/filters/condition-filter.js
 var ConditionOperator = Object.freeze({
-  EQUALS: 1,
-  LESS_THAN: 2,
-  GREATER_THAN: 3,
-  LESS_THAN_EQUAL: 4,
-  GREATER_THAN_EQUAL: 5,
-  CONTAINS: 6,
-  STARTS_WITH: 7,
-  ENDS_WITH: 8,
-  NOT_EQUALS: 9,
+  EQUALS: "equals",
+  LESS_THAN: "less-than",
+  GREATER_THAN: "greater-than",
+  LESS_THAN_EQUAL: "less-than-equal",
+  GREATER_THAN_EQUAL: "greater-than-equal",
+  CONTAINS: "contains",
+  STARTS_WITH: "starts-with",
+  ENDS_WITH: "ends-with",
+  NOT_EQUALS: "not-equals",
   // No column equals the value.
-  MATCHES: 10
+  MATCHES: "matches"
   // The value is a regular expression (or its source) that a column matches.
 });
 function toText(value) {
@@ -30768,7 +32800,7 @@ defineProperties(ConditionFilter, {
     value: ConditionOperator.CONTAINS,
     coerce(operator) {
       if (!Object.values(ConditionOperator).includes(operator)) {
-        throw new RangeError(`Invalid condition operator ${operator}.`);
+        throw new RangeError(`Invalid condition operator '${operator}'.`);
       }
       return operator;
     },
@@ -30814,111 +32846,8 @@ defineProperties(ConditionFilter, {
 });
 registerType("condition-filter", ConditionFilter);
 
-// src/data/filters/search-filter.js
-function removeAccents(text) {
-  return text.normalize("NFD").replace(/\p{Diacritic}/gu, "");
-}
-__name(removeAccents, "removeAccents");
-var SearchFilter = class extends Filter {
-  static {
-    __name(this, "SearchFilter");
-  }
-  _initialize() {
-    super._initialize();
-    this._keywords = [];
-  }
-  /**
-   * The keywords of the query, prepared for matching.
-   *
-   * @type {string[]}
-   */
-  get keywords() {
-    return [...this._keywords];
-  }
-  isVisibleRow(row) {
-    const keywords = this._keywords;
-    if (!keywords.length) {
-      return true;
-    }
-    const columns = this._columns ?? Object.keys(row);
-    const remaining = new Set(keywords);
-    for (const column of columns) {
-      if (!(column in row)) {
-        continue;
-      }
-      const value = this._prepareValue(row[column]);
-      for (const keyword of remaining) {
-        if (value.includes(keyword)) {
-          remaining.delete(keyword);
-        }
-      }
-      if (!remaining.size) {
-        return true;
-      }
-    }
-    return false;
-  }
-  /**
-   * Prepares a value (or the query) for matching: text with single spaces, in lower case and
-   * optionally without accents.
-   *
-   * @protected
-   * @param {unknown} value
-   * @returns {string}
-   */
-  _prepareValue(value) {
-    const text = value === null || value === void 0 ? "" : String(value);
-    const lower = text.replace(/\s+/g, " ").toLocaleLowerCase(getLocaleManager().locale);
-    return this._ignoreAccents ? removeAccents(lower) : lower;
-  }
-  _updateKeywords() {
-    const query = this._prepareValue(this._query).replace(/[,\s]+/g, " ").trim();
-    this._keywords = query ? [...new Set(query.split(" "))] : [];
-  }
-};
-defineProperties(SearchFilter, {
-  /**
-   * The search text.
-   */
-  query: {
-    value: "",
-    coerce(query) {
-      return query === null || query === void 0 ? "" : String(query);
-    },
-    changed() {
-      this._updateKeywords();
-      this._changed();
-    }
-  },
-  /**
-   * The columns to search, or `null` for all columns of a row.
-   */
-  columns: {
-    value: null,
-    coerce(columns) {
-      if (columns !== null && !Array.isArray(columns)) {
-        throw new TypeError("Filter columns must be an array or null.");
-      }
-      return columns && [...columns];
-    },
-    changed() {
-      this._changed();
-    }
-  },
-  /**
-   * Whether accents are ignored, so the keyword `'cafe'` finds `'Café'`.
-   */
-  ignoreAccents: {
-    value: false,
-    changed() {
-      this._updateKeywords();
-      this._changed();
-    }
-  }
-});
-registerType("search-filter", SearchFilter);
-
 // src/data/list-model.js
+var NO_ID = /* @__PURE__ */ Symbol("no id");
 function checkRow2(row) {
   if (row === null || typeof row !== "object") {
     throw new TypeError("A row must be an object.");
@@ -30928,6 +32857,14 @@ __name(checkRow2, "checkRow");
 var ListModel = class extends AbstractModel {
   static {
     __name(this, "ListModel");
+  }
+  _initialize() {
+    super._initialize();
+    this._rowsById = null;
+    this._rowsByIdColumn = null;
+  }
+  hasRowId(id) {
+    return this._getRowsById().has(id);
   }
   insertRow(index, row) {
     checkRow2(row);
@@ -30945,6 +32882,7 @@ var ListModel = class extends AbstractModel {
       index = this._findInsertIndex(rows, row, compare);
     }
     rows.splice(index, 0, row);
+    this._updateRowsById(NO_ID, row);
     this._afterInsert(index, id);
     return index;
   }
@@ -30964,13 +32902,14 @@ var ListModel = class extends AbstractModel {
     if (!newRows.length) {
       return;
     }
-    const updated = [...rows.slice(0, index), ...newRows, ...rows.slice(index)];
-    this._validateIds(updated);
     const compare = this._createSortComparator();
+    const updated = compare ? [...rows, ...newRows] : [...rows.slice(0, index), ...newRows, ...rows.slice(index)];
+    this._validateIds(updated);
     if (compare) {
       updated.sort(compare);
     }
     this._rows = updated;
+    this._rowsById = null;
     this._invalidateIndex();
     this.emit("rows-reorder", this);
     this.emit("rows-change", this, 0, updated.length - 1);
@@ -30979,6 +32918,7 @@ var ListModel = class extends AbstractModel {
     const row = this.getRow(index);
     const id = this.idColumn ? row[this.idColumn] : null;
     this._rows.splice(index, 1);
+    this._updateRowsById(id, null);
     this._invalidateIndex();
     this.emit("row-remove", this, index, id, row);
     this.emit("rows-change", this, index, this._rows.length - 1);
@@ -30986,6 +32926,7 @@ var ListModel = class extends AbstractModel {
   }
   removeAllRows() {
     this._rows = [];
+    this._rowsById = null;
     this._invalidateIndex();
     this.emit("rows-reorder", this);
     this.emit("rows-change", this, 0, -1);
@@ -31000,6 +32941,7 @@ var ListModel = class extends AbstractModel {
       throw new Error(`Duplicate row id ${String(id)}.`);
     }
     this._rows[index] = row;
+    this._updateRowsById(oldId, row);
     return this._afterChange(index, row, Object.keys({ ...oldRow, ...row }), id, oldId);
   }
   updateRow(index, changes) {
@@ -31022,11 +32964,14 @@ var ListModel = class extends AbstractModel {
     for (const column of columns) {
       row[column] = changes[column];
     }
+    if (!idColumn || !Object.is(id, oldId)) {
+      this._updateRowsById(oldId, row);
+    }
     return this._afterChange(index, row, columns, id, oldId);
   }
   sortByColumn(column, order = SortOrder.ASCENDING) {
     if (order !== SortOrder.NONE && order !== SortOrder.ASCENDING && order !== SortOrder.DESCENDING) {
-      throw new RangeError(`Invalid sort order ${order}.`);
+      throw new RangeError(`Invalid sort order '${order}'.`);
     }
     if (!column) {
       column = null;
@@ -31060,6 +33005,7 @@ var ListModel = class extends AbstractModel {
       updated.sort(compare);
     }
     this._rows = updated;
+    this._rowsById = null;
     this._invalidateIndex();
     this.emit("rows-reorder", this);
     this.emit("rows-change", this, 0, updated.length - 1);
@@ -31091,8 +33037,57 @@ var ListModel = class extends AbstractModel {
       ids.add(id);
     }
   }
+  /**
+   * Returns the rows by id, building the map when the rows were replaced or the id column
+   * changed.
+   *
+   * @returns {Map<unknown, object>}
+   */
+  _getRowsById() {
+    const idColumn = this.idColumn;
+    if (!idColumn) {
+      throw new Error("The model has no id column.");
+    }
+    if (!this._rowsById || this._rowsByIdColumn !== idColumn) {
+      const rows = /* @__PURE__ */ new Map();
+      for (const row of this._rows) {
+        const id = row[idColumn];
+        if (rows.has(id)) {
+          throw new Error(`Duplicate row id ${String(id)}.`);
+        }
+        rows.set(id, row);
+      }
+      this._rowsById = rows;
+      this._rowsByIdColumn = idColumn;
+    }
+    return this._rowsById;
+  }
+  /**
+   * Keeps the rows by id up to date after a single row changed.
+   *
+   * @param {unknown} oldId The id of a removed or changed row, or `NO_ID` for an inserted row.
+   * @param {object | null} row The inserted or changed row, or `null` for a removed row.
+   */
+  _updateRowsById(oldId, row) {
+    const idColumn = this.idColumn;
+    const rowsById = this._rowsById;
+    if (!idColumn || !rowsById || this._rowsByIdColumn !== idColumn) {
+      this._rowsById = null;
+      return;
+    }
+    if (oldId !== NO_ID) {
+      rowsById.delete(oldId);
+    }
+    if (row) {
+      rowsById.set(row[idColumn], row);
+    }
+  }
   _afterInsert(index, id) {
-    this._invalidateIndex();
+    if (!this._indexDirty && this._indexById && index === this._rows.length - 1) {
+      this._indexById.set(id, index);
+    } else {
+      this._invalidateIndex();
+    }
     this.emit("row-insert", this, index, id);
     this.emit("rows-change", this, index, this._rows.length - 1);
   }
@@ -31130,147 +33125,6 @@ var ListModel = class extends AbstractModel {
   }
 };
 registerType("list-model", ListModel);
-
-// src/i18n/number-parser.js
-var ZERO_CODE_POINTS = [1632, 1776, 2406, 2534, 3664, 65296];
-var NON_LATIN_DIGIT_REGEXP = new RegExp(
-  `[${ZERO_CODE_POINTS.map((zero) => `\\u{${zero.toString(16)}}-\\u{${(zero + 9).toString(16)}}`).join("")}]`,
-  "gu"
-);
-var MINUS_REGEXP = /[\u2212\uff0d\ufe63]/g;
-var WHITESPACE_REGEXP = /\s+/gu;
-var PLACEHOLDERS = { group: "", decimal: "" };
-function toLatinDigits(text) {
-  return text.replace(NON_LATIN_DIGIT_REGEXP, (digit) => {
-    const code = digit.codePointAt(0);
-    const zero = ZERO_CODE_POINTS.find((x) => code >= x && code <= x + 9);
-    return String(code - zero);
-  });
-}
-__name(toLatinDigits, "toLatinDigits");
-var NumberParser = class extends LocaleAware {
-  static {
-    __name(this, "NumberParser");
-  }
-  /**
-   * Parses a text to a number.
-   *
-   * @param {string} input
-   * @returns {number | null} The number, or `null` if the text is not a valid number.
-   * @throws {TypeError} If the input is not a string.
-   */
-  parse(input) {
-    const normalized = this.normalize(input);
-    return normalized === null ? null : this._toNumber(normalized);
-  }
-  /**
-   * Checks whether a text is a valid number.
-   *
-   * @param {string} input
-   * @returns {boolean}
-   */
-  isValid(input) {
-    return this.parse(input) !== null;
-  }
-  /**
-   * Converts a text to the canonical notation of JavaScript: without group separators, with a
-   * period as decimal separator and Latin digits, e.g. `'-1234.5'` for `'-1.234,5'` in Dutch.
-   *
-   * @param {string} input
-   * @returns {string | null} The canonical text, or `null` if the text is not a valid number.
-   * @throws {TypeError} If the input is not a string.
-   */
-  normalize(input) {
-    if (typeof input !== "string") {
-      throw new TypeError("The input must be a string.");
-    }
-    const manager = this.effectiveLocaleManager;
-    const group = manager.groupSeparator;
-    const decimal = manager.decimalSeparator;
-    let text = toLatinDigits(input.trim()).replace(MINUS_REGEXP, "-");
-    if (/^\s$/u.test(group)) {
-      text = text.replace(WHITESPACE_REGEXP, PLACEHOLDERS.group);
-    } else if (this._lenient) {
-      text = text.replace(WHITESPACE_REGEXP, "");
-    }
-    if (group === "\u2019") {
-      text = text.replace(/'/g, PLACEHOLDERS.group);
-    }
-    text = text.replace(new RegExp(escapeRegExp(group), "g"), PLACEHOLDERS.group).replace(new RegExp(escapeRegExp(decimal), "g"), PLACEHOLDERS.decimal);
-    const canonical = this._toCanonical(text, false);
-    if (canonical !== null) {
-      return canonical;
-    }
-    if (!this._lenient) {
-      return null;
-    }
-    return this._toCanonical(text, true);
-  }
-  _toCanonical(text, swap) {
-    let candidate = text.replaceAll(PLACEHOLDERS.group, ",").replaceAll(PLACEHOLDERS.decimal, ".");
-    if (swap) {
-      candidate = candidate.replace(/[.,]/g, (x) => x === "." ? "," : ".");
-    }
-    if (!this._lenient && /[.,]/.test(text)) {
-      return null;
-    }
-    if (!this._getRegExp().test(candidate)) {
-      return null;
-    }
-    return candidate.replace(/,/g, "");
-  }
-  /**
-   * Returns the regular expression a canonical candidate (with `,` for groups and `.` as
-   * decimal separator) must match.
-   *
-   * @protected
-   * @abstract
-   * @returns {RegExp}
-   */
-  _getRegExp() {
-    throw new Error(`${this.constructor.name} does not implement '_getRegExp'.`);
-  }
-  /**
-   * Converts a canonical text to a number, or `null` if it is out of range.
-   *
-   * @protected
-   * @abstract
-   * @param {string} _text
-   * @returns {number | null}
-   */
-  _toNumber(_text) {
-    throw new Error(`${this.constructor.name} does not implement '_toNumber'.`);
-  }
-};
-defineProperties(NumberParser, {
-  /**
-   * Whether whitespace is ignored and swapped decimal and group separators are accepted.
-   */
-  lenient: { value: true, coerce: Boolean }
-});
-var INTEGER_DIGITS_PATTERN = "(?:\\d+|\\d{1,3}(?:,\\d{3})+|\\d{1,2}(?:,\\d{2})+,\\d{3})";
-
-// src/i18n/double-parser.js
-var DOUBLE_REGEXP = new RegExp(
-  `^[+-]?(?:${INTEGER_DIGITS_PATTERN}(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$`
-);
-var DoubleParser = class extends NumberParser {
-  static {
-    __name(this, "DoubleParser");
-  }
-  _getRegExp() {
-    return DOUBLE_REGEXP;
-  }
-  _toNumber(text) {
-    const value = Number(text);
-    return Number.isFinite(value) ? value : null;
-  }
-};
-var getDoubleParser = lazySingleton(() => new DoubleParser());
-function parseDouble(input) {
-  return getDoubleParser().parse(input);
-}
-__name(parseDouble, "parseDouble");
 
 // src/data/validators/validator.js
 var Validator = class extends LocaleAware {
@@ -31558,21 +33412,21 @@ var DoubleValidator = class extends NumberValidator {
     return new DoubleParser();
   }
   _hasValidPrecision(text) {
-    if (this._decimals === null) {
+    if (this._digits === null) {
       return true;
     }
     this._parser.localeManager = this.effectiveLocaleManager;
     this._parser.lenient = this._lenient;
-    return countDecimals(this._parser.normalize(text)) <= this._decimals;
+    return countDecimals(this._parser.normalize(text)) <= this._digits;
   }
   _round(value) {
-    if (this._decimals === null) {
+    if (this._digits === null) {
       return value;
     }
-    return Number(value.toFixed(this._decimals));
+    return Number(value.toFixed(this._digits));
   }
   _getFormatOptions() {
-    return { maximumFractionDigits: this._decimals ?? 20 };
+    return { maximumFractionDigits: this._digits ?? 20 };
   }
   _getDefaultMessage() {
     const message = this._getRangeMessage({
@@ -31581,34 +33435,48 @@ var DoubleValidator = class extends NumberValidator {
       minimum: "Enter a number of at least %s.",
       maximum: "Enter a number of at most %s."
     });
-    if (this._decimals === null) {
+    if (this._digits === null) {
       return message;
     }
     const decimals = translatePlural(
       "At most %d decimal is allowed.",
       "At most %d decimals are allowed.",
-      this._decimals
+      this._digits
     );
     return `${message} ${decimals}`;
   }
 };
 defineProperties(DoubleValidator, {
   /**
-   * The maximum number of decimals, or `null` (the default) for any number.
+   * The maximum number of decimals (fraction digits), or `null` (the default) for any number.
+   * Named like the `digits` of a spin button.
    */
-  decimals: {
+  digits: {
     value: null,
-    coerce(decimals) {
-      if (decimals === null || decimals === void 0) {
+    coerce(digits) {
+      if (digits === null || digits === void 0) {
         return null;
       }
-      if (!Number.isInteger(decimals) || decimals < 0 || decimals > 20) {
-        throw new RangeError("The number of decimals must be an integer from 0 to 20.");
+      if (!Number.isInteger(digits) || digits < 0 || digits > 20) {
+        throw new RangeError("The number of digits must be an integer from 0 to 20.");
       }
-      return decimals;
+      return digits;
     },
     changed() {
       this._emitChange();
+    }
+  },
+  /**
+   * The same as `digits`.
+   */
+  decimals: {
+    signal: false,
+    get() {
+      return this._digits;
+    },
+    set(decimals) {
+      this.digits = decimals;
+      return false;
     }
   }
 });
@@ -32070,1043 +33938,6 @@ function formatDateTime(timestamp, dateStyle, timeStyle) {
 }
 __name(formatDateTime, "formatDateTime");
 
-// src/i18n/date-time-parser.js
-var ENGLISH_MONTH_NAMES = [
-  "january",
-  "february",
-  "march",
-  "april",
-  "may",
-  "june",
-  "july",
-  "august",
-  "september",
-  "october",
-  "november",
-  "december"
-];
-var ENGLISH_DAY_NAMES = [
-  "sunday",
-  "monday",
-  "tuesday",
-  "wednesday",
-  "thursday",
-  "friday",
-  "saturday"
-];
-var MONTH_PREFIX_LENGTH = 3;
-var DAY_PREFIX_LENGTH = 2;
-var ORDINAL_SUFFIXES = /* @__PURE__ */ new Set(["st", "nd", "rd", "th", "er", "e", "ste", "de"]);
-var MARKERS = { \u5E74: "y", \u6708: "m", \u65E5: "d", \uB144: "y", \uC6D4: "m", \uC77C: "d", \u0433: "y" };
-var FILLER_WORDS = /* @__PURE__ */ new Set(["of", "the", "de", "del", "den", "der", "le"]);
-var UNITS = ["day", "week", "month", "year"];
-var ENGLISH_RELATIVE_DAYS = [
-  [/^(the )?day before (y(ester)?day|(the )?(past|last) day)$/, -2],
-  [/^(y(ester)?day|(the )?(past|prev(ious)?|last) day)$/, -1],
-  [/^(today|(the )?(present|current) day)$/, 0],
-  [/^(tom+or+ow|(the )?(next|coming) day)$/, 1],
-  [/^(the )?day after (tom+or+ow|(the )?(next|coming) day)$/, 2]
-];
-var ENGLISH_DIRECTIONS = [
-  [/^(the )?(past|prev(ious)?|last) (.+)$/, -1],
-  [/^(the )?(next|coming) (.+)$/, 1],
-  [/^(this|the (present|current)) (.+)$/, 0]
-];
-var ENGLISH_COUNTED = [
-  [/^(\d+) (day|week|month|year)s? ago$/, -1],
-  [/^in (\d+) (day|week|month|year)s?$/, 1],
-  [/^(\d+) (day|week|month|year)s? from now$/, 1]
-];
-var ENGLISH_TIMES = { noon: 12 * 60, midday: 12 * 60, midnight: 0 };
-var ISO_REGEXP = /^(\d{4})-(\d{2})-(\d{2})(?:[t ](\d{2}):(\d{2})(?::(\d{2})(?:[.,](\d+))?)?\s*(z|[+-]\d{2}(?::?\d{2})?)?)?$/;
-var TOKEN_REGEXP = /(\d+)|('\d{2})|((?:\p{L}+\.?)+)|([-/.\\:])|(\s+)|(.)/gu;
-var LOCALE_DATA = /* @__PURE__ */ new Map();
-function normalizeText(text, locale) {
-  return normalizeFragment(text, locale).trim();
-}
-__name(normalizeText, "normalizeText");
-function normalizeFragment(text, locale) {
-  return text.toLocaleLowerCase(locale).normalize("NFD").replace(/\p{M}/gu, "").normalize("NFC").replace(/[,\s\u200e\u200f]+/gu, " ");
-}
-__name(normalizeFragment, "normalizeFragment");
-function escapePattern(text) {
-  return text.replace(/[\\^$.*+?()[\]{}|/]/g, "\\$&");
-}
-__name(escapePattern, "escapePattern");
-function normalizeName(name, locale) {
-  return normalizeText(name, locale).replace(/\./g, "");
-}
-__name(normalizeName, "normalizeName");
-function getLocaleData(locale) {
-  let data = LOCALE_DATA.get(locale);
-  if (data) {
-    return data;
-  }
-  const sample = utcTimestamp(2013, 7, 10, 14, 5, 9);
-  const options = { timeZone: "UTC", calendar: "gregory", numberingSystem: "latn" };
-  const dateOrder = getDateTimeFormat(locale, { ...options, dateStyle: "short" }).formatToParts(sample).map((part) => ({ day: "d", month: "m", year: "y" })[part.type]).filter(Boolean).join("");
-  const monthNames = Array.from({ length: 12 }, () => []);
-  for (const month of ["long", "short"]) {
-    const format = getDateTimeFormat(locale, { ...options, day: "numeric", month });
-    for (let i = 0; i < 12; i++) {
-      const part = format.formatToParts(utcTimestamp(2013, i, 10)).find((x) => x.type === "month");
-      if (part && !/\d/.test(part.value)) {
-        monthNames[i].push(normalizeName(part.value, locale));
-      }
-    }
-  }
-  data = {
-    dateOrder: dateOrder.length === 3 ? dateOrder : "mdy",
-    monthNames,
-    ...getRelativeData(locale),
-    ...getTimeData(locale, sample, options)
-  };
-  LOCALE_DATA.set(locale, data);
-  return data;
-}
-__name(getLocaleData, "getLocaleData");
-function getRelativeData(locale) {
-  const relativeWords = /* @__PURE__ */ new Map();
-  const automatic = getRelativeTimeFormat(locale, { numeric: "auto" });
-  relativeWords.set(normalizeText(automatic.format(0, "second"), locale), {
-    unit: "now",
-    offset: 0
-  });
-  for (const unit of UNITS) {
-    for (const offset of unit === "day" ? [-2, -1, 0, 1, 2] : [-1, 0, 1]) {
-      const phrase = normalizeText(automatic.format(offset, unit), locale);
-      if (!/\d/.test(phrase) && !relativeWords.has(phrase)) {
-        relativeWords.set(phrase, { unit, offset });
-      }
-    }
-  }
-  const relativeTemplates = [];
-  const sources = /* @__PURE__ */ new Set();
-  const numeric = getRelativeTimeFormat(locale, { numeric: "always" });
-  for (const unit of UNITS) {
-    for (const sign of [-1, 1]) {
-      for (const count of [1, 2, 3, 5, 11, 21, 22, 100, 101]) {
-        const pattern = numeric.formatToParts(sign * count, unit).map(
-          (part) => part.type === "integer" ? "(\\d+)" : escapePattern(normalizeFragment(part.value, locale))
-        ).join("");
-        const source = `^${pattern.trim().replace(/ /g, "\\s?")}$`;
-        if (!sources.has(source)) {
-          sources.add(source);
-          relativeTemplates.push({ regexp: new RegExp(source, "u"), unit, sign });
-        }
-      }
-    }
-  }
-  return { relativeWords, relativeTemplates };
-}
-__name(getRelativeData, "getRelativeData");
-function getTimeData(locale, sample, options) {
-  const timeParts = getDateTimeFormat(locale, { ...options, timeStyle: "short" }).formatToParts(
-    sample
-  );
-  const hourIndex = timeParts.findIndex((x) => x.type === "hour");
-  const separator = timeParts[hourIndex + 1]?.value.trim();
-  const timeSeparators = [":"];
-  if (separator && separator.length === 1 && separator !== ":") {
-    timeSeparators.push(separator);
-  }
-  const connectors = ["at"];
-  const dateTimeParts = getDateTimeFormat(locale, {
-    ...options,
-    dateStyle: "long",
-    timeStyle: "short"
-  }).formatToParts(sample);
-  for (const part of dateTimeParts) {
-    const word = normalizeName(part.value, locale);
-    if (part.type === "literal" && /^\p{L}+$/u.test(word) && !connectors.includes(word)) {
-      connectors.push(word);
-    }
-  }
-  return { timeSeparators, connectors };
-}
-__name(getTimeData, "getTimeData");
-function matchName(word, names, prefixLength) {
-  const exact = names.findIndex((list) => list.includes(word));
-  if (exact >= 0 || word.length < prefixLength) {
-    return exact;
-  }
-  const matches = /* @__PURE__ */ new Set();
-  names.forEach((list, index) => {
-    if (list.some((name) => name.startsWith(word))) {
-      matches.add(index);
-    }
-  });
-  return matches.size === 1 ? [...matches][0] : -1;
-}
-__name(matchName, "matchName");
-function tokenize(text) {
-  const tokens = [];
-  for (const match of text.matchAll(TOKEN_REGEXP)) {
-    const [value, number, shortYear, word, separator, space] = match;
-    if (number !== void 0) {
-      tokens.push({ type: "number", value: Number(number), digits: number.length });
-    } else if (shortYear !== void 0) {
-      tokens.push({ type: "short-year", value: Number(shortYear.slice(1)) });
-    } else if (word !== void 0) {
-      tokens.push({ type: "word", text: word.replace(/\./g, "") });
-    } else if (separator !== void 0) {
-      tokens.push({ type: "separator", text: separator });
-    } else if (space !== void 0) {
-      tokens.push({ type: "space" });
-    } else {
-      tokens.push({ type: "other", text: value });
-    }
-  }
-  return tokens;
-}
-__name(tokenize, "tokenize");
-var DateTimeParser = class extends LocaleAware {
-  static {
-    __name(this, "DateTimeParser");
-  }
-  /**
-   * The time zone dates are in: `timeZone`, or else the locale manager's.
-   *
-   * @type {string}
-   */
-  get effectiveTimeZone() {
-    return this._timeZone || this._getDefaultTimeZone();
-  }
-  /**
-   * Parses a date.
-   *
-   * @param {string} input
-   * @returns {Date | null} The date at midnight (or the current time for `now`), or `null` if the
-   *     text is not a valid date.
-   * @throws {TypeError} If the input is not a string.
-   */
-  parseDate(input) {
-    const text = this._prepareInput(input);
-    if (this._isNow(text)) {
-      return new Date(this._getNow());
-    }
-    const date = this._parseDateText(text);
-    return date ? this._toDate(date, 0) : null;
-  }
-  /**
-   * Parses a time of day.
-   *
-   * @param {string} input
-   * @returns {number | null} The time as milliseconds since midnight, or `null` if the text is
-   *     not a valid time.
-   * @throws {TypeError} If the input is not a string.
-   */
-  parseTime(input) {
-    const text = this._prepareInput(input);
-    if (this._isNow(text)) {
-      const fields = getZonedFields(this._getNow(), this.effectiveTimeZone);
-      return ((fields.hours * 60 + fields.minutes) * 60 + fields.seconds) * 1e3 + fields.milliseconds;
-    }
-    return this._parseTimeText(text, true);
-  }
-  /**
-   * Parses a date and a time, in either order (`10 aug 2013 14:05` or `2 pm tomorrow`), or only
-   * one of them: a date alone is at midnight, and a time alone is today. ISO 8601 date-times
-   * (`2013-08-10T14:05:09Z`) are understood too, including their time zone.
-   *
-   * @param {string} input
-   * @returns {Date | null}
-   * @throws {TypeError} If the input is not a string.
-   */
-  parseDateTime(input) {
-    const text = this._prepareInput(input);
-    if (this._isNow(text)) {
-      return new Date(this._getNow());
-    }
-    const iso = this._parseIso(text);
-    if (iso !== void 0) {
-      return iso;
-    }
-    const data = getLocaleData(this.effectiveLocale);
-    const words = text.split(" ");
-    for (let count = 1; count <= Math.min(words.length, 3); count++) {
-      for (const timeAtEnd of [true, false]) {
-        const timeWords = timeAtEnd ? words.slice(-count) : words.slice(0, count);
-        const dateWords = timeAtEnd ? words.slice(0, -count) : words.slice(count);
-        const time = this._parseTimeText(timeWords.join(" "), false);
-        if (time === null) {
-          continue;
-        }
-        const connectorIndex = timeAtEnd ? dateWords.length - 1 : 0;
-        if (data.connectors.includes(dateWords[connectorIndex]?.replace(/\./g, ""))) {
-          dateWords.splice(connectorIndex, 1);
-        }
-        const date2 = dateWords.length ? this._parseDateText(dateWords.join(" ")) : this._getToday();
-        if (date2) {
-          return this._toDate(date2, time);
-        }
-      }
-    }
-    const date = this._parseDateText(text);
-    return date ? this._toDate(date, 0) : null;
-  }
-  /**
-   * Parses a text in a `strftime` format of the {@link DateTimeFormatter}, e.g. `'%d-%m-%Y'`.
-   * Numbers may omit their padding, names may be abbreviated and whitespace may vary. Fields
-   * missing from the format are taken from today (when the format has no date at all) or are
-   * the first month and day. The preferred formats `%c`, `%x` and `%X` can only be used alone;
-   * they parse like {@link DateTimeParser#parseDate}, {@link DateTimeParser#parseDateTime} and
-   * a time today.
-   *
-   * @param {string} input
-   * @param {string} format
-   * @returns {Date | null}
-   * @throws {TypeError} If the input or format is not a string.
-   * @throws {Error} If the format uses `%c`, `%x` or `%X` with other specifiers.
-   */
-  parseExact(input, format) {
-    if (typeof format !== "string") {
-      throw new TypeError("The format must be a string.");
-    }
-    const text = this._prepareInput(input);
-    if (format === "%c") {
-      return this.parseDate(input);
-    }
-    if (format === "%x") {
-      return this.parseDateTime(input);
-    }
-    if (format === "%X") {
-      const time = this.parseTime(input);
-      return time === null ? null : this._toDate(this._getToday(), time);
-    }
-    const { regexp, fields } = this._compileFormat(format);
-    const matches = regexp.exec(text);
-    if (!matches) {
-      return null;
-    }
-    return this._buildExact(fields, matches.slice(1));
-  }
-  _prepareInput(input) {
-    if (typeof input !== "string") {
-      throw new TypeError("The input must be a string.");
-    }
-    return normalizeText(input, this.effectiveLocale);
-  }
-  _isNow(text) {
-    return text === "now" || this._getRelativeWord(text)?.unit === "now";
-  }
-  _getNow() {
-    return this._referenceTime ?? Date.now();
-  }
-  _getToday() {
-    const { year, month, day, weekDay } = getZonedFields(
-      this._getNow(),
-      this.effectiveTimeZone
-    );
-    return { year, month, day, weekDay };
-  }
-  _toDate({ year, month, day }, time) {
-    const timestamp = fromZonedFields({ year, month, day }, this.effectiveTimeZone);
-    if (!time) {
-      return new Date(timestamp);
-    }
-    const minutes = Math.floor(time / MINUTE);
-    return new Date(
-      fromZonedFields(
-        {
-          year,
-          month,
-          day,
-          hours: Math.floor(minutes / 60),
-          minutes: minutes % 60,
-          seconds: Math.floor(time % MINUTE / 1e3),
-          milliseconds: time % 1e3
-        },
-        this.effectiveTimeZone
-      )
-    );
-  }
-  _getRelativeWord(text) {
-    return getLocaleData(this.effectiveLocale).relativeWords.get(text) || null;
-  }
-  _parseIso(text) {
-    const matches = ISO_REGEXP.exec(text);
-    if (!matches) {
-      return void 0;
-    }
-    const [, year, month, day, hours, minutes, seconds, fraction, zone] = matches;
-    const fields = {
-      year: Number(year),
-      month: Number(month) - 1,
-      day: Number(day),
-      hours: Number(hours || 0),
-      minutes: Number(minutes || 0),
-      seconds: Number(seconds || 0),
-      milliseconds: fraction ? Math.floor(Number(`0.${fraction}`) * 1e3) : 0
-    };
-    if (!this._isValidDate(fields) || fields.hours > 23 || fields.minutes > 59 || fields.seconds > 59) {
-      return null;
-    }
-    if (!zone) {
-      return new Date(fromZonedFields(fields, this.effectiveTimeZone));
-    }
-    const wallClock = utcTimestamp(
-      fields.year,
-      fields.month,
-      fields.day,
-      fields.hours,
-      fields.minutes,
-      fields.seconds,
-      fields.milliseconds
-    );
-    return new Date(wallClock - this._parseOffset(zone) * MINUTE);
-  }
-  _parseOffset(zone) {
-    if (zone === "z" || zone === "utc" || zone === "gmt") {
-      return 0;
-    }
-    const matches = /^([+-])(\d{2}):?(\d{2})?$/.exec(zone);
-    if (!matches) {
-      return null;
-    }
-    const offset = Number(matches[2]) * 60 + Number(matches[3] || 0);
-    return matches[1] === "-" ? -offset : offset;
-  }
-  _isValidDate({ year, month, day }) {
-    return Number.isInteger(year) && year >= 1 && year <= 9999 && month >= 0 && month <= 11 && day >= 1 && day <= getDaysInMonth(year, month);
-  }
-  /**
-   * Parses a normalized date text to its fields.
-   *
-   * @param {string} text
-   * @returns {{year: number, month: number, day: number} | null}
-   */
-  _parseDateText(text) {
-    if (!text) {
-      return null;
-    }
-    const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(text);
-    if (iso) {
-      const date = { year: Number(iso[1]), month: Number(iso[2]) - 1, day: Number(iso[3]) };
-      return this._isValidDate(date) ? date : null;
-    }
-    const relative = this._parseRelativeDate(text);
-    if (relative !== void 0) {
-      return relative;
-    }
-    return this._parseAbsoluteDate(tokenize(text));
-  }
-  /**
-   * Parses a relative date.
-   *
-   * @param {string} text
-   * @returns {{year: number, month: number, day: number} | null | undefined} `undefined` if
-   *     the text is not a relative date.
-   */
-  _parseRelativeDate(text) {
-    const today = this._getToday();
-    const data = getLocaleData(this.effectiveLocale);
-    for (const [regexp, offset] of ENGLISH_RELATIVE_DAYS) {
-      if (regexp.test(text)) {
-        return this._addDays(today, offset);
-      }
-    }
-    const word = this._getRelativeWord(text);
-    if (word) {
-      return this._moveToUnit(today, word.unit, word.offset);
-    }
-    for (const [regexp, sign] of ENGLISH_COUNTED) {
-      const matches = regexp.exec(text);
-      if (matches) {
-        return this._addUnits(today, matches[2], sign * Number(matches[1]));
-      }
-    }
-    for (const { regexp, unit, sign } of data.relativeTemplates) {
-      const matches = regexp.exec(text);
-      if (matches) {
-        return this._addUnits(today, unit, sign * Number(matches[1]));
-      }
-    }
-    for (const [regexp, direction] of ENGLISH_DIRECTIONS) {
-      const matches = regexp.exec(text);
-      if (!matches) {
-        continue;
-      }
-      const rest = matches[matches.length - 1];
-      if (UNITS.includes(rest)) {
-        return this._moveToUnit(today, rest, direction);
-      }
-      const named = this._parseNamedRelative(rest, today, direction);
-      return named === void 0 ? null : named;
-    }
-    return this._parseNamedRelative(text, today, 1);
-  }
-  /**
-   * Parses a day or month name relative to today: the next one (`direction` 1 or 0) or the
-   * last one (-1).
-   */
-  _parseNamedRelative(text, today, direction) {
-    if (!/^\p{L}+\.?$/u.test(text)) {
-      return void 0;
-    }
-    const word = text.replace(/\./g, "");
-    const past = direction < 0;
-    const weekDay = matchName(word, this._getDayNames(), DAY_PREFIX_LENGTH);
-    if (weekDay >= 0) {
-      let offset = weekDay - today.weekDay;
-      if (past ? offset >= 0 : offset <= 0) {
-        offset += past ? -7 : 7;
-      }
-      return this._addDays(today, offset);
-    }
-    const month = matchName(word, this._getMonthNames(), MONTH_PREFIX_LENGTH);
-    if (month >= 0) {
-      let year = today.year;
-      if (past ? month >= today.month : month <= today.month) {
-        year += past ? -1 : 1;
-      }
-      return { year, month, day: 1 };
-    }
-    return void 0;
-  }
-  _addDays({ year, month, day }, days) {
-    const date = new Date(utcTimestamp(year, month, day + days));
-    return { year: date.getUTCFullYear(), month: date.getUTCMonth(), day: date.getUTCDate() };
-  }
-  _addUnits(date, unit, count) {
-    if (unit === "day") {
-      return this._addDays(date, count);
-    }
-    if (unit === "week") {
-      return this._addDays(date, 7 * count);
-    }
-    const months = date.year * 12 + date.month + (unit === "year" ? 12 * count : count);
-    const year = Math.floor(months / 12);
-    const month = months - year * 12;
-    return { year, month, day: Math.min(date.day, getDaysInMonth(year, month)) };
-  }
-  /**
-   * Moves to the first day of the day, week, month or year some units from today, e.g. the
-   * first day of the last month for `('month', -1)`.
-   */
-  _moveToUnit(today, unit, offset) {
-    if (unit === "now") {
-      return today;
-    }
-    if (unit === "day") {
-      return this._addDays(today, offset);
-    }
-    if (unit === "week") {
-      const firstDay = this.effectiveLocaleManager.firstDayOfWeek;
-      const start = -((today.weekDay - firstDay + 7) % 7);
-      return this._addDays(today, start + 7 * offset);
-    }
-    if (unit === "month") {
-      return this._addUnits({ ...today, day: 1 }, "month", offset);
-    }
-    return { year: today.year + offset, month: 0, day: 1 };
-  }
-  _getMonthNames() {
-    const manager = this.effectiveLocaleManager;
-    const locale = manager.locale;
-    const data = getLocaleData(locale);
-    return ENGLISH_MONTH_NAMES.map((name, i) => [
-      normalizeName(manager.longMonthNames[i], locale),
-      normalizeName(manager.shortMonthNames[i], locale),
-      ...data.monthNames[i],
-      name,
-      name.slice(0, 3)
-    ]);
-  }
-  _getDayNames() {
-    const manager = this.effectiveLocaleManager;
-    const locale = manager.locale;
-    return ENGLISH_DAY_NAMES.map((name, i) => [
-      normalizeName(manager.longDayNames[i], locale),
-      normalizeName(manager.shortDayNames[i], locale),
-      name
-    ]);
-  }
-  _expandYear(value, digits) {
-    if (digits > 2) {
-      return value;
-    }
-    return value > this._twoDigitYearMax ? 1900 + value : 2e3 + value;
-  }
-  /**
-   * Parses the tokens of an absolute date.
-   *
-   * @param {object[]} tokens
-   * @returns {{year: number, month: number, day: number} | null}
-   */
-  _parseAbsoluteDate(tokens) {
-    const date = { year: null, month: null, day: null };
-    let weekDay = null;
-    const numbers = [];
-    const components = [];
-    const monthNames = this._getMonthNames();
-    const dayNames = this._getDayNames();
-    for (let i = 0; i < tokens.length; i++) {
-      const token = tokens[i];
-      const previous = tokens[i - 1];
-      if (token.type === "space" || token.type === "separator") {
-        continue;
-      }
-      if (token.type === "other") {
-        return null;
-      }
-      if (token.type === "number") {
-        if (token.digits > 4) {
-          return null;
-        }
-        const number = { ...token, role: null };
-        numbers.push(number);
-        components.push(number);
-        continue;
-      }
-      if (token.type === "short-year") {
-        if (date.year !== null) {
-          return null;
-        }
-        date.year = this._expandYear(token.value, 2);
-        components.push({ role: "y", digits: 2 });
-        continue;
-      }
-      const word = token.text;
-      const previousNumber = previous?.type === "number" ? numbers[numbers.length - 1] : null;
-      if (previousNumber && !previousNumber.role && ORDINAL_SUFFIXES.has(word)) {
-        previousNumber.role = "d";
-        continue;
-      }
-      const marker = MARKERS[word];
-      if (marker) {
-        const number = previousNumber || (previous?.type === "space" && tokens[i - 2]?.type === "number" ? numbers[numbers.length - 1] : null);
-        if (!number || number.role) {
-          return null;
-        }
-        number.role = marker;
-        continue;
-      }
-      if (FILLER_WORDS.has(word)) {
-        continue;
-      }
-      const month = matchName(word, monthNames, MONTH_PREFIX_LENGTH);
-      if (month >= 0) {
-        if (date.month !== null) {
-          return null;
-        }
-        date.month = month;
-        components.push({ role: "m" });
-        continue;
-      }
-      const day = matchName(word, dayNames, DAY_PREFIX_LENGTH);
-      if (day >= 0 && weekDay === null) {
-        weekDay = day;
-        continue;
-      }
-      return null;
-    }
-    if (!this._assignNumbers(date, numbers, components)) {
-      return null;
-    }
-    const today = this._getToday();
-    if (date.day === null && date.month === null) {
-      if (date.year === null) {
-        return null;
-      }
-      date.month = 0;
-      date.day = 1;
-    } else if (date.day === null) {
-      if (date.year === null) {
-        return null;
-      }
-      date.day = 1;
-    }
-    if (date.month === null) {
-      date.month = today.month;
-    }
-    if (date.year === null) {
-      date.year = today.year;
-    }
-    if (!this._isValidDate(date)) {
-      return null;
-    }
-    if (weekDay !== null && new Date(utcTimestamp(date.year, date.month, date.day)).getUTCDay() !== weekDay) {
-      return null;
-    }
-    return date;
-  }
-  _assignNumbers(date, numbers, components) {
-    const assign = /* @__PURE__ */ __name((role, number) => {
-      const key = { y: "year", m: "month", d: "day" }[role];
-      if (date[key] !== null) {
-        return false;
-      }
-      if (role === "y") {
-        date.year = this._expandYear(number.value, number.digits);
-      } else {
-        date[key] = role === "m" ? number.value - 1 : number.value;
-      }
-      return true;
-    }, "assign");
-    for (const number of numbers) {
-      if (number.role && !assign(number.role, number)) {
-        return false;
-      }
-    }
-    let unassigned = numbers.filter((x) => !x.role);
-    for (const number of unassigned) {
-      if (number.digits > 2 || number.value > 31) {
-        number.role = "y";
-        if (!assign("y", number)) {
-          return false;
-        }
-      }
-    }
-    unassigned = unassigned.filter((x) => !x.role);
-    if (!unassigned.length) {
-      return true;
-    }
-    const first = components[0];
-    let order = getLocaleData(this.effectiveLocale).dateOrder;
-    if (first?.role === "y" && first.digits > 2) {
-      order = "ymd";
-    }
-    let missing = [...order].filter((role) => {
-      return date[{ y: "year", m: "month", d: "day" }[role]] === null;
-    });
-    if (unassigned.length < missing.length && missing.includes("y")) {
-      missing = missing.filter((role) => role !== "y");
-    }
-    if (unassigned.length === 1 && date.day === null && missing.length > 1) {
-      missing = ["d"];
-    }
-    if (unassigned.length !== missing.length) {
-      return false;
-    }
-    return unassigned.every((number, i) => assign(missing[i], number));
-  }
-  _getDesignatorRegExp() {
-    const manager = this.effectiveLocaleManager;
-    const locale = manager.locale;
-    const toPattern = /* @__PURE__ */ __name((designator) => escapePattern(normalizeName(designator, locale)).replace(/ /g, "\\s?"), "toPattern");
-    return {
-      am: `(?:${toPattern(manager.amDesignator)}|a\\.?\\s?m\\.?)`,
-      pm: `(?:${toPattern(manager.pmDesignator)}|p\\.?\\s?m\\.?)`
-    };
-  }
-  /**
-   * Parses a normalized time text.
-   *
-   * @param {string} text
-   * @param {boolean} alone Whether the text is only a time, which allows more separators.
-   * @returns {number | null} Milliseconds since midnight.
-   */
-  _parseTimeText(text, alone) {
-    if (Object.hasOwn(ENGLISH_TIMES, text)) {
-      return ENGLISH_TIMES[text] * MINUTE;
-    }
-    const data = getLocaleData(this.effectiveLocale);
-    const separators = alone ? [":", ".", ...data.timeSeparators] : data.timeSeparators;
-    const separator = `(?:${separators.map(escapePattern).join("|")})`;
-    const { am, pm } = this._getDesignatorRegExp();
-    const designator = `(${am}|${pm})`;
-    const clock = `(\\d{1,2})(?:(?:${separator}|h)(\\d{2})(?:${separator}(\\d{2})(?:[.,](\\d{1,3}))?)?)?(h)?`;
-    const regexp = new RegExp(`^(?:${designator}\\s?)?${clock}(?:\\s?${designator})?$`, "u");
-    const matches = regexp.exec(text);
-    if (!matches) {
-      return null;
-    }
-    const [, before, hoursText, minutesText, secondsText, fraction, hourMark, after] = matches;
-    if (before && after || hourMark && minutesText !== void 0) {
-      return null;
-    }
-    const period = before || after;
-    if (minutesText === void 0 && !period && !hourMark) {
-      return null;
-    }
-    let hours = Number(hoursText);
-    const minutes = Number(minutesText || 0);
-    const seconds = Number(secondsText || 0);
-    const milliseconds = fraction ? Number(fraction.padEnd(3, "0")) : 0;
-    if (minutes > 59 || seconds > 59) {
-      return null;
-    }
-    if (period) {
-      if (hours < 1 || hours > 12) {
-        return null;
-      }
-      const isPm = new RegExp(`^${pm}$`, "u").test(period);
-      hours = hours % 12 + (isPm ? 12 : 0);
-    } else if (hours > 23) {
-      return null;
-    }
-    return ((hours * 60 + minutes) * 60 + seconds) * 1e3 + milliseconds;
-  }
-  _compileFormat(format) {
-    const fields = [];
-    let source = "";
-    const expanded = format.replace(/%([-_0^]*)([rRTDF])/g, (_match, _flags, character) => {
-      return {
-        r: "%I:%M:%S %p",
-        R: "%H:%M",
-        T: "%H:%M:%S",
-        D: "%m/%d/%y",
-        F: "%Y-%m-%d"
-      }[character];
-    });
-    const { am, pm } = this._getDesignatorRegExp();
-    const word = "([\\p{L}.]+)";
-    const patterns = {
-      a: word,
-      A: word,
-      b: word,
-      B: word,
-      h: word,
-      d: "(\\d{1,2})",
-      e: "(\\d{1,2})",
-      j: "(\\d{1,3})",
-      u: "(\\d)",
-      w: "(\\d)",
-      U: "(\\d{1,2})",
-      V: "(\\d{1,2})",
-      W: "(\\d{1,2})",
-      m: "(\\d{1,2})",
-      C: "(\\d{1,2})",
-      g: "(\\d{2})",
-      G: "(\\d{4})",
-      y: "(\\d{2})",
-      Y: "(\\d{4})",
-      H: "(\\d{1,2})",
-      k: "(\\d{1,2})",
-      I: "(\\d{1,2})",
-      l: "(\\d{1,2})",
-      M: "(\\d{2})",
-      S: "(\\d{2})",
-      L: "(\\d{3})",
-      p: `(${am}|${pm})`,
-      P: `(${am}|${pm})`,
-      z: "(z|[+-]\\d{2}:?\\d{2})",
-      Z: "([\\p{L}\\d+\\-:/_]+)",
-      s: "(-?\\d+)"
-    };
-    let position = 0;
-    for (const match of expanded.matchAll(/%[-_0^]*([a-zA-Z%])/g)) {
-      source += this._literalPattern(expanded.slice(position, match.index));
-      position = match.index + match[0].length;
-      const character = match[1];
-      if (character === "%") {
-        source += "%";
-      } else if (character === "n" || character === "t") {
-        source += "\\s*";
-      } else if (patterns[character]) {
-        source += (/[eklIH]/.test(character) ? "\\s?" : "") + patterns[character];
-        fields.push(character);
-      } else if ("cxX".includes(character)) {
-        throw new Error(`'%${character}' can only be used alone in a format to parse.`);
-      } else {
-        source += escapePattern("%" + match[1]);
-      }
-    }
-    source += this._literalPattern(expanded.slice(position));
-    return { regexp: new RegExp(`^${source}$`, "u"), fields };
-  }
-  _literalPattern(text) {
-    return normalizeFragment(text, this.effectiveLocale).split(" ").map((x) => escapePattern(x)).join("\\s*");
-  }
-  _buildExact(specifiers, values) {
-    const fields = { year: null, month: null, day: null };
-    let hours = 0;
-    let minutes = 0;
-    let seconds = 0;
-    let milliseconds = 0;
-    let period = null;
-    let hour12 = false;
-    let weekDay = null;
-    let offset = null;
-    let dayOfYear = null;
-    const { pm } = this._getDesignatorRegExp();
-    for (let i = 0; i < specifiers.length; i++) {
-      const character = specifiers[i];
-      const value = values[i];
-      const number = Number(value);
-      switch (character) {
-        case "a":
-        case "A": {
-          weekDay = matchName(value.replace(/\./g, ""), this._getDayNames(), 2);
-          if (weekDay < 0) {
-            return null;
-          }
-          break;
-        }
-        case "b":
-        case "B":
-        case "h": {
-          const month = matchName(value.replace(/\./g, ""), this._getMonthNames(), 3);
-          if (month < 0) {
-            return null;
-          }
-          fields.month = month;
-          break;
-        }
-        case "d":
-        case "e":
-          fields.day = number;
-          break;
-        case "j":
-          dayOfYear = number;
-          break;
-        case "u":
-          weekDay = number % 7;
-          break;
-        case "w":
-          weekDay = number;
-          break;
-        case "m":
-          fields.month = number - 1;
-          break;
-        case "y":
-          fields.year = this._expandYear(number, 2);
-          break;
-        case "Y":
-          fields.year = number;
-          break;
-        case "H":
-        case "k":
-          hours = number;
-          break;
-        case "I":
-        case "l":
-          hours = number;
-          hour12 = true;
-          break;
-        case "M":
-          minutes = number;
-          break;
-        case "S":
-          seconds = number;
-          break;
-        case "L":
-          milliseconds = number;
-          break;
-        case "p":
-        case "P":
-          period = new RegExp(`^${pm}$`, "u").test(value) ? "pm" : "am";
-          break;
-        case "z":
-          offset = this._parseOffset(value);
-          break;
-        case "Z":
-          if (value === "utc" || value === "gmt" || value === "z") {
-            offset = 0;
-          }
-          break;
-        case "s":
-          return new Date(number * 1e3);
-        // The week-based fields are checked by the other fields.
-        default:
-          break;
-      }
-    }
-    if (period !== null || hour12) {
-      if (hours < 1 || hours > 12) {
-        return null;
-      }
-      hours = hours % 12 + (period === "pm" ? 12 : 0);
-    }
-    if (hours > 23 || minutes > 59 || seconds > 59) {
-      return null;
-    }
-    const today = this._getToday();
-    if (fields.year === null && fields.month === null && fields.day === null && dayOfYear === null) {
-      Object.assign(fields, { year: today.year, month: today.month, day: today.day });
-    }
-    fields.year ??= today.year;
-    if (dayOfYear !== null && fields.month === null && fields.day === null) {
-      const date = new Date(utcTimestamp(fields.year, 0, dayOfYear));
-      if (date.getUTCFullYear() !== fields.year || dayOfYear < 1) {
-        return null;
-      }
-      fields.month = date.getUTCMonth();
-      fields.day = date.getUTCDate();
-    }
-    fields.month ??= 0;
-    fields.day ??= 1;
-    if (!this._isValidDate(fields)) {
-      return null;
-    }
-    if (weekDay !== null && new Date(utcTimestamp(fields.year, fields.month, fields.day)).getUTCDay() !== weekDay) {
-      return null;
-    }
-    const all = { ...fields, hours, minutes, seconds, milliseconds };
-    if (offset !== null) {
-      const wallClock = utcTimestamp(
-        all.year,
-        all.month,
-        all.day,
-        hours,
-        minutes,
-        seconds,
-        milliseconds
-      );
-      return new Date(wallClock - offset * MINUTE);
-    }
-    return new Date(fromZonedFields(all, this.effectiveTimeZone));
-  }
-};
-defineProperties(DateTimeParser, {
-  /**
-   * The time zone dates are parsed in (an IANA name, `'UTC'` or `'local'`), or `null` (the
-   * default) for the time zone of the locale manager.
-   */
-  timeZone: {
-    value: null,
-    coerce(timeZone) {
-      if (timeZone === null || timeZone === void 0 || timeZone === "local") {
-        return timeZone ?? null;
-      }
-      return new Intl.DateTimeFormat("en-US", { timeZone }).resolvedOptions().timeZone;
-    }
-  },
-  /**
-   * The largest two-digit year that is in this century: with 29, `'29` is 2029 and `'30` is
-   * 1930.
-   */
-  twoDigitYearMax: {
-    value: 29,
-    coerce(year) {
-      if (!Number.isInteger(year) || year < 0 || year > 99) {
-        throw new RangeError("The two-digit year maximum must be an integer from 0 to 99.");
-      }
-      return year;
-    }
-  },
-  /**
-   * The time relative dates (`today`, `next week`) are relative to, as a timestamp, or `null`
-   * (the default) for the current time.
-   */
-  referenceTime: {
-    value: null,
-    coerce(time) {
-      if (time instanceof Date) {
-        time = time.getTime();
-      }
-      if (time !== null && !Number.isFinite(time)) {
-        throw new TypeError("The reference time must be a timestamp, a Date or null.");
-      }
-      return time;
-    }
-  }
-});
-var getDateTimeParser = lazySingleton(() => new DateTimeParser());
-function parseDate(input) {
-  return getDateTimeParser().parseDate(input);
-}
-__name(parseDate, "parseDate");
-function parseDateTime(input) {
-  return getDateTimeParser().parseDateTime(input);
-}
-__name(parseDateTime, "parseDateTime");
-function parseTime(input) {
-  return getDateTimeParser().parseTime(input);
-}
-__name(parseTime, "parseTime");
-
 // src/i18n/translated-text.js
 var TranslatedText = class extends Instance {
   static {
@@ -33291,7 +34122,6 @@ __name(__n, "__n");
 registerType("translated-text", TranslatedText);
 
 // src/construction/builder.js
-var RESERVED_KEYS = /* @__PURE__ */ new Set(["type", "id"]);
 var BuilderError = class extends Error {
   static {
     __name(this, "BuilderError");
@@ -33331,6 +34161,10 @@ function isReference(value) {
   return isPlainObject2(value) && typeof value.id === "string" && Object.keys(value).length === 1;
 }
 __name(isReference, "isReference");
+function hasIdProperty(cls) {
+  return Boolean(typeof cls?.getPropertyInfo === "function" && cls.getPropertyInfo("id")?.write);
+}
+__name(hasIdProperty, "hasIdProperty");
 function findHook(cls, name) {
   const camelName = toCamelCase(name);
   for (let current = cls; current && current !== Function.prototype; ) {
@@ -33477,10 +34311,11 @@ var Builder = class extends Instance {
       }
       return object;
     }
-    const { type, id } = description;
+    const { type } = description;
     if (typeof type !== "string") {
       this._fail(`Malformed builder input: the object has no type.`);
     }
+    const id = hasIdProperty(getType(type)?.cls) ? void 0 : description.id;
     if (id !== void 0 && typeof id !== "string") {
       this._fail(`The id of a '${type}' must be a string.`);
     }
@@ -33542,7 +34377,7 @@ var Builder = class extends Instance {
     const normal = [];
     const special = [];
     for (const [name, value] of Object.entries(description)) {
-      if (RESERVED_KEYS.has(name)) {
+      if (name === "type" || name === "id" && !hasIdProperty(cls)) {
         continue;
       }
       const found = findHook(cls, name);
@@ -33759,6 +34594,17 @@ function build(input, options = {}) {
 __name(build, "build");
 
 // src/navigation/navigator.js
+var FRAGMENT_ENCODED_REGEXP = /[^!-~]|["<>`]/gu;
+function encodeFragment(token) {
+  return token.replace(FRAGMENT_ENCODED_REGEXP, (x) => {
+    try {
+      return encodeURIComponent(x);
+    } catch (_error) {
+      return "%EF%BF%BD";
+    }
+  });
+}
+__name(encodeFragment, "encodeFragment");
 function decode(text) {
   try {
     return decodeURIComponent(text);
@@ -33894,7 +34740,8 @@ defineProperties(Navigator, {
   },
   /**
    * The token of the current location, the hash without `#`. It contains the whole (encoded)
-   * token, including the name and the arguments.
+   * token, including the name and the arguments. Characters that browsers encode in the hash,
+   * such as spaces and non-ASCII characters, are encoded when it is set.
    */
   token: {
     value: "",
@@ -33902,7 +34749,7 @@ defineProperties(Navigator, {
       if (typeof token !== "string") {
         throw new TypeError("The token must be a string.");
       }
-      return token.replace(/^#/, "");
+      return encodeFragment(token.replace(/^#/, ""));
     },
     changed() {
       this._onTokenChange();
@@ -33963,7 +34810,7 @@ export {
   CheckBoxColumn,
   CheckMenuItem,
   CheckToolItem,
-  Circle,
+  CircleSprite,
   ColorButton,
   ColorChooser,
   ColorPalette,
@@ -34053,7 +34900,7 @@ export {
   NumberValidator,
   Orientation,
   Paned,
-  Path,
+  PathSprite,
   PointerEvent,
   Policy,
   Popover,
@@ -34064,13 +34911,12 @@ export {
   RadioButton,
   RadioMenuItem,
   RadioToolItem,
-  Rectangle,
+  RectangleSprite,
   RegexpValidator,
   Relief,
   ResizeDirections,
   Resizer,
   Response,
-  SPLITTER_SIZE,
   Screen,
   ScrollArea,
   ScrollBar,
@@ -34078,14 +34924,12 @@ export {
   SearchFilter,
   Selection,
   SelectionMode,
-  SelectionModes,
   Separator,
   SeparatorMenuItem,
   SeparatorToolItem,
   ShadowType,
   SignalDispatcher,
   Slider,
-  SortIndicator,
   SortOrder,
   Spacer,
   SpinButton,
@@ -34096,7 +34940,6 @@ export {
   StrokeStyle,
   Switch,
   TOOLKIT_TRANSLATIONS,
-  TYPE_AHEAD_TIMEOUT,
   Table,
   TextColumn,
   TextView,
@@ -34111,6 +34954,7 @@ export {
   TranslatedText,
   Translator,
   TreeModel,
+  VERSION,
   Validator,
   VectorCanvas,
   Widget,
@@ -34120,7 +34964,6 @@ export {
   __n,
   activateMnemonic,
   alert,
-  areEqual,
   attachAuxiliaryWidget,
   attachButtonBehavior,
   attachContextMenu,
@@ -34128,15 +34971,12 @@ export {
   attachPressRepeat,
   bindToolkitText,
   build,
-  clamp,
   composeToken,
   computePopupPosition,
   confirm,
   createElement,
   defineProperties,
-  dispatchThroughChain,
   escapeHtml,
-  escapeRegExp,
   flushLayout,
   formatAccelerator,
   formatDate,
@@ -34150,7 +34990,6 @@ export {
   getAcceleratorGroup,
   getAuxiliaryFocusChain,
   getCursor,
-  getDateFieldOrder,
   getDateTimeFormatter,
   getDateTimeParser,
   getDoubleParser,
@@ -34173,8 +35012,6 @@ export {
   getWheelNotches,
   hslToRgb,
   hsvToRgb,
-  lazySingleton,
-  lerp,
   matchesAccelerator,
   normalizeColor,
   parseAccelerator,
@@ -34184,10 +35021,7 @@ export {
   parseDateTime,
   parseDouble,
   parseInteger,
-  parseLocaleDate,
-  parseLocaleNumber,
   parseMnemonic,
-  parsePixels,
   parseTime,
   parseToken,
   placePopup,
@@ -34201,18 +35035,15 @@ export {
   rgbToHsv,
   settings,
   startAutoRepeat,
-  throttleToFrame,
   toAriaKeyShortcuts,
-  toCamelCase,
   toDate,
-  toKebabCase,
+  toLatinDigits,
   toTimestamp,
   toolkitText,
   tr,
   translate,
   translateLabels,
   translatePlural,
-  trn,
-  uniqueId
+  trn
 };
 //# sourceMappingURL=widgetry.js.map

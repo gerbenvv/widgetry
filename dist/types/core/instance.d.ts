@@ -203,6 +203,7 @@ export declare class Instance {
      *
      * @param {Record<string, unknown>} properties
      * @returns {boolean} Whether any value changed.
+     * @throws {Error} If a name is not a writable property; nothing is set then.
      */
     set(properties: Record<string, unknown>): boolean;
     /**

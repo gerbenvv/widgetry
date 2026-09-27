@@ -36,10 +36,12 @@ async function mount(page, properties = {}, locale = 'en-US') {
 
             globalThis.widget = widget;
             globalThis.changes = [];
-            widget.connect('change', () => {
+            globalThis.textChanges = 0;
+            widget.connect('date-change', () => {
                 const date = widget.date;
                 globalThis.changes.push(date ? date.toDateString() : null);
             });
+            widget.connect('change', () => globalThis.textChanges++);
         },
         { properties, locale }
     );
@@ -133,31 +135,100 @@ test.describe('DateEdit', () => {
         ]);
 
         const parsed = await page.evaluate(async () => {
-            const { parseLocaleDate, getDateFieldOrder } =
-                await import('/src/widgets/date-edit.js');
-            const reference = new Date(2026, 0, 1);
-            const show = (date) => date?.toDateString() ?? null;
+            const { getLocaleManager } = await import('/src/i18n/locale-manager.js');
+            const widget = globalThis.widget;
+            const parse = (text, locale) => {
+                getLocaleManager().locale = locale;
 
-            return {
-                dutch: show(parseLocaleDate('27-9-2026', 'nl-NL', reference)),
-                dutchName: show(parseLocaleDate('27 sep. 2026', 'nl-NL', reference)),
-                noYear: show(parseLocaleDate('14.3.', 'de-DE', reference)),
-                japanese: show(parseLocaleDate('2026/09/27', 'ja-JP', reference)),
-                twoDigits: show(parseLocaleDate('1/2/99', 'en-US', reference)),
-                nonsense: parseLocaleDate('hello', 'en-US', reference),
-                order: getDateFieldOrder('nl-NL'),
+                return widget.parseDate(text)?.toDateString() ?? null;
             };
+
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            const result = {
+                dutch: parse('27-9-2026', 'nl-NL'),
+                dutchName: parse('27 sep. 2026', 'nl-NL'),
+                noYear: parse('14.3.', 'de-DE'),
+                japanese: parse('2026/09/27', 'ja-JP'),
+                twoDigits: parse('1/2/99', 'en-US'),
+                nonsense: parse('hello', 'en-US'),
+                tomorrow: parse('tomorrow', 'en-US') === tomorrow.toDateString(),
+                now: widget.parseDate('now').getHours(),
+            };
+
+            getLocaleManager().locale = 'en-US';
+
+            return result;
         });
 
         expect(parsed).toEqual({
             dutch: 'Sun Sep 27 2026',
             dutchName: 'Sun Sep 27 2026',
-            noYear: 'Sat Mar 14 2026',
+            noYear: new Date(new Date().getFullYear(), 2, 14).toDateString(),
             japanese: 'Sun Sep 27 2026',
             twoDigits: 'Sat Jan 02 1999',
             nonsense: null,
-            order: ['day', 'month', 'year'],
+            tomorrow: true,
+            now: 0,
         });
+
+        // The `change` signal is about the text, like that of a line edit.
+        const textChanges = await page.evaluate(() => {
+            const widget = globalThis.widget;
+            const before = globalThis.textChanges;
+            const dates = globalThis.changes.length;
+
+            widget.text = '3/1';
+            widget.text = '3/14';
+
+            return {
+                texts: globalThis.textChanges - before,
+                dates: globalThis.changes.length - dates,
+            };
+        });
+
+        expect(textChanges).toEqual({ texts: 2, dates: 2 });
+    });
+
+    test('reads back the dates it shows in every locale and date style', async ({ page }) => {
+        await openHarness(page);
+        await mount(page, { date: '2026-09-27' });
+
+        const failures = await page.evaluate(async () => {
+            const { getLocaleManager } = await import('/src/i18n/locale-manager.js');
+            const widget = globalThis.widget;
+            const failures = [];
+
+            const locales = [
+                ...['en-US', 'nl-NL', 'de-DE', 'fr-FR', 'pl-PL', 'ru-RU', 'uk-UA', 'fi-FI'],
+                ...['lt-LT', 'el-GR', 'cs-CZ', 'ca-ES', 'vi-VN', 'hi-IN', 'he-IL', 'th-TH'],
+                ...['ar-EG', 'fa-IR', 'bn-BD', 'ja-JP', 'ko-KR', 'zh-CN'],
+            ];
+
+            for (const locale of locales) {
+                getLocaleManager().locale = locale;
+
+                for (const dateStyle of ['short', 'medium', 'long', 'full']) {
+                    widget.format = { dateStyle };
+
+                    const text = widget.text;
+                    widget.date = null;
+                    widget.text = text;
+
+                    const date = widget.date?.toDateString();
+                    if (!widget.isValid || date !== 'Sun Sep 27 2026') {
+                        failures.push(`${locale} ${dateStyle}: ${text} -> ${date}`);
+                    }
+
+                    widget.date = '2026-09-27';
+                }
+            }
+
+            return failures;
+        });
+
+        expect(failures).toEqual([]);
     });
 
     test('the date range limits the dates', async ({ page }) => {
@@ -197,6 +268,7 @@ test.describe('DateEdit', () => {
                 open: widget.popupOpen,
                 focused: document.activeElement === widget.focusElement,
                 expanded: widget.focusElement.getAttribute('aria-expanded'),
+                role: widget.focusElement.getAttribute('role'),
                 shown: calendar.isVisible,
                 selected: calendar.el.querySelector('.wy-selected').textContent,
             };
@@ -206,6 +278,7 @@ test.describe('DateEdit', () => {
             open: true,
             focused: true,
             expanded: 'true',
+            role: 'combobox',
             shown: true,
             selected: '27',
         });
@@ -264,5 +337,25 @@ test.describe('DateEdit', () => {
         await page.keyboard.press('F4');
         await page.keyboard.press('Tab');
         expect(await page.evaluate(() => globalThis.widget.popupOpen)).toBe(false);
+    });
+
+    test('popup() and popdown() open and close the calendar', async ({ page }) => {
+        await openHarness(page);
+        await mount(page, { date: new Date(2026, 8, 27) });
+
+        const states = await page.evaluate(() => {
+            const widget = globalThis.widget;
+            const states = [];
+            widget.connect('popup-open-change', () => states.push(widget.popupOpen));
+
+            widget.popup();
+            widget.popdown();
+            widget.togglePopup();
+            widget.popupOpen = false;
+
+            return states;
+        });
+
+        expect(states).toEqual([true, false, true, false]);
     });
 });

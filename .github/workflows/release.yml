@@ -30,15 +30,31 @@ jobs:
             -   name: Unit tests
                 run: npm run test:unit
 
-            -   name: Check that the committed build is up to date
-                run: npm run build && npm run types && git diff --exit-code -- dist
+            -   name: Install the browsers
+                run: npx playwright install --with-deps chromium firefox
 
+            -   name: Browser tests
+                run: npm run test:browser
+                env:
+                    CI: true
+
+            -   name: Check that the committed build is up to date
+                run: npm run build && npm run types && git add -N dist && git diff --exit-code -- dist
+
+            # The steps above ran what `prepublishOnly` would run again.
             -   name: Publish to npm
-                run: npm publish --provenance --access public
+                run: npm publish --provenance --access public --ignore-scripts
                 env:
                     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+            # The notes are the section of the changelog for this version.
             -   name: Create the GitHub release
-                run: gh release create "${GITHUB_REF_NAME}" --title "Widgetry ${GITHUB_REF_NAME}" --notes-file CHANGELOG.md
+                run: |
+                    awk -v version="${GITHUB_REF_NAME#v}" '
+                        /^## / { found = $2 == version; next }
+                        found { print }
+                    ' CHANGELOG.md > release-notes.md
+                    test -s release-notes.md
+                    gh release create "${GITHUB_REF_NAME}" --title "Widgetry ${GITHUB_REF_NAME}" --notes-file release-notes.md
                 env:
                     GH_TOKEN: ${{ github.token }}

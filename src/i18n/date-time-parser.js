@@ -13,6 +13,7 @@ import {
     utcTimestamp,
 } from './intl-util.js';
 import { LocaleAware } from './locale-aware.js';
+import { toLatinDigits } from './number-parser.js';
 
 /**
  * The English month names, which are always understood.
@@ -73,11 +74,12 @@ const ORDINAL_SUFFIXES = new Set(['st', 'nd', 'rd', 'th', 'er', 'e', 'ste', 'de'
 
 /**
  * Words that mark the number before them as a year, month or day, as in `2013年8月10日`
- * (Chinese and Japanese), `2013년 8월 10일` (Korean) and `2013 г.` (Russian).
+ * (Chinese and Japanese), `2013년 8월 10일` (Korean), `2013 г.` (Russian) and `2013 р.`
+ * (Ukrainian).
  *
  * @type {Record<string, 'y' | 'm' | 'd'>}
  */
-const MARKERS = { 年: 'y', 月: 'm', 日: 'd', 년: 'y', 월: 'm', 일: 'd', г: 'y' };
+const MARKERS = { 年: 'y', 月: 'm', 日: 'd', 년: 'y', 월: 'm', 일: 'd', г: 'y', р: 'y' };
 
 /**
  * Words that are ignored between the parts of a date, as in `10th of August` or `10 de agosto`.
@@ -144,11 +146,22 @@ const ISO_REGEXP =
     /^(\d{4})-(\d{2})-(\d{2})(?:[t ](\d{2}):(\d{2})(?::(\d{2})(?:[.,](\d+))?)?\s*(z|[+-]\d{2}(?::?\d{2})?)?)?$/;
 
 /**
- * Splits a normalized input into numbers, short years (`'90`), words, separators and whitespace.
+ * Splits a normalized input into numbers, short years (`'90`), words (with abbreviation periods,
+ * hyphens and apostrophes), separators and whitespace.
  *
  * @type {RegExp}
  */
-const TOKEN_REGEXP = /(\d+)|('\d{2})|((?:\p{L}+\.?)+)|([-/.\\:])|(\s+)|(.)/gu;
+const TOKEN_REGEXP =
+    /(\d+)|('\d{2})|([\p{L}\p{M}]+(?:(?:[-'’]|[.\u05f3\u0970]+)[\p{L}\p{M}]+)*[.\u05f3\u0970]?)|([-/.\\:])|(\s+)|(.)/gu;
+
+/**
+ * Matches the characters that are removed from words: the periods and signs of abbreviations
+ * (`aug.`, the Hebrew geresh and the Devanagari abbreviation sign), and the hyphens and
+ * apostrophes inside words (`quinta-feira`, `d’agost`).
+ *
+ * @type {RegExp}
+ */
+const WORD_PUNCTUATION_REGEXP = /[-.'’\u05f3\u0970]/g;
 
 /**
  * The cached data of locales that does not depend on the locale manager's overridable names.
@@ -161,6 +174,7 @@ const LOCALE_DATA = new Map();
  * @typedef {object} LocaleData
  * @property {string} dateOrder The order of day, month and year in short dates, e.g. `'dmy'`.
  * @property {string[][]} monthNames Extra month names (as used in dates), per month.
+ * @property {Set<string>} fillers The words of the locale's date formats, which are ignored.
  * @property {Map<string, {unit: string, offset: number}>} relativeWords Words like `yesterday`.
  * @property {{regexp: RegExp, unit: string, sign: number}[]} relativeTemplates E.g. `in 3 days`.
  * @property {string[]} connectors Words between a date and a time, like `at`.
@@ -168,8 +182,8 @@ const LOCALE_DATA = new Map();
  */
 
 /**
- * Normalizes text for matching: lowercase, without diacritics, with commas and whitespace
- * collapsed to single spaces.
+ * Normalizes text for matching: lowercase, with Latin digits, without accents and bidirectional
+ * marks, and with commas and whitespace collapsed to single spaces.
  *
  * @param {string} text
  * @param {string} locale
@@ -187,12 +201,16 @@ function normalizeText(text, locale) {
  * @returns {string}
  */
 function normalizeFragment(text, locale) {
-    return text
+    // Only the combining diacritical marks (accents) and the Arabic hamza above (the Persian
+    // ezafe, as in `فوریهٔ`) are removed: other marks, such as the vowels of Thai and Devanagari,
+    // are part of the letters.
+    return toLatinDigits(text)
         .toLocaleLowerCase(locale)
         .normalize('NFD')
-        .replace(/\p{M}/gu, '')
+        .replace(/[\u0300-\u036f\u0654]/g, '')
         .normalize('NFC')
-        .replace(/[,\s\u200e\u200f]+/gu, ' ');
+        .replace(/[\u200e\u200f\u061c]/g, '')
+        .replace(/[,\u060c\s]+/gu, ' ');
 }
 
 /**
@@ -207,7 +225,7 @@ function escapePattern(text) {
 }
 
 function normalizeName(name, locale) {
-    return normalizeText(name, locale).replace(/\./g, '');
+    return normalizeText(name, locale).replace(WORD_PUNCTUATION_REGEXP, '');
 }
 
 function getLocaleData(locale) {
@@ -242,9 +260,45 @@ function getLocaleData(locale) {
         }
     }
 
+    // The words of month names with a number, such as the Vietnamese `tháng 9` (month 9), mark the
+    // number as the month like `月` does, and are ignored like the filler words.
+    const monthWords = new Set();
+    for (const month of ['long', 'short']) {
+        const format = getDateTimeFormat(locale, { ...options, day: 'numeric', month });
+        const part = format.formatToParts(sample).find((x) => x.type === 'month');
+
+        if (part && /\d/.test(part.value)) {
+            for (const word of normalizeName(part.value, locale).split(' ')) {
+                if (/^[\p{L}\p{M}]+$/u.test(word)) {
+                    monthWords.add(word);
+                }
+            }
+        }
+    }
+
+    // The words of the locale's own date formats, such as `de` in Portuguese, `del` in Catalan and
+    // the era in Thai, which are ignored like the filler words.
+    const fillers = new Set(monthWords);
+    for (const dateStyle of ['medium', 'long', 'full']) {
+        const parts = getDateTimeFormat(locale, { ...options, dateStyle }).formatToParts(sample);
+
+        for (const part of parts) {
+            if (part.type !== 'literal' && part.type !== 'era') {
+                continue;
+            }
+
+            for (const word of normalizeName(part.value, locale).split(' ')) {
+                if (/^[\p{L}\p{M}]+$/u.test(word)) {
+                    fillers.add(word);
+                }
+            }
+        }
+    }
+
     data = {
         dateOrder: dateOrder.length === 3 ? dateOrder : 'mdy',
         monthNames,
+        fillers,
         ...getRelativeData(locale),
         ...getTimeData(locale, sample, options),
     };
@@ -325,7 +379,11 @@ function getTimeData(locale, sample, options) {
 
     for (const part of dateTimeParts) {
         const word = normalizeName(part.value, locale);
-        if (part.type === 'literal' && /^\p{L}+$/u.test(word) && !connectors.includes(word)) {
+        if (
+            part.type === 'literal' &&
+            /^[\p{L}\p{M}]+$/u.test(word) &&
+            !connectors.includes(word)
+        ) {
             connectors.push(word);
         }
     }
@@ -368,7 +426,7 @@ function tokenize(text) {
         } else if (shortYear !== undefined) {
             tokens.push({ type: 'short-year', value: Number(shortYear.slice(1)) });
         } else if (word !== undefined) {
-            tokens.push({ type: 'word', text: word.replace(/\./g, '') });
+            tokens.push({ type: 'word', text: word.replace(WORD_PUNCTUATION_REGEXP, '') });
         } else if (separator !== undefined) {
             tokens.push({ type: 'separator', text: separator });
         } else if (space !== undefined) {
@@ -404,7 +462,7 @@ function tokenize(text) {
  *   (`friday`, `next friday`: the next one after today; `last friday`: the last one before
  *   today) and month names (`august`, `next august`, `past august`: the first day of it).
  *
- * Understood times: `14:05`, `14:05:09`, `14:05:09.042`, `2:05 PM`, `2 pm`, `14h05`, the locale's
+ * Understood times: `14:05`, `14:05:09`, `14:05:09.042`, `2:05 PM`, `2 pm`, `14h05` (or `14 h 05`), the locale's
  * own separator (`14.05` in Finnish), `noon`, `midnight` and `now`.
  *
  * Dates are returned as `Date` objects at midnight in `timeZone` (the locale manager's by
@@ -717,7 +775,39 @@ export class DateTimeParser extends LocaleAware {
             return relative;
         }
 
-        return this._parseAbsoluteDate(tokenize(text));
+        return this._parseAbsoluteDate(tokenize(this._joinNames(text)));
+    }
+
+    /**
+     * Removes the spaces from the month and day names of more than one word in a text, such as
+     * `יום שבת` (Hebrew) and `thu bay` (Vietnamese), so they are single words like their names in
+     * {@link DateTimeParser#_getMonthNames} and {@link DateTimeParser#_getDayNames}.
+     *
+     * @param {string} text A normalized text.
+     * @returns {string}
+     */
+    _joinNames(text) {
+        const manager = this.effectiveLocaleManager;
+        const names = [
+            ...manager.longMonthNames,
+            ...manager.shortMonthNames,
+            ...manager.longDayNames,
+            ...manager.shortDayNames,
+            ...getLocaleData(manager.locale).monthNames.flat(),
+        ]
+            .map((x) => normalizeText(x, manager.locale))
+            .filter((x) => x.includes(' '))
+            .sort((a, b) => b.length - a.length);
+
+        for (const name of names) {
+            const pattern = escapePattern(name).replace(/ /g, '\\s');
+            text = text.replace(
+                new RegExp(`(?<!\\p{L})${pattern}(?!\\p{L})`, 'gu'),
+                name.replace(/ /g, '')
+            );
+        }
+
+        return text;
     }
 
     /**
@@ -865,24 +955,62 @@ export class DateTimeParser extends LocaleAware {
         const locale = manager.locale;
         const data = getLocaleData(locale);
 
-        return ENGLISH_MONTH_NAMES.map((name, i) => [
-            normalizeName(manager.longMonthNames[i], locale),
-            normalizeName(manager.shortMonthNames[i], locale),
-            ...data.monthNames[i],
-            name,
-            name.slice(0, 3),
-        ]);
+        return ENGLISH_MONTH_NAMES.map((name, i) =>
+            [
+                normalizeName(manager.longMonthNames[i], locale),
+                normalizeName(manager.shortMonthNames[i], locale),
+                ...data.monthNames[i],
+                name,
+                name.slice(0, 3),
+            ].map((x) => x.replace(/ /g, ''))
+        );
     }
 
     _getDayNames() {
         const manager = this.effectiveLocaleManager;
         const locale = manager.locale;
 
-        return ENGLISH_DAY_NAMES.map((name, i) => [
-            normalizeName(manager.longDayNames[i], locale),
-            normalizeName(manager.shortDayNames[i], locale),
-            name,
-        ]);
+        return ENGLISH_DAY_NAMES.map((name, i) =>
+            [
+                normalizeName(manager.longDayNames[i], locale),
+                normalizeName(manager.shortDayNames[i], locale),
+                name,
+            ].map((x) => x.replace(/ /g, ''))
+        );
+    }
+
+    /**
+     * Splits a word that is a month name, day name or marker with a filler word or marker attached
+     * to it, such as `באוגוסט` (Hebrew, "in August"), `วันเสาร์ที่` (Thai, "Saturday the") and
+     * `日土曜日` (Japanese, a day marker and "Saturday").
+     *
+     * @param {string} word
+     * @param {Set<string>} fillers The filler words of the locale.
+     * @param {string[][]} monthNames
+     * @param {string[][]} dayNames
+     * @returns {string[] | null} The two words, or `null` if the word cannot be split.
+     */
+    _splitWord(word, fillers, monthNames, dayNames) {
+        const isKnown = (x) =>
+            Object.hasOwn(MARKERS, x) ||
+            matchName(x, monthNames, MONTH_PREFIX_LENGTH) >= 0 ||
+            matchName(x, dayNames, DAY_PREFIX_LENGTH) >= 0;
+
+        for (const affix of [...Object.keys(MARKERS), ...FILLER_WORDS, ...fillers]) {
+            if (affix.length >= word.length) {
+                continue;
+            }
+
+            if (word.startsWith(affix) && isKnown(word.slice(affix.length))) {
+                return [affix, word.slice(affix.length)];
+            }
+
+            if (word.endsWith(affix) && isKnown(word.slice(0, -affix.length))) {
+                return [word.slice(0, -affix.length), affix];
+            }
+        }
+
+        return null;
     }
 
     _expandYear(value, digits) {
@@ -900,6 +1028,9 @@ export class DateTimeParser extends LocaleAware {
      * @returns {{year: number, month: number, day: number} | null}
      */
     _parseAbsoluteDate(tokens) {
+        // The loop splits words, so it works on its own copy.
+        tokens = [...tokens];
+
         const date = { year: null, month: null, day: null };
         let weekDay = null;
 
@@ -907,6 +1038,7 @@ export class DateTimeParser extends LocaleAware {
         const components = [];
         const monthNames = this._getMonthNames();
         const dayNames = this._getDayNames();
+        const { fillers } = getLocaleData(this.effectiveLocale);
 
         for (let i = 0; i < tokens.length; i++) {
             const token = tokens[i];
@@ -984,6 +1116,22 @@ export class DateTimeParser extends LocaleAware {
             const day = matchName(word, dayNames, DAY_PREFIX_LENGTH);
             if (day >= 0 && weekDay === null) {
                 weekDay = day;
+                continue;
+            }
+
+            if (fillers.has(word)) {
+                continue;
+            }
+
+            // Split a name with a word attached to it, and read both parts.
+            const split = this._splitWord(word, fillers, monthNames, dayNames);
+            if (split) {
+                tokens = [
+                    ...tokens.slice(0, i),
+                    ...split.map((text) => ({ type: 'word', text })),
+                    ...tokens.slice(i + 1),
+                ];
+                i -= 1;
                 continue;
             }
 
@@ -1103,8 +1251,11 @@ export class DateTimeParser extends LocaleAware {
         const manager = this.effectiveLocaleManager;
         const locale = manager.locale;
 
+        // Periods are optional, as in `ip.` (Finnish) and `μ.μ.` (Greek).
         const toPattern = (designator) =>
-            escapePattern(normalizeName(designator, locale)).replace(/ /g, '\\s?');
+            escapePattern(normalizeText(designator, locale))
+                .replace(/\\\./g, '\\.?')
+                .replace(/ /g, '\\s?');
 
         return {
             am: `(?:${toPattern(manager.amDesignator)}|a\\.?\\s?m\\.?)`,
@@ -1131,7 +1282,7 @@ export class DateTimeParser extends LocaleAware {
         const designator = `(${am}|${pm})`;
 
         const clock =
-            `(\\d{1,2})(?:(?:${separator}|h)(\\d{2})(?:${separator}(\\d{2})(?:[.,](\\d{1,3}))?)?)?` +
+            `(\\d{1,2})(?:(?:${separator}|\\s?h\\s?)(\\d{2})(?:${separator}(\\d{2})(?:[.,](\\d{1,3}))?)?)?` +
             '(h)?';
         const regexp = new RegExp(`^(?:${designator}\\s?)?${clock}(?:\\s?${designator})?$`, 'u');
 
@@ -1190,7 +1341,7 @@ export class DateTimeParser extends LocaleAware {
         });
 
         const { am, pm } = this._getDesignatorRegExp();
-        const word = '([\\p{L}.]+)';
+        const word = "([\\p{L}\\p{M}][\\p{L}\\p{M}.'’\\-\\u05f3\\u0970]*)";
         const patterns = {
             a: word,
             A: word,
@@ -1280,7 +1431,11 @@ export class DateTimeParser extends LocaleAware {
             switch (character) {
                 case 'a':
                 case 'A': {
-                    weekDay = matchName(value.replace(/\./g, ''), this._getDayNames(), 2);
+                    weekDay = matchName(
+                        value.replace(WORD_PUNCTUATION_REGEXP, ''),
+                        this._getDayNames(),
+                        2
+                    );
                     if (weekDay < 0) {
                         return null;
                     }
@@ -1290,7 +1445,11 @@ export class DateTimeParser extends LocaleAware {
                 case 'b':
                 case 'B':
                 case 'h': {
-                    const month = matchName(value.replace(/\./g, ''), this._getMonthNames(), 3);
+                    const month = matchName(
+                        value.replace(WORD_PUNCTUATION_REGEXP, ''),
+                        this._getMonthNames(),
+                        3
+                    );
                     if (month < 0) {
                         return null;
                     }

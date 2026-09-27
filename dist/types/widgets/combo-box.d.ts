@@ -63,8 +63,6 @@ export declare class ComboBox extends Widget {
     _buttonEl: Element;
     _sizerEl: Element;
     _textEl: Element;
-    items: any[];
-    popupOpen: boolean;
     _activeIndex: any;
     _popupOpen: boolean;
     _initialize(): void;
@@ -75,6 +73,14 @@ export declare class ComboBox extends Widget {
      * @type {HTMLElement}
      */
     get focusElement(): HTMLElement;
+    /**
+     * Returns both the root element and the entry, which are the focus element without and with
+     * `hasEntry`.
+     *
+     * @protected
+     * @returns {Element[]}
+     */
+    protected _getAccessibleNameElements(): Element[];
     /**
      * The popover showing the list.
      *
@@ -145,11 +151,11 @@ export declare class ComboBox extends Widget {
     /**
      * Opens the list.
      */
-    openPopup(): void;
+    popup(): void;
     /**
      * Closes the list.
      */
-    closePopup(): void;
+    popdown(): void;
     /**
      * Opens the list if it is closed, and closes it otherwise.
      */
@@ -174,6 +180,13 @@ export declare class ComboBox extends Widget {
      * @param {number} index
      */
     protected _choose(index: number): void;
+    /**
+     * Puts a text in the entry, as the text of the combo box.
+     *
+     * @protected
+     * @param {string} text
+     */
+    protected _setEntryText(text: string): void;
     _findSensitive(start: any, step: any): any;
     _showPopup(): boolean;
     _hidePopup(): boolean;
@@ -198,11 +211,16 @@ export declare class ComboBox extends Widget {
 /** The declared properties of {@link ComboBox}. */
 export interface ComboBox {
     canFocus: boolean;
-    vAlign: any;
+    /**
+     * The items, as objects with `id`, `label` and `sensitive`. Set an array of labels or of
+     * objects with a `label` and optionally an `id` and `sensitive`. The active item stays active
+     * if it is still there.
+     */
+    items: any[];
     /**
      * The number of items.
      */
-    readonly itemsCount: any;
+    readonly itemsCount: number;
     /**
      * A model providing the items instead of `items`, or `null`: an object with `rows` (or
      * `getRows()`), optionally `idColumn` (or `getIdColumn()`), and a `rows-change` signal.
@@ -213,13 +231,10 @@ export interface ComboBox {
      */
     column: any;
     /**
-     * The index of the active item, or -1 if there is none.
+     * The index of the active item, or -1 if there is none. It is set after the items, so both can
+     * be given to the constructor in any order (the same holds for `activeId` and `text`).
      */
     activeIndex: number;
-    /**
-     * The same as `activeIndex`.
-     */
-    active: any;
     /**
      * The id of the active item, or `null` if there is none or it has no id.
      */
@@ -234,11 +249,11 @@ export interface ComboBox {
      */
     hasEntry: boolean;
     /**
+     * Whether the list is open. Setting it opens or closes the list.
+     */
+    popupOpen: boolean;
+    /**
      * Text shown while no item is active (or the entry is empty), as a hint.
      */
     placeholder: string;
-    /**
-     * The accessible name of the combo box, for combo boxes without a visible label.
-     */
-    accessibleName: string;
 }

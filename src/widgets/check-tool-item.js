@@ -5,12 +5,15 @@
 import { defineProperties } from '../core/instance.js';
 import { registerType } from '../core/registry.js';
 import { CheckMenuItem } from './check-menu-item.js';
+import { RadioMenuItem } from './radio-menu-item.js';
 import { ToolItem } from './tool-item.js';
 
 /**
  * A tool item that toggles between active (drawn pressed) and inactive when activated.
  *
- * Signals: `activate` (when activated, after toggling) and `toggle` (whenever `active` changes).
+ * Signals: `activate` (`item`) when the user activates the item (a click, Space or Enter, or its
+ * proxy in the overflow menu of the tool bar) or `activate()` is called, after it toggled;
+ * `toggle` (`item`) and `active-change` on every change of `active`, also from code.
  */
 export class CheckToolItem extends ToolItem {
     _initialize() {
@@ -22,7 +25,8 @@ export class CheckToolItem extends ToolItem {
     }
 
     /**
-     * Activates the item: toggles it and emits `activate`. Does nothing if it is insensitive.
+     * Activates the item, as the user does: toggles `active` and emits `activate`. Does nothing if
+     * it is insensitive.
      *
      * @returns {boolean} Whether the item was activated.
      */
@@ -48,11 +52,11 @@ export class CheckToolItem extends ToolItem {
     }
 
     _createMenuProxy() {
-        const proxy = new CheckMenuItem({
+        const ProxyClass = this._getRole() === 'radio' ? RadioMenuItem : CheckMenuItem;
+        const proxy = new ProxyClass({
             label: this._getMenuLabel(),
             useUnderline: this._useUnderline,
             active: this._active,
-            drawAsRadio: this._getRole() === 'radio',
             sensitive: this.sensitive,
         });
 

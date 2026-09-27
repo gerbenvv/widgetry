@@ -58,6 +58,4 @@ export interface ImageSprite {
      * The height, or -1 for the natural height.
      */
     height: any;
-    fill: any;
-    strokeWidth: any;
 }

@@ -31,8 +31,6 @@ export declare class CheckBoxColumn extends DataColumn {
 
 /** The declared properties of {@link CheckBoxColumn}. */
 export interface CheckBoxColumn {
-    alignment: any;
-    ellipsize: any;
     /**
      * Whether clicking a check box toggles the value in the model.
      */

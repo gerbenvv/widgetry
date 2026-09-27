@@ -41,6 +41,9 @@ export class ToolBar extends Box {
         /** @type {Menu | null} */
         this._overflowMenu = null;
 
+        // The items in the overflow menu and their proxies, as `[item, proxy]` pairs.
+        this._overflowProxies = [];
+
         /** @type {AbstractToolItem | null} */
         this._focusItem = null;
 
@@ -98,7 +101,10 @@ export class ToolBar extends Box {
 
     destroy() {
         this._resizeObserver?.disconnect();
-        this._overflowMenu?.destroy();
+
+        if (this._overflowMenu) {
+            this._destroyOverflowMenu(this._overflowMenu, this._overflowProxies);
+        }
 
         super.destroy();
     }
@@ -225,10 +231,12 @@ export class ToolBar extends Box {
         }
 
         const menu = new Menu();
+        const proxies = [];
         for (const child of this._overflowItems) {
             const proxy = child instanceof AbstractToolItem ? child._createMenuProxy() : null;
             if (proxy) {
                 menu.addChild(proxy);
+                proxies.push([child, proxy]);
             }
         }
 
@@ -243,6 +251,7 @@ export class ToolBar extends Box {
         }
 
         this._overflowMenu = menu;
+        this._overflowProxies = proxies;
         this._overflowEl.classList.add('wy-active');
         this._overflowEl.setAttribute('aria-expanded', 'true');
 
@@ -256,10 +265,11 @@ export class ToolBar extends Box {
 
             if (this._overflowMenu === menu) {
                 this._overflowMenu = null;
+                this._overflowProxies = [];
             }
 
             // Destroy it once the handlers of an activated item ran.
-            setTimeout(() => menu.destroyed || menu.destroy());
+            setTimeout(() => menu.destroyed || this._destroyOverflowMenu(menu, proxies));
         });
 
         const horizontal = this._orientation !== Orientation.VERTICAL;
@@ -269,6 +279,17 @@ export class ToolBar extends Box {
             owner: this._overflowEl,
             selectFirst: keyboard,
         });
+    }
+
+    _destroyOverflowMenu(menu, proxies) {
+        // The items take back what they lent to their proxies, such as their submenus.
+        for (const [child, proxy] of proxies) {
+            if (!child.destroyed && !proxy.destroyed) {
+                child._releaseMenuProxy(proxy);
+            }
+        }
+
+        menu.destroy();
     }
 
     /**

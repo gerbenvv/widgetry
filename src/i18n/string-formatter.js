@@ -168,8 +168,9 @@ export class StringFormatter extends LocaleAware {
      * manager) and digit grouping.
      *
      * @param {number | bigint} value
-     * @param {Intl.NumberFormatOptions & {decimals?: number}} [options] `Intl.NumberFormat`
-     *     options. `decimals` is a shortcut for an exact number of fraction digits.
+     * @param {Intl.NumberFormatOptions & {digits?: number, decimals?: number}} [options]
+     *     `Intl.NumberFormat` options. `digits` is a shortcut for an exact number of fraction
+     *     digits, and `decimals` is the same.
      * @returns {string}
      * @throws {TypeError} If the value is not a number.
      */
@@ -178,14 +179,15 @@ export class StringFormatter extends LocaleAware {
             throw new TypeError('The value must be a number.');
         }
 
-        const { decimals, ...intlOptions } = options;
-        if (decimals !== undefined) {
-            if (!Number.isInteger(decimals) || decimals < 0 || decimals > 100) {
-                throw new RangeError('The number of decimals must be an integer from 0 to 100.');
+        const { digits: ownDigits, decimals, ...intlOptions } = options;
+        const digits = ownDigits ?? decimals;
+        if (digits !== undefined) {
+            if (!Number.isInteger(digits) || digits < 0 || digits > 100) {
+                throw new RangeError('The number of digits must be an integer from 0 to 100.');
             }
 
-            intlOptions.minimumFractionDigits = decimals;
-            intlOptions.maximumFractionDigits = decimals;
+            intlOptions.minimumFractionDigits = digits;
+            intlOptions.maximumFractionDigits = digits;
         }
 
         const manager = this.effectiveLocaleManager;
@@ -349,10 +351,10 @@ export function formatString(format, ...args) {
  * @example
  * formatNumber(1234.5); // '1,234.5' in English, '1.234,5' in Dutch
  * formatNumber(0.25, { style: 'percent' }); // '25%'
- * formatNumber(3, { decimals: 2 }); // '3.00'
+ * formatNumber(3, { digits: 2 }); // '3.00'
  *
  * @param {number | bigint} value
- * @param {Intl.NumberFormatOptions & {decimals?: number}} [options]
+ * @param {Intl.NumberFormatOptions & {digits?: number, decimals?: number}} [options]
  * @returns {string}
  */
 export function formatNumber(value, options) {

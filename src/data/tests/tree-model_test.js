@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 
-import { SelectionModes, SortOrder } from '../../core/enums.js';
+import { SelectionMode, SortOrder } from '../../core/enums.js';
 import { getLocaleManager } from '../../i18n/locale-manager.js';
 import { SearchFilter } from '../filters/search-filter.js';
 import { Selection } from '../selection.js';
@@ -256,6 +256,25 @@ describe('TreeModel', () => {
         );
     });
 
+    test('rejects an id column with duplicate ids in collapsed rows without changing anything', () => {
+        const model = new TreeModel({
+            rows: [
+                { id: 1, code: 'a', children: [{ id: 2, code: 'b' }] },
+                { id: 3, code: 'b' },
+            ],
+            idColumn: 'id',
+        });
+        const changes = [];
+        model.connect('id-column-change', () => changes.push(model.idColumn));
+
+        // The duplicate code is in a collapsed row.
+        assert.throws(() => (model.idColumn = 'code'), /Duplicate row id b/);
+        assert.equal(model.idColumn, 'id');
+        assert.equal(model.getRowById(3).code, 'b');
+        assert.equal(model.getRowById(2).code, 'b');
+        assert.deepEqual(changes, []);
+    });
+
     test('sorts every level stably and keeps it sorted', () => {
         const model = createModel({ sortColumn: 'name' });
         model.expandAll();
@@ -468,6 +487,58 @@ describe('TreeModel', () => {
         assert.deepEqual(names(model), ['src', 'widgets', 'guide.js', 'docs', 'guide.md']);
     });
 
+    test('sorts every level again when the locale changes', () => {
+        const model = new TreeModel({
+            rows: [
+                { name: 'z' },
+                { name: 'a', children: [{ name: 'z' }, { name: 'ä' }] },
+                { name: 'ä' },
+            ],
+            sortColumn: 'name',
+        });
+        model.expandAll();
+
+        try {
+            // Swedish sorts 'ä' after 'z'.
+            getLocaleManager().locale = 'sv-SE';
+            assert.deepEqual(
+                model.rows.map((x) => x.name),
+                ['a', 'z', 'ä', 'z', 'ä']
+            );
+        } finally {
+            getLocaleManager().locale = 'en-US';
+        }
+
+        assert.deepEqual(
+            model.rows.map((x) => x.name),
+            ['a', 'ä', 'z', 'ä', 'z']
+        );
+    });
+
+    test('filters once when many rows are inserted at once', () => {
+        const filter = new SearchFilter({ query: 'row' });
+        const isVisibleRow = filter.isVisibleRow.bind(filter);
+        let calls = 0;
+        filter.isVisibleRow = (row) => (++calls, isVisibleRow(row));
+
+        const model = new TreeModel({
+            rows: Array.from({ length: 1000 }, (_x, i) => ({ id: i, name: `row ${i}` })),
+            idColumn: 'id',
+            filters: [filter],
+        });
+
+        calls = 0;
+        model.insertRows(0, [
+            ...Array.from({ length: 100 }, (_x, i) => ({ id: 1000 + i, name: `row ${1000 + i}` })),
+            { id: 2000, name: 'other' },
+        ]);
+
+        // Filtering the whole tree after every row would take 100,000 calls.
+        assert.ok(calls <= 2 * 1101);
+        assert.equal(model.rowsCount, 1100);
+        assert.equal(model.getRowIndex(model.getRowById(1000)), 0);
+    });
+
     test('signals many changes at once as a reorder', () => {
         const children = Array.from({ length: 1000 }, (_x, i) => ({ id: i + 1, name: `${i}` }));
         const model = new TreeModel({ rows: [{ id: 0, name: 'root', children }], idColumn: 'id' });
@@ -486,7 +557,7 @@ describe('TreeModel', () => {
     test('keeps selections across expanding, collapsing and sorting', () => {
         for (const idColumn of ['id', null]) {
             const model = createModel({ idColumn });
-            const selection = new Selection({ model, modes: SelectionModes.MULTI });
+            const selection = new Selection({ model, selectionMode: SelectionMode.MULTIPLE });
 
             model.expandAll();
             const label = model.getRowById(idColumn ? 5 : model.getRowByPath([0, 1, 1]));

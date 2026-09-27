@@ -3,13 +3,13 @@ import { expect, test } from '@playwright/test';
 
 import { openHarness } from '../../../tests/helpers.js';
 
-test('Circle is positioned by its center', async ({ page }) => {
+test('CircleSprite is positioned by its center', async ({ page }) => {
     await openHarness(page);
 
     const result = await page.evaluate(async () => {
-        const { Circle } = await import('/src/sprites/circle.js');
+        const { CircleSprite } = await import('/src/sprites/circle.js');
 
-        const circle = new Circle({ position: { x: 50, y: 40 }, radius: 10 });
+        const circle = new CircleSprite({ position: { x: 50, y: 40 }, radius: 10 });
         const before = ['cx', 'cy', 'r', 'x'].map((x) => circle.el.getAttribute(x));
 
         circle.y = 45;

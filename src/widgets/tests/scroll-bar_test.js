@@ -127,6 +127,44 @@ test.describe('ScrollBar', () => {
         expect(focused).toBe(false);
     });
 
+    test('a held stepper stops repeating when the scroll bar becomes insensitive or is destroyed', async ({
+        page,
+    }) => {
+        await openHarness(page);
+        await mount(page, { width: 400, upper: 1000, pageSize: 100, value: 0 });
+
+        const { forward } = await geometry(page);
+        const hold = async (action) => {
+            await page.mouse.move(forward.x + 7, forward.y + 7);
+            await page.mouse.down();
+            await page.waitForTimeout(100);
+
+            const before = await page.evaluate((action) => {
+                const widget = globalThis.widget;
+                globalThis.adjustment = widget.adjustment;
+
+                if (action === 'insensitive') {
+                    widget.sensitive = false;
+                } else {
+                    widget.destroy();
+                }
+
+                return globalThis.adjustment.value;
+            }, action);
+
+            await page.waitForTimeout(800);
+            const after = await page.evaluate(() => globalThis.adjustment.value);
+            await page.mouse.up();
+
+            return after - before;
+        };
+
+        expect(await hold('insensitive')).toBe(0);
+
+        await page.evaluate(() => (globalThis.widget.sensitive = true));
+        expect(await hold('destroy')).toBe(0);
+    });
+
     test('pressing the trough pages towards the pointer until the thumb reaches it', async ({
         page,
     }) => {

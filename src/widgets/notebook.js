@@ -49,7 +49,8 @@ const TAB_POSITIONS = new Set(Object.values(Position));
  * Delete closes a closable page. Ctrl+Page Up and Ctrl+Page Down switch pages from anywhere in
  * the notebook.
  *
- * Signals: `switch-page` (`notebook, page, index`) after the current page changed,
+ * Signals: `switch-page` (`notebook, page, index`) after another page became the current one,
+ * `current-page-change` (also when no page is current any more),
  * `page-add` and `page-remove` (`notebook, page, index`), `page-reorder` (`notebook, page,
  * index`) and `page-close` (`notebook, page, index`), emitted when the close button of a tab is
  * clicked: the page is destroyed unless a handler returns `true`.
@@ -339,6 +340,10 @@ export class Notebook extends Container {
     }
 
     removeChild(widget) {
+        if (this._drag?.child === widget) {
+            this._endDrag();
+        }
+
         const wasCurrent = widget === this._current;
         const index = super.removeChild(widget);
 
@@ -353,7 +358,7 @@ export class Notebook extends Container {
         this.emit('page-remove', this, widget, index);
 
         if (wasCurrent) {
-            this._current = null;
+            // Without another visible page, there is no current page any more.
             this._setCurrent(this._findVisible(index, 1) || this._findVisible(index - 1, -1));
         } else {
             this._syncCurrent();
@@ -554,7 +559,11 @@ export class Notebook extends Container {
         }
 
         this.emit('current-page-change', this);
-        this.emit('switch-page', this, this._current, this._currentPage);
+
+        // Like GTK, only switching to a page is a switch; `currentPage` becomes -1 otherwise.
+        if (this._current) {
+            this.emit('switch-page', this, this._current, this._currentPage);
+        }
     }
 
     _findVisible(start, step) {

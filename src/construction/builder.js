@@ -7,13 +7,6 @@ import { getType } from '../core/registry.js';
 import { toCamelCase } from '../core/util.js';
 
 /**
- * The keys of an object description that are not properties.
- *
- * @type {Set<string>}
- */
-const RESERVED_KEYS = new Set(['type', 'id']);
-
-/**
  * @callback BuilderPropertyHook
  * @param {Builder} builder
  * @param {object} instance The object being built.
@@ -81,6 +74,17 @@ function isReference(value) {
 }
 
 /**
+ * Checks whether a class has a writable `id` property of its own, which the builder sets instead
+ * of taking `id` as the id of the object in the builder.
+ *
+ * @param {Function | undefined} cls
+ * @returns {boolean}
+ */
+function hasIdProperty(cls) {
+    return Boolean(typeof cls?.getPropertyInfo === 'function' && cls.getPropertyInfo('id')?.write);
+}
+
+/**
  * Finds a builder property hook of a class: the `builderProperties` of the class itself or the
  * nearest base class that has one for the name.
  *
@@ -130,8 +134,9 @@ function findHook(cls, name) {
  * ```
  *
  * Every description has a `type`, registered with `registerType()` (which widget modules do when
- * they are imported; the builder imports no widgets itself), and optionally an `id`. The other
- * keys are, in order of precedence:
+ * they are imported; the builder imports no widgets itself), and optionally an `id` (except for
+ * classes with an `id` property of their own, such as `TranslatedText`, which get it as that
+ * property). The other keys are, in order of precedence:
  *
  * - A builder property of the class: a static `builderProperties` hook, looked up along the class
  *   hierarchy (the most derived class wins). Hooks run after the normal properties, in input
@@ -315,10 +320,14 @@ export class Builder extends Instance {
             return object;
         }
 
-        const { type, id } = description;
+        const { type } = description;
         if (typeof type !== 'string') {
             this._fail(`Malformed builder input: the object has no type.`);
         }
+
+        // For a class with an `id` property of its own (such as a translated text), `id` is that
+        // property, not an id of the builder.
+        const id = hasIdProperty(getType(type)?.cls) ? undefined : description.id;
 
         if (id !== undefined && typeof id !== 'string') {
             this._fail(`The id of a '${type}' must be a string.`);
@@ -398,7 +407,7 @@ export class Builder extends Instance {
         const special = [];
 
         for (const [name, value] of Object.entries(description)) {
-            if (RESERVED_KEYS.has(name)) {
+            if (name === 'type' || (name === 'id' && !hasIdProperty(cls))) {
                 continue;
             }
 
@@ -664,20 +673,11 @@ export function build(input, options = {}) {
 }
 
 /*
- * The original toolkit registered these special builder properties centrally. Here each widget
- * module defines them as static `builderProperties` of its class, as `ButtonGroup` does:
- *
- * - Fixed `children`: each child description may have `x` and `y`, removed before building the
- *   child, and passed as `fixed.addChild(child, x, y)`.
- * - Paned `children`: each child may have `resize`, passed as `paned.addChild(child, resize)`.
- * - Grid `children`: each child may have `row`, `column`, `rowSpan` and `columnSpan` (the original
- *   used `row-span` and `col-span`), passed as `grid.addChild(child, row, column, rowSpan,
- *   columnSpan)`.
- * - VectorCanvas `sprites`: an array of sprite descriptions, added with `canvas.addSprite()`.
- * - ButtonGroup `buttons`: an array of button descriptions (or references), added with
- *   `group.addButton()`.
- * - Dialog `buttons`: an array of buttons, added with `dialog.addButton()`.
- * - Table `columns`: an array of column descriptions, added with `table.addColumn()`.
+ * The original toolkit registered its special builder properties centrally. Here each class defines
+ * them as static `builderProperties`, as `ButtonGroup` (`buttons`), `Grid`, `Fixed`, `Paned` and
+ * `Notebook` (`children`), `Dialog`, `MessageDialog` and `InfoBar` (`buttons`), `Table`
+ * (`columns`), `VectorCanvas` (`sprites`) and the filtered and tree models (`filters`) do; see
+ * `docs/builder.md` for what each one takes.
  *
  * A hook that builds nested descriptions calls `builder.build(value)` (or `builder.buildOne()`),
  * which keeps the path for error messages and resolves references.

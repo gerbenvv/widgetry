@@ -127,7 +127,7 @@ export class MenuItem extends AbstractMenuItem {
      * @returns {boolean} Whether it was activated.
      */
     _activateByAccelerator() {
-        if (!this.visible || !this._isChainSensitive()) {
+        if (!this._isChainActivatable()) {
             return false;
         }
 

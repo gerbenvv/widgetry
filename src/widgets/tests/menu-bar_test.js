@@ -247,11 +247,15 @@ test.describe('menu bar', () => {
         await page.keyboard.press('ArrowLeft');
         await page.keyboard.press('ArrowLeft');
 
+        // The bar has the focus, and tells assistive technology which item is selected.
         state = await page.evaluate(() => ({
             selected: globalThis.t.bar.selected?.label,
             focus: document.activeElement === globalThis.t.bar.el,
+            activeDescendant:
+                globalThis.t.bar.el.getAttribute('aria-activedescendant') ===
+                globalThis.t.about.el.id,
         }));
-        expect(state).toEqual({ selected: '_About', focus: true });
+        expect(state).toEqual({ selected: '_About', focus: true, activeDescendant: true });
 
         await page.keyboard.press('ArrowRight');
         expect(await page.evaluate(() => globalThis.t.file.submenu.visible)).toBe(true);
@@ -262,8 +266,14 @@ test.describe('menu bar', () => {
             open: globalThis.t.file.submenu.visible,
             selected: globalThis.t.bar.selected,
             focus: document.activeElement === globalThis.t.block.el,
+            activeDescendant: globalThis.t.bar.el.hasAttribute('aria-activedescendant'),
         }));
-        expect(state).toEqual({ open: false, selected: null, focus: true });
+        expect(state).toEqual({
+            open: false,
+            selected: null,
+            focus: true,
+            activeDescendant: false,
+        });
     });
 
     test('Alt with a mnemonic opens the matching menu', async ({ page }) => {
@@ -361,6 +371,26 @@ test.describe('menu bar', () => {
         await page.keyboard.press('Control+s');
         expect(await page.evaluate(() => globalThis.t.log)).toEqual([]);
     });
+
+    test('the items of a hidden menu bar item have no working accelerators', async ({ page }) => {
+        await openHarness(page);
+        await setup(page);
+
+        await page.evaluate(() => {
+            globalThis.t.file.visible = false;
+        });
+        await page.keyboard.press('Control+s');
+
+        await page.evaluate(() => {
+            globalThis.t.file.visible = true;
+            globalThis.t.save.visible = false;
+        });
+        await page.keyboard.press('Control+s');
+        await page.keyboard.press('Control+z');
+
+        expect(await page.evaluate(() => globalThis.t.log)).toEqual(['_Undo']);
+    });
+
     test('menu bars and tool bars can be built declaratively', async ({ page }) => {
         const errors = await openHarness(page);
 

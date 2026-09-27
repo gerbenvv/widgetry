@@ -12,25 +12,20 @@ import { ButtonGroup } from './button-group.js';
  * `inconsistent` shows a third, "mixed" state, e.g. for a setting that applies to only some of
  * the selected items. Clicking the button clears it.
  *
- * Signals: `toggle` (`button`) on every change of `active`, `activate` when it becomes active and
- * `deactivate` when it becomes inactive (like the original toolkit), and `clicked` after a click.
+ * Signals: `activate` (`button`) when the user activates the button (a click, Space or Enter, or its
+ * mnemonic) or `activate()` is called, after it toggled; `toggle` (`button`) and `active-change`
+ * on every change of `active`, also from code; and `clicked` (`button`) after a click.
  */
 export declare class ToggleButton extends Button {
-    active: boolean;
-    group: ButtonGroup;
-    inconsistent: boolean;
     _initialize(): void;
     _render(): HTMLElement;
     /**
-     * Makes the button active. The same as setting `active` to `true`.
+     * Activates the button, as if the user clicked it: clears `inconsistent`, toggles `active` and
+     * emits `activate`.
      */
     activate(): void;
     /**
-     * Makes the button inactive. The same as setting `active` to `false`.
-     */
-    deactivate(): void;
-    /**
-     * Toggles the button.
+     * Toggles `active`, without emitting `activate`.
      */
     toggle(): void;
     /**
@@ -41,7 +36,6 @@ export declare class ToggleButton extends Button {
      *     item.
      */
     join(button: ToggleButton): void;
-    _onClicked(): void;
     /**
      * Updates the state classes and the accessible state.
      *
@@ -67,5 +61,17 @@ export declare class ToggleButton extends Button {
 
 /** The declared properties of {@link ToggleButton}. */
 export interface ToggleButton {
-
+    /**
+     * Whether the button is pressed in (checked, for check boxes and radio buttons).
+     */
+    active: boolean;
+    /**
+     * Whether the button shows the "mixed" state, between active and inactive. Clicking the
+     * button clears it.
+     */
+    inconsistent: boolean;
+    /**
+     * The `ButtonGroup` the button is in, or `null`. At most one button of a group is active.
+     */
+    group: ButtonGroup;
 }

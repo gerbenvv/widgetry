@@ -51,6 +51,7 @@ export declare class Dialog extends Window {
     _responding: number;
     _closeAfterResponse: boolean;
     _parentHandler: any;
+    _previousWindow: import("./abstract-window.js").AbstractWindow;
     _vbox: Box;
     _contentArea: Box;
     _actionArea: ButtonBox;
@@ -146,6 +147,7 @@ export declare class Dialog extends Window {
     run(): Promise<string>;
     destroy(): void;
     _onVisibleChange(visible: any): void;
+    _activatePreviousWindow(): void;
     _settle(response: any): void;
     _onDialogKeyDown(event: any): void;
     _syncDefaultButton(response: any, oldResponse: any): void;
@@ -169,8 +171,6 @@ export declare namespace Dialog {
 
 /** The declared properties of {@link Dialog}. */
 export interface Dialog {
-    resizable: any;
-    maximizable: any;
     /**
      * The child of a dialog is its content: setting it replaces the content area's children.
      */

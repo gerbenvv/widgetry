@@ -31,7 +31,6 @@ export declare class FilteredListModel extends AbstractModel {
     /** @type {Filter[]} */
     _filters: Filter[];
     _proxyDisconnectors: any[];
-    filters: any[];
     _model: any;
     /**
      * @param {AbstractModel | Record<string, unknown>} [model] The source model (followed by the
@@ -97,7 +96,7 @@ export declare class FilteredListModel extends AbstractModel {
     removeAllRows(): void;
     replaceRow(index: any, row: any): number;
     updateRow(index: any, changes: any): number;
-    sortByColumn(column: any, order?: 1): void;
+    sortByColumn(column: any, order?: string): void;
     compareValues(first: any, second: any, type: any, caseSensitive: any): any;
     _requireSource(): any;
     _setSource(model: any): void;
@@ -151,12 +150,11 @@ export interface FilteredListModel {
      */
     model: any;
     /**
+     * The filters. A row is shown when it passes all of them. Setting an array replaces them.
+     */
+    filters: any[];
+    /**
      * The number of filters.
      */
-    readonly filtersCount: any;
-    columnsInfo: any;
-    idColumn: any;
-    sortColumn: any;
-    sortOrder: any;
-    localeAware: any;
+    readonly filtersCount: number;
 }

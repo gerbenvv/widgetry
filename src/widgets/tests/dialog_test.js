@@ -315,4 +315,69 @@ test.describe('dialog', () => {
             isDefault: true,
         });
     });
+
+    test('run() resolves with none when the dialog is hidden', async ({ page }) => {
+        await openHarness(page);
+        await setUp(page, { destroyOnClose: false });
+
+        const result = await page.evaluate(async () => {
+            const dialog = globalThis.dialog;
+            const promise = dialog.run();
+            dialog.hide();
+
+            const response = await Promise.race([
+                promise,
+                new Promise((resolve) => setTimeout(() => resolve('pending'), 200)),
+            ]);
+
+            return {
+                response,
+                responses: globalThis.responses,
+                modal: dialog.modal,
+                destroyed: dialog.destroyed,
+            };
+        });
+
+        expect(result).toEqual({ response: 'none', responses: [], modal: false, destroyed: false });
+    });
+
+    test('closing a nested dialog gives the keyboard back to the dialog below', async ({
+        page,
+    }) => {
+        await openHarness(page);
+        await setUp(page);
+
+        await page.evaluate(async () => {
+            const { Application } = await import('/src/core/application.js');
+            const { Dialog } = await import('/src/widgets/dialog.js');
+
+            const nested = new Dialog({ title: 'Nested', transientFor: globalThis.dialog });
+            nested.addButton('cancel');
+
+            globalThis.Application = Application;
+            globalThis.nested = nested;
+            globalThis.results = [];
+
+            globalThis.dialog.run().then((response) => globalThis.results.push(response));
+            nested.run().then((response) => globalThis.results.push(`nested:${response}`));
+        });
+
+        await page.keyboard.press('Escape');
+        await expect.poll(() => page.evaluate(() => globalThis.results)).toEqual(['nested:cancel']);
+
+        const between = await page.evaluate(() => ({
+            destroyed: globalThis.nested.destroyed,
+            active: globalThis.Application.activeWindow === globalThis.dialog,
+        }));
+        expect(between).toEqual({ destroyed: true, active: true });
+
+        await page.keyboard.press('Escape');
+        await expect
+            .poll(() => page.evaluate(() => globalThis.results))
+            .toEqual(['nested:cancel', 'cancel']);
+
+        expect(
+            await page.evaluate(() => globalThis.Application.activeWindow === globalThis.main)
+        ).toBe(true);
+    });
 });

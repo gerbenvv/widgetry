@@ -15,7 +15,6 @@ export declare class MenuButton extends Bin {
     _menuDisconnects: any[];
     _keyboardOpen: boolean;
     _behavior: import("./button-behavior.js").ButtonBehavior;
-    active: boolean;
     _iconEl: Element;
     _labelEl: Element;
     _bodyEl: Element;
@@ -45,7 +44,6 @@ export declare class MenuButton extends Bin {
 
 /** The declared properties of {@link MenuButton}. */
 export interface MenuButton {
-    canFocus: any;
     /**
      * The label. An underscore marks the mnemonic, as in `'_Options'`.
      */
@@ -71,5 +69,9 @@ export interface MenuButton {
      * Where the menu pops up: one of `Position` (`'bottom'` by default). `'down'` and `'up'` are
      * accepted too.
      */
-    direction: any;
+    direction: string;
+    /**
+     * Whether the menu is open. Setting it opens or closes the menu.
+     */
+    active: boolean;
 }

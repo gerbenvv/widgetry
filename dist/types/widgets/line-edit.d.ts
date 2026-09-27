@@ -41,12 +41,12 @@ export type Validator = {
  * search.connect('icon-press', () => (search.text = ''));
  */
 export declare class LineEdit extends Widget {
+    _validatorDisconnect: any;
     _inputEl: HTMLInputElement;
     _iconEls: {
         primary: Element;
         secondary: Element;
     };
-    text: string;
     _isValid: any;
     _isEditable: any;
     _initialize(): void;
@@ -62,6 +62,7 @@ export declare class LineEdit extends Widget {
      * validator can fix it up.
      */
     activate(): void;
+    destroy(): void;
     /**
      * Selects a range of characters. The selection is kept when the line edit gets the focus.
      *
@@ -156,8 +157,10 @@ export declare class LineEdit extends Widget {
 
 /** The declared properties of {@link LineEdit}. */
 export interface LineEdit {
-    canFocus: any;
-    vAlign: any;
+    /**
+     * The text.
+     */
+    text: string;
     /**
      * The value: the text, or `null` if it is not valid. Setting it sets the text.
      */
@@ -173,7 +176,7 @@ export interface LineEdit {
     /**
      * Whether the user can currently change the text: it is `editable` and sensitive.
      */
-    readonly isEditable: any;
+    readonly isEditable: boolean;
     /**
      * Whether the text is shown. When `false`, the line edit is a password entry that shows every
      * character as a dot.
@@ -204,16 +207,18 @@ export interface LineEdit {
     /**
      * The border style: one of `ShadowType`. `NONE` is the same as having no frame.
      */
-    shadowType: any;
+    shadowType: string;
     /**
      * The validator of the text, or `null`: an object with a `validate(text)` method (and
      * optionally `fixup(text)`), or a function. An invalid text is shown in the invalid state.
+     * The text is validated again when a validator with a `change` signal (such as the
+     * validators of `data/validators`) emits it.
      */
     validator: any;
     /**
      * Whether the text is valid according to the validator.
      */
-    readonly isValid: any;
+    readonly isValid: boolean;
     /**
      * The name of the icon at the start, or `''` for none.
      */
@@ -242,8 +247,4 @@ export interface LineEdit {
      * The cursor position, as a character index.
      */
     cursorPosition: any;
-    /**
-     * The accessible name of the input, for line edits without a visible label.
-     */
-    accessibleName: string;
 }

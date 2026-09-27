@@ -274,20 +274,6 @@ defineProperties(TextView, {
             this.el.classList.toggle('wy-no-frame', !hasFrame);
         },
     },
-
-    /**
-     * The accessible name of the text area, for text views without a visible label.
-     */
-    accessibleName: {
-        value: '',
-        changed(name) {
-            if (name) {
-                this._textAreaEl.setAttribute('aria-label', name);
-            } else {
-                this._textAreaEl.removeAttribute('aria-label');
-            }
-        },
-    },
 });
 
 registerType('text-view', TextView);

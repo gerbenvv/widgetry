@@ -60,6 +60,7 @@ export declare class ToolItem extends AbstractToolItem {
      */
     protected _getMenuLabel(): string;
     _createMenuProxy(): MenuItem;
+    _releaseMenuProxy(proxy: any): void;
     _onToolBarChange(): void;
     _attachChildElement(widget: any): void;
     _setImage(image: any, own: any): boolean;
@@ -67,6 +68,7 @@ export declare class ToolItem extends AbstractToolItem {
     _onArrowPointerDown(event: any): void;
     _onKeyDown(event: any): void;
     _updateLabel(): void;
+    _syncAccessibleName(): void;
     _onIsSensitiveChange(isSensitive: any): void;
     _onIsVisibleChange(isVisible: any): void;
 }

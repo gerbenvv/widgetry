@@ -13,7 +13,6 @@ import { Instance } from '../core/instance.js';
  */
 export declare class ButtonGroup extends Instance {
     _buttons: any[];
-    active: any;
     _active: any;
     _initialize(): void;
     /**
@@ -45,11 +44,15 @@ export declare namespace ButtonGroup {
 /** The declared properties of {@link ButtonGroup}. */
 export interface ButtonGroup {
     /**
+     * The active button, or `null`. Setting it activates that button and deactivates the others.
+     */
+    active: any;
+    /**
      * The buttons in the group. Do not modify the array.
      */
     readonly buttons: any;
     /**
      * The number of buttons.
      */
-    readonly buttonsCount: any;
+    readonly buttonsCount: number;
 }

@@ -7,7 +7,7 @@ async function createCanvas(page) {
     await page.evaluate(async () => {
         const { MainWindow } = await import('/src/widgets/main-window.js');
         const { VectorCanvas } = await import('/src/widgets/vector-canvas.js');
-        const { Rectangle } = await import('/src/sprites/rectangle.js');
+        const { RectangleSprite } = await import('/src/sprites/rectangle.js');
 
         const host = document.createElement('div');
         host.style.cssText = 'position: fixed; left: 0; top: 0; width: 400px; height: 300px;';
@@ -19,7 +19,12 @@ async function createCanvas(page) {
         window.show();
 
         const make = (name, x, fill) =>
-            new Rectangle({ name, position: { x, y: 10 }, size: { width: 60, height: 60 }, fill });
+            new RectangleSprite({
+                name,
+                position: { x, y: 10 },
+                size: { width: 60, height: 60 },
+                fill,
+            });
 
         globalThis.canvas = canvas;
         globalThis.sprites = [make('a', 10, 'red'), make('b', 40, 'green'), make('c', 70, 'blue')];
@@ -39,13 +44,13 @@ test.describe('VectorCanvas', () => {
         await createCanvas(page);
 
         const result = await page.evaluate(async () => {
-            const { Circle } = await import('/src/sprites/circle.js');
+            const { CircleSprite } = await import('/src/sprites/circle.js');
             const canvas = globalThis.canvas;
             const log = [];
             canvas.connect('sprite-add', (_canvas, sprite) => log.push(['add', sprite.name]));
             canvas.connect('sprite-remove', (_canvas, sprite) => log.push(['remove', sprite.name]));
 
-            const circle = canvas.insertSprite(new Circle({ name: 'd' }), 1);
+            const circle = canvas.insertSprite(new CircleSprite({ name: 'd' }), 1);
             const index = canvas.indexOfSprite(circle);
             const removed = canvas.removeSpriteByIndex(1).name;
 

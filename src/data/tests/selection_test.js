@@ -2,11 +2,18 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 
-import { SelectionModes, SortOrder } from '../../core/enums.js';
+import { SelectionMode, SortOrder } from '../../core/enums.js';
 import { FilteredListModel } from '../filtered-list-model.js';
 import { SearchFilter } from '../filters/search-filter.js';
 import { ListModel } from '../list-model.js';
 import { Selection } from '../selection.js';
+
+/**
+ * The mode of most tests, which select more than one row.
+ *
+ * @type {string}
+ */
+const MULTIPLE = SelectionMode.MULTIPLE;
 
 function createModel(idColumn = 'id') {
     return new ListModel({
@@ -17,7 +24,7 @@ function createModel(idColumn = 'id') {
 
 describe('Selection', () => {
     test('selects rows by id and emits change once per operation', () => {
-        const selection = new Selection({ model: createModel() });
+        const selection = new Selection({ model: createModel(), selectionMode: MULTIPLE });
         const log = [];
         selection.connect('row-select', (_x, key) => log.push(['select', key]));
         selection.connect('row-deselect', (_x, key) => log.push(['deselect', key]));
@@ -44,7 +51,7 @@ describe('Selection', () => {
         const model = createModel();
         const filter = new SearchFilter();
         const filtered = new FilteredListModel(model, filter);
-        const selection = new Selection({ model: filtered });
+        const selection = new Selection({ model: filtered, selectionMode: MULTIPLE });
 
         selection.select(0);
         selection.select(4);
@@ -63,8 +70,10 @@ describe('Selection', () => {
         assert.equal(selection.isSelected(0), true);
     });
 
-    test('limits the selection to the modes', () => {
-        const selection = new Selection({ model: createModel(), modes: SelectionModes.SINGLE });
+    test('limits the selection to the mode', () => {
+        const selection = new Selection({ model: createModel() });
+        assert.equal(selection.selectionMode, SelectionMode.SINGLE);
+        assert.equal(selection.toggleSelection, false);
 
         selection.select(0);
         selection.select(1);
@@ -74,20 +83,29 @@ describe('Selection', () => {
         selection.selectRange(1, 3);
         assert.deepEqual(selection.selectedRowIds, [4]);
 
-        selection.modes = SelectionModes.MULTI;
+        selection.selectionMode = SelectionMode.MULTIPLE;
         selection.selectAll();
         assert.equal(selection.selectedRowsCount, 5);
 
-        selection.modes = SelectionModes.SINGLE;
-        assert.equal(selection.selectedRowsCount, 1);
+        // Browse keeps at most one row, like single.
+        selection.selectionMode = SelectionMode.BROWSE;
+        assert.deepEqual(selection.selectedRowIds, [5]);
+        selection.selectedRowIds = [1, 2];
+        assert.deepEqual(selection.selectedRowIds, [2]);
 
-        selection.modes = SelectionModes.NONE;
+        selection.selectionMode = SelectionMode.NONE;
         assert.equal(selection.selectedRowsCount, 0);
         assert.equal(selection.select(0), false);
+
+        assert.throws(() => (selection.selectionMode = 'extended'), RangeError);
+        assert.equal(selection.selectionMode, SelectionMode.NONE);
+
+        selection.toggleSelection = 1;
+        assert.equal(selection.toggleSelection, true);
     });
 
     test('toggles, extends ranges and sets the selected ids', () => {
-        const selection = new Selection({ model: createModel() });
+        const selection = new Selection({ model: createModel(), selectionMode: MULTIPLE });
 
         selection.toggle(0);
         selection.toggle(1);
@@ -108,7 +126,7 @@ describe('Selection', () => {
 
     test('unselects removed rows and follows id changes', () => {
         const model = createModel();
-        const selection = new Selection({ model });
+        const selection = new Selection({ model, selectionMode: MULTIPLE });
         selection.selectedRowIds = [1, 2];
 
         model.removeRowById(1);
@@ -123,7 +141,7 @@ describe('Selection', () => {
 
     test('follows inserted, removed and moved rows without an id column', () => {
         const model = createModel(null);
-        const selection = new Selection({ model });
+        const selection = new Selection({ model, selectionMode: MULTIPLE });
 
         assert.equal(selection.byId, false);
         selection.selectedRowIds = [1, 3];
@@ -140,7 +158,7 @@ describe('Selection', () => {
 
     test('clears when the model changes or is destroyed', () => {
         const model = createModel();
-        const selection = new Selection({ model });
+        const selection = new Selection({ model, selectionMode: MULTIPLE });
         selection.select(0);
 
         model.destroy();

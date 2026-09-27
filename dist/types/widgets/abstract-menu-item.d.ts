@@ -20,13 +20,13 @@ export declare class AbstractMenuItem extends Container {
      */
     protected _isSelectable(): boolean;
     /**
-     * Whether the item and the items its menu hangs from are all sensitive, so that it can be
-     * activated, e.g. by its accelerator.
+     * Whether the item and the items its menu hangs from are all visible and sensitive, so that
+     * it can be activated, e.g. by its accelerator, like in GTK.
      *
      * @protected
      * @returns {boolean}
      */
-    protected _isChainSensitive(): boolean;
+    protected _isChainActivatable(): boolean;
     /**
      * Returns this item if its accelerator matches a key event, or an item of its submenu that
      * matches. Overridden by menu items.

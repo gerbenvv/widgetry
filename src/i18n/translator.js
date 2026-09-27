@@ -89,7 +89,8 @@ function getTagChain(tag) {
  * without translation falls back to the identifier.
  *
  * Translations are formatted with the {@link StringFormatter}, so they can contain placeholders
- * such as `%s`, `%d` and `%1$s` (to reorder arguments). A translation can also have plural forms,
+ * such as `%s`, `%d` and `%1$s` (to reorder arguments). Like gettext, a text translated without
+ * arguments is not formatted, so it can contain a plain `%` (and `%%` stays as it is). A translation can also have plural forms,
  * chosen with `Intl.PluralRules` of its language by the first argument:
  *
  * ```js
@@ -318,6 +319,11 @@ export class Translator extends LocaleAware {
     }
 
     _format(text, args) {
+        // Like gettext, texts without arguments are not formatted, so `50% off` needs no escaping.
+        if (!args.length) {
+            return text;
+        }
+
         this._formatter.localeManager = this.effectiveLocaleManager;
 
         return this._formatter.format(text, ...args);

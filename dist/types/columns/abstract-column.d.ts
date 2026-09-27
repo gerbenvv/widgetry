@@ -164,7 +164,7 @@ export interface AbstractColumn {
     /**
      * Another name of `label`.
      */
-    title: any;
+    title: string;
     /**
      * Whether the column is shown.
      */
@@ -189,11 +189,11 @@ export interface AbstractColumn {
     /**
      * The alignment of the cell contents: one of `Justification` (`FILL` is `START`).
      */
-    alignment: any;
+    alignment: string;
     /**
      * How text that does not fit is shortened: one of `EllipsizeMode`.
      */
-    ellipsize: any;
+    ellipsize: string;
     /**
      * A function `(row, index, column) => string` returning extra class names for a cell, or
      * `null`. Use it to style cells by their value, e.g. negative numbers in red.

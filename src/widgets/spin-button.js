@@ -7,6 +7,7 @@ import { registerType } from '../core/registry.js';
 import { createElement } from '../core/util.js';
 import { Adjustment } from '../data/adjustment.js';
 import { Key } from '../events/constants.js';
+import { parseDouble } from '../i18n/double-parser.js';
 import { getLocaleManager } from '../i18n/locale-manager.js';
 import { attachPressRepeat } from './auto-repeat.js';
 import { LineEdit } from './line-edit.js';
@@ -19,53 +20,13 @@ import { LineEdit } from './line-edit.js';
 const CLIMB_REPEATS = 5;
 
 /**
- * Parses a number typed in a locale: with the locale's decimal separator (or a period), optional
- * digit group separators and an optional sign.
- *
- * @param {string} text
- * @param {string} [locale] Defaults to the current locale.
- * @returns {number | null} The number, or `null` if the text is not a number.
- */
-export function parseLocaleNumber(text, locale) {
-    const manager = getLocaleManager();
-    let decimal = manager.decimalSeparator;
-    let group = manager.groupSeparator;
-
-    if (locale && locale !== manager.locale) {
-        const parts = new Intl.NumberFormat(locale).formatToParts(12345.6);
-        decimal = parts.find((x) => x.type === 'decimal')?.value || '.';
-        group = parts.find((x) => x.type === 'group')?.value || ',';
-    }
-
-    let value = String(text)
-        .trim()
-        .replace(/[\u2212\u2012\u2013]/g, '-')
-        .replace(/[\s\u00a0\u202f]/g, '');
-
-    // Group separators are only removed when a decimal separator makes them unambiguous, or when
-    // they cannot be read as a decimal separator.
-    if (group !== decimal && (value.includes(decimal) || group !== '.')) {
-        value = value.split(group).join('');
-    }
-
-    if (decimal !== '.') {
-        value = value.replace(decimal, '.');
-    }
-
-    if (!/^[+-]?(\d+\.?\d*|\.\d+)$/.test(value)) {
-        return null;
-    }
-
-    return Number(value);
-}
-
-/**
  * A numeric entry with steppers to increase and decrease its value.
  *
  * The value is kept in an `Adjustment`, which gives its bounds and increments. The text shows the
- * value with `digits` decimals and the locale's decimal separator. Typed text is applied when
- * Enter is pressed, when the spin button loses the focus or when it steps; text that is not a
- * number is then replaced by the current value again.
+ * value with `digits` decimals and the locale's decimal separator, and typed text is read with the
+ * double parser of the locale (see `parseValue`). Typed text is applied when Enter is pressed,
+ * when the spin button loses the focus or when it steps; text that is not a number is then
+ * replaced by the current value again.
  *
  * Keyboard: Up and Down step, Page Up and Page Down step by a page. The wheel steps as well.
  * Holding a stepper repeats, faster over time with `climbRate`.
@@ -87,14 +48,17 @@ export class SpinButton extends LineEdit {
         this._inputEl.addEventListener('beforeinput', (event) => this._onBeforeInput(event));
         this.el.addEventListener('wheel', (event) => this._onWheel(event), { passive: false });
 
+        this._stepperDetaches = [];
+
         for (const [element, direction] of [
             [this._upEl, 1],
             [this._downEl, -1],
         ]) {
-            attachPressRepeat(element, {
+            const detach = attachPressRepeat(element, {
                 canStart: () => this.isSensitive,
                 onStep: (count) => this._onStepperStep(direction, count),
             });
+            this._stepperDetaches.push(detach);
 
             // Clicking a stepper focuses the entry, without selecting its text with the pointer.
             element.addEventListener('mousedown', (event) => {
@@ -204,12 +168,16 @@ export class SpinButton extends LineEdit {
 
     /**
      * Applies typed text to the value. Text that is not a number is replaced by the current value.
+     * The text that shows the current value leaves it alone, so a value with more decimals than
+     * `digits` is not rounded unless the user typed another one.
      */
     update() {
-        const value = parseLocaleNumber(this._text);
+        if (this._text !== this.formatValue(this._adjustment.value)) {
+            const value = this.parseValue(this._text);
 
-        if (value !== null) {
-            this._setValueFromUser(value);
+            if (value !== null) {
+                this._setValueFromUser(value);
+            }
         }
 
         this._updateText();
@@ -240,7 +208,23 @@ export class SpinButton extends LineEdit {
         return this._formatter.format(value);
     }
 
+    /**
+     * Parses typed text to a value with the double parser (`parseDouble`), which follows the
+     * locale manager: with the locale's separators (or swapped ones), in any digit set and with any
+     * minus sign. Override to accept other notations; it must accept what `formatValue` returns.
+     *
+     * @param {string} text
+     * @returns {number | null} The value, or `null` if the text is not a number.
+     */
+    parseValue(text) {
+        return parseDouble(text);
+    }
+
     destroy() {
+        for (const detach of this._stepperDetaches) {
+            detach();
+        }
+
         this._localeDisconnect();
         this._connectAdjustment(null);
 
@@ -248,7 +232,7 @@ export class SpinButton extends LineEdit {
     }
 
     _validate(text) {
-        return super._validate(text) && (text.trim() === '' || parseLocaleNumber(text) !== null);
+        return super._validate(text) && (text.trim() === '' || this.parseValue(text) !== null);
     }
 
     _setValueFromUser(value) {
@@ -391,7 +375,7 @@ export class SpinButton extends LineEdit {
         const allowed = new Set(['-', '+', '.', manager.decimalSeparator, '\u2212']);
 
         for (const character of event.data) {
-            if (!/\d/.test(character) && !allowed.has(character)) {
+            if (!/\p{Nd}/u.test(character) && !allowed.has(character)) {
                 event.preventDefault();
 
                 return;
@@ -455,9 +439,17 @@ defineProperties(SpinButton, {
     },
 
     /**
-     * The value, forwarded to the adjustment.
+     * The value, forwarded to the adjustment. Setting it also shows it, replacing typed text.
      */
-    value: adjustmentProperty('value'),
+    value: {
+        ...adjustmentProperty('value'),
+        set(value) {
+            this._adjustment.value = value;
+            this._updateText();
+
+            return false;
+        },
+    },
 
     /**
      * The minimum value, forwarded to the adjustment.

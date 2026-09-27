@@ -41,16 +41,19 @@ async function setup(page) {
 
 test.describe('tooltip', () => {
     test('appears after the delay below the pointer and disappears on leave', async ({ page }) => {
+        // A fake clock, paused, makes the timing independent of the machine's load.
+        await page.clock.install();
         const errors = await openHarness(page);
         await setup(page);
+        await page.clock.pauseAt(Date.now() + 60_000);
 
         const box = await page.locator('[data-name="first"]').boundingBox();
         await page.mouse.move(box.x + 30, box.y + 10);
 
-        await page.waitForTimeout(100);
+        await page.clock.runFor(100);
         expect(await page.evaluate(() => globalThis.t.first.tooltip.visible)).toBe(false);
 
-        await page.waitForTimeout(250);
+        await page.clock.runFor(150);
 
         const state = await page.evaluate(() => {
             const tooltip = globalThis.t.first.tooltip;
@@ -77,25 +80,29 @@ test.describe('tooltip', () => {
         expect(state.shown).toBe(true);
 
         await page.mouse.move(box.x + 30, box.y + box.height + 30);
-        await page.waitForTimeout(250);
+        await page.clock.runFor(1000);
 
         expect(await page.evaluate(() => globalThis.t.first.tooltip.visible)).toBe(false);
         expect(errors).toEqual([]);
     });
 
     test('the pointer must rest: moving restarts the delay', async ({ page }) => {
+        // A fake clock, paused, makes the timing independent of the machine's load.
+        await page.clock.install();
         await openHarness(page);
         await setup(page);
+        await page.clock.pauseAt(Date.now() + 60_000);
 
         const box = await page.locator('[data-name="first"]').boundingBox();
         for (let i = 0; i < 6; i++) {
             await page.mouse.move(box.x + 10 + i * 10, box.y + 10);
-            await page.waitForTimeout(80);
+            await page.clock.runFor(150);
         }
 
+        // Moving every 150 ms, the 200 ms delay never completed.
         expect(await page.evaluate(() => globalThis.t.first.tooltip.visible)).toBe(false);
 
-        await page.waitForTimeout(250);
+        await page.clock.runFor(100);
         expect(await page.evaluate(() => globalThis.t.first.tooltip.visible)).toBe(true);
     });
 

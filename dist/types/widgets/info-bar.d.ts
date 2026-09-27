@@ -18,6 +18,9 @@ import { Widget } from './widget.js';
  * handler usually hides the info bar by setting `revealed` to `false`, which slides it closed (or
  * hides it at once when the user prefers reduced motion).
  *
+ * Escape in the bar gives the response of its Cancel button, or `Response.CLOSE` when it shows the
+ * close button.
+ *
  * Errors and warnings are announced by assistive technology right away (role `alert`), other
  * messages politely (role `status`).
  *
@@ -130,6 +133,7 @@ export declare class InfoBar extends Bin {
     response(response: string): void;
     destroy(): void;
     _getFocusChain(): Widget[];
+    _onKeyDown(event: any): void;
     _computeExpand(direction: any): boolean;
     _syncMessageType(): void;
     _syncActionArea(): void;
@@ -161,7 +165,7 @@ export interface InfoBar {
     /**
      * The kind of message: one of `MessageType`, which selects the icon and the colors.
      */
-    messageType: any;
+    messageType: string;
     /**
      * Whether a close button is shown at the end, which gives the response `Response.CLOSE`.
      */

@@ -81,7 +81,7 @@ export interface DragContext {
      * The action of the drop: one of `actions`. Targets may change it during `drag-motion`, e.g.
      * to copy when Control is held.
      */
-    action: any;
+    action: string;
     /**
      * Text or an element shown next to the pointer while dragging, or `null` for none.
      */

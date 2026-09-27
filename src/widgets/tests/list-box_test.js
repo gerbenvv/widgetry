@@ -186,25 +186,64 @@ test.describe('ListBox', () => {
         // Rows are still activated.
         expect((await takeLog(page)).at(-1)).toBe('activate:1');
 
-        // Masks of SelectionModes are converted.
+        // The modes are the strings of SelectionMode; anything else is rejected.
         const modes = await page.evaluate(async () => {
-            const { SelectionModes } = await import('/src/core/enums.js');
+            const { SelectionMode } = await import('/src/core/enums.js');
             const list = globalThis.list;
             const result = [];
 
-            for (const mode of [
-                SelectionModes.MULTI,
-                SelectionModes.SINGLE_TOGGLE,
-                SelectionModes.SINGLE,
-                SelectionModes.NONE,
-            ]) {
-                list.selectionMode = mode;
-                result.push(list.selectionMode);
+            list.selectionMode = SelectionMode.MULTIPLE;
+            result.push(list.selectionMode);
+
+            try {
+                list.selectionMode = 2;
+            } catch (error) {
+                result.push(error.name);
             }
+
+            result.push(list.selectionMode);
 
             return result;
         });
-        expect(modes).toEqual(['multiple', 'single', 'browse', 'none']);
+        expect(modes).toEqual(['multiple', 'RangeError', 'multiple']);
+    });
+
+    test('browse selects the cursor row, also when Control moves it', async ({ page }) => {
+        await mount(page, { properties: { selectionMode: 'browse' } });
+
+        await clickRow(page, 1);
+        await page.keyboard.press('Control+ArrowDown');
+        expect(await selected(page)).toEqual([2]);
+        expect(await page.evaluate(() => globalThis.list.cursorRow.index)).toBe(2);
+
+        await page.keyboard.press('Control+Space');
+        expect(await selected(page)).toEqual([2]);
+    });
+
+    test('toggleSelection makes a click toggle like a Control+click', async ({ page }) => {
+        await mount(page, { properties: { toggleSelection: true } });
+
+        await clickRow(page, 2);
+        expect(await selected(page)).toEqual([2]);
+        await clickRow(page, 2);
+        expect(await selected(page)).toEqual([]);
+
+        // With browse, a click never unselects.
+        await page.evaluate(() => (globalThis.list.selectionMode = 'browse'));
+        await clickRow(page, 3);
+        await clickRow(page, 3);
+        expect(await selected(page)).toEqual([3]);
+
+        // With multiple, a click adds or removes a row.
+        await page.evaluate(() => (globalThis.list.selectionMode = 'multiple'));
+        await clickRow(page, 1);
+        await clickRow(page, 4);
+        await clickRow(page, 1);
+        expect(await selected(page)).toEqual([3, 4]);
+
+        await page.evaluate(() => (globalThis.list.toggleSelection = false));
+        await clickRow(page, 1);
+        expect(await selected(page)).toEqual([1]);
     });
 
     test('multiple: Control toggles, Shift selects a range', async ({ page }) => {
@@ -495,6 +534,25 @@ test.describe('ListBox', () => {
         await page.keyboard.press('ArrowDown');
         expect(await cursor(page)).toBe(2);
         expect(errors).toEqual([]);
+    });
+
+    test('filtering out the focused row moves the focus to the next row', async ({ page }) => {
+        await mount(page);
+
+        await clickRow(page, 2);
+        await page.evaluate(() => (globalThis.list.filterFunction = (row) => row.index !== 2));
+
+        const focusedRow = () =>
+            page.evaluate(() =>
+                globalThis.list.children.findIndex((x) => x.focusElement === document.activeElement)
+            );
+
+        expect([await cursor(page), await focusedRow()]).toEqual([3, 3]);
+
+        // The last row goes back to the one before it.
+        await clickRow(page, 4);
+        await page.evaluate(() => (globalThis.list.filterFunction = (row) => row.index < 4));
+        expect([await cursor(page), await focusedRow()]).toEqual([3, 3]);
     });
 
     test('sorts rows and keeps them sorted', async ({ page }) => {

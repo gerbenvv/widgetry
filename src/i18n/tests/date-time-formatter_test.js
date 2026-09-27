@@ -86,7 +86,11 @@ describe('DateTimeFormatter', () => {
         assert.equal(normalize(formatter.format('%X', TIME)), '2:05:09 PM');
         assert.equal(normalize(formatter.format('%x', TIME)), 'Aug 10, 2013, 2:05:09 PM');
 
-        const dutch = new DateTimeFormatter({ locale: 'nl-NL', dateStyle: DateTimeStyle.SHORT });
+        const dutch = new DateTimeFormatter({
+            locale: 'nl-NL',
+            timeZone: 'UTC',
+            dateStyle: DateTimeStyle.SHORT,
+        });
         assert.equal(dutch.format('%c', TIME), '10-08-2013');
         assert.equal(dutch.formatDate(TIME, DateTimeStyle.LONG), '10 augustus 2013');
         assert.equal(dutch.formatTime(TIME, DateTimeStyle.SHORT), '14:05');
@@ -95,20 +99,22 @@ describe('DateTimeFormatter', () => {
             '10-08-2013, 14:05'
         );
 
-        const german = new DateTimeFormatter({ locale: 'de-DE' });
+        const german = new DateTimeFormatter({ locale: 'de-DE', timeZone: 'UTC' });
         assert.equal(german.formatDate(TIME, DateTimeStyle.FULL), 'Samstag, 10. August 2013');
-        assert.equal(new DateTimeFormatter({ locale: 'ja-JP' }).formatDate(TIME), '2013/08/10');
+        const japanese = new DateTimeFormatter({ locale: 'ja-JP', timeZone: 'UTC' });
+        assert.equal(japanese.formatDate(TIME), '2013/08/10');
     });
 
     test('uses locale names and designators', () => {
-        const dutch = new DateTimeFormatter({ locale: 'nl-NL' });
+        const dutch = new DateTimeFormatter({ locale: 'nl-NL', timeZone: 'UTC' });
         assert.equal(dutch.format('%A %e %B %Y, %p', TIME), 'zaterdag 10 augustus 2013, p.m.');
 
-        const korean = new DateTimeFormatter({ locale: 'ko-KR' });
+        const korean = new DateTimeFormatter({ locale: 'ko-KR', timeZone: 'UTC' });
         assert.equal(korean.format('%p %I:%M', TIME), '오후 02:05');
 
         const manager = new LocaleManagerClass({ locale: 'en-US' });
         manager.shortDayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+        manager.timeZone = 'UTC';
         assert.equal(new DateTimeFormatter({ localeManager: manager }).format('%a', TIME), 'Sa');
     });
 
@@ -134,12 +140,21 @@ describe('DateTimeFormatter', () => {
         assert.equal(following.format('%H %z', TIME), '23 +0900');
     });
 
-    test('formats the local time zone', () => {
+    test('formats the local time zone, the default', () => {
         const local = new DateTimeFormatter({ timeZone: 'local' });
         const date = new Date(TIME);
 
         assert.equal(Number(local.format('%H', TIME)), date.getHours());
         assert.equal(Number(local.format('%M', TIME)), date.getMinutes());
+
+        // A day of the calendar (a local midnight) is formatted as that day by default.
+        const standard = new DateTimeFormatter({ locale: 'en-US' });
+        assert.equal(standard.effectiveTimeZone, 'local');
+        for (const month of [0, 6]) {
+            const day = new Date(2026, month, 27);
+            assert.equal(standard.format('%F', day), `2026-${month ? '07' : '01'}-27`);
+            assert.equal(formatDateTimePattern('%-d', day), '27');
+        }
     });
 
     test('accepts dates, numbers and numeric strings, and handles old dates', () => {

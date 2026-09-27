@@ -35,6 +35,7 @@ export declare function activateMnemonic(window: import('./abstract-window.js').
 export declare class Label extends Widget {
     _id: string;
     _mnemonicKey: any;
+    _mnemonicWidgetDisconnect: any;
     _initialize(): void;
     _render(): HTMLElement;
     destroy(): void;
@@ -58,8 +59,6 @@ export declare class Label extends Widget {
 
 /** The declared properties of {@link Label}. */
 export interface Label {
-    hAlign: any;
-    vAlign: any;
     /**
      * The text of the label. With `useMarkup` it is markup, with `useUnderline` underscores mark
      * the mnemonic.
@@ -68,7 +67,7 @@ export interface Label {
     /**
      * The same as `text`, following GTK's name.
      */
-    label: any;
+    label: string;
     /**
      * Whether the text is markup with a small set of formatting tags (see the class
      * description).
@@ -77,7 +76,7 @@ export interface Label {
     /**
      * The same as `useMarkup`, following the original toolkit's name.
      */
-    enableMarkup: any;
+    enableMarkup: boolean;
     /**
      * Whether an underscore in the text marks the next character as the mnemonic.
      */
@@ -94,11 +93,11 @@ export interface Label {
     /**
      * The text styles: a mask of `LabelStyles`.
      */
-    styles: any;
+    styles: number;
     /**
      * How the lines of the text are aligned relative to each other: one of `Justification`.
      */
-    justify: any;
+    justify: string;
     /**
      * Whether the text wraps at word boundaries when it does not fit. A wrapping label's natural
      * width is limited (see `maxWidthChars`), unless it fills its space.
@@ -109,7 +108,7 @@ export interface Label {
      * An ellipsizing label can shrink below its natural width. Middle ellipsizing needs plain
      * text; markup is ellipsized at the end instead.
      */
-    ellipsize: any;
+    ellipsize: string;
     /**
      * The maximum number of lines of a wrapping, ellipsizing label, or -1 for no limit.
      */

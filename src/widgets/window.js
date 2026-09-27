@@ -121,6 +121,12 @@ export class Window extends AbstractWindow {
     resize(width, height) {
         this._userSize = { width, height };
         this._applySize();
+
+        // A maximized window gets the size when it is restored.
+        if (this._restoreRect) {
+            this._restoreRect.size = { width, height };
+        }
+
         this._constrain();
 
         this.emit('size-change', this);
@@ -183,16 +189,17 @@ export class Window extends AbstractWindow {
     }
 
     _onVisibleChange(visible) {
+        // Stack the window first, so that it is above a modal window when it is activated.
         if (visible) {
             getScreen().layer.append(this.el);
+
+            this._raise();
+            this._syncOverlay();
         }
 
         super._onVisibleChange(visible);
 
         if (visible) {
-            this._raise();
-            this._syncOverlay();
-
             if (!this._placed) {
                 this._placed = true;
 
@@ -494,6 +501,12 @@ defineProperties(Window, {
 
             this._placed = this._visible || this._placed;
 
+            // A maximized window moves there when it is restored.
+            if (this._restoreRect) {
+                this._restoreRect.x = position.x;
+                this._restoreRect.y = position.y;
+            }
+
             if (this._visible) {
                 this._setPosition(position.x, position.y);
                 this._constrain();
@@ -614,7 +627,13 @@ defineProperties(Window, {
 
     modal: {
         value: false,
-        changed() {
+        changed(modal) {
+            if (modal) {
+                this.el.setAttribute('aria-modal', 'true');
+            } else {
+                this.el.removeAttribute('aria-modal');
+            }
+
             this._syncOverlay();
             this._raise();
         },

@@ -4,21 +4,13 @@
 import { Adjustment } from '../data/adjustment.js';
 import { LineEdit } from './line-edit.js';
 /**
- * Parses a number typed in a locale: with the locale's decimal separator (or a period), optional
- * digit group separators and an optional sign.
- *
- * @param {string} text
- * @param {string} [locale] Defaults to the current locale.
- * @returns {number | null} The number, or `null` if the text is not a number.
- */
-export declare function parseLocaleNumber(text: string, locale?: string): number | null;
-/**
  * A numeric entry with steppers to increase and decrease its value.
  *
  * The value is kept in an `Adjustment`, which gives its bounds and increments. The text shows the
- * value with `digits` decimals and the locale's decimal separator. Typed text is applied when
- * Enter is pressed, when the spin button loses the focus or when it steps; text that is not a
- * number is then replaced by the current value again.
+ * value with `digits` decimals and the locale's decimal separator, and typed text is read with the
+ * double parser of the locale (see `parseValue`). Typed text is applied when Enter is pressed,
+ * when the spin button loses the focus or when it steps; text that is not a number is then
+ * replaced by the current value again.
  *
  * Keyboard: Up and Down step, Page Up and Page Down step by a page. The wheel steps as well.
  * Holding a stepper repeats, faster over time with `climbRate`.
@@ -30,8 +22,8 @@ export declare class SpinButton extends LineEdit {
     _adjustmentDisconnects: any[];
     _formatter: Intl.NumberFormat;
     _climbStep: any;
+    _stepperDetaches: any[];
     _localeDisconnect: () => void;
-    adjustment: Adjustment;
     _upEl: Element;
     _downEl: Element;
     _initialize(): void;
@@ -65,6 +57,8 @@ export declare class SpinButton extends LineEdit {
     spin(delta: number): void;
     /**
      * Applies typed text to the value. Text that is not a number is replaced by the current value.
+     * The text that shows the current value leaves it alone, so a value with more decimals than
+     * `digits` is not rounded unless the user typed another one.
      */
     update(): void;
     activate(): void;
@@ -76,6 +70,15 @@ export declare class SpinButton extends LineEdit {
      * @returns {string}
      */
     formatValue(value: number): string;
+    /**
+     * Parses typed text to a value with the double parser (`parseDouble`), which follows the
+     * locale manager: with the locale's separators (or swapped ones), in any digit set and with any
+     * minus sign. Override to accept other notations; it must accept what `formatValue` returns.
+     *
+     * @param {string} text
+     * @returns {number | null} The value, or `null` if the text is not a number.
+     */
+    parseValue(text: string): number | null;
     destroy(): void;
     _validate(text: any): boolean;
     _setValueFromUser(value: any): void;
@@ -91,27 +94,30 @@ export declare class SpinButton extends LineEdit {
 
 /** The declared properties of {@link SpinButton}. */
 export interface SpinButton {
-    xAlign: any;
     /**
-     * The value, forwarded to the adjustment.
+     * The `Adjustment` holding the value and its bounds and increments.
+     */
+    adjustment: Adjustment;
+    /**
+     * The value, forwarded to the adjustment. Setting it also shows it, replacing typed text.
      */
     value: any;
     /**
      * The minimum value, forwarded to the adjustment.
      */
-    lower: any;
+    lower: number;
     /**
      * The maximum value, forwarded to the adjustment.
      */
-    upper: any;
+    upper: number;
     /**
      * The step of the steppers and arrow keys, forwarded to the adjustment.
      */
-    stepIncrement: any;
+    stepIncrement: number;
     /**
      * The step of Page Up and Page Down, forwarded to the adjustment.
      */
-    pageIncrement: any;
+    pageIncrement: number;
     /**
      * The number of decimals shown. Values set by the user are rounded to it.
      */

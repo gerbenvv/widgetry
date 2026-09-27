@@ -10,10 +10,10 @@ import { Widget } from './widget.js';
  * a window becomes active again, its focus widget gets the focus back. Tab and Shift+Tab move the
  * focus through the window's focusable widgets in tree order, wrapping around at the ends.
  *
- * Windows are hidden until shown. Signals: `focus-widget-change`.
+ * Windows are hidden until shown. Signals: `active-change` (`window`) when the window becomes
+ * active or inactive, and `focus-widget-change` (`window`).
  */
 export declare class AbstractWindow extends Bin {
-    active: boolean;
     _active: any;
     _focusWidget: any;
     _initialize(): void;
@@ -24,10 +24,10 @@ export declare class AbstractWindow extends Bin {
     /**
      * Moves the focus within the window.
      *
-     * @param {number} direction One of `FocusDirection`.
+     * @param {string} direction One of `FocusDirection`.
      * @returns {boolean} Whether a widget got the focus.
      */
-    moveFocus(direction: number): boolean;
+    moveFocus(direction: string): boolean;
     destroy(): void;
     /**
      * The stacking order of the window; higher is on top.
@@ -66,6 +66,13 @@ export declare class AbstractWindow extends Bin {
      */
     protected _setActive(active: boolean): void;
     /**
+     * Moves the keyboard focus into the window: to its focus widget, or else the first widget that
+     * can take it, or else the window itself so that it gets key events.
+     *
+     * @protected
+     */
+    protected _takeFocus(): void;
+    /**
      * Brings the window to the front. Overridden by floating windows.
      *
      * @protected
@@ -100,13 +107,16 @@ export declare class AbstractWindow extends Bin {
 
 /** The declared properties of {@link AbstractWindow}. */
 export interface AbstractWindow {
-    readonly isTopLevel: any;
-    readonly isWindow: any;
     visible: boolean;
     /**
      * The title of the window.
      */
     title: any;
+    /**
+     * Whether the window is active: it has the keyboard focus. Only one window is active at a
+     * time.
+     */
+    active: boolean;
     /**
      * Whether the window becomes active when shown.
      */

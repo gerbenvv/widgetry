@@ -3,6 +3,19 @@
  */
 import { LocaleAware } from './locale-aware.js';
 /**
+ * Replaces the decimal digits of other scripts (such as the Arabic-Indic digits of `ar-EG`,
+ * Devanagari and full-width digits) by Latin digits, and removes the invisible bidirectional marks
+ * that `Intl` puts around numbers and dates in right-to-left locales, so locale-formatted numbers
+ * and dates can be parsed.
+ *
+ * @example
+ * toLatinDigits('\u0663\u066b\u0665'); // '3\u066b5'
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+export declare function toLatinDigits(text: string): string;
+/**
  * Base class of {@link IntegerParser} and {@link DoubleParser}. A parser reads numbers as typed by
  * people: with the decimal and group separators of the locale (from the locale manager), in any of
  * the common digit sets and with either a hyphen or a minus sign. Group separators must be in the

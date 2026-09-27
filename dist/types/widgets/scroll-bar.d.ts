@@ -16,6 +16,7 @@ import { AbstractSlider } from './abstract-slider.js';
  * Signals: `value-change`.
  */
 export declare class ScrollBar extends AbstractSlider {
+    _stepperDetaches: (() => void)[];
     _backwardEl: Element;
     _forwardEl: Element;
     _troughEl: Element;
@@ -23,6 +24,7 @@ export declare class ScrollBar extends AbstractSlider {
     _initialize(): void;
     _render(): HTMLElement;
     _createAdjustment(): Adjustment;
+    destroy(): void;
     _step(forward: any): boolean;
     _getWheelStep(): any;
     _update(): void;

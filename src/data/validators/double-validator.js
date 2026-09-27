@@ -24,10 +24,10 @@ function countDecimals(canonical) {
 /**
  * Validates floating-point numbers in the locale (with its decimal and group separators, e.g.
  * `1,234.5` or `1.234,5`) with the {@link DoubleParser}, optionally within a range and with a
- * maximum number of decimals.
+ * maximum number of decimals (`digits`).
  *
  * @example
- * const validator = new DoubleValidator({ minimum: 0, decimals: 2 });
+ * const validator = new DoubleValidator({ minimum: 0, digits: 2 });
  * validator.validate('3.14'); // true
  * validator.validate('3.14159'); // false
  * validator.fixup('3.14159'); // '3.14'
@@ -38,26 +38,26 @@ export class DoubleValidator extends NumberValidator {
     }
 
     _hasValidPrecision(text) {
-        if (this._decimals === null) {
+        if (this._digits === null) {
             return true;
         }
 
         this._parser.localeManager = this.effectiveLocaleManager;
         this._parser.lenient = this._lenient;
 
-        return countDecimals(this._parser.normalize(text)) <= this._decimals;
+        return countDecimals(this._parser.normalize(text)) <= this._digits;
     }
 
     _round(value) {
-        if (this._decimals === null) {
+        if (this._digits === null) {
             return value;
         }
 
-        return Number(value.toFixed(this._decimals));
+        return Number(value.toFixed(this._digits));
     }
 
     _getFormatOptions() {
-        return { maximumFractionDigits: this._decimals ?? 20 };
+        return { maximumFractionDigits: this._digits ?? 20 };
     }
 
     _getDefaultMessage() {
@@ -68,14 +68,14 @@ export class DoubleValidator extends NumberValidator {
             maximum: 'Enter a number of at most %s.',
         });
 
-        if (this._decimals === null) {
+        if (this._digits === null) {
             return message;
         }
 
         const decimals = translatePlural(
             'At most %d decimal is allowed.',
             'At most %d decimals are allowed.',
-            this._decimals
+            this._digits
         );
 
         return `${message} ${decimals}`;
@@ -84,23 +84,39 @@ export class DoubleValidator extends NumberValidator {
 
 defineProperties(DoubleValidator, {
     /**
-     * The maximum number of decimals, or `null` (the default) for any number.
+     * The maximum number of decimals (fraction digits), or `null` (the default) for any number.
+     * Named like the `digits` of a spin button.
      */
-    decimals: {
+    digits: {
         value: null,
-        coerce(decimals) {
-            if (decimals === null || decimals === undefined) {
+        coerce(digits) {
+            if (digits === null || digits === undefined) {
                 return null;
             }
 
-            if (!Number.isInteger(decimals) || decimals < 0 || decimals > 20) {
-                throw new RangeError('The number of decimals must be an integer from 0 to 20.');
+            if (!Number.isInteger(digits) || digits < 0 || digits > 20) {
+                throw new RangeError('The number of digits must be an integer from 0 to 20.');
             }
 
-            return decimals;
+            return digits;
         },
         changed() {
             this._emitChange();
+        },
+    },
+
+    /**
+     * The same as `digits`.
+     */
+    decimals: {
+        signal: false,
+        get() {
+            return this._digits;
+        },
+        set(decimals) {
+            this.digits = decimals;
+
+            return false;
         },
     },
 });

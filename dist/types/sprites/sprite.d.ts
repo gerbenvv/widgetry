@@ -12,12 +12,12 @@ export declare const SVG_NAMESPACE: string;
 /**
  * Stroke styles of sprites.
  *
- * @enum {number}
+ * @enum {string}
  */
 export declare const StrokeStyle: Readonly<{
-    SOLID: 0;
-    DASHED: 1;
-    DOTTED: 2;
+    SOLID: "solid";
+    DASHED: "dashed";
+    DOTTED: "dotted";
 }>;
 /**
  * Base class of the shapes drawn on a `VectorCanvas`, as SVG elements.
@@ -47,8 +47,6 @@ export declare class Sprite extends Instance {
      */
     el: SVGGraphicsElement;
     _titleEl: any;
-    visible: boolean;
-    events: number;
     _grabState: {
         onLost: (event: any) => void;
         onUp: (event: any) => void;
@@ -202,9 +200,13 @@ export declare class Sprite extends Instance {
 /** The declared properties of {@link Sprite}. */
 export interface Sprite {
     /**
+     * Whether the sprite is shown. Set last when passing several properties.
+     */
+    visible: boolean;
+    /**
      * Whether the sprite is effectively visible: it is `visible` and on a visible canvas.
      */
-    readonly isVisible: any;
+    readonly isVisible: boolean;
     /**
      * The canvas the sprite is on, or `null`.
      */
@@ -216,7 +218,7 @@ export interface Sprite {
     /**
      * Whether this is a top-level object. Sprites never are.
      */
-    readonly isTopLevel: any;
+    readonly isTopLevel: boolean;
     /**
      * A name for finding the sprite, also set as the `data-name` attribute.
      */
@@ -225,6 +227,10 @@ export interface Sprite {
      * A title, shown as the native tooltip and used as the accessible name, or `''`.
      */
     title: string;
+    /**
+     * The mask of `Events` whose signals the sprite emits. Only pointer events apply.
+     */
+    events: number;
     /**
      * The stacking order: sprites with a higher `zIndex` are drawn on top. Sprites with the same
      * `zIndex` are drawn in the order of the canvas.
@@ -266,7 +272,7 @@ export interface Sprite {
     /**
      * The stroke style: one of {@link StrokeStyle}.
      */
-    strokeStyle: any;
+    strokeStyle: string;
     /**
      * The stroke opacity, from 0 to 1.
      */

@@ -13,8 +13,6 @@ export declare class IndexColumn extends AbstractColumn {
 
 /** The declared properties of {@link IndexColumn}. */
 export interface IndexColumn {
-    label: any;
-    alignment: any;
     /**
      * The number of the first row.
      */

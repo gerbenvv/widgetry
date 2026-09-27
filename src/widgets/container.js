@@ -149,8 +149,15 @@ export class Container extends Widget {
         index = Math.max(0, Math.min(index, this._children.length));
         this._children.splice(index, 0, widget);
 
+        // Moving an element in the document drops the focus inside it; restore it afterward.
+        const focused = widget.el.contains(document.activeElement) ? document.activeElement : null;
+
         this._detachChildElement(widget);
         this._attachChildElement(widget, index);
+
+        if (focused && focused.isConnected && document.activeElement !== focused) {
+            /** @type {HTMLElement} */ (focused).focus({ preventScroll: true });
+        }
 
         this._onChildrenChange();
     }

@@ -100,6 +100,31 @@ test.describe('SpinButton', () => {
         expect(await state(page)).toEqual({ value: 50, text: '50' });
     });
 
+    test('the value is only changed by text the user typed, and setting it shows it', async ({
+        page,
+    }) => {
+        await openHarness(page);
+        await mount(page, { digits: 1, value: 1.26 });
+
+        // Passing through keeps a value with more decimals than shown.
+        await page.click('.wy-spin-button input');
+        await page.keyboard.press('Tab');
+        expect(await state(page)).toEqual({ value: 1.26, text: '1.3' });
+
+        await page.evaluate(() => globalThis.widget.activate());
+        expect(await state(page)).toEqual({ value: 1.26, text: '1.3' });
+
+        // Setting the value shows it, also when it did not change.
+        await page.click('.wy-spin-button input');
+        await page.keyboard.press('Control+A');
+        await page.keyboard.type('abc');
+        await page.evaluate(() => (globalThis.widget.value = 1.26));
+        expect(await state(page)).toEqual({ value: 1.26, text: '1.3' });
+
+        const values = await page.evaluate(() => globalThis.values);
+        expect(values).toEqual([]);
+    });
+
     test('formats with the locale decimal separator and digits', async ({ page }) => {
         await openHarness(page);
 
@@ -121,19 +146,68 @@ test.describe('SpinButton', () => {
         expect(await state(page)).toEqual({ value: 2.38, text: '2,38' });
 
         const parsed = await page.evaluate(async () => {
-            const { parseLocaleNumber } = await import('/src/widgets/spin-button.js');
+            const { SpinButton } = await import('/src/widgets/spin-button.js');
+            const widget = new SpinButton();
 
-            return [
-                parseLocaleNumber('1.234,5'),
-                parseLocaleNumber('-3,5'),
-                parseLocaleNumber('−2,5'),
-                parseLocaleNumber('0.5'),
-                parseLocaleNumber('1,234.5', 'en-US'),
-                parseLocaleNumber('12abc'),
+            // The spin button reads typed text with the double parser of the locale.
+            const values = [
+                widget.parseValue('1.234,5'),
+                widget.parseValue('-3,5'),
+                widget.parseValue('−2,5'),
+                widget.parseValue('\u20133,5'),
+                widget.parseValue('0.5'),
+                widget.parseValue('1,234.5'),
+                widget.parseValue('12abc'),
             ];
+            widget.destroy();
+
+            return values;
         });
 
-        expect(parsed).toEqual([1234.5, -3.5, -2.5, 0.5, 1234.5, null]);
+        expect(parsed).toEqual([1234.5, -3.5, -2.5, -3.5, 0.5, 1234.5, null]);
+    });
+
+    test('reads back its text in locales with other digits and direction marks', async ({
+        page,
+    }) => {
+        await openHarness(page);
+
+        const result = await page.evaluate(async () => {
+            const { getLocaleManager } = await import('/src/i18n/locale-manager.js');
+            const { SpinButton } = await import('/src/widgets/spin-button.js');
+
+            const results = {};
+            for (const locale of ['ar-EG', 'fa-IR', 'he-IL', 'bn-BD', 'de-DE']) {
+                getLocaleManager().locale = locale;
+
+                const widget = new SpinButton({ lower: -100, upper: 100, digits: 1, value: -12.5 });
+                const text = widget.text;
+
+                // Applying the shown text keeps the value, and the text is valid.
+                widget.value = 0;
+                widget.text = text;
+                widget.update();
+
+                results[locale] = [widget.value, widget.isValid];
+                widget.destroy();
+            }
+
+            getLocaleManager().locale = 'ar-EG';
+            const widget = new SpinButton();
+            results.typed = [widget.parseValue('٣٫٥'), widget.parseValue('3.5')];
+            widget.destroy();
+
+            return results;
+        });
+
+        expect(result).toEqual({
+            'ar-EG': [-12.5, true],
+            'fa-IR': [-12.5, true],
+            'he-IL': [-12.5, true],
+            'bn-BD': [-12.5, true],
+            'de-DE': [-12.5, true],
+            typed: [3.5, 3.5],
+        });
     });
 
     test('holding a stepper repeats, faster with a climb rate', async ({ page }) => {

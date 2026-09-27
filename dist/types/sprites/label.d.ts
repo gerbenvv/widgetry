@@ -3,14 +3,15 @@
  */
 import { Sprite } from './sprite.js';
 /**
- * Where a label is anchored horizontally, relative to its position.
+ * Where a label is anchored horizontally, relative to its position. The values are those of the
+ * SVG `text-anchor` attribute.
  *
- * @enum {number}
+ * @enum {string}
  */
 export declare const LabelAnchor: Readonly<{
-    START: 0;
-    MIDDLE: 1;
-    END: 2;
+    START: "start";
+    MIDDLE: "middle";
+    END: "end";
 }>;
 /**
  * A text label. The position is the anchor point on the baseline. Labels are filled with the
@@ -27,8 +28,6 @@ export declare class LabelSprite extends Sprite {
 
 /** The declared properties of {@link LabelSprite}. */
 export interface LabelSprite {
-    fill: any;
-    strokeWidth: any;
     /**
      * The text.
      */
@@ -36,7 +35,7 @@ export interface LabelSprite {
     /**
      * The horizontal anchor: one of {@link LabelAnchor}.
      */
-    anchor: any;
+    anchor: string;
     /**
      * The vertical alignment on the position: an SVG `dominant-baseline` value such as
      * `'auto'` (the alphabetic baseline), `'middle'` or `'hanging'`.

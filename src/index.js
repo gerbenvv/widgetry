@@ -35,35 +35,24 @@ export {
     Position,
     ResizeDirections,
     Response,
-    SelectionModes,
+    SelectionMode,
     ShadowType,
     SortOrder,
     ToolBarStyle,
 } from './core/enums.js';
-export { defineProperties, Instance, lazySingleton } from './core/instance.js';
+export { defineProperties, Instance } from './core/instance.js';
 export { computePopupPosition, placePopup, pointRectangle } from './core/popup.js';
 export { getType, getTypeName, getTypeNames, registerType } from './core/registry.js';
 export { getScreen, Screen } from './core/screen.js';
 export { settings } from './core/settings.js';
 export { SignalDispatcher } from './core/signal-dispatcher.js';
-export {
-    areEqual,
-    clamp,
-    createElement,
-    escapeHtml,
-    escapeRegExp,
-    lerp,
-    parsePixels,
-    throttleToFrame,
-    toCamelCase,
-    toKebabCase,
-    uniqueId,
-} from './core/util.js';
+export { createElement, escapeHtml } from './core/util.js';
+export { VERSION } from './core/version.js';
 
 // Events and drag and drop.
 export { Events, EventType, Key, Modifiers, MouseButton } from './events/constants.js';
 export { DragAction, DragContext } from './events/drag-context.js';
-export { dispatchThroughChain, DragManager, getDragManager } from './events/drag-manager.js';
+export { DragManager, getDragManager } from './events/drag-manager.js';
 export {
     ButtonEvent,
     CrossingEvent,
@@ -123,14 +112,9 @@ export {
     ColorSwatch,
     DEFAULT_PALETTE,
 } from './widgets/color-chooser.js';
-export { ComboBox, TYPE_AHEAD_TIMEOUT } from './widgets/combo-box.js';
+export { ComboBox } from './widgets/combo-box.js';
 export { Container } from './widgets/container.js';
-export {
-    DateEdit,
-    DEFAULT_DATE_FORMAT,
-    getDateFieldOrder,
-    parseLocaleDate,
-} from './widgets/date-edit.js';
+export { DateEdit, DEFAULT_DATE_FORMAT } from './widgets/date-edit.js';
 export { Dialog, RESPONSE_LABELS } from './widgets/dialog.js';
 export { attachDoublePress } from './widgets/double-press.js';
 export { Expander } from './widgets/expander.js';
@@ -142,7 +126,7 @@ export { InfoBar } from './widgets/info-bar.js';
 export { activateMnemonic, Label } from './widgets/label.js';
 export { EntryIconPosition, LineEdit } from './widgets/line-edit.js';
 export { LinkButton } from './widgets/link-button.js';
-export { ListBox, ListBoxRow, SelectionMode } from './widgets/list-box.js';
+export { ListBox, ListBoxRow } from './widgets/list-box.js';
 export { MainWindow } from './widgets/main-window.js';
 export { MenuBar } from './widgets/menu-bar.js';
 export { MenuButton } from './widgets/menu-button.js';
@@ -158,7 +142,7 @@ export {
     prompt,
 } from './widgets/message-dialog.js';
 export { Notebook } from './widgets/notebook.js';
-export { Paned, SPLITTER_SIZE } from './widgets/paned.js';
+export { Paned } from './widgets/paned.js';
 export { Popover, PopoverCloseReason } from './widgets/popover.js';
 export { ProgressBar } from './widgets/progress-bar.js';
 export { RadioButton } from './widgets/radio-button.js';
@@ -172,7 +156,7 @@ export { SeparatorToolItem } from './widgets/separator-tool-item.js';
 export { Separator } from './widgets/separator.js';
 export { Slider } from './widgets/slider.js';
 export { Spacer } from './widgets/spacer.js';
-export { parseLocaleNumber, SpinButton } from './widgets/spin-button.js';
+export { SpinButton } from './widgets/spin-button.js';
 export { StatusBar } from './widgets/status-bar.js';
 export { Switch } from './widgets/switch.js';
 export { Table } from './widgets/table.js';
@@ -189,18 +173,18 @@ export { Window } from './widgets/window.js';
 // Table columns.
 export { AbstractColumn, ColumnChange } from './columns/abstract-column.js';
 export { CheckBoxColumn } from './columns/check-box-column.js';
-export { DataColumn, SortIndicator } from './columns/data-column.js';
+export { DataColumn } from './columns/data-column.js';
 export { DATE_FORMATS, DateColumn, toDate } from './columns/date-column.js';
 export { IndexColumn } from './columns/index-column.js';
 export { NumberColumn } from './columns/number-column.js';
 export { TextColumn } from './columns/text-column.js';
 
 // Vector canvas shapes.
-export { Circle } from './sprites/circle.js';
+export { CircleSprite } from './sprites/circle.js';
 export { ImageSprite, MISSING_IMAGE } from './sprites/image.js';
 export { LabelAnchor, LabelSprite } from './sprites/label.js';
-export { Path } from './sprites/path.js';
-export { Rectangle } from './sprites/rectangle.js';
+export { PathSprite } from './sprites/path.js';
+export { RectangleSprite } from './sprites/rectangle.js';
 export { Sprite, StrokeStyle } from './sprites/sprite.js';
 
 // Models, selection, adjustments, filters and validators.
@@ -242,7 +226,7 @@ export { DoubleParser, getDoubleParser, parseDouble } from './i18n/double-parser
 export { getIntegerParser, IntegerParser, parseInteger } from './i18n/integer-parser.js';
 export { LocaleAware } from './i18n/locale-aware.js';
 export { getLocaleManager, LocaleManagerClass } from './i18n/locale-manager.js';
-export { NumberParser } from './i18n/number-parser.js';
+export { NumberParser, toLatinDigits } from './i18n/number-parser.js';
 export {
     formatNumber,
     formatString,

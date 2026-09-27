@@ -7,10 +7,10 @@ import { openHarness } from '../../../tests/helpers.js';
 // Creates a table with the given number of rows in a main window, as globalThis.table.
 async function createTable(
     page,
-    { count = 50, selectionModes = 'MULTI', height = 300, sorted = false } = {}
+    { count = 50, selectionMode = 'multiple', height = 300, sorted = false } = {}
 ) {
     await page.evaluate(
-        async ({ count, selectionModes, height, sorted }) => {
+        async ({ count, selectionMode, height, sorted }) => {
             const { MainWindow } = await import('/src/widgets/main-window.js');
             const { Table } = await import('/src/widgets/table.js');
             const { ListModel } = await import('/src/data/list-model.js');
@@ -18,7 +18,6 @@ async function createTable(
             const { TextColumn } = await import('/src/columns/text-column.js');
             const { NumberColumn } = await import('/src/columns/number-column.js');
             const { CheckBoxColumn } = await import('/src/columns/check-box-column.js');
-            const { SelectionModes } = await import('/src/core/enums.js');
             const { flushLayout } = await import('/src/widgets/widget.js');
             const { getLocaleManager } = await import('/src/i18n/locale-manager.js');
 
@@ -42,7 +41,7 @@ async function createTable(
                 sortColumn: sorted ? 'name' : null,
             });
             const window = new MainWindow({ host });
-            const table = new Table({ model, selectionModes: SelectionModes[selectionModes] });
+            const table = new Table({ model, selectionMode });
 
             table.addColumn(new IndexColumn());
             table.addColumn(new TextColumn({ name: 'name', label: 'Name', expand: true }));
@@ -57,7 +56,7 @@ async function createTable(
             globalThis.model = model;
             globalThis.flushLayout = flushLayout;
         },
-        { count, selectionModes, height, sorted }
+        { count, selectionMode, height, sorted }
     );
 
     // Wait until the rows are measured and rendered.
@@ -198,12 +197,15 @@ test.describe('Table', () => {
 
         expect(ascending).toEqual({
             sortColumn: 'name',
-            order: 1,
+            order: 'ascending',
             first: 'alpha 1',
             text: 'alpha 1',
         });
         await expect(name).toHaveAttribute('aria-sort', 'ascending');
-        await expect(name).toHaveClass(/wy-sort-asc/);
+        await expect(name).toHaveClass(/wy-sort-ascending/);
+        expect(await page.evaluate(() => globalThis.table.getColumn(1).sortIndicator)).toBe(
+            'ascending'
+        );
 
         await name.click();
         await expect(name).toHaveAttribute('aria-sort', 'descending');
@@ -258,31 +260,112 @@ test.describe('Table', () => {
         expect(cursor).toBe(6);
     });
 
-    test('supports single and toggle selection modes', async ({ page }) => {
+    test('selects one row by default, like GTK', async ({ page }) => {
         await openHarness(page);
-        await createTable(page, { count: 10, selectionModes: 'SINGLE_TOGGLE' });
+        await page.evaluate(async () => {
+            const { Table } = await import('/src/widgets/table.js');
+            const { SelectionMode } = await import('/src/core/enums.js');
+            const table = new Table();
+
+            globalThis.defaults = {
+                table: table.selectionMode,
+                selection: table.selection.selectionMode,
+                toggle: table.toggleSelection,
+                single: SelectionMode.SINGLE,
+            };
+
+            let error = null;
+            try {
+                table.selectionMode = 2;
+            } catch (caught) {
+                error = caught.name;
+            }
+
+            globalThis.defaults.error = error;
+            globalThis.defaults.after = table.selectionMode;
+        });
+
+        expect(await page.evaluate(() => globalThis.defaults)).toEqual({
+            table: 'single',
+            selection: 'single',
+            toggle: false,
+            single: 'single',
+            error: 'RangeError',
+            after: 'single',
+        });
+    });
+
+    test('supports the single, browse and none selection modes', async ({ page }) => {
+        await openHarness(page);
+        await createTable(page, { count: 10, selectionMode: 'single' });
+
+        await expect(page.locator('.wy-table')).not.toHaveAttribute('aria-multiselectable');
 
         await row(page, 1).click();
         await row(page, 3).click({ modifiers: ['Shift'] });
         expect(await selectedIds(page)).toEqual([3]);
 
+        // A click keeps a selected row selected, and a Control+click unselects it.
         await row(page, 3).click();
+        expect(await selectedIds(page)).toEqual([3]);
+        await row(page, 3).click({ modifiers: ['Control'] });
         expect(await selectedIds(page)).toEqual([]);
 
-        await page.evaluate(async () => {
-            const { SelectionModes } = await import('/src/core/enums.js');
-            globalThis.table.selectionModes = SelectionModes.MULTI_TOGGLE;
-        });
+        // With browse, the row cannot be unselected, and the cursor row is always selected.
+        await page.evaluate(() => (globalThis.table.selectionMode = 'browse'));
+        expect(await page.evaluate(() => globalThis.table.selection.selectionMode)).toBe('browse');
 
-        await row(page, 1).click();
-        await row(page, 4).click();
-        await row(page, 1).click();
-        expect(await selectedIds(page)).toEqual([4]);
+        await row(page, 2).click();
+        await row(page, 2).click({ modifiers: ['Control'] });
+        expect(await selectedIds(page)).toEqual([2]);
 
-        await page.evaluate(() => (globalThis.table.selectionModes = 0));
+        await page.keyboard.press('Control+Space');
+        expect(await selectedIds(page)).toEqual([2]);
+
+        await page.keyboard.press('Control+ArrowDown');
+        expect(await selectedIds(page)).toEqual([3]);
+        expect(await page.evaluate(() => globalThis.table.cursor)).toBe(3);
+
+        await page.keyboard.press('Control+a');
+        expect(await selectedIds(page)).toEqual([3]);
+
+        await page.evaluate(() => (globalThis.table.selectionMode = 'none'));
+        expect(await selectedIds(page)).toEqual([]);
         await row(page, 2).click();
         expect(await selectedIds(page)).toEqual([]);
         await expect(row(page, 2)).not.toHaveAttribute('aria-selected');
+    });
+
+    test('toggles the selection with a click with toggleSelection', async ({ page }) => {
+        await openHarness(page);
+        await createTable(page, { count: 10, selectionMode: 'single' });
+
+        await page.evaluate(() => (globalThis.table.toggleSelection = true));
+        expect(await page.evaluate(() => globalThis.table.selection.toggleSelection)).toBe(true);
+
+        await row(page, 3).click();
+        expect(await selectedIds(page)).toEqual([3]);
+        await row(page, 3).click();
+        expect(await selectedIds(page)).toEqual([]);
+
+        // With browse, a click never unselects.
+        await page.evaluate(() => (globalThis.table.selectionMode = 'browse'));
+        await row(page, 4).click();
+        await row(page, 4).click();
+        expect(await selectedIds(page)).toEqual([4]);
+
+        // With multiple, a click adds or removes a row.
+        await page.evaluate(() => (globalThis.table.selectionMode = 'multiple'));
+        await expect(page.locator('.wy-table')).toHaveAttribute('aria-multiselectable', 'true');
+
+        await row(page, 1).click();
+        await row(page, 6).click();
+        await row(page, 1).click();
+        expect((await selectedIds(page)).sort((a, b) => a - b)).toEqual([4, 6]);
+
+        await page.evaluate(() => (globalThis.table.toggleSelection = false));
+        await row(page, 1).click();
+        expect(await selectedIds(page)).toEqual([1]);
     });
 
     test('navigates with the keyboard', async ({ page }) => {
@@ -387,6 +470,37 @@ test.describe('Table', () => {
                 second
             )
         ).toBe(true);
+    });
+
+    test('searches without the slow locale-aware lower-casing when it is not needed', async ({
+        page,
+    }) => {
+        await openHarness(page);
+        await createTable(page, { count: 1000 });
+
+        await row(page, 0).click();
+
+        const calls = await page.evaluate(() => {
+            const original = String.prototype.toLocaleLowerCase;
+            let count = 0;
+
+            // Lower-casing every row with the locale made a search of 100,000 rows take 170 ms.
+            String.prototype.toLocaleLowerCase = function (...args) {
+                ++count;
+
+                return original.apply(this, args);
+            };
+
+            try {
+                globalThis.table._typeAhead('q');
+            } finally {
+                String.prototype.toLocaleLowerCase = original;
+            }
+
+            return count;
+        });
+
+        expect(calls).toBe(0);
     });
 
     test('activates rows by double click', async ({ page }) => {
@@ -526,6 +640,68 @@ test.describe('Table', () => {
         expect(result.rowCount).toBe('11');
     });
 
+    test('keeps the cursor on the row that took the place of a removed cursor row', async ({
+        page,
+    }) => {
+        await openHarness(page);
+        await createTable(page, { count: 10 });
+
+        const result = await page.evaluate(async () => {
+            const { SortOrder } = await import('/src/core/enums.js');
+            const table = globalThis.table;
+            const model = globalThis.model;
+
+            table.cursor = 5;
+            model.removeRow(5);
+            const removed = model.getRow(table.cursor).id;
+
+            model.sortByColumn('name', SortOrder.DESCENDING);
+            const sorted = table.cursor >= 0 ? model.getRow(table.cursor).id : null;
+
+            // A new id of the cursor row is followed too.
+            model.updateRow(table.cursor, { id: 60 });
+            model.sortByColumn('name', SortOrder.ASCENDING);
+
+            return {
+                removed,
+                sorted,
+                renamed: table.cursor >= 0 ? model.getRow(table.cursor).id : null,
+            };
+        });
+
+        expect(result).toEqual({ removed: 6, sorted: 6, renamed: 60 });
+    });
+
+    test('renders the rows in view at once after rows were removed while scrolled', async ({
+        page,
+    }) => {
+        await openHarness(page);
+        await createTable(page, { count: 1000 });
+
+        const result = await page.evaluate(async () => {
+            const { flushLayout } = globalThis;
+            const table = globalThis.table;
+            const view = document.querySelector('.wy-table-view');
+
+            view.scrollTop = 900 * table.rowHeight;
+            await new Promise((resolve) =>
+                view.addEventListener('scroll', resolve, { once: true })
+            );
+            await new Promise((resolve) => setTimeout(resolve, 20));
+
+            globalThis.model.rows = globalThis.model.rows.slice(0, 100);
+            flushLayout();
+
+            // Without waiting for the scroll event of the clamped scroll position.
+            return [...document.querySelectorAll('.wy-table-body > .wy-table-row:not([hidden])')]
+                .map((x) => Number(x.getAttribute('aria-rowindex')) - 2)
+                .sort((first, second) => first - second)
+                .at(-1);
+        });
+
+        expect(result).toBe(99);
+    });
+
     test('keeps the selection while sorting and filtering', async ({ page }) => {
         await openHarness(page);
         await createTable(page, { count: 20 });
@@ -620,7 +796,7 @@ test.describe('Table', () => {
         await openHarness(page);
         await createTable(page, { count: 0 });
 
-        await page.evaluate(() => (globalThis.table.placeholderText = 'No signals'));
+        await page.evaluate(() => (globalThis.table.placeholder = 'No signals'));
         const placeholder = page.locator('.wy-table-placeholder');
         await expect(placeholder).toBeVisible();
         await expect(placeholder).toHaveText('No signals');

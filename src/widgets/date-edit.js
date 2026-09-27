@@ -6,8 +6,9 @@ import { defineProperties } from '../core/instance.js';
 import { registerType } from '../core/registry.js';
 import { createElement, uniqueId } from '../core/util.js';
 import { Key } from '../events/constants.js';
+import { DateTimeParser } from '../i18n/date-time-parser.js';
 import { getLocaleManager } from '../i18n/locale-manager.js';
-import { Calendar, compareDays, getDaysInMonth, makeDate, startOfDay } from './calendar.js';
+import { Calendar, compareDays, makeDate, startOfDay } from './calendar.js';
 import { LineEdit } from './line-edit.js';
 import { Popover, PopoverCloseReason } from './popover.js';
 
@@ -17,172 +18,6 @@ import { Popover, PopoverCloseReason } from './popover.js';
  * @type {Intl.DateTimeFormatOptions}
  */
 export const DEFAULT_DATE_FORMAT = Object.freeze({ dateStyle: 'medium' });
-
-/**
- * Returns the order of the day, month and year fields in a locale's numeric dates, e.g.
- * `['month', 'day', 'year']` for `en-US`.
- *
- * @param {string} locale
- * @returns {string[]}
- */
-export function getDateFieldOrder(locale) {
-    const format = new Intl.DateTimeFormat(locale, {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        timeZone: 'UTC',
-    });
-
-    return format
-        .formatToParts(Date.UTC(2006, 10, 22))
-        .map((x) => x.type)
-        .filter((x) => x === 'day' || x === 'month' || x === 'year');
-}
-
-function toFullYear(year, digits, referenceYear) {
-    if (digits > 2) {
-        return year;
-    }
-
-    // Two-digit years are taken within 50 years of the reference year.
-    let result = Math.floor(referenceYear / 100) * 100 + year;
-    if (result > referenceYear + 50) {
-        result -= 100;
-    } else if (result <= referenceYear - 50) {
-        result += 100;
-    }
-
-    return result;
-}
-
-function findMonth(word, locale) {
-    const manager = getLocaleManager();
-    const normalize = (text) =>
-        text
-            .toLocaleLowerCase(locale)
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f.]/g, '');
-
-    const target = normalize(word);
-    if (!target) {
-        return -1;
-    }
-
-    const names = [manager.longMonthNames, manager.shortMonthNames];
-    if (locale !== manager.locale) {
-        const format = (month) =>
-            Array.from({ length: 12 }, (_x, i) =>
-                new Intl.DateTimeFormat(locale, { month, timeZone: 'UTC' }).format(
-                    Date.UTC(2021, i, 1)
-                )
-            );
-
-        names.splice(0, 2, format('long'), format('short'));
-    }
-
-    for (const list of names) {
-        const index = list.findIndex((x) => normalize(x) === target);
-        if (index >= 0) {
-            return index;
-        }
-    }
-
-    // Accept unambiguous prefixes of at least three letters, e.g. "sept" or "janu".
-    if (target.length >= 3) {
-        const matches = names[0]
-            .map((x, i) => (normalize(x).startsWith(target) ? i : -1))
-            .filter((x) => x >= 0);
-
-        if (matches.length === 1) {
-            return matches[0];
-        }
-    }
-
-    return -1;
-}
-
-/**
- * Parses a date typed in a locale: numeric dates in the locale's field order (e.g. 9/27/2026 in
- * `en-US`, 27-9-2026 in `nl-NL`), ISO dates (2026-09-27), and dates with a month name (Sep 27,
- * 2026 or 27 september 2026). A missing year is the reference year, and two-digit years are taken
- * within 50 years of it.
- *
- * @param {string} text
- * @param {string} [locale] Defaults to the current locale.
- * @param {Date} [reference] The date that gives the default year. Defaults to today.
- * @returns {Date | null} The date at local midnight, or `null` if the text is not a valid date.
- */
-export function parseLocaleDate(text, locale, reference) {
-    locale = locale || getLocaleManager().locale;
-    const referenceYear = (reference || new Date()).getFullYear();
-
-    const trimmed = String(text).trim();
-    if (!trimmed) {
-        return null;
-    }
-
-    const tokens = trimmed.match(/\p{L}+|\d+/gu) || [];
-    const numbers = [];
-    let month = -1;
-
-    for (const token of tokens) {
-        if (/^\d+$/.test(token)) {
-            numbers.push({ value: Number(token), digits: token.length });
-        } else if (month < 0) {
-            month = findMonth(token, locale);
-        }
-    }
-
-    let fields;
-    const order = getDateFieldOrder(locale);
-
-    if (month >= 0) {
-        const rest = order.filter((x) => x !== 'month');
-        if (numbers.length < 1 || numbers.length > 2) {
-            return null;
-        }
-
-        fields = { month: month + 1 };
-
-        // Assign the numbers in the locale's order; a four-digit number is always the year.
-        const yearIndex = numbers.findIndex((x) => x.digits >= 3);
-        if (numbers.length === 2 && yearIndex >= 0) {
-            fields.year = numbers[yearIndex];
-            fields.day = numbers[1 - yearIndex];
-        } else if (numbers.length === 2) {
-            rest.forEach((name, i) => (fields[name] = numbers[i]));
-        } else {
-            fields.day = numbers[0];
-        }
-    } else if (numbers.length === 3) {
-        // A leading four-digit number means year, month, day, as in ISO dates.
-        const names = numbers[0].digits >= 3 ? ['year', 'month', 'day'] : order;
-        fields = {};
-        names.forEach((name, i) => (fields[name] = numbers[i]));
-    } else if (numbers.length === 2) {
-        const names = order.filter((x) => x !== 'year');
-        fields = {};
-        names.forEach((name, i) => (fields[name] = numbers[i]));
-    } else {
-        return null;
-    }
-
-    const day = typeof fields.day === 'object' ? fields.day.value : fields.day;
-    const monthNumber = typeof fields.month === 'object' ? fields.month.value : fields.month;
-    const year = fields.year
-        ? toFullYear(fields.year.value, fields.year.digits, referenceYear)
-        : referenceYear;
-
-    if (!(monthNumber >= 1 && monthNumber <= 12)) {
-        return null;
-    }
-
-    if (!(day >= 1 && day <= getDaysInMonth(year, monthNumber - 1))) {
-        return null;
-    }
-
-    return makeDate(year, monthNumber - 1, day);
-}
 
 function checkDate(date) {
     if (date === null || date === undefined || date === '') {
@@ -221,17 +56,18 @@ function sameDay(first, second) {
  * A line edit for dates, with a button that opens a calendar.
  *
  * The date is shown in the current locale with the `format` options of `Intl.DateTimeFormat`.
- * Typed dates are accepted in the locale's numeric order, as ISO dates (yyyy-mm-dd) and with month
- * names (see `parseLocaleDate`); the text is shown in the invalid state while it is not a date in
- * the range from `minDate` to `maxDate`. Once the date edit is activated or loses the focus, a
+ * Typed dates are read with the date parser of the locale (`DateTimeParser`, in local time): in the
+ * locale's numeric order, as ISO dates (yyyy-mm-dd), with month names and as relative dates such
+ * as "tomorrow" (see `parseDate`). The text is shown in the invalid state while it is not a date
+ * in the range from `minDate` to `maxDate`. Once the date edit is activated or loses the focus, a
  * valid text is shown in the format again.
  *
  * Keyboard: Alt+Down or F4 opens the calendar. While it is open, the arrow keys, Home, End, Page
  * Up and Page Down move through the days, Enter chooses one and Escape closes the calendar. The
  * focus stays in the entry.
  *
- * Signals: `change` (the date changed), `activate`, and those of a line edit (`text-change` and so
- * on).
+ * Signals: `date-change` and `value-change` (the date changed), `popup-open-change`, and those of
+ * a line edit: `change` and `text-change` (the text changed), `activate`, and so on.
  */
 export class DateEdit extends LineEdit {
     _initialize() {
@@ -242,6 +78,13 @@ export class DateEdit extends LineEdit {
         this._formatter = null;
         this._updatingText = false;
 
+        // Typed dates are local dates, like those of the calendar.
+        this._parser = new DateTimeParser({ timeZone: 'local' });
+
+        // An entry with a popup is a combo box for assistive technology, which allows
+        // `aria-expanded`.
+        this._inputEl.setAttribute('role', 'combobox');
+        this._inputEl.setAttribute('aria-autocomplete', 'none');
         this._inputEl.setAttribute('aria-haspopup', 'grid');
         this._inputEl.setAttribute('aria-expanded', 'false');
 
@@ -275,7 +118,7 @@ export class DateEdit extends LineEdit {
      */
     get calendar() {
         if (!this._calendar) {
-            this._calendar = new Calendar({ activateOnClick: true });
+            this._calendar = new Calendar({ activateOnSingleClick: true });
             this._calendar.connect('day-activate', () => this._onCalendarActivate());
 
             this._popover = new Popover({ owner: this, align: 'end' });
@@ -315,14 +158,14 @@ export class DateEdit extends LineEdit {
     /**
      * Opens the calendar.
      */
-    openPopup() {
+    popup() {
         this.popupOpen = true;
     }
 
     /**
      * Closes the calendar.
      */
-    closePopup() {
+    popdown() {
         this.popupOpen = false;
     }
 
@@ -341,20 +184,27 @@ export class DateEdit extends LineEdit {
      */
     formatDate(date) {
         if (!this._formatter) {
-            this._formatter = new Intl.DateTimeFormat(getLocaleManager().locale, this._format);
+            this._formatter = new Intl.DateTimeFormat(getLocaleManager().locale, {
+                calendar: 'gregory',
+                ...this._format,
+            });
         }
 
         return this._formatter.format(date);
     }
 
     /**
-     * Parses a typed date. Override to accept other notations.
+     * Parses a typed date with the date parser (`DateTimeParser#parseDate`) of the current locale,
+     * in local time. A missing year is this year. Override to accept other notations.
      *
      * @param {string} text
-     * @returns {Date | null}
+     * @returns {Date | null} The date at local midnight, or `null` if the text is not a date.
      */
     parseDate(text) {
-        return parseLocaleDate(text, getLocaleManager().locale, this._date || new Date());
+        const date = this._parser.parseDate(text);
+
+        // "Now" is the current time, while a date edit holds days.
+        return date && startOfDay(date);
     }
 
     activate() {
@@ -365,6 +215,7 @@ export class DateEdit extends LineEdit {
 
     destroy() {
         this._localeDisconnect();
+        this._parser.destroy();
         this._popover?.destroy();
 
         super.destroy();
@@ -392,7 +243,9 @@ export class DateEdit extends LineEdit {
     }
 
     _onTextChange(text) {
-        // The `change` signal of a date edit is about the date, not the text.
+        super._onTextChange(text);
+
+        // The text of a date shown by the date edit itself is the date already.
         if (this._updatingText) {
             return;
         }
@@ -418,7 +271,6 @@ export class DateEdit extends LineEdit {
 
         this.emit('date-change', this);
         this.emit('value-change', this);
-        this.emit('change', this);
     }
 
     _updateText() {
@@ -618,7 +470,9 @@ defineProperties(DateEdit, {
 
     /**
      * How dates are shown: options of `Intl.DateTimeFormat`, such as `{dateStyle: 'short'}` or
-     * `{year: 'numeric', month: 'long', day: 'numeric'}`.
+     * `{year: 'numeric', month: 'long', day: 'numeric'}`. Dates are shown in the Gregorian
+     * calendar, which is the one typed dates are read in, also in locales that default to another
+     * one.
      */
     format: {
         value: DEFAULT_DATE_FORMAT,
@@ -639,7 +493,7 @@ defineProperties(DateEdit, {
     },
 
     /**
-     * Whether the calendar is open.
+     * Whether the calendar is open. Setting it opens or closes the calendar.
      */
     popupOpen: {
         value: false,

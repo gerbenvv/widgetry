@@ -65,7 +65,7 @@ export interface LocaleAware {
      * A fixed locale as a BCP 47 tag (such as `'nl-NL'`), or `null` (the default) to follow the
      * locale manager.
      */
-    locale: any;
+    locale: string | null;
     /**
      * The locale manager to follow, or `null` (the default) for the singleton.
      */

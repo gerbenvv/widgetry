@@ -202,6 +202,15 @@ describe('Translator', () => {
         assert.throws(() => (translator.loader = 'x'), TypeError);
     });
 
+    test('does not format texts without arguments, so they can contain percent signs', () => {
+        const translator = new Translator({ locale: 'nl-NL' });
+        translator.addEntries({ '50% off': '50% korting' }, 'nl');
+
+        assert.equal(translator.translate('50% off'), '50% korting');
+        assert.equal(translator.translate('100% sure'), '100% sure');
+        assert.equal(translator.translate('%d%% off', 50), '50% off');
+    });
+
     test('provides convenience functions on the singleton', () => {
         assert.equal(getTranslator(), getTranslator());
         assert.equal(tr, translate);

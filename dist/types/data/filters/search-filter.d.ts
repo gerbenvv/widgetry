@@ -3,6 +3,15 @@
  */
 import { Filter } from './filter.js';
 /**
+ * Lower-cases text for the current locale. `toLocaleLowerCase()` is much slower than
+ * `toLowerCase()`, so it is only used for the few languages whose lower case differs. Search
+ * filters and the type-ahead search of tables use it.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+export declare function toLowerCase(text: string): string;
+/**
  * A filter for search fields: the query is split into keywords (at spaces and commas), and a row
  * passes when every keyword occurs in one of its columns. The search ignores case. An empty
  * query shows all rows.

@@ -4,17 +4,18 @@
 
 import { AbstractColumn, ColumnChange } from '../columns/abstract-column.js';
 import { CheckBoxColumn } from '../columns/check-box-column.js';
-import { DataColumn, SortIndicator } from '../columns/data-column.js';
+import { DataColumn } from '../columns/data-column.js';
 import { TextColumn } from '../columns/text-column.js';
 import { getCursor } from '../core/cursor.js';
-import { CursorShape, SelectionModes, SortOrder } from '../core/enums.js';
+import { CursorShape, SelectionMode, SortOrder } from '../core/enums.js';
 import { defineProperties } from '../core/instance.js';
 import { registerType } from '../core/registry.js';
 import { settings } from '../core/settings.js';
 import { clamp, createElement, uniqueId } from '../core/util.js';
 import { AbstractModel } from '../data/abstract-model.js';
 import { Adjustment } from '../data/adjustment.js';
-import { Selection } from '../data/selection.js';
+import { toLowerCase } from '../data/filters/search-filter.js';
+import { checkSelectionMode, Selection } from '../data/selection.js';
 import { TreeModel } from '../data/tree-model.js';
 import { Key } from '../events/constants.js';
 import { getLocaleManager } from '../i18n/locale-manager.js';
@@ -71,17 +72,6 @@ const HORIZONTAL_STEP = 20;
  * @type {number}
  */
 const EXPANDER_WIDTH = 16;
-
-/**
- * The `aria-sort` values of sort indicators.
- *
- * @type {Readonly<Record<string, string>>}
- */
-const ARIA_SORT = Object.freeze({
-    [SortIndicator.NONE]: 'none',
-    [SortIndicator.ASCENDING]: 'ascending',
-    [SortIndicator.DESCENDING]: 'descending',
-});
 
 /**
  * A canvas context shared by all tables to measure text.
@@ -152,8 +142,9 @@ function getHorizontalFrame(style) {
  * Interaction follows GTK: clicking a header sorts on the column (again to reverse), dragging the
  * edge between headers resizes a column and double clicking it sizes the column to fit. Rows are
  * selected by clicking, with Shift for ranges and Control to toggle (depending on
- * `selectionModes`). The keyboard moves the cursor row (the arrows, Page Up, Page Down, Home and
- * End, with Shift to extend the selection and Control to move only the cursor), Space selects the
+ * `selectionMode` and `toggleSelection`). The keyboard moves the cursor row (the arrows, Page Up, Page Down, Home and
+ * End, with Shift to extend the selection and Control to move only the cursor, except with
+ * `browse`), Space selects the
  * cursor row or toggles its check box, Control+Space toggles its selection, Control+A selects all
  * rows and Enter activates the row. Typing searches the search column. Up on the first row moves
  * the focus to the headers, where Left and Right move between columns, Enter sorts and Shift+Left
@@ -171,7 +162,7 @@ function getHorizontalFrame(style) {
  * `column-remove` (`table, column`), `cursor-change`.
  *
  * @example
- * const table = new Table({ model, selectionModes: SelectionModes.MULTI });
+ * const table = new Table({ model, selectionMode: SelectionMode.MULTIPLE });
  * table.addColumn(new IndexColumn());
  * table.addColumn(new DateColumn({ name: 'date', label: 'Date', format: 'long-date' }));
  * table.addColumn(new TextColumn({ name: 'name', label: 'Name', expand: true }));
@@ -238,7 +229,7 @@ export class Table extends Widget {
 
         this._id = uniqueId('wy-table');
 
-        this._selection = new Selection({ modes: SelectionModes.NONE });
+        this._selection = new Selection({ selectionMode: this._selectionMode });
         this._selection.connect('change', this._onSelectionChange, this);
 
         this._hAdjustment = new Adjustment({ stepIncrement: HORIZONTAL_STEP });
@@ -864,8 +855,7 @@ export class Table extends Widget {
         this._headerDirty = false;
 
         for (const [column, cell] of this._headerEls) {
-            const indicator =
-                column instanceof DataColumn ? column.sortIndicator : SortIndicator.NONE;
+            const indicator = column instanceof DataColumn ? column.sortIndicator : SortOrder.NONE;
 
             cell.firstElementChild.textContent = column.label;
             cell.title = column.label;
@@ -873,13 +863,14 @@ export class Table extends Widget {
                 `wy-table-column-header wy-align-${column.alignment}` +
                 (column.isSortable ? ' wy-sortable' : '') +
                 (column.resizable ? ' wy-resizable' : '') +
-                (indicator !== SortIndicator.NONE ? ` wy-sorted wy-sort-${indicator}` : '') +
+                (indicator !== SortOrder.NONE ? ` wy-sorted wy-sort-${indicator}` : '') +
                 (this._pressedHeader?.cell === cell && this._pressedHeader.inside
                     ? ' wy-pressed'
                     : '');
 
             if (column.isSortable) {
-                cell.setAttribute('aria-sort', ARIA_SORT[indicator]);
+                // The sort orders are the `aria-sort` values.
+                cell.setAttribute('aria-sort', indicator);
             } else {
                 cell.removeAttribute('aria-sort');
             }
@@ -963,17 +954,19 @@ export class Table extends Widget {
         this._bodyEl.style.height = `${count * height}px`;
         this.el.setAttribute('aria-rowcount', String(count + 1));
 
-        const placeholder = !count && Boolean(this._placeholderText);
+        const placeholder = !count && Boolean(this._placeholder);
         this._placeholderEl.hidden = !placeholder;
-        this._placeholderEl.textContent = this._placeholderText;
+        this._placeholderEl.textContent = this._placeholder;
 
         if (!height) {
             return;
         }
 
         const view = this._viewEl;
-        const scrollTop = view.scrollTop;
         const bodyHeight = Math.max(0, view.clientHeight - this._headerHeight);
+
+        // After rows were removed, the browser clamps the scroll position only later.
+        const scrollTop = Math.min(view.scrollTop, Math.max(0, count * height - bodyHeight));
 
         const first = Math.max(0, Math.floor(scrollTop / height) - ROW_BUFFER);
         const last = Math.min(count - 1, Math.ceil((scrollTop + bodyHeight) / height) + ROW_BUFFER);
@@ -1092,7 +1085,7 @@ export class Table extends Widget {
         element.setAttribute('aria-rowindex', String(index + 2));
         element.className = this._getRowClassName(index, selected);
 
-        if (this._selectionModes) {
+        if (this._selectionMode !== SelectionMode.NONE) {
             element.setAttribute('aria-selected', String(selected));
         } else {
             element.removeAttribute('aria-selected');
@@ -1195,7 +1188,7 @@ export class Table extends Widget {
 
             element.className = this._getRowClassName(index, selected);
 
-            if (this._selectionModes) {
+            if (this._selectionMode !== SelectionMode.NONE) {
                 element.setAttribute('aria-selected', String(selected));
             }
         }
@@ -1320,6 +1313,7 @@ export class Table extends Widget {
             old.disconnect('row-insert', this._onModelRowInsert, this);
             old.disconnect('row-remove', this._onModelRowRemove, this);
             old.disconnect('row-move', this._onModelRowMove, this);
+            old.disconnect('row-update', this._onModelRowUpdate, this);
             old.disconnect('rows-reorder', this._onModelRowsReorder, this);
             old.disconnect('sort-column-change', this._onModelSortChange, this);
             old.disconnect('sort-order-change', this._onModelSortChange, this);
@@ -1333,6 +1327,7 @@ export class Table extends Widget {
             model.connect('row-insert', this._onModelRowInsert, this);
             model.connect('row-remove', this._onModelRowRemove, this);
             model.connect('row-move', this._onModelRowMove, this);
+            model.connect('row-update', this._onModelRowUpdate, this);
             model.connect('rows-reorder', this._onModelRowsReorder, this);
             model.connect('sort-column-change', this._onModelSortChange, this);
             model.connect('sort-order-change', this._onModelSortChange, this);
@@ -1363,6 +1358,9 @@ export class Table extends Widget {
 
         if (this._cursor >= 0) {
             this.cursor = clamp(map(this._cursor), -1, count - 1);
+
+            // The cursor may stay at its index while another row got there.
+            this._rememberCursorKey();
         }
     }
 
@@ -1381,6 +1379,7 @@ export class Table extends Widget {
             const nearest = model.getNearestRowIndex(id);
             if (nearest >= 0) {
                 this.cursor = nearest;
+                this._rememberCursorKey();
             }
         }
     }
@@ -1397,6 +1396,21 @@ export class Table extends Widget {
 
             return to < from && x >= to && x < from ? x + 1 : x;
         });
+    }
+
+    _onModelRowUpdate(_model, index, id, oldId) {
+        if (Object.is(id, oldId)) {
+            return;
+        }
+
+        // Follow the new id of the cursor and anchor rows.
+        if (index === this._cursor) {
+            this._rememberCursorKey();
+        }
+
+        if (index === this._anchor) {
+            this._rememberAnchorKey();
+        }
     }
 
     _onModelRowsReorder() {
@@ -1433,6 +1447,13 @@ export class Table extends Widget {
         return Math.min(index, count - 1);
     }
 
+    _rememberCursorKey() {
+        this._cursorKey =
+            this._cursor >= 0 && this._selection.byId
+                ? this.model.getRowIdByIndex(this._cursor)
+                : undefined;
+    }
+
     _rememberAnchorKey() {
         this._anchorKey =
             this._anchor >= 0 && this._selection.byId
@@ -1454,35 +1475,40 @@ export class Table extends Widget {
     }
 
     /**
-     * Handles a press on a row, selecting according to the selection modes.
+     * Handles a press on a row, selecting according to the selection mode, like GTK: with
+     * `multiple`, Shift selects the range from the anchor and Control toggles the row; with
+     * `single`, Control unselects a selected row; with `browse`, the row is always selected.
+     * With `toggleSelection`, a press toggles as a Control+press does.
      *
      * @param {number} index
      * @param {boolean} extend Whether to select a range from the anchor (Shift).
      * @param {boolean} toggle Whether to toggle the row (Control).
      */
     _pressRow(index, extend, toggle) {
-        const modes = this._selectionModes;
+        const mode = this._selectionMode;
         const selection = this._selection;
 
         this.cursor = index;
 
-        if (!modes) {
+        if (mode === SelectionMode.NONE) {
             return;
         }
 
-        if (modes & SelectionModes.MULTI) {
+        toggle = toggle || this._toggleSelection;
+
+        if (mode === SelectionMode.MULTIPLE) {
             if (extend && this._anchor >= 0) {
                 selection.selectRange(this._anchor, index, toggle);
 
                 return;
             }
 
-            if (toggle || modes & SelectionModes.TOGGLE) {
+            if (toggle) {
                 selection.toggle(index);
             } else {
                 selection.selectOnly(index);
             }
-        } else if ((toggle || modes & SelectionModes.TOGGLE) && selection.isSelected(index)) {
+        } else if (mode === SelectionMode.SINGLE && toggle && selection.isSelected(index)) {
             selection.unselectAll();
         } else {
             selection.selectOnly(index);
@@ -1497,7 +1523,7 @@ export class Table extends Widget {
      *
      * @param {number} index
      * @param {boolean} extend Whether to extend the selection from the anchor (Shift).
-     * @param {boolean} cursorOnly Whether to move only the cursor (Control).
+     * @param {boolean} cursorOnly Whether to move only the cursor (Control), except with `browse`.
      */
     _moveCursor(index, extend, cursorOnly) {
         const count = this.model?.rowsCount || 0;
@@ -1507,7 +1533,7 @@ export class Table extends Widget {
 
         index = clamp(index, 0, count - 1);
 
-        if (extend && this._selectionModes & SelectionModes.MULTI) {
+        if (extend && this._selectionMode === SelectionMode.MULTIPLE) {
             if (this._anchor < 0) {
                 this._anchor = this._cursor >= 0 ? this._cursor : index;
                 this._rememberAnchorKey();
@@ -1515,12 +1541,13 @@ export class Table extends Widget {
 
             this.cursor = index;
             this._selection.selectRange(this._anchor, index, cursorOnly);
-        } else if (cursorOnly) {
+        } else if (cursorOnly && this._selectionMode !== SelectionMode.BROWSE) {
+            // With browse, the cursor row is always selected.
             this.cursor = index;
         } else {
             this.cursor = index;
 
-            if (this._selectionModes) {
+            if (this._selectionMode !== SelectionMode.NONE) {
                 this._selection.selectOnly(index);
             }
 
@@ -1745,7 +1772,7 @@ export class Table extends Widget {
             return;
         }
 
-        if (column.sortIndicator === SortIndicator.DESCENDING && this._allowUnsorted) {
+        if (column.sortIndicator === SortOrder.DESCENDING && this._allowUnsorted) {
             column.sort(SortOrder.NONE);
         } else {
             column.sort();
@@ -1858,7 +1885,7 @@ export class Table extends Widget {
         }
 
         if (control && !shift && event.key.toLowerCase() === Key.A) {
-            if (this._selectionModes & SelectionModes.MULTI) {
+            if (this._selectionMode === SelectionMode.MULTIPLE) {
                 this._selection.selectAll();
             }
 
@@ -2024,7 +2051,7 @@ export class Table extends Widget {
         if (!column) {
             column =
                 this._visibleColumns.find(
-                    (x) => x instanceof DataColumn && x.sortIndicator !== SortIndicator.NONE
+                    (x) => x instanceof DataColumn && x.sortIndicator !== SortOrder.NONE
                 ) || this._visibleColumns[0];
         }
 
@@ -2078,8 +2105,7 @@ export class Table extends Widget {
 
         this._searchTime = now;
 
-        const locale = getLocaleManager().locale;
-        this._searchText += character.toLocaleLowerCase(locale);
+        this._searchText += toLowerCase(character);
 
         // Typing the same letter again moves to the next row starting with it.
         const text = this._searchText;
@@ -2091,9 +2117,7 @@ export class Table extends Widget {
 
         for (let offset = 0; offset < count; ++offset) {
             const index = (start + offset) % count;
-            const cellText = column
-                .getCellText(model.getRow(index), index)
-                .toLocaleLowerCase(locale);
+            const cellText = toLowerCase(column.getCellText(model.getRow(index), index));
 
             if (cellText.startsWith(search)) {
                 this._moveCursor(index, false, false);
@@ -2202,15 +2226,18 @@ defineProperties(Table, {
     },
 
     /**
-     * How rows can be selected: a mask of `SelectionModes`. `NONE` (the default) disables
-     * selecting.
+     * How rows can be selected: one of `SelectionMode`, like in GTK. `single` (the default)
+     * selects at most one row, `browse` one row that the user cannot unselect, `multiple` any
+     * number of rows, and `none` disables selecting. Changing it changes the mode of the
+     * `selection`.
      */
-    selectionModes: {
-        value: SelectionModes.NONE,
-        changed(modes) {
-            this._selection.modes = modes;
+    selectionMode: {
+        value: SelectionMode.SINGLE,
+        coerce: checkSelectionMode,
+        changed(mode) {
+            this._selection.selectionMode = mode;
 
-            if (modes & SelectionModes.MULTI) {
+            if (mode === SelectionMode.MULTIPLE) {
                 this.el.setAttribute('aria-multiselectable', 'true');
             } else {
                 this.el.removeAttribute('aria-multiselectable');
@@ -2236,9 +2263,8 @@ defineProperties(Table, {
 
             return index < 0 || !count ? -1 : Math.min(index, count - 1);
         },
-        changed(index) {
-            this._cursorKey =
-                index >= 0 && this._selection.byId ? this.model.getRowIdByIndex(index) : undefined;
+        changed() {
+            this._rememberCursorKey();
             this._updateRowStates();
         },
     },
@@ -2313,9 +2339,22 @@ defineProperties(Table, {
     },
 
     /**
+     * Whether a click toggles the selection of a row, as a Control+click does: a click on a
+     * selected row unselects it (except with `browse`), and with `multiple`, a click on another
+     * row adds it to the selection. It is also the `toggleSelection` of the `selection`.
+     */
+    toggleSelection: {
+        value: false,
+        coerce: Boolean,
+        changed(toggle) {
+            this._selection.toggleSelection = toggle;
+        },
+    },
+
+    /**
      * The text shown when the model has no rows (or there is no model).
      */
-    placeholderText: {
+    placeholder: {
         value: '',
         coerce(text) {
             return text === null || text === undefined ? '' : String(text);

@@ -4,6 +4,7 @@ import { describe, test } from 'node:test';
 
 import { defineProperties, Instance } from '../../core/instance.js';
 import { registerType } from '../../core/registry.js';
+import { TranslatedText } from '../../i18n/translated-text.js';
 import { ButtonGroup } from '../../widgets/button-group.js';
 import { build, Builder, BuilderError } from '../builder.js';
 
@@ -442,5 +443,18 @@ describe('Builder', () => {
 
     test('has a build function', () => {
         assert.ok(build({ type: 'test-widget' })[0] instanceof TestWidget);
+    });
+
+    test('sets the id property of classes that have one, such as translated texts', () => {
+        const builder = new Builder();
+        const [first, second] = builder.build([
+            { type: 'test-widget', label: { type: 'translated-text', id: 'Open' } },
+            { type: 'test-widget', label: { type: 'translated-text', id: 'Open' } },
+        ]);
+
+        assert.ok(first.label instanceof TranslatedText);
+        assert.equal(first.label.id, 'Open');
+        assert.equal(String(second.label), 'Open');
+        assert.equal(builder.hasObject('Open'), false);
     });
 });

@@ -38,9 +38,9 @@ function toViewBox(viewBox) {
 }
 
 /**
- * A surface for vector graphics: sprites (`Rectangle`, `Circle`, `Path`, `LabelSprite`,
- * `ImageSprite`) drawn as SVG, so they are crisp at any zoom, can be styled with CSS and get
- * pointer events on their painted shape.
+ * A surface for vector graphics: sprites (`RectangleSprite`, `CircleSprite`, `PathSprite`,
+ * `LabelSprite`, `ImageSprite`) drawn as SVG, so they are crisp at any zoom, can be styled with CSS
+ * and get pointer events on their painted shape.
  *
  * Sprites are drawn in order (sorted by their `zIndex`), later sprites on top. The `viewBox` sets
  * the coordinate system (by default one unit is one pixel), and the `transformation` pans and
@@ -52,7 +52,7 @@ function toViewBox(viewBox) {
  *
  * @example
  * const canvas = new VectorCanvas({ width: 300, height: 200 });
- * canvas.addSprite(new Circle({ position: { x: 50, y: 50 }, radius: 20, fill: '#5699d8' }));
+ * canvas.addSprite(new CircleSprite({ position: { x: 50, y: 50 }, radius: 20, fill: '#5699d8' }));
  */
 export class VectorCanvas extends Widget {
     _initialize() {
@@ -60,6 +60,19 @@ export class VectorCanvas extends Widget {
         this._sprites = [];
 
         super._initialize();
+    }
+
+    _syncAccessibleName() {
+        const name = this._accessibleName;
+
+        // The drawing is decorative unless it has a name.
+        if (name) {
+            this._svgEl.setAttribute('aria-label', name);
+            this._svgEl.removeAttribute('aria-hidden');
+        } else {
+            this._svgEl.removeAttribute('aria-label');
+            this._svgEl.setAttribute('aria-hidden', 'true');
+        }
     }
 
     _render() {
@@ -424,18 +437,18 @@ defineProperties(VectorCanvas, {
     },
 
     /**
-     * A description of the drawing, for assistive technologies, or `''` if it is decorative.
+     * A description of the drawing, for assistive technologies, or `''` if it is decorative. The
+     * same as `accessibleName`.
      */
     label: {
-        value: '',
-        changed(label) {
-            if (label) {
-                this._svgEl.setAttribute('aria-label', label);
-                this._svgEl.removeAttribute('aria-hidden');
-            } else {
-                this._svgEl.removeAttribute('aria-label');
-                this._svgEl.setAttribute('aria-hidden', 'true');
-            }
+        signal: false,
+        get() {
+            return this._accessibleName;
+        },
+        set(label) {
+            this.accessibleName = label;
+
+            return false;
         },
     },
 });

@@ -31,16 +31,16 @@ export class AbstractMenuItem extends Container {
     }
 
     /**
-     * Whether the item and the items its menu hangs from are all sensitive, so that it can be
-     * activated, e.g. by its accelerator.
+     * Whether the item and the items its menu hangs from are all visible and sensitive, so that
+     * it can be activated, e.g. by its accelerator, like in GTK.
      *
      * @protected
      * @returns {boolean}
      */
-    _isChainSensitive() {
+    _isChainActivatable() {
         let item = this;
         while (item) {
-            if (!item.isSensitive) {
+            if (!item.visible || !item.isSensitive) {
                 return false;
             }
 

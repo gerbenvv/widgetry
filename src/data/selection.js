@@ -2,10 +2,33 @@
  * @module data/selection
  */
 
-import { SelectionModes } from '../core/enums.js';
+import { SelectionMode } from '../core/enums.js';
 import { defineProperties, Instance } from '../core/instance.js';
 import { registerType } from '../core/registry.js';
 import { AbstractModel } from './abstract-model.js';
+
+/**
+ * The selection modes, for validating `selectionMode`.
+ *
+ * @type {ReadonlySet<string>}
+ */
+const SELECTION_MODES = new Set(Object.values(SelectionMode));
+
+/**
+ * Checks a selection mode, as the `selectionMode` properties of selections, tables and list boxes
+ * do.
+ *
+ * @param {string} mode
+ * @returns {string} The mode.
+ * @throws {RangeError} If it is not one of `SelectionMode`.
+ */
+export function checkSelectionMode(mode) {
+    if (!SELECTION_MODES.has(mode)) {
+        throw new RangeError(`Invalid selection mode '${mode}'.`);
+    }
+
+    return mode;
+}
 
 /**
  * The selected rows of a model, as used by tables.
@@ -20,8 +43,10 @@ import { AbstractModel } from './abstract-model.js';
  * (like the original toolkit). The other methods (`select`, `toggle`, `selectRange`, ...) take row
  * indices.
  *
- * The `modes` (a mask of `SelectionModes`) limit the selection: with `NONE` nothing can be
- * selected, with `SINGLE` at most one row.
+ * The `selectionMode` (one of `SelectionMode`) limits the selection: with `none` nothing can be
+ * selected, with `single` and `browse` at most one row, and with `multiple` any number of rows.
+ * The model does not stop the program from unselecting the row in `browse` mode; the widgets that
+ * use it stop the user from doing so.
  *
  * Signals: `row-select` and `row-deselect` (`selection, key`), and `change` (`selection`) once
  * per operation that changed the selection.
@@ -89,7 +114,7 @@ export class Selection extends Instance {
     }
 
     /**
-     * Selects a row by key. With `SelectionModes.SINGLE`, the other rows are unselected.
+     * Selects a row by key. With `single` and `browse`, the other rows are unselected.
      *
      * @param {unknown} key
      * @returns {boolean} Whether the selection changed.
@@ -97,7 +122,7 @@ export class Selection extends Instance {
     selectRow(key) {
         this._checkKey(key);
 
-        if (!this._modes) {
+        if (this._selectionMode === SelectionMode.NONE) {
             return false;
         }
 
@@ -117,7 +142,7 @@ export class Selection extends Instance {
     selectOnlyRow(key) {
         this._checkKey(key);
 
-        if (!this._modes) {
+        if (this._selectionMode === SelectionMode.NONE) {
             return false;
         }
 
@@ -133,13 +158,13 @@ export class Selection extends Instance {
     }
 
     /**
-     * Selects all rows. With `SelectionModes.SINGLE`, this does nothing.
+     * Selects all rows. Only with `multiple`; otherwise this does nothing.
      *
      * @returns {boolean} Whether the selection changed.
      */
     selectAllRows() {
         const model = this._requireModel();
-        if (!(this._modes & SelectionModes.MULTI)) {
+        if (this._selectionMode !== SelectionMode.MULTIPLE) {
             return false;
         }
 
@@ -301,8 +326,8 @@ export class Selection extends Instance {
     }
 
     /**
-     * Selects the rows from one index to another (in either order). With `SelectionModes.SINGLE`,
-     * only the row at `to` is selected.
+     * Selects the rows from one index to another (in either order). Without `multiple`, only the
+     * row at `to` is selected.
      *
      * @param {number} from
      * @param {number} to
@@ -321,11 +346,11 @@ export class Selection extends Instance {
             throw new RangeError(`Invalid row range ${from} to ${to}.`);
         }
 
-        if (!this._modes) {
+        if (this._selectionMode === SelectionMode.NONE) {
             return false;
         }
 
-        if (!(this._modes & SelectionModes.MULTI)) {
+        if (this._selectionMode !== SelectionMode.MULTIPLE) {
             return this.selectOnly(to);
         }
 
@@ -394,7 +419,8 @@ export class Selection extends Instance {
 
     _isSingle() {
         return (
-            Boolean(this._modes & SelectionModes.SINGLE) && !(this._modes & SelectionModes.MULTI)
+            this._selectionMode === SelectionMode.SINGLE ||
+            this._selectionMode === SelectionMode.BROWSE
         );
     }
 
@@ -601,14 +627,15 @@ defineProperties(Selection, {
     },
 
     /**
-     * The selection modes: a mask of `SelectionModes`. With `NONE` nothing can be selected; with
-     * `SINGLE` at most one row. `TOGGLE` affects how tables handle clicks. Reducing the modes
-     * reduces the selection accordingly.
+     * How rows can be selected: one of `SelectionMode`. With `none` nothing can be selected; with
+     * `single` and `browse` at most one row. Changing it keeps at most the last selected row,
+     * except with `multiple`, and nothing with `none`.
      */
-    modes: {
-        value: SelectionModes.MULTI,
-        changed(modes) {
-            if (!modes) {
+    selectionMode: {
+        value: SelectionMode.SINGLE,
+        coerce: checkSelectionMode,
+        changed(mode) {
+            if (mode === SelectionMode.NONE) {
                 this.deselectAllRows();
             } else if (this._isSingle() && this._keys.size > 1) {
                 const last = [...this._keys].pop();
@@ -616,6 +643,14 @@ defineProperties(Selection, {
             }
         },
     },
+
+    /**
+     * Whether a click toggles the selection of a row in the tables that use the selection, as a
+     * Control+click does: a click on a selected row unselects it (except with `browse`), and with
+     * `multiple`, a click on another row adds it to the selection. The table sets it from its own
+     * `toggleSelection`.
+     */
+    toggleSelection: { value: false, coerce: Boolean },
 
     /**
      * The keys (ids, or indices without an id column) of the selected rows, in selection order.
@@ -633,7 +668,12 @@ defineProperties(Selection, {
 
             keys.forEach((key) => this._checkKey(key));
 
-            const wanted = this._modes ? (this._isSingle() ? keys.slice(-1) : keys) : [];
+            const wanted =
+                this._selectionMode === SelectionMode.NONE
+                    ? []
+                    : this._isSingle()
+                      ? keys.slice(-1)
+                      : keys;
 
             this._run(() => {
                 const keep = new Set(wanted);

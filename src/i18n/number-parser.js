@@ -7,30 +7,35 @@ import { escapeRegExp } from '../core/util.js';
 import { LocaleAware } from './locale-aware.js';
 
 /**
- * The code points of the digit zero of the non-Latin digit sets that are accepted in input:
- * Arabic-Indic, extended Arabic-Indic (Persian), Devanagari, Bengali, Thai and full-width digits.
- *
- * @type {number[]}
- */
-const ZERO_CODE_POINTS = [0x0660, 0x06f0, 0x0966, 0x09e6, 0x0e50, 0xff10];
-
-/**
- * Matches the digits of {@link ZERO_CODE_POINTS}.
+ * Matches the decimal digits of every script, such as Arabic-Indic, Persian, Devanagari, Thai,
+ * Myanmar and full-width digits, except the Latin ones.
  *
  * @type {RegExp}
  */
-const NON_LATIN_DIGIT_REGEXP = new RegExp(
-    `[${ZERO_CODE_POINTS.map((zero) => `\\u{${zero.toString(16)}}-\\u{${(zero + 9).toString(16)}}`).join('')}]`,
-    'gu'
-);
+const NON_LATIN_DIGIT_REGEXP = /(?![0-9])\p{Nd}/gu;
 
 /**
- * Minus signs other than the hyphen-minus: the Unicode minus sign, the full-width hyphen-minus and
- * the small hyphen-minus.
+ * Matches one decimal digit of any script.
  *
  * @type {RegExp}
  */
-const MINUS_REGEXP = /[\u2212\uff0d\ufe63]/g;
+const DIGIT_REGEXP = /^\p{Nd}$/u;
+
+/**
+ * Matches the invisible bidirectional marks that `Intl` puts around signs in right-to-left
+ * locales: the left-to-right, right-to-left and Arabic letter marks.
+ *
+ * @type {RegExp}
+ */
+const BIDI_MARK_REGEXP = /[\u200e\u200f\u061c]/g;
+
+/**
+ * Minus signs other than the hyphen-minus: the Unicode minus sign, the figure and en dashes (which
+ * people type for it), the full-width hyphen-minus and the small hyphen-minus.
+ *
+ * @type {RegExp}
+ */
+const MINUS_REGEXP = /[\u2212\u2012\u2013\uff0d\ufe63]/g;
 
 /**
  * Matches whitespace, including the no-break spaces used as group separators.
@@ -47,13 +52,33 @@ const WHITESPACE_REGEXP = /\s+/gu;
  */
 const PLACEHOLDERS = { group: '\u0001', decimal: '\u0002' };
 
-function toLatinDigits(text) {
-    return text.replace(NON_LATIN_DIGIT_REGEXP, (digit) => {
-        const code = digit.codePointAt(0);
-        const zero = ZERO_CODE_POINTS.find((x) => code >= x && code <= x + 9);
+/**
+ * Replaces the decimal digits of other scripts (such as the Arabic-Indic digits of `ar-EG`,
+ * Devanagari and full-width digits) by Latin digits, and removes the invisible bidirectional marks
+ * that `Intl` puts around numbers and dates in right-to-left locales, so locale-formatted numbers
+ * and dates can be parsed.
+ *
+ * @example
+ * toLatinDigits('\u0663\u066b\u0665'); // '3\u066b5'
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+export function toLatinDigits(text) {
+    return String(text)
+        .replace(BIDI_MARK_REGEXP, '')
+        .replace(NON_LATIN_DIGIT_REGEXP, (digit) => {
+            // Unicode encodes every digit set as runs of zero to nine, so the number of digits
+            // that precede a digit in its run gives its value.
+            const code = digit.codePointAt(0);
 
-        return String(code - zero);
-    });
+            let count = 0;
+            while (DIGIT_REGEXP.test(String.fromCodePoint(code - count - 1))) {
+                count += 1;
+            }
+
+            return String(count % 10);
+        });
 }
 
 /**
@@ -109,7 +134,7 @@ export class NumberParser extends LocaleAware {
         const group = manager.groupSeparator;
         const decimal = manager.decimalSeparator;
 
-        let text = toLatinDigits(input.trim()).replace(MINUS_REGEXP, '-');
+        let text = toLatinDigits(input).trim().replace(MINUS_REGEXP, '-');
 
         // Whitespace can only be a group separator, when the locale uses a space for that.
         if (/^\s$/u.test(group)) {

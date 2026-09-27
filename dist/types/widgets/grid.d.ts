@@ -188,9 +188,9 @@ export interface Grid {
     /**
      * The number of rows: one more than the last row any child occupies.
      */
-    readonly rowCount: any;
+    readonly rowCount: number;
     /**
      * The number of columns: one more than the last column any child occupies.
      */
-    readonly columnCount: any;
+    readonly columnCount: number;
 }

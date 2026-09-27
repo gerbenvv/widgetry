@@ -10,19 +10,19 @@ import { Filter } from './filter.js';
 /**
  * The operators of a {@link ConditionFilter}.
  *
- * @enum {number}
+ * @enum {string}
  */
 export const ConditionOperator = Object.freeze({
-    EQUALS: 1,
-    LESS_THAN: 2,
-    GREATER_THAN: 3,
-    LESS_THAN_EQUAL: 4,
-    GREATER_THAN_EQUAL: 5,
-    CONTAINS: 6,
-    STARTS_WITH: 7,
-    ENDS_WITH: 8,
-    NOT_EQUALS: 9, // No column equals the value.
-    MATCHES: 10, // The value is a regular expression (or its source) that a column matches.
+    EQUALS: 'equals',
+    LESS_THAN: 'less-than',
+    GREATER_THAN: 'greater-than',
+    LESS_THAN_EQUAL: 'less-than-equal',
+    GREATER_THAN_EQUAL: 'greater-than-equal',
+    CONTAINS: 'contains',
+    STARTS_WITH: 'starts-with',
+    ENDS_WITH: 'ends-with',
+    NOT_EQUALS: 'not-equals', // No column equals the value.
+    MATCHES: 'matches', // The value is a regular expression (or its source) that a column matches.
 });
 
 /**
@@ -183,7 +183,7 @@ defineProperties(ConditionFilter, {
         value: ConditionOperator.CONTAINS,
         coerce(operator) {
             if (!Object.values(ConditionOperator).includes(operator)) {
-                throw new RangeError(`Invalid condition operator ${operator}.`);
+                throw new RangeError(`Invalid condition operator '${operator}'.`);
             }
 
             return operator;

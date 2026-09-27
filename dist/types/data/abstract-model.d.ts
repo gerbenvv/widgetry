@@ -73,17 +73,18 @@ export declare class AbstractModel extends Instance {
     _indexById: Map<unknown, number> | null;
     _indexDirty: boolean;
     _columnsInfo: {};
-    sortOrder: unknown;
-    columnsInfo: any;
+    _modelReference: WeakRef<this>;
     /**
      * @param {Record<string, unknown> | object[]} [properties] Property values, or (like the
      *     original toolkit) the initial rows, followed by the other arguments.
      * @param {string | null} [idColumn] The id column, when the rows are passed as an array.
      * @param {string | null} [sortColumn] The sort column, when the rows are passed as an array.
-     * @param {number} [sortOrder] The sort order, when the rows are passed as an array.
+     * @param {string} [sortOrder] The sort order (one of `SortOrder`), when the rows are passed as
+     *     an array.
      */
-    constructor(properties?: Record<string, unknown> | object[], idColumn?: string | null, sortColumn?: string | null, sortOrder?: number);
+    constructor(properties?: Record<string, unknown> | object[], idColumn?: string | null, sortColumn?: string | null, sortOrder?: string);
     _initialize(): void;
+    destroy(): void;
     /**
      * Sets several properties. The sort column and order are applied together, so the rows are
      * sorted once.
@@ -174,13 +175,13 @@ export declare class AbstractModel extends Instance {
      * Inserts a row at an index. If the model is sorted, the row is placed at its sorted position
      * instead.
      *
-     * @param {number} index Between 0 and `rowsCount`.
-     * @param {object} row
+     * @param {number} _index Between 0 and `rowsCount`.
+     * @param {object} _row
      * @returns {number} The index the row got.
      * @throws {RangeError} If the index is invalid.
      * @throws {Error} If the model has an id column and the id is already in use.
      */
-    insertRow(_index: any, _row: any): number;
+    insertRow(_index: number, _row: object): number;
     /**
      * Appends several rows at once. If the model is sorted, the rows are placed at their sorted
      * positions. With more than one row, listeners get a single `rows-reorder` signal instead of
@@ -194,17 +195,17 @@ export declare class AbstractModel extends Instance {
      * sorted positions. With more than one row, listeners get a single `rows-reorder` signal
      * instead of one `row-insert` per row.
      *
-     * @param {number} index
-     * @param {object[]} rows
+     * @param {number} _index
+     * @param {object[]} _rows
      */
-    insertRows(_index: any, _rows: any): void;
+    insertRows(_index: number, _rows: object[]): void;
     /**
      * Removes a row.
      *
-     * @param {number} index
+     * @param {number} _index
      * @returns {object} The removed row.
      */
-    removeRow(_index: any): object;
+    removeRow(_index: number): object;
     /**
      * Removes a row by id.
      *
@@ -219,11 +220,11 @@ export declare class AbstractModel extends Instance {
     /**
      * Replaces a row by another row object. The model stays sorted.
      *
-     * @param {number} index
-     * @param {object} row
+     * @param {number} _index
+     * @param {object} _row
      * @returns {number} The index of the new row.
      */
-    replaceRow(_index: any, _row: any): number;
+    replaceRow(_index: number, _row: object): number;
     /**
      * Replaces a row by id.
      *
@@ -236,11 +237,11 @@ export declare class AbstractModel extends Instance {
      * Changes values of a row: the given columns are assigned to the row object. The model stays
      * sorted, so the row may move.
      *
-     * @param {number} index
-     * @param {Record<string, unknown>} changes Values by column.
+     * @param {number} _index
+     * @param {Record<string, unknown>} _changes Values by column.
      * @returns {number} The index of the row after the change.
      */
-    updateRow(_index: any, _changes: any): number;
+    updateRow(_index: number, _changes: Record<string, unknown>): number;
     /**
      * Changes values of a row by id.
      *
@@ -277,10 +278,10 @@ export declare class AbstractModel extends Instance {
     /**
      * Sorts the model on a column. The model keeps itself sorted when rows change.
      *
-     * @param {string | null} column The column, or `null` to stop sorting.
-     * @param {number} [order] One of `SortOrder`. `SortOrder.NONE` stops sorting.
+     * @param {string | null} _column The column, or `null` to stop sorting.
+     * @param {string} [_order] One of `SortOrder`. `SortOrder.NONE` stops sorting.
      */
-    sortByColumn(_column: any, _order?: 1): void;
+    sortByColumn(_column: string | null, _order?: string): void;
     /**
      * Compares two rows on a column, using `columnsInfo`.
      *
@@ -331,6 +332,20 @@ export declare class AbstractModel extends Instance {
      * @returns {Map<unknown, number>}
      */
     protected _getIndexById(): Map<unknown, number>;
+    /**
+     * Checks that all rows have a different value in a column, before it becomes the id column.
+     *
+     * @protected
+     * @param {string} column
+     * @throws {Error} If two rows have the same id.
+     */
+    protected _checkUniqueIds(column: string): void;
+    /**
+     * Sorts the rows again after the locale changed, when strings are compared with its rules.
+     *
+     * @protected
+     */
+    protected _onLocaleChange(): void;
     /**
      * Marks the id index as outdated.
      *
@@ -389,11 +404,16 @@ export interface AbstractModel {
     /**
      * The number of rows.
      */
-    readonly rowsCount: any;
+    readonly rowsCount: number;
+    /**
+     * Information about columns that helps sorting and filtering, keyed by column name. See
+     * {@link ColumnInfo}: e.g. `{ price: { type: 'number' }, name: { caseSensitive: false } }`.
+     */
+    columnsInfo: any;
     /**
      * The column that identifies rows, or `null`. With an id column, rows can be addressed by
      * id, and selections keep rows selected while they are sorted or filtered. Ids must be
-     * unique.
+     * unique: setting a column in which two rows have the same id throws and changes nothing.
      */
     idColumn: any;
     /**
@@ -401,6 +421,11 @@ export interface AbstractModel {
      * `SortOrder.NONE` sorts ascending; setting `null` sets the order to `SortOrder.NONE`.
      */
     sortColumn: any;
+    /**
+     * The sort order: one of `SortOrder`. Setting `SortOrder.NONE` also sets `sortColumn` to
+     * `null`.
+     */
+    sortOrder: string;
     /**
      * Whether strings are compared with the rules of the current locale (`Intl.Collator`), so
      * `'é'` sorts next to `'e'`. When `false`, strings are compared by character code, like the

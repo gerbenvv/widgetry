@@ -147,9 +147,28 @@ export class ToolItem extends AbstractToolItem {
             sensitive: this.sensitive,
         });
 
-        proxy.connect('activate', () => this._onUserActivate());
+        // An item with a submenu lends it to its proxy while the overflow menu is open, until
+        // `_releaseMenuProxy()`.
+        if (this._submenu) {
+            proxy._setSubmenu(this._submenu, false);
+        } else {
+            proxy.connect('activate', () => this._onUserActivate());
+        }
 
         return proxy;
+    }
+
+    _releaseMenuProxy(proxy) {
+        const submenu = this._submenu;
+        if (!submenu || proxy.submenu !== submenu) {
+            return;
+        }
+
+        proxy._setSubmenu(null, false);
+
+        if (!submenu.destroyed) {
+            submenu._setAttachWidget(this);
+        }
     }
 
     _onToolBarChange() {
@@ -292,8 +311,14 @@ export class ToolItem extends AbstractToolItem {
         const text = parseMnemonic(this._label, this._useUnderline).text;
         this.el.classList.toggle('wy-has-label', Boolean(text));
 
-        if (text) {
-            this.el.setAttribute('aria-label', text);
+        this._syncAccessibleName();
+    }
+
+    _syncAccessibleName() {
+        const name = this._accessibleName || parseMnemonic(this._label, this._useUnderline).text;
+
+        if (name) {
+            this.el.setAttribute('aria-label', name);
         } else {
             this.el.removeAttribute('aria-label');
         }

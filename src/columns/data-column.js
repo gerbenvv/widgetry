@@ -7,17 +7,6 @@ import { defineProperties } from '../core/instance.js';
 import { AbstractColumn, ColumnChange } from './abstract-column.js';
 
 /**
- * The sort indicator of a column header.
- *
- * @enum {string}
- */
-export const SortIndicator = Object.freeze({
-    NONE: 'none',
-    ASCENDING: 'asc',
-    DESCENDING: 'desc',
-});
-
-/**
  * Base class of columns that show a column of the model (`name`).
  *
  * Clicking the header of a `sortable` column sorts the model on the column, and clicking again
@@ -38,7 +27,7 @@ export class DataColumn extends AbstractColumn {
      * Sorts the model on the column. Without an order, the order is reversed when the model is
      * already sorted on this column, and ascending otherwise.
      *
-     * @param {number} [order] One of `SortOrder`.
+     * @param {string} [order] One of `SortOrder`.
      */
     sort(order) {
         const model = this.model;
@@ -49,7 +38,7 @@ export class DataColumn extends AbstractColumn {
 
         if (order === undefined) {
             order =
-                this.sortIndicator === SortIndicator.ASCENDING
+                this.sortIndicator === SortOrder.ASCENDING
                     ? SortOrder.DESCENDING
                     : SortOrder.ASCENDING;
         }
@@ -142,7 +131,8 @@ defineProperties(DataColumn, {
     },
 
     /**
-     * The sort indicator of the header: one of {@link SortIndicator}.
+     * The sort indicator of the header: the `SortOrder` of the model when it is sorted on this
+     * column, and `SortOrder.NONE` otherwise.
      */
     sortIndicator: {
         readOnly: true,
@@ -151,16 +141,10 @@ defineProperties(DataColumn, {
             const key = this._getSortKey();
 
             if (!model || !key || model.sortColumn !== key) {
-                return SortIndicator.NONE;
+                return SortOrder.NONE;
             }
 
-            if (model.sortOrder === SortOrder.ASCENDING) {
-                return SortIndicator.ASCENDING;
-            }
-
-            return model.sortOrder === SortOrder.DESCENDING
-                ? SortIndicator.DESCENDING
-                : SortIndicator.NONE;
+            return model.sortOrder;
         },
     },
 

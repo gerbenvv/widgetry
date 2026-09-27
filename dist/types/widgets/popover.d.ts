@@ -109,8 +109,20 @@ export declare class Popover extends Bin {
      * @returns {boolean}
      */
     containsElement(node: Node | null): boolean;
+    /**
+     * Whether an element is in the popover, or in a nested popover whose owner is in it (such as
+     * the list of a combo box in the popover).
+     *
+     * @param {Node} node
+     * @returns {boolean}
+     */
+    _containsPopupElement(node: Node): boolean;
     destroy(): void;
     _isShown(): boolean;
+    /**
+     * Gives the keyboard focus back to the owner (or its window) after the popover had it.
+     */
+    _restoreFocus(): void;
     _getAnchorTarget(): any;
     _listen(listen: any): void;
     _connectOwner(owner: any): void;
@@ -123,11 +135,10 @@ export declare class Popover extends Bin {
 
 /** The declared properties of {@link Popover}. */
 export interface Popover {
-    readonly isTopLevel: any;
     /**
      * Whether the popover is open.
      */
-    readonly isOpen: any;
+    readonly isOpen: boolean;
     /**
      * The widget the popover belongs to, or `null`. Presses on the owner do not close the popover
      * (the owner usually toggles it itself), and the popover closes when the owner is hidden, made

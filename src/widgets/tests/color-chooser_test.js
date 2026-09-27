@@ -49,6 +49,8 @@ test.describe('parseColor in the browser', () => {
         const result = await page.evaluate(async () => {
             const { normalizeColor, parseColor } = await import('/src/core/color.js');
 
+            document.documentElement.style.setProperty('--test-color', '#3465a4');
+
             return {
                 red: normalizeColor('red'),
                 purple: normalizeColor('RebeccaPurple'),
@@ -56,6 +58,10 @@ test.describe('parseColor in the browser', () => {
                 mixed: normalizeColor('color-mix(in srgb, white 50%, black)'),
                 invalid: parseColor('not-a-color'),
                 current: parseColor('currentColor') === null,
+                contextual: ['inherit', 'unset', 'initial', 'revert', 'var(--no-such-color)'].map(
+                    (x) => parseColor(x)
+                ),
+                variable: normalizeColor('var(--test-color)'),
                 leftover: document.documentElement.querySelectorAll(':scope > span').length,
             };
         });
@@ -66,6 +72,11 @@ test.describe('parseColor in the browser', () => {
         expect(['#808080', '#7f7f7f']).toContain(result.mixed);
         expect(result.invalid).toBe(null);
         expect(result.leftover).toBe(0);
+
+        // Values that depend on where they are used are not colors of their own.
+        expect(result.current).toBe(true);
+        expect(result.contextual).toEqual([null, null, null, null, null]);
+        expect(result.variable).toBe('#3465a4');
     });
 });
 
@@ -291,6 +302,27 @@ test.describe('ColorChooser', () => {
         await page.keyboard.press('PageDown');
         expect(await page.evaluate(() => globalThis.chooser.color)).toBe('#ffff00');
 
+        // The end of the hue slider is red again, and the thumb stays there.
+        const hue = () =>
+            page.evaluate(() => [
+                globalThis.chooser.color,
+                globalThis.chooser.el.querySelector('.wy-color-chooser-hue').ariaValueNow,
+            ]);
+
+        await page.keyboard.press('End');
+        expect(await hue()).toEqual(['#ff0000', '360']);
+
+        await page.keyboard.press('ArrowUp');
+        expect(await hue()).toEqual(['#ff0004', '359']);
+
+        await page.evaluate(() => {
+            globalThis.chooser.el.querySelector('.wy-color-chooser-hue').focus();
+        });
+        await page.keyboard.press('Home');
+        for (let index = 0; index < 4; index++) {
+            await page.keyboard.press('PageDown');
+        }
+
         await page.evaluate(() => {
             globalThis.chooser.el.querySelector('.wy-color-chooser-alpha').focus();
         });
@@ -384,6 +416,76 @@ test.describe('ColorChooser', () => {
         expect(
             await page.evaluate(() => document.activeElement.classList.contains('wy-color-palette'))
         ).toBe(true);
+    });
+
+    test('the accessible names follow the language', async ({ page }) => {
+        await mount(page, { color: '#3465a4' });
+
+        const result = await page.evaluate(async () => {
+            const { getLocaleManager } = await import('/src/i18n/locale-manager.js');
+            const { ColorButton } = await import('/src/widgets/color-button.js');
+
+            const chooser = globalThis.chooser;
+            const button = new ColorButton({ color: '#3465a4' });
+            const names = () => [
+                chooser.entry.focusElement.getAttribute('aria-label'),
+                chooser.el.querySelector('.wy-color-chooser-hue').getAttribute('aria-label'),
+                chooser.palette.el.getAttribute('aria-label'),
+                button.el.getAttribute('aria-label'),
+                chooser.palette.el.querySelector('.wy-selected').getAttribute('aria-label'),
+                chooser.palette.el.querySelector('.wy-selected').title,
+                chooser.el.querySelector('.wy-color-plane').getAttribute('aria-valuetext'),
+            ];
+
+            getLocaleManager().locale = 'en-US';
+            const english = names();
+
+            getLocaleManager().locale = 'nl-NL';
+            const dutch = names();
+
+            getLocaleManager().locale = 'de-DE';
+            const german = names();
+
+            // An accessible name replaces the title of a color button.
+            button.accessibleName = 'Text color';
+            const named = button.el.getAttribute('aria-label');
+
+            getLocaleManager().locale = 'en-US';
+            button.destroy();
+
+            return { english, dutch, german, named };
+        });
+
+        expect(result).toEqual({
+            english: [
+                'Color name',
+                'Hue',
+                'Palette',
+                'Pick a Color: #3465a4',
+                'Sky Blue',
+                'Sky Blue',
+                'Saturation 68%, value 64%',
+            ],
+            dutch: [
+                'Kleurnaam',
+                'Tint',
+                'Palet',
+                'Kies een kleur: #3465a4',
+                'Hemelsblauw',
+                'Hemelsblauw',
+                'Verzadiging 68%, helderheid 64%',
+            ],
+            german: [
+                'Farbname',
+                'Farbton',
+                'Palette',
+                'Farbe wählen: #3465a4',
+                'Himmelblau',
+                'Himmelblau',
+                'Sättigung 68 %, Helligkeit 64 %',
+            ],
+            named: 'Text color: #3465a4',
+        });
     });
 
     test('custom palettes, hiding the editor and the builder', async ({ page }) => {

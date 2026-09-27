@@ -118,4 +118,28 @@ test.describe('drag and drop', () => {
             'end:false:true',
         ]);
     });
+
+    test('other pointers neither move nor end a drag', async ({ page }) => {
+        await openHarness(page);
+        await setUp(page);
+
+        await page.mouse.move(100, 100);
+        await page.mouse.down();
+        await page.mouse.move(400, 100, { steps: 5 });
+
+        // A second pointer moves off the target and is released.
+        await page.evaluate(() => {
+            for (const type of ['pointermove', 'pointerup']) {
+                const init = { pointerId: 99, bubbles: true, clientX: 100, clientY: 300 };
+                document.body.dispatchEvent(new PointerEvent(type, init));
+            }
+        });
+
+        const during = await page.evaluate(() => [...globalThis.log]);
+
+        await page.mouse.up();
+
+        expect(during).toEqual(['start', 'enter', 'motion']);
+        expect(await page.evaluate(() => globalThis.log.at(-1))).toBe('end:true:false');
+    });
 });

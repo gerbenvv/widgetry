@@ -260,6 +260,45 @@ test.describe('notebook', () => {
         });
     });
 
+    test('removing the only page signals that there is no current page', async ({ page }) => {
+        await openHarness(page);
+        await setUp(page);
+
+        const result = await page.evaluate(() => {
+            const notebook = globalThis.notebook;
+            const events = [];
+            notebook.connect('current-page-change', () => events.push(notebook.currentPage));
+
+            notebook.removePage(2);
+            notebook.removePage(1);
+            notebook.removePage(0);
+
+            return { events, current: notebook.currentPage };
+        });
+
+        expect(result).toEqual({ events: [-1], current: -1 });
+    });
+
+    test('removing the page whose tab is being dragged ends the drag', async ({ page }) => {
+        const errors = await openHarness(page);
+        await setUp(page, { reorderable: true });
+
+        const first = await page.locator('.wy-notebook-tab').nth(0).boundingBox();
+        const third = await page.locator('.wy-notebook-tab').nth(2).boundingBox();
+
+        await page.mouse.move(first.x + 10, first.y + 10);
+        await page.mouse.down();
+        await page.mouse.move(first.x + 30, first.y + 10, { steps: 4 });
+        await page.evaluate(() => globalThis.notebook.removePage(0));
+        await page.mouse.move(third.x + third.width - 5, first.y + 10, { steps: 4 });
+        await page.mouse.up();
+
+        const order = await page.evaluate(() => globalThis.notebook.children.map((x) => x.name));
+
+        expect(errors).toEqual([]);
+        expect(order).toEqual(['Two', 'Three']);
+    });
+
     test('closable tabs have a close button that destroys the page', async ({ page }) => {
         await openHarness(page);
         await setUp(page, { closable: true });

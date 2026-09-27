@@ -9,12 +9,20 @@ import { getScreen } from './screen.js';
 import { settings } from './settings.js';
 
 /**
- * Elements that take the focus (or a text selection) when pressed.
+ * Elements that take the focus (or a text selection) when pressed. Buttons, selects and links
+ * taken out of the focus chain (like the title bar buttons of a window) do not.
  *
  * @type {string}
  */
-const FOCUSABLE_SELECTOR =
-    'input, textarea, select, button, a[href], [contenteditable]:not([contenteditable="false"]), [tabindex]:not([tabindex="-1"])';
+const FOCUSABLE_SELECTOR = [
+    'input',
+    'textarea',
+    'select:not([tabindex="-1"])',
+    'button:not([tabindex="-1"])',
+    'a[href]:not([tabindex="-1"])',
+    '[contenteditable]:not([contenteditable="false"])',
+    '[tabindex]:not([tabindex="-1"])',
+].join(', ');
 
 /** @type {ReadonlyArray<string>} */
 const THEMES = ['light', 'dark', 'auto'];
@@ -33,6 +41,10 @@ export class ApplicationClass extends Instance {
 
         /** @type {Set<import('../widgets/abstract-window.js').AbstractWindow>} */
         this._windows = new Set();
+
+        // The windows in the order they were last active, the most recent last.
+        /** @type {import('../widgets/abstract-window.js').AbstractWindow[]} */
+        this._activationOrder = [];
 
         this._loaded = false;
 
@@ -126,6 +138,7 @@ export class ApplicationClass extends Instance {
      */
     _removeWindow(window) {
         this._windows.delete(window);
+        this._activationOrder = this._activationOrder.filter((x) => x !== window);
 
         if (this._activeWindow === window) {
             this.activeWindow = null;
@@ -133,6 +146,37 @@ export class ApplicationClass extends Instance {
 
         if (this._mainWindow === window) {
             this._setMainWindow(null);
+        }
+    }
+
+    /**
+     * Activates another window after the active window was hidden or destroyed, like a desktop
+     * window manager: the most recently active window that is still shown, or else the topmost
+     * one. Does nothing if another window is active already.
+     *
+     * @protected
+     * @param {import('../widgets/abstract-window.js').AbstractWindow} window The window that
+     *     is gone.
+     */
+    _activateNextWindow(window) {
+        if (this._activeWindow) {
+            return;
+        }
+
+        const modal = this.modalWindow;
+        const candidates = [...this._windows]
+            .filter((x) => x !== window && x.visible && !x.destroyed)
+            .filter((x) => !modal || x === modal || x._isAbove(modal));
+
+        const recent = [...this._activationOrder].reverse().find((x) => candidates.includes(x));
+        const topmost = candidates.reduce(
+            (result, x) => (!result || x._isAbove(result) ? x : result),
+            null
+        );
+
+        const next = recent || topmost;
+        if (next) {
+            this.activeWindow = next;
         }
     }
 
@@ -322,6 +366,11 @@ defineProperties(ApplicationClass, {
             }
 
             this._activeWindow = window;
+
+            if (window) {
+                this._activationOrder = this._activationOrder.filter((x) => x !== window);
+                this._activationOrder.push(window);
+            }
 
             old?._setActive(false);
             window?._setActive(true);

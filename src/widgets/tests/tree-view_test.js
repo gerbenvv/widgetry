@@ -14,7 +14,6 @@ async function createTree(page, { lazy = false, sorted = false } = {}) {
             const { TreeModel } = await import('/src/data/tree-model.js');
             const { TextColumn } = await import('/src/columns/text-column.js');
             const { NumberColumn } = await import('/src/columns/number-column.js');
-            const { SelectionModes } = await import('/src/core/enums.js');
             const { flushLayout } = await import('/src/widgets/widget.js');
             const { getLocaleManager } = await import('/src/i18n/locale-manager.js');
 
@@ -68,7 +67,7 @@ async function createTree(page, { lazy = false, sorted = false } = {}) {
             });
 
             const window = new MainWindow({ host });
-            const table = new Table({ model, selectionModes: SelectionModes.MULTI });
+            const table = new Table({ model, selectionMode: 'multiple' });
 
             table.addColumn(new TextColumn({ name: 'name', label: 'Name', expand: true }));
             table.addColumn(new NumberColumn({ name: 'size', label: 'Size', digits: 0 }));
@@ -485,7 +484,6 @@ test.describe('Tree view', () => {
             const { Table } = await import('/src/widgets/table.js');
             const { TreeModel } = await import('/src/data/tree-model.js');
             const { TextColumn } = await import('/src/columns/text-column.js');
-            const { SelectionModes } = await import('/src/core/enums.js');
             const { flushLayout } = await import('/src/widgets/widget.js');
 
             const host = document.createElement('div');
@@ -514,7 +512,7 @@ test.describe('Tree view', () => {
             });
 
             const window = new MainWindow({ host });
-            const table = new Table({ model, selectionModes: SelectionModes.MULTI });
+            const table = new Table({ model, selectionMode: 'multiple' });
             table.addColumn(new TextColumn({ name: 'name', label: 'Name', expand: true }));
 
             window.addChild(table);
@@ -551,6 +549,14 @@ test.describe('Tree view', () => {
             const last = rendered.at(-1);
             const height = document.querySelector('.wy-table-body').offsetHeight;
 
+            // Read the last row now: collapsing renders its element for another row.
+            const lastRow = {
+                lastText: last.querySelector('.wy-table-tree-content').textContent,
+                lastLevel: last.getAttribute('aria-level'),
+                lastPosition: last.getAttribute('aria-posinset'),
+                lastSize: last.getAttribute('aria-setsize'),
+            };
+
             // Collapsing the last folder moves the cursor and keeps the rendering in sync.
             const before = performance.now();
             model.collapse(model.getRowById('folder 99'));
@@ -561,10 +567,7 @@ test.describe('Tree view', () => {
                 loaded: globalThis.loaded,
                 count,
                 rendered: rendered.length,
-                lastText: last.querySelector('.wy-table-tree-content').textContent,
-                lastLevel: last.getAttribute('aria-level'),
-                lastPosition: last.getAttribute('aria-posinset'),
-                lastSize: last.getAttribute('aria-setsize'),
+                ...lastRow,
                 height,
                 expandTime,
                 collapseTime,

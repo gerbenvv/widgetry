@@ -17,7 +17,6 @@ import { Instance } from '../core/instance.js';
 export declare class Adjustment extends Instance {
     _batch: number;
     _batchChanged: boolean;
-    value: any;
     _value: any;
     _initialize(): void;
     /**
@@ -63,6 +62,10 @@ export declare class Adjustment extends Instance {
 
 /** The declared properties of {@link Adjustment}. */
 export interface Adjustment {
+    /**
+     * The value, clamped to [`lower`, `upper - pageSize`].
+     */
+    value: number;
     /**
      * The value as a fraction from 0 (at `lower`) to 1 (at `upper - pageSize`).
      */

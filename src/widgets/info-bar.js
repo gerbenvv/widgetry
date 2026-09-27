@@ -6,6 +6,7 @@ import { Align, ButtonBoxStyle, FocusDirection, Response } from '../core/enums.j
 import { defineProperties } from '../core/instance.js';
 import { registerType } from '../core/registry.js';
 import { createElement } from '../core/util.js';
+import { Key } from '../events/constants.js';
 import { bindToolkitText, toolkitText } from '../i18n/toolkit-text.js';
 import { Bin } from './bin.js';
 import { Box } from './box.js';
@@ -60,6 +61,9 @@ const MAX_TRANSITION_TIME = 1000;
  * `response`. The close button (`showCloseButton`) emits `response` with `Response.CLOSE`; the
  * handler usually hides the info bar by setting `revealed` to `false`, which slides it closed (or
  * hides it at once when the user prefers reduced motion).
+ *
+ * Escape in the bar gives the response of its Cancel button, or `Response.CLOSE` when it shows the
+ * close button.
  *
  * Errors and warnings are announced by assistive technology right away (role `alert`), other
  * messages politely (role `status`).
@@ -119,6 +123,8 @@ export class InfoBar extends Bin {
         this._box.addChild(this._actionArea);
         this._box.addChild(this._closeButton);
         super.insertChild(this._box, 0);
+
+        this.el.addEventListener('keydown', (event) => this._onKeyDown(event));
 
         this.el.addEventListener('transitionend', (event) => {
             if (event.target === this.el) {
@@ -325,6 +331,38 @@ export class InfoBar extends Bin {
 
     _getFocusChain() {
         return this._revealed ? super._getFocusChain() : [];
+    }
+
+    _onKeyDown(event) {
+        if (
+            event.key !== Key.ESCAPE ||
+            event.defaultPrevented ||
+            event.ctrlKey ||
+            event.altKey ||
+            event.metaKey ||
+            event.shiftKey ||
+            !this._revealed
+        ) {
+            return;
+        }
+
+        // Like GTK, Escape dismisses the bar when it has a Cancel or a close button.
+        const cancel = this._buttons.get(Response.CANCEL);
+        let response = null;
+        if (cancel && cancel.isVisible && cancel.isSensitive) {
+            response = Response.CANCEL;
+        } else if (this._showCloseButton) {
+            response = Response.CLOSE;
+        }
+
+        if (response === null) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        this.response(response);
     }
 
     _computeExpand(direction) {

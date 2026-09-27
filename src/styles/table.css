@@ -217,7 +217,7 @@
     display: block;
 }
 
-.wy-table-column-header.wy-sort-desc > .wy-table-sort-arrow {
+.wy-table-column-header.wy-sort-descending > .wy-table-sort-arrow {
     transform: rotate(180deg);
 }
 

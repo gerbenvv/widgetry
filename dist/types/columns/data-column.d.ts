@@ -3,16 +3,6 @@
  */
 import { AbstractColumn } from './abstract-column.js';
 /**
- * The sort indicator of a column header.
- *
- * @enum {string}
- */
-export declare const SortIndicator: Readonly<{
-    NONE: "none";
-    ASCENDING: "asc";
-    DESCENDING: "desc";
-}>;
-/**
  * Base class of columns that show a column of the model (`name`).
  *
  * Clicking the header of a `sortable` column sorts the model on the column, and clicking again
@@ -30,9 +20,9 @@ export declare class DataColumn extends AbstractColumn {
      * Sorts the model on the column. Without an order, the order is reversed when the model is
      * already sorted on this column, and ascending otherwise.
      *
-     * @param {number} [order] One of `SortOrder`.
+     * @param {string} [order] One of `SortOrder`.
      */
-    sort(order?: number): void;
+    sort(order?: string): void;
     /**
      * Returns the value of the column in a row.
      *
@@ -70,7 +60,8 @@ export interface DataColumn {
      */
     sortable: boolean;
     /**
-     * The sort indicator of the header: one of {@link SortIndicator}.
+     * The sort indicator of the header: the `SortOrder` of the model when it is sorted on this
+     * column, and `SortOrder.NONE` otherwise.
      */
     readonly sortIndicator: any;
     /**

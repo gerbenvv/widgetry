@@ -59,6 +59,21 @@ const NUMBER = '[+-]?(?:\\d+\\.?\\d*|\\.\\d+)(?:e[+-]?\\d+)?';
 const COMPONENT_PATTERN = new RegExp(`^(?:(${NUMBER})(%|deg|grad|rad|turn)?|none)$`, 'i');
 
 /**
+ * Matches the CSS-wide keywords and `currentcolor`, which are valid values of `color` but depend on
+ * where they are used.
+ *
+ * @type {RegExp}
+ */
+const CONTEXT_KEYWORD_PATTERN = /^(?:inherit|initial|unset|revert|revert-layer|currentcolor)$/i;
+
+/**
+ * Two different inherited colors, for finding colors that depend on where they are used.
+ *
+ * @type {ReadonlyArray<string>}
+ */
+const PROBE_COLORS = Object.freeze(['rgb(0, 0, 0)', 'rgb(255, 255, 255)']);
+
+/**
  * Matches a color function: its name and its arguments.
  *
  * @type {RegExp}
@@ -307,7 +322,8 @@ export function parseColorSyntax(text) {
 /**
  * Resolves any other CSS color (such as a named color like `'rebeccapurple'`) with the browser:
  * the color is checked with `CSS.supports()` and converted by reading the computed style of a
- * temporary element. Returns `null` outside a browser.
+ * temporary element. Values that depend on where they are used, such as `currentColor`,
+ * `inherit` or an undefined custom property, are not colors. Returns `null` outside a browser.
  *
  * @param {string} text
  * @returns {Rgba | null}
@@ -317,35 +333,61 @@ function resolveWithBrowser(text) {
         typeof document === 'undefined' ||
         typeof CSS === 'undefined' ||
         typeof getComputedStyle === 'undefined' ||
+        CONTEXT_KEYWORD_PATTERN.test(text) ||
         !CSS.supports('color', text)
     ) {
         return null;
     }
 
+    const parent = document.createElement('span');
     const element = document.createElement('span');
-    element.style.display = 'none';
-    document.documentElement.append(element);
+    parent.style.display = 'none';
+    parent.append(element);
+    document.documentElement.append(parent);
 
     try {
-        // Plain colors compute to rgb(); other color spaces are converted to sRGB by mixing.
-        for (const value of [text, `color-mix(in srgb, ${text} 100%, transparent)`]) {
-            element.style.color = '';
-            element.style.color = value;
+        // Resolve the color with two different inherited colors; a color that follows them is
+        // not a color of its own.
+        const [first, second] = PROBE_COLORS.map((inherited) => {
+            parent.style.color = inherited;
 
-            if (!element.style.color) {
-                continue;
-            }
+            return resolveElementColor(element, text);
+        });
 
-            const color = parseColorSyntax(getComputedStyle(element).color);
-            if (color) {
-                return color;
-            }
+        if (!first || !second || formatHex(first, true) !== formatHex(second, true)) {
+            return null;
         }
 
-        return null;
+        return first;
     } finally {
-        element.remove();
+        parent.remove();
     }
+}
+
+/**
+ * Sets a color on an element and reads back its computed color.
+ *
+ * @param {HTMLElement} element
+ * @param {string} text
+ * @returns {Rgba | null}
+ */
+function resolveElementColor(element, text) {
+    // Plain colors compute to rgb(); other color spaces are converted to sRGB by mixing.
+    for (const value of [text, `color-mix(in srgb, ${text} 100%, transparent)`]) {
+        element.style.color = '';
+        element.style.color = value;
+
+        if (!element.style.color) {
+            continue;
+        }
+
+        const color = parseColorSyntax(getComputedStyle(element).color);
+        if (color) {
+            return color;
+        }
+    }
+
+    return null;
 }
 
 /**

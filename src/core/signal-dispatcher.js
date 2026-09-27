@@ -6,6 +6,8 @@
  * @typedef {object} SignalHandler
  * @property {Function} method
  * @property {object} [context]
+ * @property {boolean} [disconnected] Set when the handler is disconnected, so that an emit in
+ *     progress skips it.
  */
 
 /**
@@ -13,7 +15,9 @@
  *
  * Handlers run in connection order. A handler that returns `true` marks the signal as handled,
  * which is reported by {@link SignalDispatcher#emit}; the remaining handlers still run. Handlers
- * connected with {@link SignalDispatcher#connectLast} always run after the others.
+ * connected with {@link SignalDispatcher#connectLast} always run after the others. Handlers
+ * connected during an emit do not run in it, and handlers disconnected during an emit no longer
+ * run in it.
  */
 export class SignalDispatcher {
     constructor() {
@@ -36,9 +40,10 @@ export class SignalDispatcher {
      * @returns {() => void} A function that disconnects the handler again.
      */
     connect(name, method, context) {
-        this._getHandlers(this._slots, name).push({ method, context });
+        const handler = { method, context };
+        this._getHandlers(this._slots, name).push(handler);
 
-        return () => this.disconnect(name, method, context);
+        return () => this._removeHandler(name, handler);
     }
 
     /**
@@ -50,9 +55,10 @@ export class SignalDispatcher {
      * @returns {() => void}
      */
     connectFirst(name, method, context) {
-        this._getHandlers(this._slots, name).unshift({ method, context });
+        const handler = { method, context };
+        this._getHandlers(this._slots, name).unshift(handler);
 
-        return () => this.disconnect(name, method, context);
+        return () => this._removeHandler(name, handler);
     }
 
     /**
@@ -64,9 +70,10 @@ export class SignalDispatcher {
      * @returns {() => void}
      */
     connectLast(name, method, context) {
-        this._getHandlers(this._lastSlots, name).push({ method, context });
+        const handler = { method, context };
+        this._getHandlers(this._lastSlots, name).push(handler);
 
-        return () => this.disconnect(name, method, context);
+        return () => this._removeHandler(name, handler);
     }
 
     /**
@@ -85,6 +92,7 @@ export class SignalDispatcher {
 
             for (let i = handlers.length - 1; i >= 0; --i) {
                 if (handlers[i].method === method && handlers[i].context === context) {
+                    handlers[i].disconnected = true;
                     handlers.splice(i, 1);
 
                     return;
@@ -120,6 +128,10 @@ export class SignalDispatcher {
 
         let handled = false;
         for (const handler of handlers) {
+            if (handler.disconnected) {
+                continue;
+            }
+
             if (handler.method.apply(handler.context, args) === true) {
                 handled = true;
             }
@@ -155,8 +167,29 @@ export class SignalDispatcher {
      * Removes all handlers.
      */
     clear() {
-        this._slots.clear();
-        this._lastSlots.clear();
+        for (const slots of [this._slots, this._lastSlots]) {
+            for (const handlers of slots.values()) {
+                for (const handler of handlers) {
+                    handler.disconnected = true;
+                }
+            }
+
+            slots.clear();
+        }
+    }
+
+    _removeHandler(name, handler) {
+        for (const slots of [this._slots, this._lastSlots]) {
+            const handlers = slots.get(name);
+            const index = handlers ? handlers.indexOf(handler) : -1;
+
+            if (index >= 0) {
+                handler.disconnected = true;
+                handlers.splice(index, 1);
+
+                return;
+            }
+        }
     }
 
     _getHandlers(slots, name) {

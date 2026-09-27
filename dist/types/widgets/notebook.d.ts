@@ -59,7 +59,8 @@ export type NotebookTab = {
  * Delete closes a closable page. Ctrl+Page Up and Ctrl+Page Down switch pages from anywhere in
  * the notebook.
  *
- * Signals: `switch-page` (`notebook, page, index`) after the current page changed,
+ * Signals: `switch-page` (`notebook, page, index`) after another page became the current one,
+ * `current-page-change` (also when no page is current any more),
  * `page-add` and `page-remove` (`notebook, page, index`), `page-reorder` (`notebook, page,
  * index`) and `page-close` (`notebook, page, index`), emitted when the close button of a tab is
  * clicked: the page is destroyed unless a handler returns `true`.
@@ -254,7 +255,7 @@ export interface Notebook {
     /**
      * Notebooks take the keyboard focus on their tabs.
      */
-    canFocus: any;
+    canFocus: boolean;
     /**
      * The index of the shown page, or -1 when there is none. Setting an invisible page has no
      * effect.
@@ -263,11 +264,11 @@ export interface Notebook {
     /**
      * The number of pages.
      */
-    readonly pageCount: any;
+    readonly pageCount: number;
     /**
      * The side the tabs are at: one of `Position`.
      */
-    tabPosition: any;
+    tabPosition: string;
     /**
      * Whether the tabs are shown.
      */

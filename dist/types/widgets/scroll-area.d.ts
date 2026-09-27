@@ -25,8 +25,6 @@ export declare class ScrollArea extends Bin {
     _adjustmentHandlers: Map<any, any>;
     _hAdjustment: any;
     _vAdjustment: any;
-    hAdjustment: Adjustment;
-    vAdjustment: Adjustment;
     _contentObserver: ResizeObserver;
     _mutationObserver: MutationObserver;
     _measureQueued: boolean;
@@ -90,22 +88,30 @@ export declare class ScrollArea extends Bin {
 
 /** The declared properties of {@link ScrollArea}. */
 export interface ScrollArea {
-    hExpand: any;
-    vExpand: any;
+    /**
+     * The horizontal `Adjustment`: its value is the horizontal scroll offset. Only change its
+     * value; the scroll area sets its bounds and page size.
+     */
+    hAdjustment: Adjustment;
+    /**
+     * The vertical `Adjustment`: its value is the vertical scroll offset. Only change its
+     * value; the scroll area sets its bounds and page size.
+     */
+    vAdjustment: Adjustment;
     /**
      * When the horizontal scroll bar is shown: one of `Policy`. With `never`, the content fits
      * the width of the view.
      */
-    hPolicy: any;
+    hPolicy: string;
     /**
      * When the vertical scroll bar is shown: one of `Policy`. With `never`, the content fits the
      * height of the view.
      */
-    vPolicy: any;
+    vPolicy: string;
     /**
      * The border around the view: one of `ShadowType`.
      */
-    shadowType: any;
+    shadowType: string;
     /**
      * Whether the natural width of the scroll area is that of its content, instead of
      * `minContentWidth`. In some containers the natural size is also the minimum size.

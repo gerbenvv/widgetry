@@ -3,13 +3,13 @@ import { expect, test } from '@playwright/test';
 
 import { openHarness } from '../../../tests/helpers.js';
 
-test('Rectangle has a position, a size and rounded corners', async ({ page }) => {
+test('RectangleSprite has a position, a size and rounded corners', async ({ page }) => {
     await openHarness(page);
 
     const result = await page.evaluate(async () => {
-        const { Rectangle } = await import('/src/sprites/rectangle.js');
+        const { RectangleSprite } = await import('/src/sprites/rectangle.js');
 
-        const rectangle = new Rectangle({
+        const rectangle = new RectangleSprite({
             position: { x: 5, y: 6 },
             size: { width: 30, height: 20 },
             cornerRadius: 3,

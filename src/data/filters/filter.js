@@ -16,7 +16,7 @@ export class Filter extends Instance {
     /**
      * Checks whether a row passes the filter.
      *
-     * @param {object} row
+     * @param {object} _row
      * @returns {boolean}
      */
     isVisibleRow(_row) {

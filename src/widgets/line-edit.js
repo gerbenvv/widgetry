@@ -71,6 +71,8 @@ export class LineEdit extends Widget {
     _initialize() {
         super._initialize();
 
+        this._validatorDisconnect = null;
+
         this._inputEl.addEventListener('input', () => this._onInput());
         this._inputEl.addEventListener('keydown', (event) => this._onInputKeyDown(event));
         this._inputEl.addEventListener('blur', () => this._onInputBlur());
@@ -130,6 +132,13 @@ export class LineEdit extends Widget {
         this._fixup();
 
         this.emit('activate', this);
+    }
+
+    destroy() {
+        this._validatorDisconnect?.();
+        this._validatorDisconnect = null;
+
+        super.destroy();
     }
 
     /**
@@ -642,11 +651,20 @@ defineProperties(LineEdit, {
     /**
      * The validator of the text, or `null`: an object with a `validate(text)` method (and
      * optionally `fixup(text)`), or a function. An invalid text is shown in the invalid state.
+     * The text is validated again when a validator with a `change` signal (such as the
+     * validators of `data/validators`) emits it.
      */
     validator: {
         value: null,
         coerce: checkValidator,
-        changed() {
+        changed(validator) {
+            this._validatorDisconnect?.();
+            this._validatorDisconnect = null;
+
+            if (typeof validator?.connect === 'function') {
+                this._validatorDisconnect = validator.connect('change', () => this._revalidate());
+            }
+
             this._revalidate();
         },
     },
@@ -733,20 +751,6 @@ defineProperties(LineEdit, {
             this._inputEl.setSelectionRange(index, index);
 
             return false;
-        },
-    },
-
-    /**
-     * The accessible name of the input, for line edits without a visible label.
-     */
-    accessibleName: {
-        value: '',
-        changed(name) {
-            if (name) {
-                this._inputEl.setAttribute('aria-label', name);
-            } else {
-                this._inputEl.removeAttribute('aria-label');
-            }
         },
     },
 });

@@ -115,6 +115,7 @@ export class MenuBar extends Box {
             manager._addShell(this);
 
             item._setSelected(true);
+            this.el.setAttribute('aria-activedescendant', item.el.id);
 
             if (item.submenu) {
                 this._popupSubmenu(item, keyboard);
@@ -123,6 +124,7 @@ export class MenuBar extends Box {
                 this.el.focus({ preventScroll: true });
             }
         } else {
+            this.el.removeAttribute('aria-activedescendant');
             manager._removeShell(this);
         }
 

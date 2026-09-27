@@ -123,11 +123,16 @@ export declare function confirm(text: string, options?: MessageOptions & {
 /**
  * Asks the user for a text, with a line edit and OK and Cancel buttons.
  *
- * @param {string} text
- * @param {MessageOptions & {value?: string, placeholder?: string}} [options]
+ * @example
+ * const name = await prompt('Save as', { text: 'notes.txt', placeholder: 'File name' });
+ *
+ * @param {string} message The question.
+ * @param {MessageOptions & {text?: string, value?: string, placeholder?: string}} [options] The
+ *     initial `text` of the line edit (or `value`, the same) and its `placeholder`.
  * @returns {Promise<string | null>} The text, or `null` when canceled.
  */
-export declare function prompt(text: string, options?: MessageOptions & {
+export declare function prompt(message: string, options?: MessageOptions & {
+    text?: string;
     value?: string;
     placeholder?: string;
 }): Promise<string | null>;
@@ -137,7 +142,7 @@ export interface MessageDialog {
     /**
      * The kind of message: one of `MessageType`, which selects the icon.
      */
-    messageType: any;
+    messageType: string;
     /**
      * The primary text, shown bold.
      */
@@ -158,5 +163,5 @@ export interface MessageDialog {
      * The standard buttons: one of `ButtonsType`. They are added when this is set, so set it
      * once.
      */
-    buttonsType: any;
+    buttonsType: string;
 }

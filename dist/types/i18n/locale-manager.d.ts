@@ -72,9 +72,10 @@ export interface LocaleManagerClass {
      */
     pmDesignator: any;
     /**
-     * The time zone dates are formatted and parsed in: an IANA time zone name such as
-     * `'Europe/Amsterdam'`, `'UTC'` (the default, like the original toolkit) or `'local'` for the
-     * time zone of the system. It does not change with the locale.
+     * The time zone dates are formatted and parsed in: `'local'` (the default) for the time zone of
+     * the system, which is the one of the dates of the calendar and the date edit (local
+     * midnight), `'UTC'` (like the original toolkit) or an IANA time zone name such as
+     * `'Europe/Amsterdam'`. It does not change with the locale.
      */
     timeZone: string;
     /**

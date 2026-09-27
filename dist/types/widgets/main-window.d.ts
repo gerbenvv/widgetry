@@ -21,6 +21,7 @@ export declare class MainWindow extends AbstractWindow {
      */
     get hostElement(): HTMLElement;
     destroy(): void;
+    _syncAccessibleName(): void;
     _onVisibleChange(visible: any): void;
 }
 

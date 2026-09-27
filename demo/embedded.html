@@ -15,6 +15,13 @@
                     16px/1.6 Georgia,
                     serif;
                 color: #222;
+
+                /* The page keeps its own colors in the dark theme of the application. */
+                background: #fff;
+            }
+
+            a {
+                color: #1f63b5;
             }
 
             #app {
@@ -73,7 +80,7 @@
                 const table = new w.Table({
                     model,
                     vExpand: true,
-                    selectionModes: w.SelectionModes.SINGLE,
+                    selectionMode: w.SelectionMode.SINGLE,
                 });
                 table.addColumn(new w.TextColumn({ name: 'task', label: 'Task', expand: true }));
                 table.addColumn(

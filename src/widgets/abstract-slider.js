@@ -273,7 +273,7 @@ export class AbstractSlider extends Widget {
             const before = position < current.thumbStart;
             const after = position >= current.thumbStart + current.thumbLength;
 
-            if (!before && !after) {
+            if ((!before && !after) || !this.isSensitive) {
                 return false;
             }
 

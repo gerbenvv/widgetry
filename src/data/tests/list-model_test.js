@@ -75,6 +75,28 @@ describe('ListModel', () => {
         assert.throws(() => model.updateRow(0, { id: 2 }), /Duplicate/);
     });
 
+    test('rejects an id column with duplicate ids without changing anything', () => {
+        const model = createModel();
+        const changes = [];
+        model.connect('id-column-change', () => changes.push(model.idColumn));
+
+        // Two rows have the value 1.
+        assert.throws(() => (model.idColumn = 'value'), /Duplicate row id 1/);
+        assert.equal(model.idColumn, 'id');
+        assert.equal(model.getRowById(3).name, 'Indices');
+        assert.deepEqual(changes, []);
+
+        model.idColumn = 'name';
+        assert.equal(model.getRowById('bonds').id, 2);
+        assert.deepEqual(changes, ['name']);
+
+        model.idColumn = null;
+        assert.equal(model.hasRowIds, false);
+        assert.throws(() => (model.idColumn = 'value'), /Duplicate/);
+        assert.equal(model.idColumn, null);
+        assert.equal(model.hasRowIds, false);
+    });
+
     test('sorts stably, and keeps non-values at the end in both orders', () => {
         const model = new ListModel({
             rows: [
@@ -110,8 +132,12 @@ describe('ListModel', () => {
 
         model.sortColumn = null;
         assert.equal(model.sortOrder, SortOrder.NONE);
-        assert.deepEqual(orders, [1, 0, 2, 0]);
+        assert.deepEqual(orders, ['ascending', 'none', 'descending', 'none']);
         assert.throws(() => (model.sortOrder = 7), RangeError);
+
+        // The old numeric orders are no longer accepted.
+        assert.throws(() => model.sortByColumn('name', 1), RangeError);
+        assert.equal(model.sortOrder, SortOrder.NONE);
     });
 
     test('compares strings with the locale, case sensitively or not', () => {
@@ -135,6 +161,37 @@ describe('ListModel', () => {
         assert.deepEqual(
             model.rows.map((x) => x.name),
             ['B', 'a', 'b', 'e', 'é']
+        );
+    });
+
+    test('sorts strings again when the locale changes', () => {
+        const model = new ListModel({
+            rows: [{ name: 'z' }, { name: 'ä' }, { name: 'a' }],
+            sortColumn: 'name',
+        });
+        const log = record(model);
+
+        try {
+            // Swedish sorts 'ä' after 'z'.
+            getLocaleManager().locale = 'sv-SE';
+            assert.deepEqual(
+                model.rows.map((x) => x.name),
+                ['a', 'z', 'ä']
+            );
+            assert.equal(log[0][0], 'rows-reorder');
+
+            model.appendRow({ name: 'b' });
+            assert.deepEqual(
+                model.rows.map((x) => x.name),
+                ['a', 'b', 'z', 'ä']
+            );
+        } finally {
+            getLocaleManager().locale = 'en-US';
+        }
+
+        assert.deepEqual(
+            model.rows.map((x) => x.name),
+            ['a', 'ä', 'b', 'z']
         );
     });
 
@@ -274,6 +331,59 @@ describe('ListModel', () => {
             ['rows-reorder', 'rows-change']
         );
         assert.throws(() => model.appendRows([{ id: 7 }, { id: 7 }]), /Duplicate/);
+    });
+
+    test('keeps inserted rows after the rows they are equal to', () => {
+        const model = new ListModel({
+            rows: [
+                { key: 'a', value: 1 },
+                { key: 'b', value: 1 },
+            ],
+            sortColumn: 'value',
+        });
+
+        model.insertRows(0, [
+            { key: 'c', value: 1 },
+            { key: 'd', value: 1 },
+        ]);
+        model.insertRow(0, { key: 'e', value: 1 });
+
+        assert.equal(model.rows.map((x) => x.key).join(''), 'abcde');
+    });
+
+    test('appends many rows with ids one by one in linear time', () => {
+        const model = new ListModel({ idColumn: 'id' });
+
+        const start = performance.now();
+        for (let i = 0; i < 20000; ++i) {
+            model.appendRow({ id: i });
+        }
+
+        // Checking every id against a rebuilt index would take seconds.
+        assert.ok(performance.now() - start < 1000);
+        assert.throws(() => model.appendRow({ id: 5 }), /Duplicate/);
+        assert.equal(model.getRowIndexById(19999), 19999);
+
+        model.removeRow(0);
+        model.appendRow({ id: 0 });
+        model.setCellValue(0, 'id', 'one');
+        assert.equal(model.hasRowId(1), false);
+        assert.equal(model.hasRowId('one'), true);
+        assert.throws(() => model.setCellValue(1, 'id', 'one'), /Duplicate/);
+
+        // Rows added without the id column are known when it is set again.
+        model.idColumn = null;
+        model.appendRow({ id: 'two' });
+        model.setCellValue(0, 'id', 'three');
+        model.idColumn = 'id';
+        assert.throws(() => model.appendRow({ id: 'two' }), /Duplicate/);
+        assert.equal(model.hasRowId('three'), true);
+
+        model.idColumn = null;
+        model.rows = [{ id: 1 }, { key: 1 }];
+        model.idColumn = 'key';
+        assert.equal(model.hasRowId(1), true);
+        assert.throws(() => model.appendRow({ key: 1 }), /Duplicate/);
     });
 
     test('replaces all rows by setting rows', () => {

@@ -29,9 +29,9 @@ test.describe('Sprite', () => {
         await createCanvas(page);
 
         const result = await page.evaluate(async () => {
-            const { Rectangle } = await import('/src/sprites/rectangle.js');
+            const { RectangleSprite } = await import('/src/sprites/rectangle.js');
             const canvas = globalThis.canvas;
-            const sprite = new Rectangle({ size: { width: 10, height: 10 } });
+            const sprite = new RectangleSprite({ size: { width: 10, height: 10 } });
             const log = [];
             sprite.connect('is-visible-change', () => log.push(sprite.isVisible));
             sprite.connect('parent-change', () =>
@@ -62,10 +62,10 @@ test.describe('Sprite', () => {
         await createCanvas(page);
 
         const result = await page.evaluate(async () => {
-            const { Rectangle } = await import('/src/sprites/rectangle.js');
+            const { RectangleSprite } = await import('/src/sprites/rectangle.js');
             const { StrokeStyle } = await import('/src/sprites/sprite.js');
 
-            const sprite = new Rectangle({
+            const sprite = new RectangleSprite({
                 name: 'bar',
                 title: 'A bar',
                 fill: '#5699d8',
@@ -103,8 +103,21 @@ test.describe('Sprite', () => {
                 error = e.constructor.name;
             }
 
+            // Stroke styles are strings; the old numbers are rejected.
+            sprite.strokeStyle = 'dotted';
+            const dotted = sprite.strokeStyle === StrokeStyle.DOTTED;
+
+            let styleError = null;
+            try {
+                sprite.strokeStyle = 1;
+            } catch (e) {
+                styleError = e.constructor.name;
+            }
+
             return {
                 attributes,
+                dotted,
+                styleError,
                 classes,
                 has,
                 after: sprite.hasStyleClass('highlight'),
@@ -129,6 +142,8 @@ test.describe('Sprite', () => {
         expect(result.noStroke).toBe('none');
         expect(result.title).toBe('A bar');
         expect(result.error).toBe('RangeError');
+        expect(result.dotted).toBe(true);
+        expect(result.styleError).toBe('RangeError');
     });
 
     test('applies its transformation', async ({ page }) => {
@@ -136,11 +151,11 @@ test.describe('Sprite', () => {
         await createCanvas(page);
 
         const result = await page.evaluate(async () => {
-            const { Rectangle } = await import('/src/sprites/rectangle.js');
+            const { RectangleSprite } = await import('/src/sprites/rectangle.js');
             const { Matrix } = await import('/src/data/matrix.js');
 
             // Without a stroke, as browsers differ in whether bounding boxes include it.
-            const sprite = new Rectangle({
+            const sprite = new RectangleSprite({
                 size: { width: 20, height: 10 },
                 fill: 'red',
                 strokeWidth: 0,
@@ -172,18 +187,18 @@ test.describe('Sprite', () => {
         await createCanvas(page);
 
         await page.evaluate(async () => {
-            const { Rectangle } = await import('/src/sprites/rectangle.js');
-            const { Circle } = await import('/src/sprites/circle.js');
+            const { RectangleSprite } = await import('/src/sprites/rectangle.js');
+            const { CircleSprite } = await import('/src/sprites/circle.js');
             const { Events } = await import('/src/events/constants.js');
 
             const canvas = globalThis.canvas;
-            const box = new Rectangle({
+            const box = new RectangleSprite({
                 position: { x: 10, y: 10 },
                 size: { width: 100, height: 100 },
                 fill: '#ccc',
                 name: 'box',
             });
-            const ring = new Circle({
+            const ring = new CircleSprite({
                 position: { x: 200, y: 60 },
                 radius: 40,
                 strokeWidth: 6,
@@ -248,10 +263,10 @@ test.describe('Sprite', () => {
         await createCanvas(page);
 
         await page.evaluate(async () => {
-            const { Rectangle } = await import('/src/sprites/rectangle.js');
+            const { RectangleSprite } = await import('/src/sprites/rectangle.js');
             const { Events } = await import('/src/events/constants.js');
 
-            const sprite = new Rectangle({
+            const sprite = new RectangleSprite({
                 position: { x: 10, y: 10 },
                 size: { width: 40, height: 40 },
                 fill: '#ccc',
@@ -308,16 +323,16 @@ test.describe('Sprite', () => {
         await createCanvas(page);
 
         await page.evaluate(async () => {
-            const { Rectangle } = await import('/src/sprites/rectangle.js');
+            const { RectangleSprite } = await import('/src/sprites/rectangle.js');
             const { Events, Modifiers } = await import('/src/events/constants.js');
             const canvas = globalThis.canvas;
             const log = [];
 
-            const other = new Rectangle({
+            const other = new RectangleSprite({
                 position: { x: 100, y: 0 },
                 size: { width: 50, height: 50 },
             });
-            const sprite = new Rectangle({
+            const sprite = new RectangleSprite({
                 position: { x: 10, y: 10 },
                 size: { width: 50, height: 50 },
                 fill: 'red',
@@ -379,8 +394,8 @@ test.describe('Sprite', () => {
         await createCanvas(page);
 
         const result = await page.evaluate(async () => {
-            const { Path } = await import('/src/sprites/path.js');
-            const sprite = globalThis.canvas.addSprite(new Path({ path: 'M0 0L10 10' }));
+            const { PathSprite } = await import('/src/sprites/path.js');
+            const sprite = globalThis.canvas.addSprite(new PathSprite({ path: 'M0 0L10 10' }));
 
             sprite.destroy();
 
@@ -392,5 +407,31 @@ test.describe('Sprite', () => {
         });
 
         expect(result).toEqual({ count: 0, inDocument: false, parent: null });
+    });
+
+    test('the shape classes are named after their builder types', async ({ page }) => {
+        await openHarness(page);
+
+        const result = await page.evaluate(async () => {
+            const w = await import('/src/index.js');
+
+            return {
+                names: ['rectangle', 'circle', 'path', 'label', 'image'].map((x) =>
+                    w.getTypeName(w[`${x[0].toUpperCase()}${x.slice(1)}Sprite`])
+                ),
+                old: ['Rectangle', 'Circle', 'Path'].filter((x) => x in w),
+            };
+        });
+
+        expect(result).toEqual({
+            names: [
+                'rectangle-sprite',
+                'circle-sprite',
+                'path-sprite',
+                'label-sprite',
+                'image-sprite',
+            ],
+            old: [],
+        });
     });
 });

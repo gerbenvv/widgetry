@@ -333,6 +333,73 @@ describe('DateTimeParser', () => {
         assert.throws(() => parser.parseExact('x', 5), TypeError);
     });
 
+    test('parses what Intl formats in many locales', () => {
+        const locales = ['en-US', 'nl-NL', 'de-DE', 'fr-FR', 'es-ES', 'pt-BR', 'pt-PT', 'it-IT'];
+        locales.push('uk-UA', 'ru-RU', 'th-TH', 'hi-IN', 'ja-JP', 'zh-CN', 'ko-KR', 'ar-EG');
+        locales.push(
+            'fa-IR',
+            'he-IL',
+            'ca-ES',
+            'fi-FI',
+            'cs-CZ',
+            'el-GR',
+            'hu-HU',
+            'bg-BG',
+            'fr-CA',
+            'pl-PL',
+            'lt-LT',
+            'vi-VN',
+            'bn-BD'
+        );
+
+        for (const locale of locales) {
+            for (const timeZone of ['UTC', 'Europe/Amsterdam', 'Asia/Kolkata']) {
+                const parser = createParser(locale, { timeZone });
+                const options = { timeZone, calendar: 'gregory' };
+
+                for (const time of [Date.UTC(2013, 7, 10, 14, 5), Date.UTC(2024, 1, 29, 23, 59)]) {
+                    const midnight = parser.parseExact(
+                        new Intl.DateTimeFormat('en-CA', options).format(time),
+                        '%Y-%m-%d'
+                    );
+
+                    for (const dateStyle of ['short', 'medium', 'long', 'full']) {
+                        const text = new Intl.DateTimeFormat(locale, { ...options, dateStyle });
+                        const date = parser.parseDate(text.format(time));
+                        assert.equal(date?.getTime(), midnight.getTime(), text.format(time));
+                    }
+
+                    const text = new Intl.DateTimeFormat(locale, {
+                        ...options,
+                        timeStyle: 'short',
+                    }).format(time);
+                    const [hours, minutes] = new Intl.DateTimeFormat('en-GB', {
+                        ...options,
+                        timeStyle: 'short',
+                    })
+                        .format(time)
+                        .split(':');
+
+                    assert.equal(parser.parseTime(text), (hours * 60 + +minutes) * 60000, text);
+                }
+            }
+        }
+    });
+
+    test('parses day periods with periods in exact formats', () => {
+        for (const locale of ['fi-FI', 'cs-CZ', 'el-GR', 'hu-HU', 'nl-NL']) {
+            const manager = new LocaleManagerClass({ locale });
+            const parser = createParser(locale);
+            const text = `10/08/2013 02:05 ${manager.pmDesignator}`;
+
+            assert.equal(
+                parser.parseExact(text, '%d/%m/%Y %I:%M %p')?.toISOString(),
+                '2013-08-10T14:05:00.000Z',
+                text
+            );
+        }
+    });
+
     test('validates its properties', () => {
         assert.throws(() => createParser('en-US', { twoDigitYearMax: 100 }), RangeError);
         assert.throws(() => createParser('en-US', { referenceTime: 'now' }), TypeError);
@@ -343,7 +410,12 @@ describe('DateTimeParser', () => {
         assert.equal(iso(parser.parseDate('1/1/51')), '1951-01-01');
     });
 
-    test('provides convenience functions', () => {
-        assert.equal(iso(parseDate('2013-08-10')), '2013-08-10');
+    test('provides convenience functions, which parse in local time by default', () => {
+        const date = parseDate('2013-08-10');
+
+        assert.deepEqual(
+            [date.getFullYear(), date.getMonth(), date.getDate(), date.getHours()],
+            [2013, 7, 10, 0]
+        );
     });
 });

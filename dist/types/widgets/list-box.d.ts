@@ -6,17 +6,6 @@ import { Bin } from './bin.js';
 import { Container } from './container.js';
 import { Widget } from './widget.js';
 /**
- * How the rows of a list box can be selected, as in GTK.
- *
- * @enum {string}
- */
-export declare const SelectionMode: Readonly<{
-    NONE: "none";
-    SINGLE: "single";
-    BROWSE: "browse";
-    MULTIPLE: "multiple";
-}>;
-/**
  * A row of a `ListBox`. It holds one child widget. Widgets added to a list box that are not rows
  * are wrapped in a row automatically.
  *
@@ -94,8 +83,8 @@ export declare class ListBoxRow extends Bin {
  * scroll area.
  *
  * Rows are `ListBoxRow`s; other widgets are wrapped in one when added. Rows can be selected
- * according to `selectionMode` and activated (`row-activate`) with a click (a double click without
- * `activateOnSingleClick`), Enter or Space.
+ * according to `selectionMode` (and `toggleSelection`) and activated (`row-activate`) with a click
+ * (a double click without `activateOnSingleClick`), Enter or Space.
  *
  * Rows can be filtered (`filterFunction`), sorted (`sortFunction`) and get headers
  * (`setHeaderFunction()`), for example section titles or separators; call `invalidateFilter()`,
@@ -104,7 +93,8 @@ export declare class ListBoxRow extends Bin {
  * from the rows of a model and follow its changes.
  *
  * Keyboard: Up, Down, Home, End, Page Up and Page Down move the cursor row and select it (with
- * Control only the cursor moves, and Shift extends the selection with `multiple`). Space and Enter
+ * Control only the cursor moves, except with `browse`, and Shift extends the selection with
+ * `multiple`). Space and Enter
  * select and activate the cursor row, Control+Space toggles its selection, and Control+A selects
  * all rows (Shift+Control+A deselects them).
  *
@@ -127,9 +117,6 @@ export declare class ListBox extends Container {
     _binding: boolean;
     _bodyEl: Element;
     _placeholderEl: Element;
-    filterFunction: (row: ListBoxRow) => boolean;
-    sortFunction: (first: ListBoxRow, second: ListBoxRow) => number;
-    headerFunction: (row: ListBoxRow, before: ListBoxRow | null) => void;
     _model: AbstractModel;
     _createWidgetFunction: (row: object, index: number) => Widget;
     _cursorRow: any;
@@ -311,7 +298,8 @@ export declare class ListBox extends Container {
      *
      * @protected
      * @param {ListBoxRow | null} row
-     * @param {boolean} modify Whether Control was held: only the cursor moves.
+     * @param {boolean} modify Whether Control was held: only the cursor moves (except with
+     *     `browse`).
      * @param {boolean} extend Whether Shift was held: the selection is extended (with `multiple`).
      */
     protected _moveCursor(row: ListBoxRow | null, modify: boolean, extend: boolean): void;
@@ -343,7 +331,6 @@ export declare class ListBox extends Container {
 
 /** The declared properties of {@link ListBoxRow}. */
 export interface ListBoxRow {
-    canFocus: any;
     /**
      * Whether the row can be activated (by a click or Enter), emitting `row-activate`.
      */
@@ -371,10 +358,18 @@ export interface ListBoxRow {
 /** The declared properties of {@link ListBox}. */
 export interface ListBox {
     /**
-     * How rows can be selected: one of `SelectionMode`. A mask of `SelectionModes` (as tables use)
-     * is converted. Changing it keeps at most the first selected row, except with `multiple`.
+     * How rows can be selected: one of `SelectionMode`, like in GTK. `single` (the default)
+     * selects at most one row, `browse` one row that the user cannot unselect, `multiple` any
+     * number of rows, and `none` disables selecting. Changing it keeps at most the first selected
+     * row, except with `multiple`.
      */
-    selectionMode: any;
+    selectionMode: string;
+    /**
+     * Whether a click toggles the selection of a row, as a Control+click does: a click on a
+     * selected row unselects it (except with `browse`), and with `multiple`, a click on another
+     * row adds it to the selection.
+     */
+    toggleSelection: any;
     /**
      * Whether a single click activates a row. Otherwise a double click does.
      */
@@ -387,6 +382,21 @@ export interface ListBox {
      * The row with the keyboard cursor, or `null`.
      */
     readonly cursorRow: any;
+    /**
+     * A function that decides which rows are shown, or `null` to show all rows. It gets a row and
+     * returns whether to show it. Rows that are filtered out are deselected.
+     */
+    filterFunction: (row: ListBoxRow) => boolean;
+    /**
+     * A function that orders the rows, or `null` to keep them in the order they were added. It
+     * gets two rows and returns a negative number, zero or a positive number, like the compare
+     * function of `Array.prototype.sort()`.
+     */
+    sortFunction: (first: ListBoxRow, second: ListBoxRow) => number;
+    /**
+     * The header function (see `setHeaderFunction()`), or `null`.
+     */
+    headerFunction: (row: ListBoxRow, before: ListBoxRow | null) => void;
     /**
      * A widget shown instead of the rows while no row is shown, such as a label saying the list is
      * empty, or `null`. The list box owns it.

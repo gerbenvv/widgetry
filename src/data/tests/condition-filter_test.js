@@ -82,6 +82,11 @@ describe('ConditionFilter', () => {
 
         assert.equal(changes, 3);
         assert.throws(() => (filter.operator = 99), RangeError);
+
+        // The operators are strings; the old numbers are rejected.
+        filter.operator = 'starts-with';
+        assert.equal(filter.operator, ConditionOperator.STARTS_WITH);
+        assert.throws(() => (filter.operator = 1), RangeError);
         assert.throws(() => (filter.columns = 'name'), TypeError);
     });
 });

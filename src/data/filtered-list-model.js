@@ -527,6 +527,18 @@ export class FilteredListModel extends AbstractModel {
             return;
         }
 
+        // The change that moved the row may also filter it out: remove it instead of moving it
+        // first (the `row-update` that follows then finds it gone). A replaced row is another
+        // object in the source.
+        if (!this.isVisibleRow(model.getRow(toIndex))) {
+            this._invalidateIndex();
+
+            this.emit('row-remove', this, from, id, row);
+            this.emit('rows-change', this, from, this._rows.length - 1);
+
+            return;
+        }
+
         this._rows.splice(to, 0, row);
         this._sourceIndices.splice(to, 0, toIndex);
         this._invalidateIndex();
@@ -558,11 +570,12 @@ export class FilteredListModel extends AbstractModel {
             this.emit('row-insert', this, position, id);
             this.emit('rows-change', this, position, this._rows.length - 1);
         } else if (wasVisible) {
-            this._rows.splice(position, 1);
+            // Pass on the row object that was shown, which a replaced row no longer is.
+            const [removed] = this._rows.splice(position, 1);
             this._sourceIndices.splice(position, 1);
             this._invalidateIndex();
 
-            this.emit('row-remove', this, position, oldId, row);
+            this.emit('row-remove', this, position, oldId, removed);
             this.emit('rows-change', this, position, this._rows.length - 1);
         }
     }

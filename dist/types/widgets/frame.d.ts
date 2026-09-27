@@ -19,7 +19,6 @@ export declare class Frame extends Bin {
     _headerEl: Element;
     _labelEl: Element;
     _bodyEl: Element;
-    labelWidget: any;
     _initialize(): void;
     _render(): HTMLElement;
     destroy(): void;
@@ -39,6 +38,11 @@ export interface Frame {
      */
     label: string;
     /**
+     * A widget to show as the label instead of the text, or `null`. The frame owns it: it is
+     * destroyed with the frame, and destroying it removes it from the frame.
+     */
+    labelWidget: any;
+    /**
      * The position of the label along the top border, from 0 (at the left) to 1 (at the right).
      * The label keeps its natural size.
      */
@@ -46,9 +50,9 @@ export interface Frame {
     /**
      * The original toolkit's name of `labelXAlign`.
      */
-    labelHAlign: any;
+    labelHAlign: number;
     /**
      * The style of the border: one of `ShadowType`. Defaults to an etched line, like GTK.
      */
-    shadowType: any;
+    shadowType: string;
 }

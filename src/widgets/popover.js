@@ -164,8 +164,15 @@ export class Popover extends Bin {
 
         this._isOpen = false;
 
+        // Removing the element would drop a focus inside it on the page; give it back instead.
+        const hadFocus = this.el.contains(document.activeElement);
+
         this._listen(false);
         this.el.remove();
+
+        if (hadFocus) {
+            this._restoreFocus();
+        }
 
         this._recalculateVisibility();
 
@@ -214,11 +221,21 @@ export class Popover extends Bin {
             return false;
         }
 
-        if (this.el.contains(node) || this._owner?.el.contains(node)) {
+        return Boolean(this._owner?.el.contains(node)) || this._containsPopupElement(node);
+    }
+
+    /**
+     * Whether an element is in the popover, or in a nested popover whose owner is in it (such as
+     * the list of a combo box in the popover).
+     *
+     * @param {Node} node
+     * @returns {boolean}
+     */
+    _containsPopupElement(node) {
+        if (this.el.contains(node)) {
             return true;
         }
 
-        // Popovers whose owner is inside this one (such as a nested list) count as inside.
         let popover = Widget.fromElement(node);
         while (popover && !(popover instanceof Popover)) {
             popover = popover.parent;
@@ -226,7 +243,7 @@ export class Popover extends Bin {
 
         const owner = popover && popover !== this ? popover.owner : null;
 
-        return Boolean(owner && this.el.contains(owner.el));
+        return Boolean(owner && this._containsPopupElement(owner.el));
     }
 
     destroy() {
@@ -238,6 +255,24 @@ export class Popover extends Bin {
 
     _isShown() {
         return this._visible && this._isOpen;
+    }
+
+    /**
+     * Gives the keyboard focus back to the owner (or its window) after the popover had it.
+     */
+    _restoreFocus() {
+        const owner = this._owner;
+        const window = owner && !owner.destroyed ? owner.window : null;
+        if (!window?.active) {
+            return;
+        }
+
+        if (owner.focus() || window.focusWidget?.focus()) {
+            return;
+        }
+
+        window.el.tabIndex = -1;
+        window.el.focus({ preventScroll: true });
     }
 
     _getAnchorTarget() {
@@ -315,7 +350,7 @@ export class Popover extends Bin {
     }
 
     _onDocumentScroll(event) {
-        if (this._closeOnScroll && !this.el.contains(event.target)) {
+        if (this._closeOnScroll && !this._containsPopupElement(event.target)) {
             this.popdown(PopoverCloseReason.SCROLL);
         }
     }

@@ -544,18 +544,23 @@
         const age = field('_Age:', new w.SpinButton({ lower: 0, upper: 120, value: 30 }));
         const amount = field(
             'A_mount:',
-            new w.LineEdit({ text: '1,234.50', validator: new w.DoubleValidator({ decimals: 2 }) })
+            new w.LineEdit({ text: '1,234.50', validator: new w.DoubleValidator({ digits: 2 }) })
         );
 
         const country = field(
             '_Country:',
             new w.ComboBox({
                 items: ['Belgium', 'Canada', 'Germany', 'Japan', 'Netherlands', 'United States'],
-                active: 4,
+                activeIndex: 4,
             })
         );
 
         const date = field('_Date:', new w.DateEdit({ date: new Date() }));
+        date.connect('date-change', () => {
+            if (date.date) {
+                say(`The date is ${w.formatDate(date.date, 'long')}.`);
+            }
+        });
 
         const notes = field(
             'N_otes:',
@@ -581,7 +586,7 @@
                 `Age: ${age.value}`,
                 `Amount: ${amount.text}`,
                 `Country: ${country.text}`,
-                `Date: ${date.date ? date.date.toDateString() : '(none)'}`,
+                `Date: ${date.date ? w.formatDate(date.date, 'long') : '(none)'}`,
                 `Notes: ${notes.text.length} characters`,
             ].join('\n');
 
@@ -594,7 +599,7 @@
 
         calendar.connect(
             'day-selected',
-            () => (picked.text = `Selected: ${calendar.date.toDateString()}`)
+            () => (picked.text = `Selected: ${w.formatDate(calendar.date, 'long')}`)
         );
         calendar.connect('day-activate', () => {
             date.date = calendar.date;
@@ -735,9 +740,9 @@
 
         const table = new w.Table({
             model: filtered,
-            selectionModes: w.SelectionModes.MULTI,
+            selectionMode: w.SelectionMode.MULTIPLE,
             vExpand: true,
-            placeholderText: 'No matching files.',
+            placeholder: 'No matching files.',
         });
         table.addColumn(new w.IndexColumn());
         table.addColumn(new w.TextColumn({ name: 'name', label: 'Name', expand: true }));
@@ -1040,7 +1045,7 @@
 
         const byName = new Map();
         const paths = links.map(([from, to]) => {
-            const path = new w.Path({ strokeColor: '#8d8577', strokeWidth: 2, fill: 'none' });
+            const path = new w.PathSprite({ strokeColor: '#8d8577', strokeWidth: 2, fill: 'none' });
             canvas.addSprite(path);
 
             return { from, to, path };
@@ -1062,7 +1067,7 @@
         }
 
         for (const node of nodes) {
-            const box = new w.Rectangle({
+            const box = new w.RectangleSprite({
                 name: node.name,
                 position: { x: node.x, y: node.y },
                 size: { width: NODE_WIDTH, height: NODE_HEIGHT },

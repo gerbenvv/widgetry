@@ -30,12 +30,11 @@ export declare class NumberColumn extends DataColumn {
 
 /** The declared properties of {@link NumberColumn}. */
 export interface NumberColumn {
-    alignment: any;
     /**
      * The number of fraction digits, setting both the minimum and the maximum. Reading returns
      * the maximum.
      */
-    digits: any;
+    digits: number;
     /**
      * The minimum number of fraction digits.
      */

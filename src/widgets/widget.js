@@ -17,6 +17,7 @@ import {
     ScrollEvent,
 } from '../events/events.js';
 import { bindToolkitText, translateLabels } from '../i18n/toolkit-text.js';
+import { MULTIPLE_PRESS_DISTANCE } from './double-press.js';
 
 /**
  * Maps elements to the widget they are the root element of.
@@ -79,6 +80,13 @@ const DOM_TO_TOOLKIT_BUTTON = {
 const pressState = { time: 0, button: 0, x: 0, y: 0, count: 0 };
 
 /**
+ * The counts of the presses counted so far, so that every press is counted once.
+ *
+ * @type {WeakMap<Event, number>}
+ */
+const PRESS_COUNTS = new WeakMap();
+
+/**
  * Longhand properties of the shorthands used for layout.
  *
  * @type {Readonly<Record<string, string[]>>}
@@ -115,8 +123,15 @@ function flushLayoutQueue() {
         LAYOUT_QUEUE.clear();
 
         for (const widget of widgets) {
-            if (!widget.destroyed) {
+            if (widget.destroyed) {
+                continue;
+            }
+
+            // A failing layout must not stop the others; report its error like an uncaught one.
+            try {
                 widget._updateLayout();
+            } catch (error) {
+                reportError(error);
             }
         }
     }
@@ -131,19 +146,24 @@ export function flushLayout() {
 }
 
 /**
- * Counts presses for double and triple presses. Call it once per press.
+ * Counts presses for double and triple presses. Calling it again for the same event (e.g. from
+ * both a widget and a sprite) returns the same count.
  *
  * @param {PointerEvent} event
  * @returns {number} 1 for a single press, 2 for a double press and so on.
  */
 export function countPress(event) {
+    if (PRESS_COUNTS.has(event)) {
+        return PRESS_COUNTS.get(event);
+    }
+
     const now = event.timeStamp || performance.now();
     const distance = Math.hypot(event.pageX - pressState.x, event.pageY - pressState.y);
 
     if (
         event.button === pressState.button &&
         now - pressState.time <= settings.multiplePressInterval &&
-        distance < 5
+        distance <= MULTIPLE_PRESS_DISTANCE
     ) {
         pressState.count += 1;
     } else {
@@ -151,6 +171,7 @@ export function countPress(event) {
     }
 
     Object.assign(pressState, { time: now, button: event.button, x: event.pageX, y: event.pageY });
+    PRESS_COUNTS.set(event, pressState.count);
 
     return pressState.count;
 }
@@ -342,6 +363,48 @@ export class Widget extends Instance {
     }
 
     /**
+     * Returns the elements that get the `aria-label` of `accessibleName`: the focus element, which
+     * is the root element for widgets without a focus element of their own. Override to name other
+     * elements.
+     *
+     * @protected
+     * @returns {Element[]}
+     */
+    _getAccessibleNameElements() {
+        return [this.focusElement];
+    }
+
+    /**
+     * Puts `accessibleName` in the `aria-label` of the elements of
+     * `_getAccessibleNameElements()`, or removes it. Widgets that compute their own `aria-label`
+     * override this to combine the two.
+     *
+     * @protected
+     */
+    _syncAccessibleName() {
+        const name = this._accessibleName;
+
+        for (const element of this._getAccessibleNameElements()) {
+            if (name) {
+                // `aria-labelledby` takes precedence over `aria-label`, so set it aside.
+                if (element.hasAttribute('aria-labelledby')) {
+                    element.dataset.wyLabelledby = element.getAttribute('aria-labelledby');
+                    element.removeAttribute('aria-labelledby');
+                }
+
+                element.setAttribute('aria-label', name);
+            } else {
+                element.removeAttribute('aria-label');
+
+                if (element.dataset.wyLabelledby) {
+                    element.setAttribute('aria-labelledby', element.dataset.wyLabelledby);
+                    delete element.dataset.wyLabelledby;
+                }
+            }
+        }
+    }
+
+    /**
      * The rendered position and size relative to the viewport, or zero if not rendered.
      *
      * @type {{x: number, y: number, width: number, height: number}}
@@ -483,18 +546,27 @@ export class Widget extends Instance {
     }
 
     /**
-     * Removes the keyboard focus from this widget. Its window keeps no focus widget.
+     * Removes the keyboard focus from this widget. Its window keeps no focus widget, but keeps the
+     * keyboard focus itself if it is active.
      */
     blur() {
         if (!this.isFocus) {
             return;
         }
 
-        if (this.hasFocus) {
-            this.focusElement.blur();
-        }
+        const window = this.window;
+        const hadDomFocus = this.focusElement.contains(document.activeElement);
 
-        this.window?._setFocusWidget(null);
+        window?._setFocusWidget(null);
+
+        if (hadDomFocus) {
+            if (window?.active) {
+                window.el.tabIndex = -1;
+                window.el.focus({ preventScroll: true });
+            } else {
+                this.focusElement.blur();
+            }
+        }
     }
 
     /**
@@ -570,7 +642,14 @@ export class Widget extends Instance {
             this.window._onFocusWidgetGone(this);
         }
 
+        const oldParent = this._parent;
         this._parent = parent;
+
+        // Drop the layout styles of the old container, keeping the widget's own.
+        if (!parent && oldParent) {
+            this._clearLayoutStyles();
+            this._applyLayoutStyle();
+        }
 
         this._recalculateVisibility();
         this._recalculateSensitivity();
@@ -652,17 +731,34 @@ export class Widget extends Instance {
         }
 
         // A shorthand replaces its longhands, so they are no longer set by us.
-        for (const longhand of LONGHANDS[name] || []) {
-            this._layoutStyles.delete(longhand);
-        }
+        const ownLonghands = (LONGHANDS[name] || []).filter((x) => this._layoutStyles.delete(x));
 
         if (value) {
             this.el.style[name] = value;
             this._layoutStyles.add(name);
-        } else if (this._layoutStyles.has(name) || LONGHANDS[name]?.some((x) => this.el.style[x])) {
+        } else if (this._layoutStyles.has(name)) {
             this.el.style[name] = '';
             this._layoutStyles.delete(name);
+        } else {
+            // Clear only the longhands we set, not ones the widget set itself.
+            for (const longhand of ownLonghands) {
+                this.el.style[longhand] = '';
+            }
         }
+    }
+
+    /**
+     * Clears all styles set with {@link Widget#_setLayoutStyle}, e.g. when the widget leaves its
+     * container.
+     *
+     * @protected
+     */
+    _clearLayoutStyles() {
+        for (const name of this._layoutStyles || []) {
+            this.el.style[name] = '';
+        }
+
+        this._layoutStyles?.clear();
     }
 
     /**
@@ -1114,6 +1210,22 @@ defineProperties(Widget, {
             } else {
                 delete this.el.dataset.name;
             }
+        },
+    },
+
+    /**
+     * The accessible name, for widgets without a visible label (such as an icon button or a line
+     * edit next to a picture), or `''` for none. It is the `aria-label` of the focus element (or of
+     * the root element of widgets that have none of their own). A label whose mnemonic widget
+     * this is names the widget instead.
+     */
+    accessibleName: {
+        value: '',
+        coerce(name) {
+            return name === null || name === undefined ? '' : String(name);
+        },
+        changed() {
+            this._syncAccessibleName();
         },
     },
 

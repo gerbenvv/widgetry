@@ -472,7 +472,11 @@ html.wy-cursor-override * {
 }
 @media (prefers-reduced-motion: reduce) {
   .wy-widget,
+  .wy-widget::before,
+  .wy-widget::after,
   .wy-widget *,
+  .wy-widget *::before,
+  .wy-widget *::after,
   .wy-overlay {
     animation-duration: 0s !important;
     transition-duration: 0s !important;
@@ -3739,7 +3743,7 @@ html.wy-cursor-override * {
 .wy-table-column-header.wy-sorted > .wy-table-sort-arrow {
   display: block;
 }
-.wy-table-column-header.wy-sort-desc > .wy-table-sort-arrow {
+.wy-table-column-header.wy-sort-descending > .wy-table-sort-arrow {
   transform: rotate(180deg);
 }
 .wy-table-resizer {
@@ -4112,6 +4116,7 @@ html.wy-cursor-override * {
 .wy-switch-trough {
   position: absolute;
   inset: 0;
+  direction: ltr;
   display: grid;
   grid-template-columns: 1fr 1fr;
   place-items: center;

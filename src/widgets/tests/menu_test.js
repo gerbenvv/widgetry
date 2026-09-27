@@ -447,6 +447,60 @@ test.describe('menu', () => {
         expect(state).toEqual({ lazy: null, shared: true, first: false, second: true });
     });
 
+    test('check and radio items emit activate when activated and toggle on changes', async ({
+        page,
+    }) => {
+        await openHarness(page);
+        await setup(page);
+
+        const log = await page.evaluate(async () => {
+            const { RadioMenuItem } = await import('/src/widgets/radio-menu-item.js');
+
+            const first = new RadioMenuItem({ label: 'First', active: true });
+            const second = new RadioMenuItem({ label: 'Second' });
+            first.join(second);
+
+            const menu = new globalThis.t.Menu();
+            menu.addChild(first);
+            menu.addChild(second);
+
+            const log = [];
+            for (const item of [globalThis.t.wrap, first, second]) {
+                for (const name of ['activate', 'toggle', 'active-change']) {
+                    item.connect(name, () =>
+                        log.push(`${item.label.replace('_', '')}:${name}:${item.active}`)
+                    );
+                }
+            }
+
+            globalThis.t.wrap.active = true;
+            globalThis.t.wrap.activate();
+            second.activate();
+            second.activate();
+            first.active = true;
+
+            return log;
+        });
+
+        expect(log).toEqual([
+            'Wrap:toggle:true',
+            'Wrap:active-change:true',
+            'Wrap:toggle:false',
+            'Wrap:active-change:false',
+            'Wrap:activate:false',
+            'Second:toggle:true',
+            'First:toggle:false',
+            'First:active-change:false',
+            'Second:active-change:true',
+            'Second:activate:true',
+            'Second:activate:true',
+            'First:toggle:true',
+            'Second:toggle:false',
+            'Second:active-change:false',
+            'First:active-change:true',
+        ]);
+    });
+
     test('pressing outside and scrolling outside close the menus', async ({ page }) => {
         await openHarness(page);
         await setup(page);

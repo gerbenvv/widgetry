@@ -69,16 +69,14 @@ export declare class MenuBar extends Box {
 
 /** The declared properties of {@link MenuBar}. */
 export interface MenuBar {
-    orientation: any;
-    vExpand: any;
     /**
      * Whether this is a menu shell (a container of menu items).
      */
-    readonly isMenuShell: any;
+    readonly isMenuShell: boolean;
     /**
      * Whether this is a menu bar.
      */
-    readonly isMenuBar: any;
+    readonly isMenuBar: boolean;
     /**
      * The selected item, whose menu is open, or `null`. Setting it opens that item's menu.
      */

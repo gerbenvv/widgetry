@@ -142,6 +142,20 @@ describe('Navigator', () => {
         assert.equal(environment.location.hash, '#a%2Fb/c%25d/%C3%A9/%23/');
     });
 
+    test('encodes a token set directly the way browsers encode hashes', () => {
+        const { environment, navigator, events } = createNavigator();
+
+        navigator.token = 'raw token/ü/"<a>"/it\'s%20ok';
+        assert.equal(navigator.token, "raw%20token/%C3%BC/%22%3Ca%3E%22/it's%20ok");
+        assert.equal(environment.location.hash, '#' + navigator.token);
+        assert.equal(navigator.tokenName, 'raw token');
+        assert.deepEqual(navigator.tokenArguments, ['ü', '"<a>"', "it's ok"]);
+
+        // The browser keeps the hash as it is, so the token does not change again.
+        environment.fire();
+        assert.deepEqual(events, ['token-name-change', 'token-arguments-change', 'token-change']);
+    });
+
     test('follows hash changes of the browser', () => {
         const { environment, navigator, events } = createNavigator();
 

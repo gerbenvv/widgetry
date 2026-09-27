@@ -12,6 +12,10 @@ export type LocaleData = {
      */
     monthNames: string[][];
     /**
+     * The words of the locale's date formats, which are ignored.
+     */
+    fillers: Set<string>;
+    /**
      * Words like `yesterday`.
      */
     relativeWords: Map<string, {
@@ -58,7 +62,7 @@ export type LocaleData = {
  *   (`friday`, `next friday`: the next one after today; `last friday`: the last one before
  *   today) and month names (`august`, `next august`, `past august`: the first day of it).
  *
- * Understood times: `14:05`, `14:05:09`, `14:05:09.042`, `2:05 PM`, `2 pm`, `14h05`, the locale's
+ * Understood times: `14:05`, `14:05:09`, `14:05:09.042`, `2:05 PM`, `2 pm`, `14h05` (or `14 h 05`), the locale's
  * own separator (`14.05` in Finnish), `noon`, `midnight` and `now`.
  *
  * Dates are returned as `Date` objects at midnight in `timeZone` (the locale manager's by
@@ -159,6 +163,15 @@ export declare class DateTimeParser extends LocaleAware {
         day: number;
     } | null;
     /**
+     * Removes the spaces from the month and day names of more than one word in a text, such as
+     * `יום שבת` (Hebrew) and `thu bay` (Vietnamese), so they are single words like their names in
+     * {@link DateTimeParser#_getMonthNames} and {@link DateTimeParser#_getDayNames}.
+     *
+     * @param {string} text A normalized text.
+     * @returns {string}
+     */
+    _joinNames(text: string): string;
+    /**
      * Parses a relative date.
      *
      * @param {string} text
@@ -200,6 +213,18 @@ export declare class DateTimeParser extends LocaleAware {
     _moveToUnit(today: any, unit: any, offset: any): any;
     _getMonthNames(): string[][];
     _getDayNames(): string[][];
+    /**
+     * Splits a word that is a month name, day name or marker with a filler word or marker attached
+     * to it, such as `באוגוסט` (Hebrew, "in August"), `วันเสาร์ที่` (Thai, "Saturday the") and
+     * `日土曜日` (Japanese, a day marker and "Saturday").
+     *
+     * @param {string} word
+     * @param {Set<string>} fillers The filler words of the locale.
+     * @param {string[][]} monthNames
+     * @param {string[][]} dayNames
+     * @returns {string[] | null} The two words, or `null` if the word cannot be split.
+     */
+    _splitWord(word: string, fillers: Set<string>, monthNames: string[][], dayNames: string[][]): string[] | null;
     _expandYear(value: any, digits: any): any;
     /**
      * Parses the tokens of an absolute date.

@@ -495,6 +495,7 @@ export class Label extends Widget {
 
         this._id = '';
         this._mnemonicKey = '';
+        this._mnemonicWidgetDisconnect = null;
 
         // Apply the defaults.
         this._renderContent();
@@ -508,6 +509,7 @@ export class Label extends Widget {
     destroy() {
         MNEMONIC_LABELS.delete(this);
         this._unlinkMnemonicWidget(this._mnemonicWidget);
+        this._mnemonicWidgetDisconnect?.();
 
         super.destroy();
     }
@@ -786,8 +788,19 @@ defineProperties(Label, {
             }
 
             this._unlinkMnemonicWidget(this._mnemonicWidget);
+            this._mnemonicWidgetDisconnect?.();
+            this._mnemonicWidgetDisconnect = null;
+
             this._mnemonicWidget = widget;
             this._linkMnemonicWidget(widget);
+
+            // A destroyed widget is forgotten, so its mnemonic no longer takes the key.
+            if (widget) {
+                this._mnemonicWidgetDisconnect = widget.connect(
+                    'destroy',
+                    () => (this.mnemonicWidget = null)
+                );
+            }
         },
     },
 

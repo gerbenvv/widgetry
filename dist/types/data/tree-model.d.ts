@@ -159,11 +159,10 @@ export declare class TreeModel extends AbstractModel {
     _revealed: Set<object>;
     _batch: number;
     _dirty: object;
+    _filterStateDirty: boolean;
     _queuedSignals: any[];
-    rows: any[] | object[];
     _sortColumn: any;
-    _sortOrder: 1;
-    filters: any[] | Filter[];
+    _sortOrder: "ascending";
     _initialize(): void;
     /**
      * Rows always have ids: the value in `idColumn`, or the row object itself.
@@ -321,6 +320,16 @@ export declare class TreeModel extends AbstractModel {
      */
     insertChild(parent: object | number | null, index: number, row: object): number;
     /**
+     * Inserts a row as a child of another row, like `insertChild()`, without looking up its
+     * index, which takes the time of building the id index when many rows are inserted.
+     *
+     * @param {object | number | null} parent
+     * @param {number} index
+     * @param {object} row
+     * @returns {object} The row.
+     */
+    _insertChild(parent: object | number | null, index: number, row: object): object;
+    /**
      * Appends a row (with its children) to the children of another row. If the model is sorted,
      * the row is placed at its sorted position instead.
      *
@@ -380,7 +389,7 @@ export declare class TreeModel extends AbstractModel {
      * @param {object} [context]
      */
     forEachTreeRow(method: (row: object, depth: number, parent: object | null) => void, context?: object): void;
-    sortByColumn(column: any, order?: 1): void;
+    sortByColumn(column: any, order?: string): void;
     /**
      * Adds a filter.
      *
@@ -427,6 +436,15 @@ export declare class TreeModel extends AbstractModel {
      * @returns {Map<unknown, object>}
      */
     _getRowsById(): Map<unknown, object>;
+    /**
+     * Checks that all rows of the tree, also those in collapsed rows, have a different value in
+     * a column.
+     *
+     * @protected
+     * @param {string} column
+     * @throws {Error} If two rows have the same id.
+     */
+    protected _checkUniqueIds(column: string): void;
     _findRow(id: any): any;
     _resolveRow(row: any): any;
     _getNode(row: any): TreeNode;
@@ -587,6 +605,12 @@ export declare namespace TreeModel {
 /** The declared properties of {@link TreeModel}. */
 export interface TreeModel {
     /**
+     * The shown rows, in order: the top-level rows and the shown children of expanded rows. Do
+     * not modify the array. Setting it replaces the tree with the given top-level rows (the array
+     * is copied, the row objects and their children arrays are not).
+     */
+    rows: any[] | object[];
+    /**
      * The top-level rows, in order. Do not modify the array.
      */
     readonly rootRows: any;
@@ -605,9 +629,13 @@ export interface TreeModel {
      * Without it, a `load-children` handler calls `setChildren()` once it has the children.
      */
     loadChildren: any;
-    idColumn: any;
+    /**
+     * The filters. A row is shown when it or one of its descendants matches all of them. Setting
+     * an array replaces them.
+     */
+    filters: any[] | Filter[];
     /**
      * The number of filters.
      */
-    readonly filtersCount: any;
+    readonly filtersCount: number;
 }

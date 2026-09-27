@@ -148,8 +148,8 @@ function checkDate(date) {
  * cursor day, and Enter selects and activates it. The wheel changes the month.
  *
  * Signals: `day-selected` (the selected `date` changed by the user), `day-activate` (a day was
- * activated: double-clicked, Enter pressed, or clicked with `activateOnClick`), `month-change`
- * (the shown month changed).
+ * activated: double-clicked, Enter pressed, or clicked with `activateOnSingleClick`),
+ * `month-change` (the shown month changed).
  */
 export class Calendar extends Widget {
     _initialize() {
@@ -248,6 +248,22 @@ export class Calendar extends Widget {
      */
     get focusElement() {
         return this._gridEl;
+    }
+
+    _syncAccessibleName() {
+        super._syncAccessibleName();
+
+        // The grid is labeled by the month and year; an accessible name comes before them, by
+        // referring to the grid's own `aria-label`.
+        const grid = this._gridEl;
+        const labels = `${this._monthEl.id} ${this._yearEl.id}`;
+
+        if (this._accessibleName) {
+            grid.id ||= uniqueId('wy-calendar-grid');
+            grid.setAttribute('aria-labelledby', `${grid.id} ${labels}`);
+        } else {
+            grid.setAttribute('aria-labelledby', labels);
+        }
     }
 
     /**
@@ -558,14 +574,14 @@ export class Calendar extends Widget {
     _onGridClick(event) {
         // A click activates after the button is released, so the press is complete by then.
         const cell = event.target.closest('.wy-calendar-day');
-        if (cell && this._activateOnClick && this._isInRange(this._dayFromCell(cell))) {
+        if (cell && this._activateOnSingleClick && this._isInRange(this._dayFromCell(cell))) {
             this.emit('day-activate', this);
         }
     }
 
     _onGridDoubleClick(event) {
         const cell = event.target.closest('.wy-calendar-day');
-        if (cell && !this._activateOnClick && this._isInRange(this._dayFromCell(cell))) {
+        if (cell && !this._activateOnSingleClick && this._isInRange(this._dayFromCell(cell))) {
             this.emit('day-activate', this);
         }
     }
@@ -756,7 +772,7 @@ defineProperties(Calendar, {
     /**
      * Whether a single click on a day also activates it, as in a date picker.
      */
-    activateOnClick: { value: false, coerce: Boolean },
+    activateOnSingleClick: { value: false, coerce: Boolean },
 });
 
 registerType('calendar', Calendar);

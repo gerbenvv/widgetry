@@ -4,18 +4,27 @@
 export type SignalHandler = {
     method: Function;
     context?: object;
+    /**
+     * Set when the handler is disconnected, so that an emit in
+     * progress skips it.
+     */
+    disconnected?: boolean;
 };
 /**
  * @typedef {object} SignalHandler
  * @property {Function} method
  * @property {object} [context]
+ * @property {boolean} [disconnected] Set when the handler is disconnected, so that an emit in
+ *     progress skips it.
  */
 /**
  * Dispatches named signals to connected handlers.
  *
  * Handlers run in connection order. A handler that returns `true` marks the signal as handled,
  * which is reported by {@link SignalDispatcher#emit}; the remaining handlers still run. Handlers
- * connected with {@link SignalDispatcher#connectLast} always run after the others.
+ * connected with {@link SignalDispatcher#connectLast} always run after the others. Handlers
+ * connected during an emit do not run in it, and handlers disconnected during an emit no longer
+ * run in it.
  */
 export declare class SignalDispatcher {
     /** @type {Map<string, SignalHandler[]>} */
@@ -91,5 +100,6 @@ export declare class SignalDispatcher {
      * Removes all handlers.
      */
     clear(): void;
+    _removeHandler(name: any, handler: any): void;
     _getHandlers(slots: any, name: any): any;
 }

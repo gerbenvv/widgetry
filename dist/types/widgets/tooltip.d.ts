@@ -82,7 +82,6 @@ export declare class Tooltip extends Bin {
 
 /** The declared properties of {@link Tooltip}. */
 export interface Tooltip {
-    readonly isTopLevel: any;
     visible: boolean;
     /**
      * The text of the tooltip.
@@ -109,7 +108,7 @@ export interface Tooltip {
     /**
      * Where the tooltip appears: one of `TooltipPlacement`.
      */
-    placement: any;
+    placement: string;
     /**
      * Whether a shown tooltip moves along with the pointer.
      */

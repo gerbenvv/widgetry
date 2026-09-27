@@ -58,6 +58,16 @@ export class MainWindow extends AbstractWindow {
         }
     }
 
+    _syncAccessibleName() {
+        const name = this._accessibleName || this._title;
+
+        if (name) {
+            this.el.setAttribute('aria-label', name);
+        } else {
+            this.el.removeAttribute('aria-label');
+        }
+    }
+
     _onVisibleChange(visible) {
         if (visible) {
             const host = this.hostElement;
@@ -72,6 +82,10 @@ export class MainWindow extends AbstractWindow {
 
         if (!visible) {
             this.el.remove();
+
+            if (!this._host) {
+                document.documentElement.classList.remove('wy-page');
+            }
         }
     }
 }
@@ -96,7 +110,7 @@ defineProperties(MainWindow, {
                 document.title = title;
             }
 
-            this.el.setAttribute('aria-label', title);
+            this._syncAccessibleName();
         },
     },
 });

@@ -7,7 +7,6 @@ import { Widget } from './widget.js';
  * otherwise. GTK calls it a spinner, so it is also exported as `Spinner`.
  */
 export declare class Throbber extends Widget {
-    active: boolean;
     _initialize(): void;
     _render(): HTMLElement;
     /**
@@ -27,6 +26,10 @@ export declare const Spinner: typeof Throbber;
 
 /** The declared properties of {@link Throbber}. */
 export interface Throbber {
+    /**
+     * Whether the throbber spins.
+     */
+    active: boolean;
     /**
      * The size in pixels, or 0 for the default of 32 pixels.
      */

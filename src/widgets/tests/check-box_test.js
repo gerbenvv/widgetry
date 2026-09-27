@@ -74,6 +74,44 @@ test.describe('CheckBox', () => {
         expect(errors).toEqual([]);
     });
 
+    test('activation toggles and emits activate, changes from code only toggle', async ({
+        page,
+    }) => {
+        const errors = await openWindow(page);
+
+        const log = await page.evaluate(async () => {
+            const { CheckBox } = await import('/src/widgets/check-box.js');
+
+            const check = globalThis.box.addChild(
+                new CheckBox({ label: 'Mixed', inconsistent: true })
+            );
+            const log = [];
+            for (const name of ['activate', 'toggle', 'active-change']) {
+                check.connect(name, () => log.push(`${name}:${check.active}`));
+            }
+
+            check.activate();
+            log.push(`inconsistent:${check.inconsistent}`);
+            check.activate();
+            check.active = true;
+
+            return log;
+        });
+
+        expect(log).toEqual([
+            'toggle:true',
+            'active-change:true',
+            'activate:true',
+            'inconsistent:false',
+            'toggle:false',
+            'active-change:false',
+            'activate:false',
+            'toggle:true',
+            'active-change:true',
+        ]);
+        expect(errors).toEqual([]);
+    });
+
     test('the mark shows only when active or inconsistent', async ({ page }) => {
         await openWindow(page);
 

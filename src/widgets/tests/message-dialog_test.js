@@ -34,8 +34,12 @@ test.describe('message dialog', () => {
                 error = e.message;
             }
 
+            const describedBy = (dialog.el.getAttribute('aria-describedby') || '').split(' ');
+
             return {
                 icons,
+                role: dialog.el.getAttribute('role'),
+                description: describedBy.map((x) => document.getElementById(x)?.textContent),
                 texts: [...labels].map((x) => x.textContent),
                 bold: getComputedStyle(text).fontWeight,
                 buttons: dialog.actionArea.children.map((x) => x.el.textContent),
@@ -54,6 +58,8 @@ test.describe('message dialog', () => {
             other: ['', false],
         });
         expect(result.texts).toEqual(['Delete the file?', 'It cannot be restored.']);
+        expect(result.role).toBe('alertdialog');
+        expect(result.description).toEqual(['Delete the file?', 'It cannot be restored.']);
         expect(result.bold).toBe('700');
         expect(result.buttons).toEqual(['Cancel', 'OK']);
         expect(result.defaultResponse).toBe('ok');
@@ -116,7 +122,7 @@ test.describe('message dialog', () => {
             const { prompt } = await import('/src/widgets/message-dialog.js');
 
             globalThis.answer = undefined;
-            prompt('Your name?', { value: 'Ada', placeholder: 'Name' }).then(
+            prompt('Your name?', { text: 'Ada', placeholder: 'Name' }).then(
                 (x) => (globalThis.answer = x)
             );
         });
@@ -135,6 +141,24 @@ test.describe('message dialog', () => {
         });
         await page.keyboard.press('Escape');
         await expect.poll(() => page.evaluate(() => globalThis.answer)).toBeNull();
+
+        // The initial text is `text`, like that of a line edit, or `value`.
+        for (const option of ['text', 'value']) {
+            await page.evaluate(async (option) => {
+                const { prompt } = await import('/src/widgets/message-dialog.js');
+
+                globalThis.answer = undefined;
+                prompt('File name?', { [option]: `${option}.txt` }).then(
+                    (x) => (globalThis.answer = x)
+                );
+            }, option);
+
+            await expect
+                .poll(() => page.evaluate(() => document.activeElement?.tagName))
+                .toBe('INPUT');
+            await page.keyboard.press('Enter');
+            await expect.poll(() => page.evaluate(() => globalThis.answer)).toBe(`${option}.txt`);
+        }
     });
 
     test('the builder accepts a buttons preset', async ({ page }) => {

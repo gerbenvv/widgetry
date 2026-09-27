@@ -84,7 +84,7 @@ test.describe('README examples', () => {
             const model = new w.ListModel({ rows, idColumn: 'id', sortColumn: 'name' });
             const table = new w.Table({
                 model,
-                selectionModes: w.SelectionModes.MULTI,
+                selectionMode: w.SelectionMode.MULTIPLE,
                 vExpand: true,
             });
 
@@ -137,7 +137,7 @@ test.describe('README examples', () => {
         const errors = await openHarness(page);
 
         const result = await page.evaluate(async () => {
-            const { MainWindow, SearchFilter, SelectionModes, Table, TextColumn, TreeModel } =
+            const { MainWindow, SearchFilter, SelectionMode, Table, TextColumn, TreeModel } =
                 await import('/src/index.js');
 
             const opened = [];
@@ -153,7 +153,7 @@ test.describe('README examples', () => {
                 sortColumn: 'name',
                 loadChildren: (row) => loadFolder(row.id),
             });
-            const tree = new Table({ model, selectionModes: SelectionModes.MULTI });
+            const tree = new Table({ model, selectionMode: SelectionMode.MULTIPLE });
 
             tree.addColumn(new TextColumn({ name: 'name', label: 'Name', expand: true }));
             tree.connect('row-activate', (_table, _index, row) => openFile(row));
@@ -262,6 +262,128 @@ test.describe('README examples', () => {
 
         expect(title).toBe('Hello');
         await expect(page.locator('.wy-label', { hasText: 'Hello, world!' })).toBeVisible();
+        expect(errors).toEqual([]);
+    });
+
+    test('the list example binds a list box to a model', async ({ page }) => {
+        const errors = await openHarness(page);
+
+        await page.evaluate(async () => {
+            const { Box, Label, ListBox, ListModel, MainWindow, SelectionMode, Switch } =
+                await import('/src/index.js');
+
+            const opened = [];
+            const openSetting = (row) => opened.push(row.name);
+
+            const model = new ListModel({ rows: [{ name: 'Wi-Fi' }, { name: 'Bluetooth' }] });
+            const list = new ListBox({ selectionMode: SelectionMode.BROWSE });
+
+            list.bindModel(model, (row) => {
+                const box = new Box({ spacing: 6, margin: 6 });
+                box.addChild(new Label({ text: row.name, hExpand: true }));
+                box.addChild(new Switch({ active: true }));
+
+                return box;
+            });
+            list.connect('row-activate', (_list, row) => openSetting(model.getRow(row.index)));
+
+            const window = new MainWindow();
+            window.addChild(list);
+            window.show();
+
+            globalThis.readme = { model, opened };
+        });
+
+        await expect(page.locator('.wy-list-box-row')).toHaveCount(2);
+        await page.locator('.wy-list-box-row', { hasText: 'Bluetooth' }).click();
+
+        // The list follows the model.
+        await page.evaluate(() => globalThis.readme.model.appendRow({ name: 'Sound' }));
+        await expect(page.locator('.wy-list-box-row')).toHaveCount(3);
+
+        expect(await page.evaluate(() => globalThis.readme.opened)).toEqual(['Bluetooth']);
+        expect(errors).toEqual([]);
+    });
+
+    test('the color button example sets the accent color', async ({ page }) => {
+        const errors = await openHarness(page);
+
+        await page.evaluate(async () => {
+            const { Application, ColorButton, MainWindow } = await import('/src/index.js');
+
+            const button = new ColorButton({ color: '#4e9a06' });
+            button.connect('color-set', () => (Application.accentColor = button.color));
+
+            const window = new MainWindow();
+            window.addChild(button);
+            window.show();
+
+            globalThis.button = button;
+        });
+
+        await page.click('.wy-color-button');
+        const swatch = await page.evaluate(() => {
+            const rect = globalThis.button.chooser.palette.el.children[13].getBoundingClientRect();
+
+            return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+        });
+        await page.mouse.dblclick(swatch.x, swatch.y);
+
+        const accent = await page.evaluate(async () => {
+            const { Application } = await import('/src/index.js');
+
+            return Application.accentColor;
+        });
+
+        expect(accent).toBe('#3465a4');
+        expect(errors).toEqual([]);
+    });
+
+    test('the smaller examples work', async ({ page }) => {
+        const errors = await openHarness(page);
+
+        const result = await page.evaluate(async () => {
+            const w = await import('/src/index.js');
+
+            // Embedding in a host element.
+            const host = document.createElement('div');
+            host.id = 'app';
+            host.style.cssText = 'width: 300px; height: 200px';
+            document.body.append(host);
+
+            const window = new w.MainWindow({ host: document.querySelector('#app') });
+            const label = new w.Label({ text: 'Embedded' });
+            window.addChild(label);
+            window.show();
+
+            // A context menu and icons.
+            const menu = new w.Menu();
+            menu.addChild(new w.MenuItem({ label: 'Copy', icon: 'edit-copy' }));
+            w.attachContextMenu(label, menu);
+
+            w.registerIcon(
+                'my-icon',
+                '<svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/></svg>'
+            );
+
+            // Filtering a model.
+            const model = new w.ListModel({ rows: [{ name: 'apple' }, { name: 'pear' }] });
+            const filtered = new w.FilteredListModel({ model });
+            filtered.addFilter(new w.SearchFilter({ columns: ['name'], query: 'pe' }));
+
+            return {
+                inHost: host.contains(window.el),
+                icons: ['document-open', 'edit-copy', 'my-icon'].every((x) =>
+                    w.getIconNames().includes(x)
+                ),
+                filtered: filtered.rows.map((x) => x.name),
+            };
+        });
+
+        expect(result).toEqual({ inHost: true, icons: true, filtered: ['pear'] });
+
+        await page.click('text=Embedded', { button: 'right' });
+        await expect(page.locator('.wy-menu', { hasText: 'Copy' })).toBeVisible();
         expect(errors).toEqual([]);
     });
 });

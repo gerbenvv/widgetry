@@ -18,8 +18,9 @@ import { Widget } from './widget.js';
  * Interaction follows GTK: clicking a header sorts on the column (again to reverse), dragging the
  * edge between headers resizes a column and double clicking it sizes the column to fit. Rows are
  * selected by clicking, with Shift for ranges and Control to toggle (depending on
- * `selectionModes`). The keyboard moves the cursor row (the arrows, Page Up, Page Down, Home and
- * End, with Shift to extend the selection and Control to move only the cursor), Space selects the
+ * `selectionMode` and `toggleSelection`). The keyboard moves the cursor row (the arrows, Page Up, Page Down, Home and
+ * End, with Shift to extend the selection and Control to move only the cursor, except with
+ * `browse`), Space selects the
  * cursor row or toggles its check box, Control+Space toggles its selection, Control+A selects all
  * rows and Enter activates the row. Typing searches the search column. Up on the first row moves
  * the focus to the headers, where Left and Right move between columns, Enter sorts and Shift+Left
@@ -37,7 +38,7 @@ import { Widget } from './widget.js';
  * `column-remove` (`table, column`), `cursor-change`.
  *
  * @example
- * const table = new Table({ model, selectionModes: SelectionModes.MULTI });
+ * const table = new Table({ model, selectionMode: SelectionMode.MULTIPLE });
  * table.addColumn(new IndexColumn());
  * table.addColumn(new DateColumn({ name: 'date', label: 'Date', format: 'long-date' }));
  * table.addColumn(new TextColumn({ name: 'name', label: 'Name', expand: true }));
@@ -128,8 +129,6 @@ export declare class Table extends Widget {
     _probeHeaderHeight: number;
     _fillerEl: HTMLElement;
     _model: any;
-    cursor: any;
-    model: any;
     _initialize(): void;
     _render(): HTMLElement;
     /**
@@ -320,14 +319,19 @@ export declare class Table extends Widget {
     _onModelRowInsert(_model: any, index: any): void;
     _onModelRowRemove(model: any, index: any, id: any): void;
     _onModelRowMove(_model: any, from: any, to: any): void;
+    _onModelRowUpdate(_model: any, index: any, id: any, oldId: any): void;
     _onModelRowsReorder(): void;
     _findKey(key: any, index: any): number;
+    _rememberCursorKey(): void;
     _rememberAnchorKey(): void;
     _onModelSortChange(): void;
     _onModelDestroy(): void;
     _onSelectionChange(): void;
     /**
-     * Handles a press on a row, selecting according to the selection modes.
+     * Handles a press on a row, selecting according to the selection mode, like GTK: with
+     * `multiple`, Shift selects the range from the anchor and Control toggles the row; with
+     * `single`, Control unselects a selected row; with `browse`, the row is always selected.
+     * With `toggleSelection`, a press toggles as a Control+press does.
      *
      * @param {number} index
      * @param {boolean} extend Whether to select a range from the anchor (Shift).
@@ -339,7 +343,7 @@ export declare class Table extends Widget {
      *
      * @param {number} index
      * @param {boolean} extend Whether to extend the selection from the anchor (Shift).
-     * @param {boolean} cursorOnly Whether to move only the cursor (Control).
+     * @param {boolean} cursorOnly Whether to move only the cursor (Control), except with `browse`.
      */
     _moveCursor(index: number, extend: boolean, cursorOnly: boolean): void;
     _getRowIndex(target: any): any;
@@ -409,9 +413,11 @@ export declare namespace Table {
 
 /** The declared properties of {@link Table}. */
 export interface Table {
-    canFocus: any;
-    hExpand: any;
-    vExpand: any;
+    /**
+     * The model: a `ListModel`, a `FilteredListModel`, a `TreeModel` (making the table a tree
+     * view) or another `AbstractModel`, or `null`.
+     */
+    model: any;
     /**
      * The column that shows the tree of a `TreeModel` (the indentation and the expanders), or
      * `null` for the first text column (or else the first column).
@@ -432,10 +438,17 @@ export interface Table {
      */
     readonly selection: any;
     /**
-     * How rows can be selected: a mask of `SelectionModes`. `NONE` (the default) disables
-     * selecting.
+     * How rows can be selected: one of `SelectionMode`, like in GTK. `single` (the default)
+     * selects at most one row, `browse` one row that the user cannot unselect, `multiple` any
+     * number of rows, and `none` disables selecting. Changing it changes the mode of the
+     * `selection`.
      */
-    selectionModes: any;
+    selectionMode: string;
+    /**
+     * The row with the keyboard cursor, or -1. It is distinct from the selection: Control with
+     * the arrow keys moves only the cursor.
+     */
+    cursor: number;
     /**
      * The columns, in order. Do not modify the array.
      */
@@ -443,7 +456,7 @@ export interface Table {
     /**
      * The number of columns.
      */
-    readonly columnsCount: any;
+    readonly columnsCount: number;
     /**
      * Whether the column headers are shown.
      */
@@ -451,7 +464,7 @@ export interface Table {
     /**
      * Another name of `headerVisible`.
      */
-    showHeaders: any;
+    showHeaders: boolean;
     /**
      * Whether every other row has a slightly darker background.
      */
@@ -461,9 +474,15 @@ export interface Table {
      */
     hasFrame: boolean;
     /**
+     * Whether a click toggles the selection of a row, as a Control+click does: a click on a
+     * selected row unselects it (except with `browse`), and with `multiple`, a click on another
+     * row adds it to the selection. It is also the `toggleSelection` of the `selection`.
+     */
+    toggleSelection: boolean;
+    /**
      * The text shown when the model has no rows (or there is no model).
      */
-    placeholderText: string;
+    placeholder: string;
     /**
      * The model column that type-ahead search uses, or `null` for the sort column (or else the
      * first text column).

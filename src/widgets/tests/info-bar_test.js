@@ -220,6 +220,26 @@ test.describe('InfoBar', () => {
         await expect(close).toBeHidden();
     });
 
+    test('Escape in the bar gives the cancel or the close response', async ({ page }) => {
+        await mount(page, { showCloseButton: true });
+
+        await page.evaluate(() => globalThis.bar.addButton('ok').focus());
+        await page.keyboard.press('Escape');
+
+        await page.evaluate(() => globalThis.bar.addButton('cancel'));
+        await page.keyboard.press('Escape');
+
+        // Without a cancel or close button, Escape is left alone.
+        await page.evaluate(() => {
+            globalThis.bar.removeButton('cancel');
+            globalThis.bar.showCloseButton = false;
+            globalThis.bar.getButton('ok').focus();
+        });
+        await page.keyboard.press('Escape');
+
+        expect(await page.evaluate(() => globalThis.responses)).toEqual(['close', 'cancel']);
+    });
+
     test('revealed slides the bar closed and open again', async ({ page }) => {
         await mount(page, { showCloseButton: true });
 

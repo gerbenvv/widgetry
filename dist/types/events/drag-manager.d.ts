@@ -41,6 +41,7 @@ export declare class DragManager {
     _context: DragContext;
     _sourceWidget: Widget;
     _targetWidget: any;
+    _pointerId: any;
     _iconEl: HTMLDivElement;
     _suppressClick: boolean;
     constructor();

@@ -85,6 +85,61 @@ test.describe('RadioButton', () => {
         expect(errors).toEqual([]);
     });
 
+    test('activation and changes of active emit their signals', async ({ page }) => {
+        const errors = await openWindow(page);
+
+        await page.evaluate(() => {
+            globalThis.log = [];
+            for (const radio of globalThis.radios) {
+                for (const name of ['activate', 'toggle', 'active-change']) {
+                    radio.connect(name, () =>
+                        globalThis.log.push(`${radio.name}:${name}:${radio.active}`)
+                    );
+                }
+            }
+        });
+
+        const log = () => page.evaluate(() => globalThis.log.splice(0));
+
+        // Activating one radio button changes two, and only the activated one emits `activate`.
+        // The group deactivates the other button when the activated one emits `active-change`.
+        await page.evaluate(() => globalThis.radios[0].activate());
+        expect(await actives(page)).toEqual([true, false, false]);
+        expect(await log()).toEqual([
+            'One:toggle:true',
+            'Two:toggle:false',
+            'Two:active-change:false',
+            'One:active-change:true',
+            'One:activate:true',
+        ]);
+
+        // Activating the active button keeps it active, but still emits `activate`.
+        await page.evaluate(() => globalThis.radios[0].activate());
+        expect(await actives(page)).toEqual([true, false, false]);
+        expect(await log()).toEqual(['One:activate:true']);
+
+        // The arrow keys activate the button they move to.
+        await page.evaluate(() => globalThis.radios[0].focus());
+        await page.keyboard.press('ArrowDown');
+        expect(await log()).toEqual([
+            'Two:toggle:true',
+            'One:toggle:false',
+            'One:active-change:false',
+            'Two:active-change:true',
+            'Two:activate:true',
+        ]);
+
+        // Setting `active` from code does not emit `activate`.
+        await page.evaluate(() => (globalThis.radios[2].active = true));
+        expect(await log()).toEqual([
+            'Three:toggle:true',
+            'Two:toggle:false',
+            'Two:active-change:false',
+            'Three:active-change:true',
+        ]);
+        expect(errors).toEqual([]);
+    });
+
     test('the group is one tab stop, and arrow keys move within it', async ({ page }) => {
         await openWindow(page);
         await page.evaluate(() => globalThis.before.focus());
@@ -135,6 +190,33 @@ test.describe('RadioButton', () => {
         expect(tabIndexes.after).toEqual([0, 0, 0]);
     });
 
+    test('a shared mnemonic cycles the focus through inactive radio buttons', async ({ page }) => {
+        const errors = await openWindow(page);
+
+        await page.evaluate(() => {
+            globalThis.radios[0].set({ label: 'On_e', useUnderline: true });
+            globalThis.radios[2].set({ label: 'Thr_ee', useUnderline: true });
+            globalThis.radios[1].focus();
+        });
+
+        // Both mnemonics are E: the focus moves without choosing, as in GTK.
+        await page.keyboard.press('Alt+e');
+        const first = [await focused(page), await actives(page)];
+
+        await page.keyboard.press('Alt+e');
+        const second = [await focused(page), await actives(page)];
+
+        // Once the focus leaves, only the active button is a tab stop again.
+        await page.keyboard.press('Tab');
+        const tabStops = await page.evaluate(() => globalThis.radios.map((x) => x.el.tabIndex));
+
+        expect(errors).toEqual([]);
+        expect(first).toEqual(['One', [false, true, false]]);
+        expect(second).toEqual(['Three', [false, true, false]]);
+        expect(await focused(page)).toBe('After');
+        expect(tabStops).toEqual([-1, 0, -1]);
+    });
+
     test('a radio button draws a round indicator with a dot', async ({ page }) => {
         await openWindow(page);
 
@@ -153,6 +235,28 @@ test.describe('RadioButton', () => {
             ['50%', 'hidden'],
             ['50%', 'visible'],
             ['50%', 'hidden'],
+        ]);
+    });
+
+    test('the accessible state is checked or not, also when inconsistent', async ({ page }) => {
+        await openWindow(page);
+
+        const states = await page.evaluate(() => {
+            const [first, second] = globalThis.radios;
+            first.inconsistent = true;
+            second.inconsistent = true;
+
+            return [first, second].map((x) => [
+                x.el.getAttribute('role'),
+                x.el.getAttribute('aria-checked'),
+                x.el.classList.contains('wy-inconsistent'),
+            ]);
+        });
+
+        // Radio buttons have no mixed state for assistive technology.
+        expect(states).toEqual([
+            ['radio', 'false', true],
+            ['radio', 'true', true],
         ]);
     });
 });

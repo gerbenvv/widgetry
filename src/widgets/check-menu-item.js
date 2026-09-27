@@ -9,7 +9,9 @@ import { MenuItem } from './menu-item.js';
 /**
  * A menu item with a check mark, which activating toggles.
  *
- * Signals: `activate` (when activated, after toggling) and `toggle` (whenever `active` changes).
+ * Signals: `activate` (`item`) when the user activates the item (a click, Enter or Space, its
+ * mnemonic or its accelerator) or `activate()` is called, after it toggled; `toggle` (`item`) and
+ * `active-change` on every change of `active`, also from code.
  */
 export class CheckMenuItem extends MenuItem {
     _initialize() {
@@ -25,7 +27,8 @@ export class CheckMenuItem extends MenuItem {
     }
 
     /**
-     * Activates the item: toggles it and emits `activate`. Does nothing if it is insensitive.
+     * Activates the item, as the user does: clears `inconsistent`, toggles `active` and emits
+     * `activate`. Does nothing if it is insensitive.
      *
      * @returns {boolean} Whether the item was activated.
      */

@@ -235,17 +235,15 @@ export declare function attachContextMenu(widget: Widget, menuOrFactory: Menu | 
 
 /** The declared properties of {@link Menu}. */
 export interface Menu {
-    readonly isTopLevel: any;
-    orientation: any;
     visible: boolean;
     /**
      * Whether this is a menu shell (a container of menu items).
      */
-    readonly isMenuShell: any;
+    readonly isMenuShell: boolean;
     /**
      * Whether this is a menu.
      */
-    readonly isMenu: any;
+    readonly isMenu: boolean;
     /**
      * The selected (highlighted) item, or `null`.
      */

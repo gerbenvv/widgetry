@@ -11,13 +11,15 @@ import { Widget } from './widget.js';
  * Enter toggle it while it has the focus, and so does its mnemonic (as the `mnemonicWidget` of a
  * label).
  *
- * When the user toggles the switch, `state-set` (`switch, state`) is emitted with the new state
- * before `active` changes. A handler that returns `true` vetoes the change, as in GTK: `active`
- * keeps its value, and the handler may set it later itself, for example once a slow operation
- * finished. Setting `active` from code does not emit `state-set`.
+ * When the user activates the switch (or `activate()` is called), `state-set` (`switch, state`) is
+ * emitted with the new state before `active` changes. A handler that returns `true` vetoes the
+ * change, as in GTK: `active` keeps its value, and the handler may set it later itself, for example
+ * once a slow operation finished. Setting `active` from code does not emit `state-set`.
  *
- * Signals: `state-set` (`switch, state`), `activate` (`switch`) when the user toggled it, and
- * `active-change`.
+ * Signals: `state-set` (`switch, state`) as described above; `activate` (`switch`) when the user
+ * activates the switch or `activate()` is called, after `state-set` and the change of `active`
+ * (also when a handler vetoed it); `toggle` (`switch`) and `active-change` on every change of
+ * `active`, also from code.
  *
  * @example
  * const wifi = new Switch({ active: true });
@@ -34,18 +36,18 @@ export declare class Switch extends Widget {
         dragging: boolean;
     };
     _sliderEl: Element;
-    active: boolean;
     _initialize(): void;
     _render(): HTMLElement;
     /**
-     * Toggles the switch as if the user clicked it: emits `state-set`, and changes `active` unless
-     * a handler vetoed it.
+     * Activates the switch as if the user clicked it: emits `state-set`, changes `active` unless a
+     * handler vetoed it, and emits `activate`. Does nothing if the switch is insensitive.
      *
      * @returns {boolean} Whether `active` changed.
      */
     activate(): boolean;
     /**
-     * Asks for a new state on behalf of the user, as described for `state-set`.
+     * Asks for a new state on behalf of the user, as described for `state-set`, and emits
+     * `activate`.
      *
      * @protected
      * @param {boolean} state
@@ -74,7 +76,8 @@ export declare class Switch extends Widget {
 
 /** The declared properties of {@link Switch}. */
 export interface Switch {
-    canFocus: any;
-    hAlign: any;
-    vAlign: any;
+    /**
+     * Whether the switch is on.
+     */
+    active: boolean;
 }

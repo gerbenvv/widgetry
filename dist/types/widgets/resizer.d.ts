@@ -103,11 +103,11 @@ export interface Resizer {
     /**
      * The width of the child area, or -1 for the natural width. The same as `size.width`.
      */
-    width: any;
+    width: number;
     /**
      * The height of the child area, or -1 for the natural height. The same as `size.height`.
      */
-    height: any;
+    height: number;
     /**
      * The minimum size of the child area; a component of -1 means no minimum.
      */
@@ -135,11 +135,11 @@ export interface Resizer {
     /**
      * The directions the user can resize in: a mask of `ResizeDirections`.
      */
-    resizeDirections: any;
+    resizeDirections: number;
     /**
      * The original toolkit's name of `resizeDirections`.
      */
-    directions: any;
+    directions: number;
     /**
      * Whether the corner shows a resize grip, when resizing in both directions.
      */

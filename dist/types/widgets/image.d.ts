@@ -15,13 +15,12 @@ export declare class Image extends Widget {
     _render(): HTMLElement;
     _showIcon(name: any): void;
     _showPicture(source: any): void;
+    _syncAccessibleName(): void;
     _applyPixelSize(): void;
 }
 
 /** The declared properties of {@link Image}. */
 export interface Image {
-    hAlign: any;
-    vAlign: any;
     /**
      * The name of an icon, e.g. `'document-open'`. Setting it clears `source`.
      */
@@ -36,7 +35,8 @@ export interface Image {
      */
     pixelSize: number;
     /**
-     * A text alternative for assistive technology.
+     * A text alternative for assistive technology, used when `accessibleName` is not set. An image
+     * without either is decorative and hidden from assistive technology.
      */
     alternativeText: string;
 }

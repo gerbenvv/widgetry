@@ -58,27 +58,25 @@ export declare const LabelStyles: Readonly<{
     STRIKETHROUGH: number;
 }>;
 /**
- * Sorting order of models and table columns.
+ * Sorting order of models and table columns. It is also the sort indicator of table column headers.
  *
- * @enum {number}
+ * @enum {string}
  */
 export declare const SortOrder: Readonly<{
-    NONE: 0;
-    ASCENDING: 1;
-    DESCENDING: 2;
+    NONE: "none";
+    ASCENDING: "ascending";
+    DESCENDING: "descending";
 }>;
 /**
- * Selection modes, as a bit mask.
+ * How the rows of tables, list boxes and selections can be selected, as in GTK.
  *
- * @enum {number}
+ * @enum {string}
  */
-export declare const SelectionModes: Readonly<{
-    NONE: 0;
-    SINGLE: number;
-    MULTI: number;
-    TOGGLE: number;
-    SINGLE_TOGGLE: number;
-    MULTI_TOGGLE: number;
+export declare const SelectionMode: Readonly<{
+    NONE: "none";
+    SINGLE: "single";
+    BROWSE: "browse";
+    MULTIPLE: "multiple";
 }>;
 /**
  * Pointer cursor shapes.
@@ -147,13 +145,13 @@ export declare const ButtonBoxStyle: Readonly<{
 /**
  * Directions in which keyboard focus can move.
  *
- * @enum {number}
+ * @enum {string}
  */
 export declare const FocusDirection: Readonly<{
-    START: 1;
-    END: 2;
-    FORWARD: 3;
-    BACKWARD: 4;
+    START: "start";
+    END: "end";
+    FORWARD: "forward";
+    BACKWARD: "backward";
 }>;
 /**
  * Resize directions, as a bit mask.

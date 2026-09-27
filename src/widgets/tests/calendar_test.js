@@ -176,6 +176,21 @@ test.describe('Calendar', () => {
         expect(result).toEqual({ activations: 1, focused: true });
     });
 
+    test('with activateOnSingleClick, a click activates a day', async ({ page }) => {
+        await openHarness(page);
+        await mount(page, { date: new Date(2026, 8, 27), activateOnSingleClick: true });
+
+        await page.click('.wy-calendar-day >> text=/^15$/');
+
+        const result = await page.evaluate(() => ({
+            single: globalThis.widget.activateOnSingleClick,
+            activations: globalThis.events.filter((x) => x === 'day-activate').length,
+        }));
+
+        expect((await view(page)).selected).toBe('2026-9-15');
+        expect(result).toEqual({ single: true, activations: 1 });
+    });
+
     test('days outside the date range cannot be chosen', async ({ page }) => {
         await openHarness(page);
         await mount(page, {

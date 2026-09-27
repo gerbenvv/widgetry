@@ -54,8 +54,8 @@ export declare function getIsoWeek(date: Date): number;
  * cursor day, and Enter selects and activates it. The wheel changes the month.
  *
  * Signals: `day-selected` (the selected `date` changed by the user), `day-activate` (a day was
- * activated: double-clicked, Enter pressed, or clicked with `activateOnClick`), `month-change`
- * (the shown month changed).
+ * activated: double-clicked, Enter pressed, or clicked with `activateOnSingleClick`),
+ * `month-change` (the shown month changed).
  */
 export declare class Calendar extends Widget {
     _cursor: any;
@@ -82,6 +82,7 @@ export declare class Calendar extends Widget {
      * @type {HTMLElement}
      */
     get focusElement(): HTMLElement;
+    _syncAccessibleName(): void;
     /**
      * Selects a day, as if the user did.
      *
@@ -131,11 +132,10 @@ export declare class Calendar extends Widget {
 
 /** The declared properties of {@link Calendar}. */
 export interface Calendar {
-    canFocus: any;
     /**
      * The selected day, or `null`. Setting it also shows its month.
      */
-    date: any;
+    date: Date | null;
     /**
      * The day with the keyboard focus, which determines the month shown. It stays within the date
      * range.
@@ -152,11 +152,11 @@ export interface Calendar {
     /**
      * The earliest day that can be chosen, or `null`.
      */
-    minDate: any;
+    minDate: Date | null;
     /**
      * The latest day that can be chosen, or `null`.
      */
-    maxDate: any;
+    maxDate: Date | null;
     /**
      * The first day of the week (0 for Sunday, 1 for Monday and so on), or `null` for the
      * locale's.
@@ -177,5 +177,5 @@ export interface Calendar {
     /**
      * Whether a single click on a day also activates it, as in a date picker.
      */
-    activateOnClick: any;
+    activateOnSingleClick: any;
 }

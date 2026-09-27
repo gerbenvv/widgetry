@@ -3,6 +3,15 @@
  */
 import { Instance } from '../core/instance.js';
 /**
+ * Checks a selection mode, as the `selectionMode` properties of selections, tables and list boxes
+ * do.
+ *
+ * @param {string} mode
+ * @returns {string} The mode.
+ * @throws {RangeError} If it is not one of `SelectionMode`.
+ */
+export declare function checkSelectionMode(mode: string): string;
+/**
  * The selected rows of a model, as used by tables.
  *
  * When the model has an id column (or is a `TreeModel`), rows are selected by id: they stay
@@ -15,8 +24,10 @@ import { Instance } from '../core/instance.js';
  * (like the original toolkit). The other methods (`select`, `toggle`, `selectRange`, ...) take row
  * indices.
  *
- * The `modes` (a mask of `SelectionModes`) limit the selection: with `NONE` nothing can be
- * selected, with `SINGLE` at most one row.
+ * The `selectionMode` (one of `SelectionMode`) limits the selection: with `none` nothing can be
+ * selected, with `single` and `browse` at most one row, and with `multiple` any number of rows.
+ * The model does not stop the program from unselecting the row in `browse` mode; the widgets that
+ * use it stop the user from doing so.
  *
  * Signals: `row-select` and `row-deselect` (`selection, key`), and `change` (`selection`) once
  * per operation that changed the selection.
@@ -31,7 +42,6 @@ export declare class Selection extends Instance {
     _batch: number;
     _batchChanged: any;
     _model: any;
-    model: any;
     _initialize(): void;
     destroy(): void;
     /**
@@ -55,7 +65,7 @@ export declare class Selection extends Instance {
      */
     getIndex(key: unknown): number;
     /**
-     * Selects a row by key. With `SelectionModes.SINGLE`, the other rows are unselected.
+     * Selects a row by key. With `single` and `browse`, the other rows are unselected.
      *
      * @param {unknown} key
      * @returns {boolean} Whether the selection changed.
@@ -69,7 +79,7 @@ export declare class Selection extends Instance {
      */
     selectOnlyRow(key: unknown): boolean;
     /**
-     * Selects all rows. With `SelectionModes.SINGLE`, this does nothing.
+     * Selects all rows. Only with `multiple`; otherwise this does nothing.
      *
      * @returns {boolean} Whether the selection changed.
      */
@@ -160,8 +170,8 @@ export declare class Selection extends Instance {
      */
     isSelected(index: number): boolean;
     /**
-     * Selects the rows from one index to another (in either order). With `SelectionModes.SINGLE`,
-     * only the row at `to` is selected.
+     * Selects the rows from one index to another (in either order). Without `multiple`, only the
+     * row at `to` is selected.
      *
      * @param {number} from
      * @param {number} to
@@ -213,11 +223,22 @@ export declare class Selection extends Instance {
 /** The declared properties of {@link Selection}. */
 export interface Selection {
     /**
-     * The selection modes: a mask of `SelectionModes`. With `NONE` nothing can be selected; with
-     * `SINGLE` at most one row. `TOGGLE` affects how tables handle clicks. Reducing the modes
-     * reduces the selection accordingly.
+     * The model the selection is of. Changing it clears the selection.
      */
-    modes: any;
+    model: any;
+    /**
+     * How rows can be selected: one of `SelectionMode`. With `none` nothing can be selected; with
+     * `single` and `browse` at most one row. Changing it keeps at most the last selected row,
+     * except with `multiple`, and nothing with `none`.
+     */
+    selectionMode: string;
+    /**
+     * Whether a click toggles the selection of a row in the tables that use the selection, as a
+     * Control+click does: a click on a selected row unselects it (except with `browse`), and with
+     * `multiple`, a click on another row adds it to the selection. The table sets it from its own
+     * `toggleSelection`.
+     */
+    toggleSelection: any;
     /**
      * The keys (ids, or indices without an id column) of the selected rows, in selection order.
      * Setting it selects exactly those rows.
@@ -234,5 +255,5 @@ export interface Selection {
     /**
      * The number of selected rows.
      */
-    readonly selectedRowsCount: any;
+    readonly selectedRowsCount: number;
 }

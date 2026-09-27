@@ -16,6 +16,33 @@ describe('LocaleManager', () => {
         assert.equal(manager.firstDayOfWeek, 1);
     });
 
+    test('has the Gregorian month names in locales with another calendar', () => {
+        const gregorian = (locale, month) =>
+            new Intl.DateTimeFormat(locale, {
+                month: 'long',
+                timeZone: 'UTC',
+                calendar: 'gregory',
+            }).format(Date.UTC(2021, month, 1));
+
+        for (const locale of ['fa-IR', 'ar-SA', 'th-TH']) {
+            const manager = new LocaleManagerClass({ locale });
+
+            assert.equal(manager.longMonthNames[1], gregorian(locale, 1), locale);
+            assert.equal(manager.longMonthNames[9], gregorian(locale, 9), locale);
+        }
+    });
+
+    test('takes the country from the region, not the script', () => {
+        const manager = new LocaleManagerClass({ locale: 'zh-Hant-TW' });
+        assert.deepEqual([manager.language, manager.country], ['zh', 'TW']);
+
+        manager.locale = 'sr-Latn';
+        assert.deepEqual([manager.language, manager.country], ['sr', '']);
+
+        manager.locale = 'es-419';
+        assert.deepEqual([manager.language, manager.country], ['es', '419']);
+    });
+
     test('emits language-change only when the language changes', () => {
         const manager = new LocaleManagerClass({ locale: 'en-US' });
         const events = [];
@@ -45,6 +72,9 @@ describe('LocaleManager additions', () => {
 
     test('has a validated time zone that does not change with the locale', () => {
         const manager = new LocaleManagerClass({ locale: 'en-US' });
+        assert.equal(manager.timeZone, 'local');
+
+        manager.timeZone = 'UTC';
         assert.equal(manager.timeZone, 'UTC');
 
         manager.timeZone = 'Europe/Amsterdam';

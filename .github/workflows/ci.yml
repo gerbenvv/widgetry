@@ -33,8 +33,9 @@ jobs:
             -   name: Build
                 run: npm run build && npm run types
 
+            # Also fails on new files that are not committed, such as the declarations of a new module.
             -   name: Check that the committed build is up to date
-                run: git diff --exit-code -- dist
+                run: git add -N dist && git diff --exit-code -- dist
 
             -   uses: actions/upload-artifact@v4
                 if: failure()

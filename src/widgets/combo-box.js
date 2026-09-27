@@ -149,6 +149,17 @@ export class ComboBox extends Widget {
     }
 
     /**
+     * Returns both the root element and the entry, which are the focus element without and with
+     * `hasEntry`.
+     *
+     * @protected
+     * @returns {Element[]}
+     */
+    _getAccessibleNameElements() {
+        return [this.el, this._entryEl];
+    }
+
+    /**
      * The popover showing the list.
      *
      * @type {Popover}
@@ -262,14 +273,14 @@ export class ComboBox extends Widget {
     /**
      * Opens the list.
      */
-    openPopup() {
+    popup() {
         this.popupOpen = true;
     }
 
     /**
      * Closes the list.
      */
-    closePopup() {
+    popdown() {
         this.popupOpen = false;
     }
 
@@ -381,8 +392,8 @@ export class ComboBox extends Widget {
         this._textEl.textContent = item ? item.label : '';
         this._buttonEl.classList.toggle('wy-empty', !item);
 
-        if (this._hasEntry && item && this._entryEl.value !== item.label) {
-            this._entryEl.value = item.label;
+        if (this._hasEntry && item) {
+            this._setEntryText(item.label);
         }
 
         this._syncList();
@@ -413,13 +424,28 @@ export class ComboBox extends Widget {
         }
 
         if (this._hasEntry) {
-            this._entryEl.value = item.label;
-            this._entryText = item.label;
-            this.emit('text-change', this);
+            this._setEntryText(item.label);
         }
 
         if (index !== this._activeIndex) {
             this._setActiveIndex(index, true);
+        }
+    }
+
+    /**
+     * Puts a text in the entry, as the text of the combo box.
+     *
+     * @protected
+     * @param {string} text
+     */
+    _setEntryText(text) {
+        if (this._entryEl.value !== text) {
+            this._entryEl.value = text;
+        }
+
+        if (text !== this._entryText) {
+            this._entryText = text;
+            this.emit('text-change', this);
         }
     }
 
@@ -530,6 +556,10 @@ export class ComboBox extends Widget {
     _updateEntryMode() {
         const hasEntry = this._hasEntry;
 
+        // The focus element changes; the list and the focus move along.
+        const focused = this.el.contains(document.activeElement);
+        this._hidePopup();
+
         this.el.classList.toggle('wy-has-entry', hasEntry);
         this._entryEl.hidden = !hasEntry;
 
@@ -545,7 +575,11 @@ export class ComboBox extends Widget {
             this._entryEl.setAttribute('aria-expanded', String(this._popupOpen));
 
             const item = this._items[this._activeIndex];
-            this._entryEl.value = item ? item.label : this._entryText;
+            this._entryEl.value = this._entryText;
+
+            if (item) {
+                this._setEntryText(item.label);
+            }
         } else {
             this._entryEl.tabIndex = -1;
 
@@ -555,6 +589,10 @@ export class ComboBox extends Widget {
         }
 
         this._updateTabIndex();
+
+        if (focused) {
+            this.focusElement.focus({ preventScroll: true });
+        }
     }
 
     _connectModel(model) {
@@ -878,9 +916,11 @@ defineProperties(ComboBox, {
     },
 
     /**
-     * The index of the active item, or -1 if there is none.
+     * The index of the active item, or -1 if there is none. It is set after the items, so both can
+     * be given to the constructor in any order (the same holds for `activeId` and `text`).
      */
     activeIndex: {
+        late: true,
         value: -1,
         signal: false,
         coerce(index) {
@@ -899,24 +939,10 @@ defineProperties(ComboBox, {
     },
 
     /**
-     * The same as `activeIndex`.
-     */
-    active: {
-        signal: false,
-        get() {
-            return this._activeIndex;
-        },
-        set(index) {
-            this.activeIndex = index;
-
-            return false;
-        },
-    },
-
-    /**
      * The id of the active item, or `null` if there is none or it has no id.
      */
     activeId: {
+        late: true,
         signal: false,
         get() {
             return this._items[this._activeIndex]?.id ?? null;
@@ -944,6 +970,7 @@ defineProperties(ComboBox, {
      * it without an entry makes the first item with that label active.
      */
     text: {
+        late: true,
         signal: false,
         get() {
             if (this._hasEntry) {
@@ -984,7 +1011,7 @@ defineProperties(ComboBox, {
     },
 
     /**
-     * Whether the list is open.
+     * Whether the list is open. Setting it opens or closes the list.
      */
     popupOpen: {
         value: false,
@@ -1008,22 +1035,6 @@ defineProperties(ComboBox, {
         changed(placeholder) {
             this._entryEl.placeholder = placeholder || '';
             this._textEl.dataset.placeholder = placeholder || '';
-        },
-    },
-
-    /**
-     * The accessible name of the combo box, for combo boxes without a visible label.
-     */
-    accessibleName: {
-        value: '',
-        changed(name) {
-            for (const element of [this.el, this._entryEl]) {
-                if (name) {
-                    element.setAttribute('aria-label', name);
-                } else {
-                    element.removeAttribute('aria-label');
-                }
-            }
         },
     },
 });

@@ -194,6 +194,30 @@ describe('FilteredListModel', () => {
         }
     });
 
+    test('passes on the shown row when a replaced row is filtered out', () => {
+        const { model, filtered } = createModels();
+        const shown = model.getRowById(2);
+        const removed = [];
+        filtered.connect('row-remove', (_model, index, id, row) => removed.push([index, id, row]));
+
+        model.replaceRowById(2, { id: 2, even: false, value: 2 });
+
+        assert.deepEqual(removed, [[1, 2, shown]]);
+        assertInSync(filtered, model);
+    });
+
+    test('removes a row that a change moves and filters out, without moving it first', () => {
+        const { model, filtered } = createModels();
+        model.sortByColumn('value');
+        const log = record(filtered);
+
+        // The row with id 2 moves to the end of the source, and is no longer even.
+        model.updateRowById(2, { even: false, value: 20 });
+
+        assert.deepEqual(log, [['row-remove', 1, 2]]);
+        assertInSync(filtered, model);
+    });
+
     test('changes go to the source model with translated indices', () => {
         const { model, filtered } = createModels();
 

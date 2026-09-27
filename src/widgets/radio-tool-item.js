@@ -12,7 +12,9 @@ import { CheckToolItem } from './check-tool-item.js';
  * pages of a view. Put items in a group by setting their `group` to the same `ButtonGroup`, or
  * with `join()`. Activating the active item does not deactivate it.
  *
- * Signals: `activate`, `toggle`.
+ * Signals: `activate` (`item`) when the user activates the item or `activate()` is called, also
+ * when it already was active; `toggle` (`item`) and `active-change` on every change of `active`,
+ * also from code.
  */
 export class RadioToolItem extends CheckToolItem {
     _initialize() {

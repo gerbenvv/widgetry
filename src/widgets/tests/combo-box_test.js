@@ -48,6 +48,31 @@ const active = (page) =>
     }));
 
 test.describe('ComboBox', () => {
+    test('the active item can be given before the items', async ({ page }) => {
+        await openHarness(page);
+
+        const result = await page.evaluate(async () => {
+            const { ComboBox } = await import('/src/widgets/combo-box.js');
+            const { Builder } = await import('/src/construction/builder.js');
+
+            const items = [
+                { id: 'a', label: 'A' },
+                { id: 'b', label: 'B' },
+            ];
+            const [built] = new Builder().build({ type: 'combo-box', 'active-id': 'b', items });
+
+            return [
+                new ComboBox({ activeIndex: 1, items }).activeIndex,
+                new ComboBox({ activeId: 'b', items }).activeIndex,
+                new ComboBox({ text: 'B', items }).activeIndex,
+                new ComboBox({ text: 'B', hasEntry: true, items }).activeIndex,
+                built.activeId,
+            ];
+        });
+
+        expect(result).toEqual([1, 1, 1, 1, 'b']);
+    });
+
     test('has items with an active index and id', async ({ page }) => {
         const errors = await openHarness(page);
         await mount(page, { items: FRUITS, activeId: 'banana' });
@@ -58,9 +83,9 @@ test.describe('ComboBox', () => {
             widget.connect('active-id-change', () => signals.push('id'));
             widget.connect('active-index-change', () => signals.push('index'));
 
-            const states = [widget.activeIndex, widget.active, widget.text];
+            const states = [widget.activeIndex, 'active' in widget, widget.text];
 
-            widget.active = 4;
+            widget.activeIndex = 4;
             states.push(widget.activeId, widget.el.querySelector('.wy-combo-box-text').textContent);
 
             widget.activeId = null;
@@ -83,7 +108,7 @@ test.describe('ComboBox', () => {
 
         expect(errors).toEqual([]);
         expect(result).toEqual({
-            states: [1, 1, 'Banana', 'date', 'Date', -1, ''],
+            states: [1, false, 'Banana', 'date', 'Date', -1, ''],
             signals: ['index', 'id', 'index', 'id'],
             changes: [4, -1],
             errors: ['RangeError', 'Error'],
@@ -328,6 +353,60 @@ test.describe('ComboBox', () => {
         expect(result).toEqual({ text: 'Red', focused: true, role: 'combobox' });
     });
 
+    test('the text of an entry follows the active item set from code', async ({ page }) => {
+        await openHarness(page);
+        await mount(page, { items: ['Red', 'Green', 'Blue'], hasEntry: true, activeIndex: 0 });
+
+        const result = await page.evaluate(() => {
+            const widget = globalThis.widget;
+            const texts = [];
+            widget.connect('text-change', () => texts.push(widget.text));
+
+            const states = [widget.text];
+
+            widget.activeIndex = 2;
+            states.push(widget.text);
+
+            widget.text = 'Purple';
+            widget.hasEntry = false;
+            widget.activeIndex = 1;
+            widget.hasEntry = true;
+            states.push(widget.text, widget.focusElement.value);
+
+            return { states, texts };
+        });
+
+        expect(result).toEqual({
+            states: ['Red', 'Blue', 'Green', 'Green'],
+            texts: ['Blue', 'Purple', 'Green'],
+        });
+    });
+
+    test('keeps the focus when the entry is added or removed', async ({ page }) => {
+        await openHarness(page);
+        await mount(page, { items: ['Red', 'Green', 'Blue'], activeIndex: 0 });
+
+        const focus = () =>
+            page.evaluate(() => [
+                document.activeElement === globalThis.widget.focusElement,
+                globalThis.widget.hasFocus,
+            ]);
+
+        await page.evaluate(() => globalThis.widget.focus());
+        await page.evaluate(() => (globalThis.widget.hasEntry = true));
+        const withEntry = await focus();
+
+        await page.evaluate(() => (globalThis.widget.hasEntry = false));
+        const withoutEntry = await focus();
+
+        await page.keyboard.press('Tab');
+        const next = await page.evaluate(
+            () => document.activeElement.closest('.wy-line-edit') !== null
+        );
+
+        expect([withEntry, withoutEntry, next]).toEqual([[true, true], [true, true], true]);
+    });
+
     test('items can come from a model', async ({ page }) => {
         await openHarness(page);
         await mount(page);
@@ -371,12 +450,32 @@ test.describe('ComboBox', () => {
             states.push(Boolean(error));
 
             widget.sensitive = false;
-            widget.openPopup();
+            widget.popup();
             states.push(widget.popupOpen);
 
             return states;
         });
 
         expect(result).toEqual([2, 'Two', 0, 2, true, false]);
+    });
+
+    test('popup(), popdown() and togglePopup() open and close the list', async ({ page }) => {
+        await openHarness(page);
+        await mount(page, { items: FRUITS });
+
+        const states = await page.evaluate(() => {
+            const widget = globalThis.widget;
+            const states = [];
+            widget.connect('popup-open-change', () => states.push(widget.popupOpen));
+
+            widget.popup();
+            widget.popdown();
+            widget.togglePopup();
+            widget.togglePopup();
+
+            return states;
+        });
+
+        expect(states).toEqual([true, false, true, false]);
     });
 });

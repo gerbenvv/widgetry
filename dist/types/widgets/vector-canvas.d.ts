@@ -4,9 +4,9 @@
 import { Sprite } from '../sprites/sprite.js';
 import { Widget } from './widget.js';
 /**
- * A surface for vector graphics: sprites (`Rectangle`, `Circle`, `Path`, `LabelSprite`,
- * `ImageSprite`) drawn as SVG, so they are crisp at any zoom, can be styled with CSS and get
- * pointer events on their painted shape.
+ * A surface for vector graphics: sprites (`RectangleSprite`, `CircleSprite`, `PathSprite`,
+ * `LabelSprite`, `ImageSprite`) drawn as SVG, so they are crisp at any zoom, can be styled with CSS
+ * and get pointer events on their painted shape.
  *
  * Sprites are drawn in order (sorted by their `zIndex`), later sprites on top. The `viewBox` sets
  * the coordinate system (by default one unit is one pixel), and the `transformation` pans and
@@ -18,15 +18,15 @@ import { Widget } from './widget.js';
  *
  * @example
  * const canvas = new VectorCanvas({ width: 300, height: 200 });
- * canvas.addSprite(new Circle({ position: { x: 50, y: 50 }, radius: 20, fill: '#5699d8' }));
+ * canvas.addSprite(new CircleSprite({ position: { x: 50, y: 50 }, radius: 20, fill: '#5699d8' }));
  */
 export declare class VectorCanvas extends Widget {
     /** @type {Sprite[]} */
     _sprites: Sprite[];
     _svgEl: SVGSVGElement;
     _contentEl: SVGGElement;
-    transformation: any;
     _initialize(): void;
+    _syncAccessibleName(): void;
     _render(): HTMLElement;
     /**
      * The SVG element, e.g. to add gradient definitions.
@@ -171,7 +171,7 @@ export interface VectorCanvas {
     /**
      * The number of sprites.
      */
-    readonly spritesCount: any;
+    readonly spritesCount: number;
     /**
      * The coordinate system, as `{x, y, width, height}` (or the SVG text `'0 0 100 100'`), or
      * `null` for pixels.
@@ -182,7 +182,12 @@ export interface VectorCanvas {
      */
     preserveAspectRatio: string;
     /**
-     * A description of the drawing, for assistive technologies, or `''` if it is decorative.
+     * The transformation of all sprites, a `Matrix`, e.g. for panning and zooming.
+     */
+    transformation: any;
+    /**
+     * A description of the drawing, for assistive technologies, or `''` if it is decorative. The
+     * same as `accessibleName`.
      */
     label: string;
 }

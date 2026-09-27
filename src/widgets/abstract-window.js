@@ -16,7 +16,8 @@ import { Widget } from './widget.js';
  * a window becomes active again, its focus widget gets the focus back. Tab and Shift+Tab move the
  * focus through the window's focusable widgets in tree order, wrapping around at the ends.
  *
- * Windows are hidden until shown. Signals: `focus-widget-change`.
+ * Windows are hidden until shown. Signals: `active-change` (`window`) when the window becomes
+ * active or inactive, and `focus-widget-change` (`window`).
  */
 export class AbstractWindow extends Bin {
     _initialize() {
@@ -42,10 +43,14 @@ export class AbstractWindow extends Bin {
     /**
      * Moves the focus within the window.
      *
-     * @param {number} direction One of `FocusDirection`.
+     * @param {string} direction One of `FocusDirection`.
      * @returns {boolean} Whether a widget got the focus.
      */
     moveFocus(direction) {
+        if (!Object.values(FocusDirection).includes(direction)) {
+            throw new RangeError(`Invalid focus direction '${direction}'.`);
+        }
+
         const chain = this._getFocusChain();
         if (!chain.length) {
             return false;
@@ -89,13 +94,18 @@ export class AbstractWindow extends Bin {
     }
 
     destroy() {
-        if (this._active) {
+        const wasActive = this._active;
+        if (wasActive) {
             Application.activeWindow = null;
         }
 
         super.destroy();
 
         Application._removeWindow(this);
+
+        if (wasActive) {
+            Application._activateNextWindow(this);
+        }
     }
 
     /**
@@ -151,6 +161,7 @@ export class AbstractWindow extends Bin {
             }
         } else if (this._active) {
             Application.activeWindow = null;
+            Application._activateNextWindow(this);
         }
     }
 
@@ -176,19 +187,7 @@ export class AbstractWindow extends Bin {
 
         if (active) {
             this._raise();
-
-            // Give the focus back to the focus widget, or find one.
-            if (!this.el.contains(document.activeElement) || document.activeElement === this.el) {
-                if (!this._focusWidget || !this._focusWidget.focus()) {
-                    this.moveFocus(FocusDirection.START);
-                }
-            }
-
-            if (!this.el.contains(document.activeElement)) {
-                // Nothing can take the focus; focus the window itself so it gets key events.
-                this.el.tabIndex = -1;
-                this.el.focus({ preventScroll: true });
-            }
+            this._takeFocus();
         } else if (this.el.contains(document.activeElement)) {
             /** @type {HTMLElement} */ (document.activeElement).blur();
         }
@@ -196,6 +195,25 @@ export class AbstractWindow extends Bin {
         this._syncFocusStates();
 
         this.emit('active-change', this);
+    }
+
+    /**
+     * Moves the keyboard focus into the window: to its focus widget, or else the first widget that
+     * can take it, or else the window itself so that it gets key events.
+     *
+     * @protected
+     */
+    _takeFocus() {
+        if (!this.el.contains(document.activeElement) || document.activeElement === this.el) {
+            if (!this._focusWidget || !this._focusWidget.focus()) {
+                this.moveFocus(FocusDirection.START);
+            }
+        }
+
+        if (!this.el.contains(document.activeElement)) {
+            this.el.tabIndex = -1;
+            this.el.focus({ preventScroll: true });
+        }
     }
 
     /**
@@ -312,6 +330,14 @@ export class AbstractWindow extends Bin {
 
     _onFocusIn(event) {
         this._activateFromFocus();
+
+        // A modal window above keeps the keyboard focus.
+        const activeWindow = Application.activeWindow;
+        if (!this._active && activeWindow && activeWindow !== this) {
+            activeWindow._takeFocus();
+
+            return;
+        }
 
         // Find the widget whose focus element got the focus.
         let widget = Widget.fromElement(event.target);

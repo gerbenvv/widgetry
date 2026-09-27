@@ -21,7 +21,7 @@ export interface Separator {
     /**
      * The direction of the line: one of `Orientation`.
      */
-    orientation: any;
+    orientation: string;
     /**
      * The thickness of the line in pixels (at least 1). The default of 2 draws a dark and a light
      * line.

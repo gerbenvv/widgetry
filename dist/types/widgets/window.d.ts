@@ -40,7 +40,6 @@ export declare class Window extends AbstractWindow {
     };
     _x: any;
     _y: any;
-    maximized: boolean;
     _initialize(): void;
     _render(): HTMLElement;
     /**
@@ -106,6 +105,10 @@ export interface Window {
      * it when first shown.
      */
     transientFor: any;
+    /**
+     * Whether the window fills the screen. Only has an effect when `maximizable`.
+     */
+    maximized: boolean;
     /**
      * Whether the window can be maximized. Shows or hides the maximize button.
      */

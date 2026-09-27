@@ -62,11 +62,11 @@ export interface ProgressBar {
      * ellipsizing, the bar is at least as wide as its text. Middle ellipsizing is done at the
      * end.
      */
-    ellipsize: any;
+    ellipsize: string;
     /**
      * The direction of the bar: one of `Orientation`.
      */
-    orientation: any;
+    orientation: string;
     /**
      * Whether the bar fills in the opposite direction: from right to left, or from top to
      * bottom.

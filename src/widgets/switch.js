@@ -19,13 +19,15 @@ import { Widget } from './widget.js';
  * Enter toggle it while it has the focus, and so does its mnemonic (as the `mnemonicWidget` of a
  * label).
  *
- * When the user toggles the switch, `state-set` (`switch, state`) is emitted with the new state
- * before `active` changes. A handler that returns `true` vetoes the change, as in GTK: `active`
- * keeps its value, and the handler may set it later itself, for example once a slow operation
- * finished. Setting `active` from code does not emit `state-set`.
+ * When the user activates the switch (or `activate()` is called), `state-set` (`switch, state`) is
+ * emitted with the new state before `active` changes. A handler that returns `true` vetoes the
+ * change, as in GTK: `active` keeps its value, and the handler may set it later itself, for example
+ * once a slow operation finished. Setting `active` from code does not emit `state-set`.
  *
- * Signals: `state-set` (`switch, state`), `activate` (`switch`) when the user toggled it, and
- * `active-change`.
+ * Signals: `state-set` (`switch, state`) as described above; `activate` (`switch`) when the user
+ * activates the switch or `activate()` is called, after `state-set` and the change of `active`
+ * (also when a handler vetoed it); `toggle` (`switch`) and `active-change` on every change of
+ * `active`, also from code.
  *
  * @example
  * const wifi = new Switch({ active: true });
@@ -65,8 +67,8 @@ export class Switch extends Widget {
     }
 
     /**
-     * Toggles the switch as if the user clicked it: emits `state-set`, and changes `active` unless
-     * a handler vetoed it.
+     * Activates the switch as if the user clicked it: emits `state-set`, changes `active` unless a
+     * handler vetoed it, and emits `activate`. Does nothing if the switch is insensitive.
      *
      * @returns {boolean} Whether `active` changed.
      */
@@ -75,7 +77,8 @@ export class Switch extends Widget {
     }
 
     /**
-     * Asks for a new state on behalf of the user, as described for `state-set`.
+     * Asks for a new state on behalf of the user, as described for `state-set`, and emits
+     * `activate`.
      *
      * @protected
      * @param {boolean} state
@@ -86,17 +89,22 @@ export class Switch extends Widget {
             return false;
         }
 
-        if (this.emit('state-set', this, state) || this.destroyed) {
-            this._updateState();
-
+        const vetoed = this.emit('state-set', this, state);
+        if (this.destroyed) {
             return false;
         }
 
-        this.active = state;
+        if (vetoed) {
+            this._updateState();
+        } else {
+            this.active = state;
+        }
 
-        this.emit('activate', this);
+        if (!this.destroyed) {
+            this.emit('activate', this);
+        }
 
-        return true;
+        return !vetoed;
     }
 
     /**
@@ -236,6 +244,8 @@ defineProperties(Switch, {
         coerce: Boolean,
         changed() {
             this._updateState();
+
+            this.emit('toggle', this);
         },
     },
 });
