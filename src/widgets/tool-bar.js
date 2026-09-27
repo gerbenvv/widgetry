@@ -77,7 +77,7 @@ export class ToolBar extends Box {
             <div class="wy-tool-bar" role="toolbar">
                 <div class="wy-tool-bar-body"></div>
                 <div class="wy-tool-bar-overflow" role="button" tabindex="-1" aria-haspopup="menu"
-                    aria-expanded="false" aria-label="More" hidden></div>
+                    aria-expanded="false" data-wy-label="More" hidden></div>
             </div>
         `);
 

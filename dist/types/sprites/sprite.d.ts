@@ -49,6 +49,10 @@ export declare class Sprite extends Instance {
     _titleEl: any;
     visible: boolean;
     events: number;
+    _grabState: {
+        onLost: (event: any) => void;
+        onUp: (event: any) => void;
+    };
     _initialize(): void;
     /**
      * Finds the sprite an element belongs to.
@@ -183,6 +187,15 @@ export declare class Sprite extends Instance {
     protected _recalculateVisibility(): void;
     _syncEventListeners(): void;
     _onDomEvent(nativeEvent: any, type: any, capture: any): void;
+    /**
+     * Grabs the pointer while a button is pressed on the sprite, so motion and the release keep
+     * coming to it, also outside the canvas.
+     *
+     * @param {PointerEvent} nativeEvent The press.
+     */
+    _grab(nativeEvent: PointerEvent): void;
+    _releaseGrab(): void;
+    _dispatchDomEvent(nativeEvent: any, type: any, capture: any): void;
     _createEvent(nativeEvent: any, type: any): ButtonEvent | CrossingEvent | MotionEvent | ScrollEvent;
 }
 

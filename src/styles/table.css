@@ -20,6 +20,8 @@
     --wy-table-selected-unfocused-text: var(--wy-text);
     --wy-table-check-border: var(--wy-border);
     --wy-table-check-background: var(--wy-base);
+    --wy-table-expander-fill: var(--wy-base);
+    --wy-table-expander-hover-fill: var(--wy-accent-lighter);
 }
 
 :root[data-wy-theme='dark'] {
@@ -324,6 +326,95 @@
 .wy-table-index-cell,
 .wy-table-date-cell {
     font-variant-numeric: tabular-nums;
+}
+
+/*
+ * The tree column of tree views: the indentation of the level, the expander and the content of
+ * the column's cell.
+ */
+.wy-table-cell.wy-table-tree-cell {
+    display: flex;
+    align-items: center;
+    direction: ltr;
+    text-overflow: clip;
+}
+
+.wy-table-tree-cell > .wy-table-expander,
+.wy-table.wy-no-expanders .wy-table-tree-cell > .wy-table-tree-content {
+    margin-left: var(--wy-table-indent, 0px);
+}
+
+.wy-table-tree-content {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wy-table-tree-cell.wy-ellipsize-none > .wy-table-tree-content {
+    text-overflow: clip;
+}
+
+.wy-table-tree-cell.wy-ellipsize-start > .wy-table-tree-content {
+    direction: rtl;
+}
+
+/*
+ * The Clearlooks expander: a triangle in the base color with an outline in the text color,
+ * pointing right when collapsed and down when expanded.
+ */
+.wy-table-expander {
+    position: relative;
+    flex: none;
+    align-self: stretch;
+    width: 16px;
+}
+
+.wy-table-expander::before,
+.wy-table-expander::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    mask: var(--wy-table-expander-shape) center / 12px 12px no-repeat;
+    transition: transform var(--wy-transition);
+}
+
+.wy-table-expander::before {
+    --wy-table-expander-shape: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12"><path d="M3.5 1.5L8.5 6L3.5 10.5Z"/></svg>');
+
+    background: var(--wy-table-expander-fill);
+}
+
+.wy-table-expander::after {
+    --wy-table-expander-shape: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12"><path d="M3.5 1.5L8.5 6L3.5 10.5Z" fill="none" stroke="black" stroke-linejoin="round"/></svg>');
+
+    background: currentColor;
+}
+
+.wy-table-expander.wy-expanded::before,
+.wy-table-expander.wy-expanded::after {
+    transform: rotate(90deg);
+}
+
+.wy-table-expander:hover {
+    --wy-table-expander-fill: var(--wy-table-expander-hover-fill);
+}
+
+/* In selected rows, the expander is filled with the selection color, like in GTK. */
+.wy-table-row.wy-selected .wy-table-expander:not(:hover) {
+    --wy-table-expander-fill: transparent;
+}
+
+.wy-table-expander.wy-leaf {
+    visibility: hidden;
+}
+
+.wy-table-expander.wy-loading {
+    opacity: 0.5;
+}
+
+.wy-table.wy-no-expanders .wy-table-expander {
+    display: none;
 }
 
 /* The drawn Clearlooks check box of check box columns. */

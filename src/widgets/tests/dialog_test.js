@@ -44,7 +44,8 @@ test.describe('dialog', () => {
             const cancel = dialog.getWidgetForResponse('cancel');
 
             return {
-                order: content.bottom <= actions.top,
+                // Allow for sub-pixel rounding, which differs between browsers.
+                order: content.bottom <= actions.top + 0.5,
                 labels: [cancel.el.textContent, ok.el.textContent],
                 okAtEnd: Math.round(actions.right - ok.el.getBoundingClientRect().right),
                 cancelLeftOfOk:

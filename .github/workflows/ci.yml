@@ -24,8 +24,8 @@ jobs:
             -   name: Unit tests
                 run: npm run test:unit
 
-            -   name: Install the browser
-                run: npx playwright install --with-deps chromium
+            -   name: Install the browsers
+                run: npx playwright install --with-deps chromium firefox
 
             -   name: Browser tests
                 run: npm run test:browser

@@ -259,7 +259,7 @@ export class DateEdit extends LineEdit {
         const element = super._render();
 
         this._buttonEl = createElement(`
-            <span class="wy-date-edit-button" role="button" aria-label="Choose date"></span>
+            <span class="wy-date-edit-button" role="button" data-wy-label="Choose date"></span>
         `);
 
         element.classList.add('wy-date-edit');

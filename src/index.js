@@ -9,6 +9,18 @@
 
 // The object model, application and shared infrastructure.
 export { Application, ApplicationClass } from './core/application.js';
+export {
+    formatHex,
+    formatRgb,
+    getLuminance,
+    hslToRgb,
+    hsvToRgb,
+    normalizeColor,
+    parseColor,
+    parseColorSyntax,
+    rgbToHsl,
+    rgbToHsv,
+} from './core/color.js';
 export { CSS_CURSORS, Cursor, getCursor } from './core/cursor.js';
 export {
     Align,
@@ -103,6 +115,14 @@ export { Calendar } from './widgets/calendar.js';
 export { CheckBox } from './widgets/check-box.js';
 export { CheckMenuItem } from './widgets/check-menu-item.js';
 export { CheckToolItem } from './widgets/check-tool-item.js';
+export { ColorButton } from './widgets/color-button.js';
+export {
+    ColorChooser,
+    ColorPalette,
+    ColorPlane,
+    ColorSwatch,
+    DEFAULT_PALETTE,
+} from './widgets/color-chooser.js';
 export { ComboBox, TYPE_AHEAD_TIMEOUT } from './widgets/combo-box.js';
 export { Container } from './widgets/container.js';
 export {
@@ -112,14 +132,17 @@ export {
     parseLocaleDate,
 } from './widgets/date-edit.js';
 export { Dialog, RESPONSE_LABELS } from './widgets/dialog.js';
+export { attachDoublePress } from './widgets/double-press.js';
 export { Expander } from './widgets/expander.js';
 export { Fixed } from './widgets/fixed.js';
 export { Frame } from './widgets/frame.js';
 export { Grid } from './widgets/grid.js';
 export { Image } from './widgets/image.js';
+export { InfoBar } from './widgets/info-bar.js';
 export { activateMnemonic, Label } from './widgets/label.js';
 export { EntryIconPosition, LineEdit } from './widgets/line-edit.js';
 export { LinkButton } from './widgets/link-button.js';
+export { ListBox, ListBoxRow, SelectionMode } from './widgets/list-box.js';
 export { MainWindow } from './widgets/main-window.js';
 export { MenuBar } from './widgets/menu-bar.js';
 export { MenuButton } from './widgets/menu-button.js';
@@ -151,6 +174,7 @@ export { Slider } from './widgets/slider.js';
 export { Spacer } from './widgets/spacer.js';
 export { parseLocaleNumber, SpinButton } from './widgets/spin-button.js';
 export { StatusBar } from './widgets/status-bar.js';
+export { Switch } from './widgets/switch.js';
 export { Table } from './widgets/table.js';
 export { TextView, WrapMode } from './widgets/text-view.js';
 export { Spinner, Throbber } from './widgets/throbber.js';
@@ -189,6 +213,7 @@ export { SearchFilter } from './data/filters/search-filter.js';
 export { ListModel } from './data/list-model.js';
 export { Matrix } from './data/matrix.js';
 export { Selection } from './data/selection.js';
+export { TreeModel } from './data/tree-model.js';
 export { DoubleValidator } from './data/validators/double-validator.js';
 export { IntegerValidator } from './data/validators/integer-validator.js';
 export { NumberValidator } from './data/validators/number-validator.js';
@@ -224,6 +249,12 @@ export {
     getStringFormatter,
     StringFormatter,
 } from './i18n/string-formatter.js';
+export {
+    bindToolkitText,
+    TOOLKIT_TRANSLATIONS,
+    toolkitText,
+    translateLabels,
+} from './i18n/toolkit-text.js';
 export { __, __n, TranslatedText } from './i18n/translated-text.js';
 export {
     getTranslator,

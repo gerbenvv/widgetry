@@ -429,11 +429,64 @@
 
         status.addChild(row(throbber, pulsingBar, busy));
 
+        // Switches, and a color button that sets the accent color of the whole application.
+        const extras = framed(right, 'Switches and colors');
+        const settings = new w.Grid({ rowSpacing: 6, columnSpacing: 12 });
+        extras.addChild(settings);
+
+        const setting = (index, text, widget) => {
+            const label = new w.Label({ text, useUnderline: true, mnemonicWidget: widget });
+
+            settings.addChild(label, index, 0);
+            settings.addChild(widget, index, 1);
+        };
+
+        const wireless = new w.Switch({ active: true });
+        wireless.connect('state-set', (_switch, state) =>
+            say(`Wireless networking is ${state ? 'on' : 'off'}.`)
+        );
+        setting(0, '_Wireless networking', wireless);
+        setting(1, 'Automatic updates', new w.Switch({ active: true, sensitive: false }));
+
+        const accent = new w.ColorButton({ color: '#5699d8', title: 'Accent Color' });
+        accent.connect('color-set', () => {
+            application.accentColor = accent.color;
+            say(`The accent color is now ${accent.color}.`);
+        });
+        setting(2, 'Accent co_lor', accent);
+
         return page;
     }
 
     function makeTextPage() {
-        const page = new w.Box({ spacing: 12, margin: 12 });
+        const page = new w.Box({ orientation: 'vertical', spacing: 12, margin: 12 });
+        const content = new w.Box({ spacing: 12 });
+
+        // An info bar reports an invalid email address when the form is submitted.
+        const invalidEmail = new w.InfoBar({
+            messageType: 'error',
+            showCloseButton: true,
+            revealed: false,
+        });
+        invalidEmail.addChild(
+            new w.Label({
+                text: 'The email address is not valid. Correct it and submit the form again.',
+                wrap: true,
+                hExpand: true,
+            })
+        );
+        invalidEmail.addButton('fix', 'Correct It');
+        invalidEmail.connect('response', (_bar, response) => {
+            invalidEmail.revealed = false;
+
+            if (response === 'fix') {
+                email.focus();
+                email.selectAll();
+            }
+        });
+
+        page.addChild(invalidEmail);
+        page.addChild(content);
 
         const form = new w.Grid({
             rowSpacing: 6,
@@ -441,7 +494,7 @@
             hExpand: true,
             vAlign: 'start',
         });
-        page.addChild(form);
+        content.addChild(form);
 
         let rowIndex = 0;
         const field = (label, widget) => {
@@ -513,6 +566,14 @@
         form.addChild(submit, rowIndex, 1);
 
         submit.connect('activate', () => {
+            if (!email.isValid) {
+                invalidEmail.revealed = true;
+
+                return;
+            }
+
+            invalidEmail.revealed = false;
+
             const summary = [
                 `Name: ${name.text || '(none)'}`,
                 `Email: ${email.text || '(none)'}${email.isValid ? '' : ' (invalid)'}`,
@@ -545,7 +606,7 @@
         calendarBox.addChild(
             new w.Label({ text: 'Double-click a day to use it in the form.', wrap: true })
         );
-        page.addChild(calendarBox);
+        content.addChild(calendarBox);
 
         return page;
     }
@@ -737,6 +798,131 @@
         );
 
         updateCount();
+
+        return page;
+    }
+
+    function makeListsPage() {
+        const page = new w.Box({ spacing: 12, margin: 12 });
+
+        // Settings from a model: a label and a switch per row, with a header per section.
+        const settings = framed(page, 'Settings', { hExpand: true, vExpand: true });
+        const model = new w.ListModel({
+            rows: [
+                ['wifi', 'Network', 'Wi-Fi', true],
+                ['bluetooth', 'Network', 'Bluetooth', false],
+                ['airplane', 'Network', 'Airplane mode', false],
+                ['night-light', 'Display', 'Night light', true],
+                ['brightness', 'Display', 'Automatic brightness', true],
+                ['screen-lock', 'Privacy', 'Lock the screen automatically', true],
+                ['location', 'Privacy', 'Location services', false],
+                ['statistics', 'Privacy', 'Share usage statistics', false],
+                ['alerts', 'Sound', 'Alert sounds', true],
+                ['mute', 'Sound', 'Mute when the screen is locked', false],
+            ].map(([id, section, name, active]) => ({ id, section, name, active })),
+            idColumn: 'id',
+        });
+
+        const search = new w.LineEdit({
+            placeholder: 'Find a setting…',
+            primaryIcon: 'edit-find',
+            hExpand: true,
+        });
+        settings.addChild(search);
+
+        const list = new w.ListBox({ selectionMode: 'none' });
+        list.placeholder = new w.Label({ text: 'No matching settings.', hAlign: 'center' });
+
+        list.bindModel(model, (setting) => {
+            const box = new w.Box({
+                spacing: 12,
+                margin: { top: 3, bottom: 3, left: 10, right: 8 },
+            });
+            const toggle = new w.Switch({ active: setting.active });
+
+            toggle.connect('state-set', (_switch, state) => {
+                setting.active = state;
+                say(`${setting.name}: ${state ? 'on' : 'off'}.`);
+            });
+
+            box.addChild(new w.Label({ text: setting.name, hExpand: true }));
+            box.addChild(toggle);
+
+            return box;
+        });
+
+        list.setHeaderFunction((listRow, before) => {
+            const section = model.getRow(listRow.index).section;
+            if (before && model.getRow(before.index).section === section) {
+                listRow.header = null;
+            } else if (listRow.header?.text !== section) {
+                const header = new w.Label({ text: section, hAlign: 'fill' });
+                header.addStyleClass('demo-list-header');
+                listRow.header = header;
+            }
+        });
+
+        list.filterFunction = (listRow) =>
+            model.getRow(listRow.index).name.toLowerCase().includes(search.text.toLowerCase());
+        search.connect('text-change', () => list.invalidateFilter());
+
+        // Activating a row (clicking it, or Enter) toggles its switch.
+        list.connect('row-activate', (_list, listRow) => listRow.child.children[1].activate());
+
+        settings.addChild(
+            new w.ScrollArea({ child: list, hPolicy: 'never', shadowType: 'in', vExpand: true })
+        );
+
+        // A sorted list with multiple selection.
+        const basket = framed(page, 'Fruit basket', { hExpand: true, vExpand: true });
+        const fruits = new w.ListBox({ selectionMode: 'multiple', activateOnSingleClick: false });
+        const spare = ['Lemon', 'Mango', 'Grape', 'Papaya', 'Lychee', 'Melon'];
+
+        const addFruit = (name) =>
+            fruits.addChild(
+                new w.Label({ text: name, margin: { top: 4, bottom: 4, left: 10, right: 10 } })
+            );
+
+        fruits.sortFunction = (first, second) => first.child.text.localeCompare(second.child.text);
+        fruits.placeholder = new w.Label({ text: 'The basket is empty.', hAlign: 'center' });
+        ['Pear', 'Apple', 'Cherry', 'Banana', 'Fig', 'Kiwi', 'Orange', 'Plum'].forEach(addFruit);
+
+        const selection = new w.Label({
+            text: 'Nothing selected.',
+            ellipsize: 'end',
+            hAlign: 'fill',
+        });
+        fruits.connect('selected-rows-change', () => {
+            const names = fruits.selectedRows.map((x) => x.child.text);
+            selection.text = names.length ? `Selected: ${names.join(', ')}.` : 'Nothing selected.';
+        });
+        fruits.connect('row-activate', (_list, fruitRow) => say(`${fruitRow.child.text}, yum!`));
+
+        const add = new w.Button({ label: 'Add', icon: 'list-add' });
+        add.connect('activate', () => {
+            if (spare.length) {
+                fruits.selectRow(addFruit(spare.shift()));
+            }
+
+            add.sensitive = spare.length > 0;
+        });
+
+        const remove = new w.Button({ label: 'Remove', icon: 'list-remove' });
+        remove.connect('activate', () => {
+            fruits.selectedRows.forEach((x) => x.destroy());
+        });
+
+        basket.addChild(
+            new w.ScrollArea({ child: fruits, hPolicy: 'never', shadowType: 'in', vExpand: true })
+        );
+        basket.addChild(selection);
+        basket.addChild(row(add, remove));
+        basket.addChild(
+            new w.Label({
+                text: 'Control-click and Shift-click select more fruit; double-click or press Enter to eat one.',
+                wrap: true,
+            })
+        );
 
         return page;
     }
@@ -1141,7 +1327,7 @@
             buttonsType: 'close',
             text: 'Widgetry 1.0',
             secondaryText:
-                'A desktop-style widget toolkit for the browser, in the spirit of GTK and the Clearlooks theme.\n\nMIT licensed.',
+                'A desktop-style widget toolkit for the browser, in the spirit of GTK and the Clearlooks theme.\n\nWritten by Gerben van Veenendaal.\nMIT licensed.',
             transientFor: mainWindow,
         });
 
@@ -1167,6 +1353,7 @@
         notebook.appendPage(makeTextPage(), 'Text and dates');
         notebook.appendPage(makeRangesPage(), 'Ranges');
         notebook.appendPage(makeTablePage(), 'Table');
+        notebook.appendPage(makeListsPage(), 'Lists');
         notebook.appendPage(makeLayoutPage(), 'Layout');
         notebook.appendPage(makeCanvasPage(), 'Canvas');
         notebook.appendPage(makeDragPage(), 'Drag and drop');

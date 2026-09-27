@@ -208,6 +208,11 @@ html.wy-page body {
     outline-offset: -3px;
 }
 
+/* A window that has the focus itself (because nothing in it can take it) shows no ring. */
+.wy-window-base:focus-visible {
+    outline: none;
+}
+
 /* An overridden page cursor, e.g. while dragging or resizing. */
 html.wy-cursor-override,
 html.wy-cursor-override * {

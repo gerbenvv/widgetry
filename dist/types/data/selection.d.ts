@@ -5,10 +5,11 @@ import { Instance } from '../core/instance.js';
 /**
  * The selected rows of a model, as used by tables.
  *
- * When the model has an id column, rows are selected by id: they stay selected while the model
- * is sorted or filtered, and are unselected when they are removed (or filtered out). Without an id
- * column, rows are selected by index; the selection follows inserted, removed and moved rows, and
- * is cleared when the model is re-sorted.
+ * When the model has an id column (or is a `TreeModel`), rows are selected by id: they stay
+ * selected while the model is sorted or filtered, and are unselected when they are removed (or
+ * filtered out, or hidden in a collapsed row). Without an id column, rows are selected by index;
+ * the selection follows inserted, removed and moved rows, and is cleared when the model is
+ * re-sorted.
  *
  * The methods ending in `Row` take a row key: the id with an id column, the index otherwise
  * (like the original toolkit). The other methods (`select`, `toggle`, `selectRange`, ...) take row
@@ -34,7 +35,7 @@ export declare class Selection extends Instance {
     _initialize(): void;
     destroy(): void;
     /**
-     * Whether rows are selected by id (the model has an id column).
+     * Whether rows are selected by id (the model has row ids, see `AbstractModel#hasRowIds`).
      *
      * @type {boolean}
      */

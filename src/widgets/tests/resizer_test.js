@@ -49,9 +49,10 @@ async function drag(page, selector, dx, dy) {
     const x = box.x + box.width / 2;
     const y = box.y + box.height / 2;
 
+    // Stay inside the page: test drivers may reject moves outside the viewport.
     await page.mouse.move(x, y);
     await page.mouse.down();
-    await page.mouse.move(x + dx, y + dy, { steps: 5 });
+    await page.mouse.move(Math.max(0, x + dx), Math.max(0, y + dy), { steps: 5 });
     await page.mouse.up();
 }
 

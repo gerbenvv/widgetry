@@ -16,6 +16,7 @@ import {
     MotionEvent,
     ScrollEvent,
 } from '../events/events.js';
+import { bindToolkitText, translateLabels } from '../i18n/toolkit-text.js';
 
 /**
  * Maps elements to the widget they are the root element of.
@@ -312,6 +313,11 @@ export class Widget extends Instance {
 
         // Apply the default expand flags, which subclasses may override.
         this._refreshExpand();
+
+        // Keep the toolkit's own accessible names (marked with `data-wy-label`) translated.
+        if (this.el.matches('[data-wy-label]') || this.el.querySelector('[data-wy-label]')) {
+            bindToolkitText(this, () => translateLabels(this.el));
+        }
     }
 
     /**
@@ -874,22 +880,44 @@ export class Widget extends Instance {
     }
 
     _onDomEvent(nativeEvent, type, capture) {
-        // Grab the pointer while a button is pressed, so motion and release keep coming to us.
-        if (
-            type === EventType.BUTTON_PRESS &&
-            !capture &&
-            this._events & GRAB_MASK &&
-            !nativeEvent.wyGrabbed
-        ) {
-            nativeEvent.wyGrabbed = true;
+        try {
+            this._handleDomEvent(nativeEvent, type, capture);
+        } finally {
+            this._grabAfterPress(nativeEvent, type, capture);
+        }
+    }
 
-            try {
-                nativeEvent.target.setPointerCapture?.(nativeEvent.pointerId);
-            } catch (_error) {
-                // The pointer may already be gone.
-            }
+    /**
+     * Grabs the pointer while a button is pressed, so motion and release keep coming to us. This
+     * runs after the press handlers, because moving the pressed element in the document (which a
+     * handler may do) makes the browser drop a pointer capture.
+     */
+    _grabAfterPress(nativeEvent, type, capture) {
+        if (
+            type !== EventType.BUTTON_PRESS ||
+            capture ||
+            !(this._events & GRAB_MASK) ||
+            nativeEvent.wyGrabbed
+        ) {
+            return;
         }
 
+        nativeEvent.wyGrabbed = true;
+
+        // Capture on the pressed element, or on ourselves if a handler removed it.
+        const target =
+            nativeEvent.target?.isConnected && this.el.contains(nativeEvent.target)
+                ? nativeEvent.target
+                : this.el;
+
+        try {
+            target.setPointerCapture?.(nativeEvent.pointerId);
+        } catch (_error) {
+            // The pointer may already be gone.
+        }
+    }
+
+    _handleDomEvent(nativeEvent, type, capture) {
         const mask = EVENT_BINDINGS.find((x) => x[3] === type)[capture ? 1 : 0];
         if (!(this._events & mask)) {
             return;

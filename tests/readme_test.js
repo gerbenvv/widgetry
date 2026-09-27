@@ -133,6 +133,63 @@ test.describe('README examples', () => {
         expect(errors).toEqual([]);
     });
 
+    test('the tree example shows a filtered tree that loads lazily', async ({ page }) => {
+        const errors = await openHarness(page);
+
+        const result = await page.evaluate(async () => {
+            const { MainWindow, SearchFilter, SelectionModes, Table, TextColumn, TreeModel } =
+                await import('/src/index.js');
+
+            const opened = [];
+            const loadFolder = async (id) => [{ id: id * 10, name: 'guide.md' }];
+            const openFile = (row) => opened.push(row.name);
+
+            const model = new TreeModel({
+                rows: [
+                    { id: 1, name: 'src', children: [{ id: 2, name: 'index.js' }] },
+                    { id: 3, name: 'docs', hasChildren: true },
+                ],
+                idColumn: 'id',
+                sortColumn: 'name',
+                loadChildren: (row) => loadFolder(row.id),
+            });
+            const tree = new Table({ model, selectionModes: SelectionModes.MULTI });
+
+            tree.addColumn(new TextColumn({ name: 'name', label: 'Name', expand: true }));
+            tree.connect('row-activate', (_table, _index, row) => openFile(row));
+
+            model.expand(model.getRowById(1));
+            const expanded = model.rows.map((x) => x.name);
+
+            model.addFilter(new SearchFilter({ columns: ['name'], query: 'index' }));
+            const filtered = model.rows.map((x) => x.name);
+
+            model.removeAllFilters();
+            model.expand(model.getRowById(3));
+            await Promise.resolve();
+
+            const window = new MainWindow();
+            window.addChild(tree);
+            window.show();
+
+            tree.activateRow(0);
+
+            return { expanded, filtered, loaded: model.rows.map((x) => x.name), opened };
+        });
+
+        expect(result).toEqual({
+            expanded: ['docs', 'src', 'index.js'],
+            filtered: ['src', 'index.js'],
+            loaded: ['docs', 'guide.md', 'src', 'index.js'],
+            opened: ['docs'],
+        });
+
+        await expect(
+            page.locator('.wy-table[role="treegrid"] .wy-table-body > .wy-table-row')
+        ).toHaveCount(4);
+        expect(errors).toEqual([]);
+    });
+
     test('the dialog example resolves with the response', async ({ page }) => {
         await openHarness(page);
 

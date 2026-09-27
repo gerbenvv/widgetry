@@ -21,19 +21,22 @@ natural sizes, expand and align, just like in GTK. It has no dependencies.
 ## Features
 
 - **Widgets:** windows, dialogs and message dialogs, menu bars, menus and context menus, toolbars,
-  tooltips, buttons (push, toggle, check, radio, link and menu buttons), labels with markup and
-  mnemonics, text entries with validation and icons, multi-line text, spin buttons, combo boxes,
-  calendars and date entries, sliders, scroll bars, progress bars and throbbers, frames, grids,
-  boxes, panes, notebooks (tabs), expanders, scroll areas, button boxes, status bars, a virtualized
-  table with sortable and resizable columns, and a vector canvas with interactive shapes.
+  tooltips, buttons (push, toggle, check, radio, link and menu buttons), switches, color buttons
+  with a color chooser (a palette and an editor), labels with markup and mnemonics, text entries
+  with validation and icons, multi-line text, spin buttons, combo boxes, calendars and date
+  entries, sliders, scroll bars, progress bars and throbbers, frames, grids, boxes, panes,
+  notebooks (tabs), expanders, scroll areas, button boxes, status bars, info bars, list boxes of
+  any widgets (with selection, filtering, sorting, headers and model binding), a virtualized
+  table with sortable and resizable columns that is also a tree view, and a vector canvas with
+  interactive shapes.
 - **GTK's layout model on CSS:** natural and minimum sizes, `hExpand`/`vExpand` (inherited from the
   children), `hAlign`/`vAlign`, margins and size requests, laid out with CSS flexbox and grid.
 - **Keyboard first:** focus handling per window, Tab navigation, mnemonics (Alt+letter),
   accelerators (Ctrl+S), menu and table navigation, and ARIA roles throughout.
 - **An object model with properties and signals:** every property emits a change signal, and every
   widget can be created from a plain object or JSON with the builder.
-- **Data:** list models with sorting, filtered models that stay in sync, selections, filters and
-  validators.
+- **Data:** list and tree models with sorting, filtered models that stay in sync, selections,
+  filters and validators.
 - **Internationalization:** locale-aware formatting and parsing of numbers and dates, and a
   translator with plural forms, all based on `Intl`.
 - **Theming:** the classic Clearlooks look in a light and a dark variant (or following the system),
@@ -178,6 +181,63 @@ table.connect('row-activate', (_table, index) => openRow(model.getRow(index)));
 Tables render only the visible rows. Wrap a model in a `FilteredListModel` with a `SearchFilter`
 or `ConditionFilter` to filter it.
 
+#### Trees
+
+A `TreeModel` makes a table a tree view, like GTK's tree view with a tree store. Rows keep their
+children in a `children` array, or load them when first expanded (`hasChildren` and
+`loadChildren`, which may return a promise):
+
+```js
+const model = new TreeModel({
+    rows: [
+        { id: 1, name: 'src', children: [{ id: 2, name: 'index.js' }] },
+        { id: 3, name: 'docs', hasChildren: true },
+    ],
+    idColumn: 'id',
+    sortColumn: 'name',
+    loadChildren: (row) => loadFolder(row.id),
+});
+const tree = new Table({ model, selectionModes: SelectionModes.MULTI });
+
+tree.addColumn(new TextColumn({ name: 'name', label: 'Name', expand: true }));
+tree.connect('row-activate', (_table, _index, row) => openFile(row));
+
+model.expand(model.getRowById(1));
+model.addFilter(new SearchFilter({ columns: ['name'], query: 'index' }));
+```
+
+The table shows the *shown* rows (expanded and matching the filters) and indents the first text
+column with Clearlooks expanders. Clicking an expander toggles its row, and the keyboard works as in
+GTK: Right and Left expand and collapse (or move to the first child and to the parent), `+`, `-`
+and `*` expand, collapse and expand all rows below. The model has the tree operations
+(`expand()`, `collapse()`, `getParent()`, `getPath()`, `insertChild()`, `removeRow()`, ...). A
+filtered tree shows the rows that match with their ancestors, expanded.
+
+### Lists and colors
+
+A `ListBox` is a vertical list of rows that hold any widgets, like GTK 3's list box. It selects,
+activates, filters, sorts and adds headers to its rows, and `bindModel()` keeps it in sync with a
+model:
+
+```js
+const model = new ListModel({ rows: [{ name: 'Wi-Fi' }, { name: 'Bluetooth' }] });
+const list = new ListBox({ selectionMode: SelectionMode.BROWSE });
+
+list.bindModel(model, (row) => {
+    const box = new Box({ spacing: 6, margin: 6 });
+    box.addChild(new Label({ text: row.name, hExpand: true }));
+    box.addChild(new Switch({ active: true }));
+
+    return box;
+});
+list.connect('row-activate', (_list, row) => openSetting(model.getRow(row.index)));
+```
+
+A `ColorButton` shows a color and opens a `ColorChooser` in a popover (or in a dialog with
+`modal`); it emits `color-set` when the user picked a color, such as
+`button.connect('color-set', () => (Application.accentColor = button.color))`. An `InfoBar` shows
+a message above content, with buttons like a dialog's.
+
 ### Events and drag and drop
 
 For custom behavior, enable event signals with the `events` mask:
@@ -224,7 +284,7 @@ of property values.
 ## Browser support
 
 Widgetry targets current versions of Chrome, Edge, Firefox and Safari (it uses CSS `color-mix()`,
-`inert` and pointer events). The tests run in Chromium.
+`inert` and pointer events). The tests run in Chromium and Firefox.
 
 ## Smaller bundles
 
@@ -237,13 +297,13 @@ builder. To include only what you use, import the modules directly, e.g.
 ```bash
 npm install
 
-# Tests: Node tests for the logic, Playwright browser tests for the widgets.
+# Tests: Node tests for the logic, Playwright browser tests (Chromium and Firefox) for the widgets.
 npm run test:unit
-npx playwright install chromium
+npx playwright install chromium firefox
 npm run test:browser
 
-# Or, to use an installed Chrome instead of downloading a browser.
-PLAYWRIGHT_CHANNEL=chrome npm run test:browser
+# Or, to use an installed Chrome and Firefox instead of downloading browsers.
+PLAYWRIGHT_CHANNEL=chrome PLAYWRIGHT_FIREFOX_CHANNEL=moz-firefox npm run test:browser
 
 # Build dist/ (commit it with source changes) and the TypeScript declarations.
 npm run build && npm run types

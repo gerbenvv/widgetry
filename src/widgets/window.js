@@ -10,6 +10,7 @@ import { getScreen } from '../core/screen.js';
 import { clamp, createElement, uniqueId } from '../core/util.js';
 import { MouseButton } from '../events/constants.js';
 import { AbstractWindow } from './abstract-window.js';
+import { attachDoublePress } from './double-press.js';
 
 /**
  * Resize handle directions and their cursors.
@@ -51,7 +52,7 @@ export class Window extends AbstractWindow {
         getScreen().connect('size-change', this._onScreenSizeChange);
 
         this._headerEl.addEventListener('pointerdown', (event) => this._onHeaderPointerDown(event));
-        this._headerEl.addEventListener('dblclick', (event) => this._onHeaderDoubleClick(event));
+        attachDoublePress(this._headerEl, (event) => this._onHeaderDoubleClick(event));
 
         for (const button of this._headerEl.querySelectorAll('button')) {
             button.addEventListener('click', () =>
@@ -76,9 +77,9 @@ export class Window extends AbstractWindow {
                 <div class="wy-window-header">
                     <div class="wy-window-title" id="${titleId}"></div>
                     <div class="wy-window-buttons">
-                        <button type="button" class="wy-window-button wy-window-maximize" data-action="maximize" tabindex="-1" aria-label="Maximize"></button>
-                        <button type="button" class="wy-window-button wy-window-restore" data-action="restore" tabindex="-1" aria-label="Restore"></button>
-                        <button type="button" class="wy-window-button wy-window-close" data-action="close" tabindex="-1" aria-label="Close"></button>
+                        <button type="button" class="wy-window-button wy-window-maximize" data-action="maximize" tabindex="-1" data-wy-label="Maximize"></button>
+                        <button type="button" class="wy-window-button wy-window-restore" data-action="restore" tabindex="-1" data-wy-label="Restore"></button>
+                        <button type="button" class="wy-window-button wy-window-close" data-action="close" tabindex="-1" data-wy-label="Close"></button>
                     </div>
                 </div>
                 <div class="wy-window-body"></div>

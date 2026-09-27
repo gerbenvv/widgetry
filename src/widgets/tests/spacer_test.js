@@ -49,7 +49,7 @@ test.describe('Spacer', () => {
 
         expect(result.before.spacer).toEqual([true, false]);
         expect(result.before.row).toEqual([true, false]);
-        expect(result.before.rightEdge).toBe(400);
+        expect(result.before.rightEdge).toBeCloseTo(400, 1);
         expect(result.before.spacerWidth).toBeGreaterThan(200);
         expect(result.after).toEqual([false, true, true]);
         expect(result.empty).toBe(true);

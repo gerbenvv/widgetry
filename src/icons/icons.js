@@ -7,7 +7,7 @@
 
 /**
  * Path data of the built-in icons, on a 16 by 16 grid. Strokes are drawn 1.5 wide with round
- * ends; paths that start with `F` are filled instead.
+ * ends; paths that start with `F` instead of `M` are filled rather than stroked.
  *
  * @type {Record<string, string[]>}
  */
@@ -57,25 +57,29 @@ const ICON_PATHS = {
     'zoom-original': ['M10.5 6.5a4 4 0 1 1-8 0 4 4 0 0 1 8 0z', 'M9.5 9.5l5 5', 'M5.5 5l1-.5v4'],
     'help-about': [
         'M14.5 8a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z',
-        'M8 7v4.5',
-        'F7.1 4.2h1.8v1.8H7.1z',
+        'M8 7.4v4.1',
+        'F7.05 4.75a0.95 0.95 0 1 0 1.9 0a0.95 0.95 0 1 0 -1.9 0z',
     ],
     'help-contents': [
         'M14.5 8a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z',
-        'M6 6.2a2 2 0 1 1 2.8 1.8c-.6.3-.8.7-.8 1.3v.5',
-        'F7.1 11h1.8v1.8H7.1z',
+        'M6.1 6.1a1.95 1.95 0 1 1 2.75 1.8c-.55.25-.85.65-.85 1.2v.3',
+        'F7.05 12a0.95 0.95 0 1 0 1.9 0a0.95 0.95 0 1 0 -1.9 0z',
     ],
     'dialog-information': [
         'M14.5 8a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z',
-        'M8 7v4.5',
-        'F7.1 4.2h1.8v1.8H7.1z',
+        'M8 7.4v4.1',
+        'F7.05 4.75a0.95 0.95 0 1 0 1.9 0a0.95 0.95 0 1 0 -1.9 0z',
     ],
-    'dialog-warning': ['M8 1.8L14.8 13.8H1.2z', 'M8 6v3.8', 'F7.1 10.8h1.8v1.8H7.1z'],
+    'dialog-warning': [
+        'M8 1.8L14.8 13.8H1.2z',
+        'M8 6.3v3.2',
+        'F7.05 11.75a0.95 0.95 0 1 0 1.9 0a0.95 0.95 0 1 0 -1.9 0z',
+    ],
     'dialog-error': ['M14.5 8a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z', 'M5.5 5.5l5 5m0-5l-5 5'],
     'dialog-question': [
         'M14.5 8a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z',
-        'M6 6.2a2 2 0 1 1 2.8 1.8c-.6.3-.8.7-.8 1.3v.5',
-        'F7.1 11h1.8v1.8H7.1z',
+        'M6.1 6.1a1.95 1.95 0 1 1 2.75 1.8c-.55.25-.85.65-.85 1.2v.3',
+        'F7.05 12a0.95 0.95 0 1 0 1.9 0a0.95 0.95 0 1 0 -1.9 0z',
     ],
     'preferences-system': [
         'M10 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0z',
@@ -86,7 +90,11 @@ const ICON_PATHS = {
     'application-exit': ['M9.5 4.5v-3h-7v13h7v-3', 'M6.5 8h8M12 5.5L14.5 8 12 10.5'],
     folder: ['M1.5 13.5v-11h4.5l1.5 2h7v9z'],
     'folder-new': ['M1.5 13.5v-11h4.5l1.5 2h7v9z', 'M8 7.5v4M6 9.5h4'],
-    'text-x-generic': ['M4 1.5h5.5L13 5v9.5H4z', 'M9.5 1.5V5H13', 'M6 8h5M6 10.5h5M6 13h3'],
+    'text-x-generic': [
+        'M4 1.5h5.5L13 5v9.5H4z',
+        'M9.5 1.5V5H13',
+        'M6.25 7.25h4.5M6.25 9.75h4.5M6.25 12.25h2.5',
+    ],
     'x-office-spreadsheet': ['M2.5 2.5h11v11h-11z', 'M2.5 6h11M2.5 9.5h11M6.5 2.5v11'],
     'x-office-presentation': ['M1.5 2.5h13v8h-13z', 'M8 10.5v3M5 14.5l3-1 3 1'],
     'office-chart-line': ['M1.5 1.5v13h13', 'M3.5 11l3-4 3 2 4-6'],
@@ -151,7 +159,8 @@ function toSvg(paths, color) {
 
     const elements = paths.map((path) => {
         if (path.startsWith('F')) {
-            return `<path d="${path.slice(1)}" fill="${stroke}"/>`;
+            // The F takes the place of the initial move-to command.
+            return `<path d="M${path.slice(1)}" fill="${stroke}"/>`;
         }
 
         return `<path d="${path}" fill="none" stroke="${stroke}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`;

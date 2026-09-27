@@ -25,6 +25,14 @@ import { Widget } from './widget.js';
  * the focus to the headers, where Left and Right move between columns, Enter sorts and Shift+Left
  * and Shift+Right resize.
  *
+ * With a `TreeModel`, the table is a tree view: the `treeColumn` (by default the first text
+ * column) indents the rows by their level and shows expanders, which toggle the rows when
+ * clicked (with Shift, recursively). The keyboard follows GTK: Right expands the cursor row or
+ * moves to its first child, Left collapses it or moves to its parent, `+` and `-` expand and
+ * collapse, `*` expands all rows below, `/` collapses them, Shift+Right and Shift+Left expand and
+ * collapse recursively and Backspace moves to the parent. The table then has the ARIA role
+ * `treegrid`.
+ *
  * Signals: `row-activate` (`table, index, row`) on double click and Enter, `column-add` and
  * `column-remove` (`table, column`), `cursor-change`.
  *
@@ -92,6 +100,12 @@ export declare class Table extends Widget {
         column: any;
         time: any;
     };
+    /**
+     * The column that shows the tree, when the model is a tree model.
+     *
+     * @type {AbstractColumn | null}
+     */
+    _treeColumnInUse: AbstractColumn | null;
     _id: string;
     _selection: Selection;
     _hAdjustment: Adjustment;
@@ -236,6 +250,22 @@ export declare class Table extends Widget {
      * @returns {boolean} Whether a width grew.
      */
     _measureColumns(columns: AbstractColumn[], indices: Iterable<number>): boolean;
+    /**
+     * Returns the width of the indentation and expander of the tree column in a row, or 0 for
+     * other columns.
+     *
+     * @param {AbstractColumn} column
+     * @param {object} row
+     * @returns {number}
+     */
+    _getTreeIndent(column: AbstractColumn, row: object): number;
+    /**
+     * Returns the column that shows the tree: the `treeColumn`, or the first text column (or else
+     * the first column). Only tree models have one.
+     *
+     * @returns {AbstractColumn | null}
+     */
+    _findTreeColumn(): AbstractColumn | null;
     _getHeaderWidth(column: any): number;
     _onColumnsChange(): void;
     /**
@@ -250,7 +280,21 @@ export declare class Table extends Widget {
      */
     _renderRows(): void;
     _createRowElement(): HTMLDivElement;
+    /**
+     * Creates the cell of the tree column: an expander and the cell of the column.
+     *
+     * @param {AbstractColumn} column
+     * @returns {HTMLElement}
+     */
+    _createTreeCell(column: AbstractColumn): HTMLElement;
     _bindRow(element: any, index: any): void;
+    /**
+     * Shows the indentation and the expander of a row in its tree cell.
+     *
+     * @param {HTMLElement} cell
+     * @param {import('../data/tree-model.js').TreeRowInfo} info
+     */
+    _renderTreeCell(cell: HTMLElement, info: import('../data/tree-model.js').TreeRowInfo): void;
     _getRowClassName(index: any, selected: any): string;
     /**
      * Updates the selected and cursor states of the rendered rows.
@@ -274,7 +318,7 @@ export declare class Table extends Widget {
      */
     _followRows(map: (index: number) => number): void;
     _onModelRowInsert(_model: any, index: any): void;
-    _onModelRowRemove(_model: any, index: any): void;
+    _onModelRowRemove(model: any, index: any, id: any): void;
     _onModelRowMove(_model: any, from: any, to: any): void;
     _onModelRowsReorder(): void;
     _findKey(key: any, index: any): number;
@@ -308,7 +352,15 @@ export declare class Table extends Widget {
     _onPointerMove(event: any): void;
     _onPointerUp(event: any, canceled: any): void;
     _onClick(event: any): void;
-    _onDoubleClick(event: any): void;
+    /**
+     * Returns the index of the row a press is on, or -1 for presses elsewhere (such as on the
+     * headers and on expanders), which do not activate rows.
+     *
+     * @param {PointerEvent} event
+     * @returns {number}
+     */
+    _getDoublePressRow(event: PointerEvent): number;
+    _onDoublePress(event: any): void;
     /**
      * Sorts on a column, cycling ascending, descending and (with `allowUnsorted`) unsorted.
      *
@@ -317,6 +369,21 @@ export declare class Table extends Widget {
     _cycleSort(column: AbstractColumn): void;
     _onKeyDown(event: any): void;
     _handleKey(event: any): boolean;
+    /**
+     * Handles the tree keys on the cursor row, like GTK.
+     *
+     * @param {KeyboardEvent} event
+     * @param {number} cursor
+     * @returns {boolean} Whether the key was used.
+     */
+    _handleTreeKey(event: KeyboardEvent, cursor: number): boolean;
+    /**
+     * Moves the cursor to the parent of a row, if it has one.
+     *
+     * @param {object} row
+     * @param {boolean} cursorOnly Whether to move only the cursor (Control).
+     */
+    _moveToParent(row: object, cursorOnly: boolean): void;
     _onHeaderKeyDown(event: any, header: any): boolean;
     /**
      * Moves the focus to a column header: the given column, the sorted column or the first.
@@ -345,6 +412,21 @@ export interface Table {
     canFocus: any;
     hExpand: any;
     vExpand: any;
+    /**
+     * The column that shows the tree of a `TreeModel` (the indentation and the expanders), or
+     * `null` for the first text column (or else the first column).
+     */
+    treeColumn: any;
+    /**
+     * Whether rows of a tree have expanders. Without them, rows are only indented by
+     * `levelIndentation`, and expanded and collapsed with the keyboard.
+     */
+    showExpanders: boolean;
+    /**
+     * The extra indentation of every level of a tree, in pixels, besides the width of the
+     * expanders.
+     */
+    levelIndentation: number;
     /**
      * The `Selection` of the rows.
      */

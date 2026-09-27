@@ -304,8 +304,10 @@ test.describe('menu', () => {
         await openHarness(page);
         await setup(page);
 
+        // Shift+F10 opens the context menu like the ContextMenu key, which not every test driver
+        // knows.
         await page.focus('.test-block');
-        await page.keyboard.press('ContextMenu');
+        await page.keyboard.press('Shift+F10');
         await page.keyboard.press('ArrowDown');
         await page.keyboard.press('ArrowDown');
         await page.keyboard.press('ArrowRight');

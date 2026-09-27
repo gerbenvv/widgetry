@@ -1,7 +1,18 @@
 // Browser tests of the ScrollArea.
 import { expect, test } from '@playwright/test';
 
-import { openHarness } from '../../../tests/helpers.js';
+import { openHarness as openPage } from '../../../tests/helpers.js';
+
+// Opens the harness with the scroll bars hidden, so sizes do not depend on the browser's scroll
+// bars (headless Chrome hides them, Firefox does not).
+async function openHarness(page) {
+    const errors = await openPage(page);
+    await page.addStyleTag({
+        content: '* { scrollbar-width: none; }',
+    });
+
+    return errors;
+}
 
 // Defines a block widget with a fixed natural size, and shows a scroll area with a 1000 by 800
 // block in a vertical box of 400 by 300 pixels (with a 20 pixel high block below it).

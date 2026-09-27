@@ -6,6 +6,7 @@ import { ButtonBoxStyle, Orientation, Response } from '../core/enums.js';
 import { defineProperties } from '../core/instance.js';
 import { registerType } from '../core/registry.js';
 import { Key } from '../events/constants.js';
+import { bindToolkitText, toolkitText } from '../i18n/toolkit-text.js';
 import { Box } from './box.js';
 import { ButtonBox } from './button-box.js';
 import { Button } from './button.js';
@@ -168,8 +169,15 @@ export class Dialog extends Window {
             return this.addActionWidget(label, response);
         }
 
-        const text = label ?? RESPONSE_LABELS[response] ?? String(response);
-        const button = new Button({ label: text, useUnderline: true });
+        const button = new Button({ label: label ?? String(response), useUnderline: true });
+
+        // A standard label follows the current language.
+        if (label === undefined || label === null) {
+            const standard = RESPONSE_LABELS[response];
+            if (standard) {
+                bindToolkitText(button, () => (button.label = toolkitText(standard)));
+            }
+        }
 
         return this.addActionWidget(button, response);
     }

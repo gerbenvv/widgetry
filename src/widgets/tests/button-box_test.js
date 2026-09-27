@@ -57,7 +57,9 @@ test.describe('button box', () => {
         await page.evaluate(() => (globalThis.box.homogeneous = false));
         const natural = (await layout(page)).map((x) => x[1]);
         expect(natural[0]).toBe(85);
-        expect(natural[2]).toBe(widths[0]);
+        // The homogeneous width is the natural width rounded up to whole pixels.
+        expect(widths[0] - natural[2]).toBeGreaterThanOrEqual(0);
+        expect(widths[0] - natural[2]).toBeLessThanOrEqual(1);
 
         await page.evaluate(() => (globalThis.box.minChildWidth = 0));
         const small = (await layout(page)).map((x) => x[1]);

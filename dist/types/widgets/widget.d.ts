@@ -294,6 +294,13 @@ export declare class Widget extends Instance {
     protected _dispatchEvent(event: import('../events/events.js').ToolkitEvent, capture: boolean): boolean;
     _syncEventListeners(): void;
     _onDomEvent(nativeEvent: any, type: any, capture: any): void;
+    /**
+     * Grabs the pointer while a button is pressed, so motion and release keep coming to us. This
+     * runs after the press handlers, because moving the pressed element in the document (which a
+     * handler may do) makes the browser drop a pointer capture.
+     */
+    _grabAfterPress(nativeEvent: any, type: any, capture: any): void;
+    _handleDomEvent(nativeEvent: any, type: any, capture: any): void;
     _createEvent(nativeEvent: any, type: any): import("../index.js").ToolkitEvent;
     _observeSize(): void;
     _createTooltip(properties: any): any;

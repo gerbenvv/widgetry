@@ -13,6 +13,7 @@ import {
     getAuxiliaryFocusChain,
     refreshAuxiliaryWidgets,
 } from './auxiliary.js';
+import { translateLabels } from '../i18n/toolkit-text.js';
 import { Container } from './container.js';
 import { Widget } from './widget.js';
 
@@ -455,13 +456,15 @@ export class Notebook extends Container {
         const tabEl = createElement(`
             <div class="wy-notebook-tab" role="tab" id="${tabId}" aria-controls="${pageId}" aria-selected="false">
                 <span class="wy-notebook-tab-label"></span>
-                <button type="button" class="wy-notebook-tab-close" tabindex="-1" aria-label="Close"></button>
+                <button type="button" class="wy-notebook-tab-close" tabindex="-1" data-wy-label="Close"></button>
             </div>
         `);
 
         const pageEl = createElement(
             `<div class="wy-notebook-page" role="tabpanel" id="${pageId}" aria-labelledby="${tabId}"></div>`
         );
+
+        translateLabels(tabEl);
 
         const closeEl = tabEl.querySelector('.wy-notebook-tab-close');
         closeEl.addEventListener('pointerdown', (event) => event.stopPropagation());

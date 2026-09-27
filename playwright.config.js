@@ -23,6 +23,14 @@ export default defineConfig({
             // Set PLAYWRIGHT_CHANNEL=chrome to use an installed Google Chrome instead.
             use: { browserName: 'chromium', channel: process.env.PLAYWRIGHT_CHANNEL || undefined },
         },
+        {
+            name: 'firefox',
+            // Set PLAYWRIGHT_FIREFOX_CHANNEL=moz-firefox to use an installed Firefox instead.
+            use: {
+                browserName: 'firefox',
+                channel: process.env.PLAYWRIGHT_FIREFOX_CHANNEL || undefined,
+            },
+        },
     ],
     webServer: {
         command: 'node scripts/serve.js --port 4173',

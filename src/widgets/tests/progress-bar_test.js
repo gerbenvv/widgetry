@@ -41,11 +41,12 @@ async function measure(page) {
         const outer = bar.el.getBoundingClientRect();
         const inner = fill.getBoundingClientRect();
 
+        // The fill covers the 1 pixel border of the trough on every side.
         return {
-            left: Math.round(inner.left - outer.left - 1),
-            right: Math.round(outer.right - 1 - inner.right),
-            top: Math.round(inner.top - outer.top - 1),
-            bottom: Math.round(outer.bottom - 1 - inner.bottom),
+            left: Math.round(inner.left - outer.left),
+            right: Math.round(outer.right - inner.right),
+            top: Math.round(inner.top - outer.top),
+            bottom: Math.round(outer.bottom - inner.bottom),
             width: Math.round(outer.width - 2),
             height: Math.round(outer.height - 2),
             hidden: getComputedStyle(fill).visibility === 'hidden',

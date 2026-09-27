@@ -1167,6 +1167,1086 @@ var DragDropEvent = class extends DragEvent {
   }
 };
 
+// src/i18n/locale-manager.js
+function getDefaultLocale() {
+  if (typeof navigator !== "undefined" && navigator.language) {
+    return navigator.language;
+  }
+  return Intl.DateTimeFormat().resolvedOptions().locale || "en-US";
+}
+__name(getDefaultLocale, "getDefaultLocale");
+function getNames(locale, kind, width) {
+  if (kind === "month") {
+    const format2 = new Intl.DateTimeFormat(locale, { month: width, timeZone: "UTC" });
+    return Array.from({ length: 12 }, (_x, i) => format2.format(Date.UTC(2021, i, 1)));
+  }
+  const format = new Intl.DateTimeFormat(locale, { weekday: width, timeZone: "UTC" });
+  return Array.from({ length: 7 }, (_x, i) => format.format(Date.UTC(2021, 0, 3 + i)));
+}
+__name(getNames, "getNames");
+function getFirstDayOfWeek(locale) {
+  try {
+    const info = new Intl.Locale(locale);
+    const weekInfo = info.getWeekInfo?.() || info.weekInfo;
+    if (weekInfo?.firstDay) {
+      return weekInfo.firstDay % 7;
+    }
+  } catch (_error) {
+  }
+  return /-(US|CA|JP|BR|IL|MX|PH|KR|TW|HK|IN|ZA|SA)\b/i.test(locale) ? 0 : 1;
+}
+__name(getFirstDayOfWeek, "getFirstDayOfWeek");
+function getDayPeriods(locale) {
+  const format = new Intl.DateTimeFormat(locale, {
+    hour: "numeric",
+    hourCycle: "h12",
+    timeZone: "UTC"
+  });
+  return [1, 13].map((hour, i) => {
+    const parts = format.formatToParts(Date.UTC(2021, 0, 1, hour));
+    return parts.find((x) => x.type === "dayPeriod")?.value || (i ? "PM" : "AM");
+  });
+}
+__name(getDayPeriods, "getDayPeriods");
+var LocaleManagerClass = class extends Instance {
+  static {
+    __name(this, "LocaleManagerClass");
+  }
+  _initialize() {
+    super._initialize();
+    this._locale = getDefaultLocale();
+    this._applyLocale();
+  }
+  _applyLocale() {
+    const locale = this._locale;
+    const [language, country] = locale.split(/[-_]/);
+    this._language = (language || "en").toLowerCase();
+    this._country = (country || "").toUpperCase();
+    this._shortMonthNames = getNames(locale, "month", "short");
+    this._longMonthNames = getNames(locale, "month", "long");
+    this._shortDayNames = getNames(locale, "day", "short");
+    this._longDayNames = getNames(locale, "day", "long");
+    this._firstDayOfWeek = getFirstDayOfWeek(locale);
+    [this._amDesignator, this._pmDesignator] = getDayPeriods(locale);
+    const parts = new Intl.NumberFormat(locale).formatToParts(12345.6);
+    this._decimalSeparator = parts.find((x) => x.type === "decimal")?.value || ".";
+    this._groupSeparator = parts.find((x) => x.type === "group")?.value || ",";
+  }
+};
+defineProperties(LocaleManagerClass, {
+  /**
+   * The current locale as a BCP 47 tag, e.g. `'en-US'` or `'nl-NL'`. Defaults to the browser's.
+   */
+  locale: {
+    value: "en-US",
+    coerce(locale) {
+      const tag = String(locale).replace(/_/g, "-");
+      return Intl.getCanonicalLocales(tag)[0];
+    },
+    changed() {
+      const oldLanguage = this._language;
+      this._applyLocale();
+      if (this._language !== oldLanguage) {
+        this.emit("language-change", this);
+      }
+    }
+  },
+  /**
+   * The language of the locale, e.g. `'en'`.
+   */
+  language: { readOnly: true },
+  /**
+   * The country (region) of the locale, e.g. `'US'`, or `''` if the locale has none.
+   */
+  country: { readOnly: true },
+  /**
+   * The short month names, January first.
+   */
+  shortMonthNames: { value: null },
+  /**
+   * The long month names, January first.
+   */
+  longMonthNames: { value: null },
+  /**
+   * The short day names, Sunday first.
+   */
+  shortDayNames: { value: null },
+  /**
+   * The long day names, Sunday first.
+   */
+  longDayNames: { value: null },
+  /**
+   * The first day of the week: 0 for Sunday, 1 for Monday and so on.
+   */
+  firstDayOfWeek: { value: 1 },
+  /**
+   * The designator of times before noon on a 12-hour clock, e.g. `'AM'`.
+   */
+  amDesignator: { value: "AM" },
+  /**
+   * The designator of times after noon on a 12-hour clock, e.g. `'PM'`.
+   */
+  pmDesignator: { value: "PM" },
+  /**
+   * The time zone dates are formatted and parsed in: an IANA time zone name such as
+   * `'Europe/Amsterdam'`, `'UTC'` (the default, like the original toolkit) or `'local'` for the
+   * time zone of the system. It does not change with the locale.
+   */
+  timeZone: {
+    value: "UTC",
+    coerce(timeZone) {
+      if (typeof timeZone !== "string") {
+        throw new TypeError("The time zone must be a string.");
+      }
+      if (timeZone === "local") {
+        return timeZone;
+      }
+      return new Intl.DateTimeFormat("en-US", { timeZone }).resolvedOptions().timeZone;
+    }
+  },
+  /**
+   * The decimal separator of numbers, e.g. `'.'`.
+   */
+  decimalSeparator: { value: "." },
+  /**
+   * The digit group (thousands) separator of numbers, e.g. `','`.
+   */
+  groupSeparator: { value: "," }
+});
+var getLocaleManager = lazySingleton(() => new LocaleManagerClass());
+
+// src/i18n/intl-util.js
+var MINUTE = 60 * 1e3;
+var DAY = 24 * 60 * MINUTE;
+var CACHE = /* @__PURE__ */ new Map();
+function getCached(cls, locale, options) {
+  const key = `${cls.name}|${locale}|${JSON.stringify(options)}`;
+  let result = CACHE.get(key);
+  if (!result) {
+    result = new cls(locale, options);
+    CACHE.set(key, result);
+  }
+  return result;
+}
+__name(getCached, "getCached");
+function getDateTimeFormat(locale, options = {}) {
+  return (
+    /** @type {Intl.DateTimeFormat} */
+    getCached(Intl.DateTimeFormat, locale, options)
+  );
+}
+__name(getDateTimeFormat, "getDateTimeFormat");
+function getNumberFormat(locale, options = {}) {
+  return (
+    /** @type {Intl.NumberFormat} */
+    getCached(Intl.NumberFormat, locale, options)
+  );
+}
+__name(getNumberFormat, "getNumberFormat");
+function getPluralRules(locale, options = {}) {
+  return (
+    /** @type {Intl.PluralRules} */
+    getCached(Intl.PluralRules, locale, options)
+  );
+}
+__name(getPluralRules, "getPluralRules");
+function getRelativeTimeFormat(locale, options = {}) {
+  return (
+    /** @type {Intl.RelativeTimeFormat} */
+    getCached(Intl.RelativeTimeFormat, locale, options)
+  );
+}
+__name(getRelativeTimeFormat, "getRelativeTimeFormat");
+function toIntlTimeZone(timeZone) {
+  return timeZone === "local" ? void 0 : timeZone;
+}
+__name(toIntlTimeZone, "toIntlTimeZone");
+function utcTimestamp(year, month, day, hours = 0, minutes = 0, seconds = 0, milliseconds = 0) {
+  const date = /* @__PURE__ */ new Date(0);
+  date.setUTCFullYear(year, month, day);
+  date.setUTCHours(hours, minutes, seconds, milliseconds);
+  return date.getTime();
+}
+__name(utcTimestamp, "utcTimestamp");
+function getDaysInMonth(year, month) {
+  return new Date(utcTimestamp(year, month + 1, 0)).getUTCDate();
+}
+__name(getDaysInMonth, "getDaysInMonth");
+function getZonedFields(timestamp, timeZone) {
+  const date = new Date(timestamp);
+  if (timeZone === "local") {
+    return {
+      year: date.getFullYear(),
+      month: date.getMonth(),
+      day: date.getDate(),
+      hours: date.getHours(),
+      minutes: date.getMinutes(),
+      seconds: date.getSeconds(),
+      milliseconds: date.getMilliseconds(),
+      weekDay: date.getDay(),
+      offset: -date.getTimezoneOffset()
+    };
+  }
+  if (timeZone === "UTC") {
+    return getUtcFields(date);
+  }
+  const format = getDateTimeFormat("en-US", {
+    timeZone,
+    hourCycle: "h23",
+    era: "short",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+    calendar: "gregory",
+    numberingSystem: "latn"
+  });
+  const parts = {};
+  for (const part of format.formatToParts(date)) {
+    parts[part.type] = part.value;
+  }
+  const year = parts.era === "BC" ? 1 - Number(parts.year) : Number(parts.year);
+  const milliseconds = date.getUTCMilliseconds();
+  const wallClock = utcTimestamp(
+    year,
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour),
+    Number(parts.minute),
+    Number(parts.second),
+    milliseconds
+  );
+  return {
+    ...getUtcFields(new Date(wallClock)),
+    offset: Math.round((wallClock - timestamp) / MINUTE)
+  };
+}
+__name(getZonedFields, "getZonedFields");
+function getUtcFields(date) {
+  return {
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth(),
+    day: date.getUTCDate(),
+    hours: date.getUTCHours(),
+    minutes: date.getUTCMinutes(),
+    seconds: date.getUTCSeconds(),
+    milliseconds: date.getUTCMilliseconds(),
+    weekDay: date.getUTCDay(),
+    offset: 0
+  };
+}
+__name(getUtcFields, "getUtcFields");
+function getTimeZoneOffset(timestamp, timeZone) {
+  return getZonedFields(timestamp, timeZone).offset;
+}
+__name(getTimeZoneOffset, "getTimeZoneOffset");
+function fromZonedFields(fields, timeZone) {
+  const wallClock = utcTimestamp(
+    fields.year,
+    fields.month,
+    fields.day,
+    fields.hours || 0,
+    fields.minutes || 0,
+    fields.seconds || 0,
+    fields.milliseconds || 0
+  );
+  if (timeZone === "UTC") {
+    return wallClock;
+  }
+  const earlyOffset = getTimeZoneOffset(wallClock - DAY, timeZone);
+  const lateOffset = getTimeZoneOffset(wallClock + DAY, timeZone);
+  for (const offset of [earlyOffset, lateOffset]) {
+    const timestamp = wallClock - offset * MINUTE;
+    if (getTimeZoneOffset(timestamp, timeZone) === offset) {
+      return timestamp;
+    }
+  }
+  return wallClock - earlyOffset * MINUTE;
+}
+__name(fromZonedFields, "fromZonedFields");
+
+// src/i18n/locale-aware.js
+var LocaleAware = class extends Instance {
+  static {
+    __name(this, "LocaleAware");
+  }
+  _initialize() {
+    super._initialize();
+    this._ownLocaleManager = null;
+    this._disconnectLocaleManager = null;
+  }
+  /**
+   * The locale manager this object uses: its own one when `locale` is set, otherwise
+   * `localeManager`, otherwise the singleton.
+   *
+   * @type {LocaleManagerClass}
+   */
+  get effectiveLocaleManager() {
+    return this._ownLocaleManager || this._localeManager || getLocaleManager();
+  }
+  /**
+   * The locale this object uses, e.g. `'en-US'`.
+   *
+   * @type {string}
+   */
+  get effectiveLocale() {
+    return this.effectiveLocaleManager.locale;
+  }
+  /**
+   * The time zone of the followed locale manager. A fixed `locale` does not fix the time zone.
+   *
+   * @protected
+   * @returns {string}
+   */
+  _getDefaultTimeZone() {
+    return (this._localeManager || getLocaleManager()).timeZone;
+  }
+  connect(name, method, context) {
+    const disconnect = super.connect(name, method, context);
+    if (name === "effective-locale-change") {
+      this._watchLocaleManager();
+    }
+    return disconnect;
+  }
+  destroy() {
+    this._unwatchLocaleManager();
+    super.destroy();
+  }
+  /**
+   * Starts listening to the locale changes of the followed locale manager, so
+   * `effective-locale-change` is emitted. Subclasses call this when they need the signal
+   * themselves.
+   *
+   * @protected
+   */
+  _watchLocaleManager() {
+    if (this._disconnectLocaleManager) {
+      return;
+    }
+    const manager = this._localeManager || getLocaleManager();
+    this._disconnectLocaleManager = manager.connect("locale-change", () => {
+      if (!this._ownLocaleManager) {
+        this._onEffectiveLocaleChange();
+      }
+    });
+  }
+  _unwatchLocaleManager() {
+    this._disconnectLocaleManager?.();
+    this._disconnectLocaleManager = null;
+  }
+  /**
+   * Called when the locale this object uses changed. Subclasses that override it must call the
+   * base implementation, which emits `effective-locale-change`.
+   *
+   * @protected
+   */
+  _onEffectiveLocaleChange() {
+    this.emit("effective-locale-change", this);
+  }
+};
+defineProperties(LocaleAware, {
+  /**
+   * A fixed locale as a BCP 47 tag (such as `'nl-NL'`), or `null` (the default) to follow the
+   * locale manager.
+   */
+  locale: {
+    value: null,
+    coerce(locale) {
+      if (locale === null || locale === void 0 || locale === "") {
+        return null;
+      }
+      return Intl.getCanonicalLocales(String(locale).replace(/_/g, "-"))[0];
+    },
+    changed(locale) {
+      this._ownLocaleManager = locale ? new LocaleManagerClass({ locale }) : null;
+      this._onEffectiveLocaleChange();
+    }
+  },
+  /**
+   * The locale manager to follow, or `null` (the default) for the singleton.
+   */
+  localeManager: {
+    value: null,
+    coerce(manager) {
+      if (manager && !(manager instanceof LocaleManagerClass)) {
+        throw new TypeError("The locale manager must be a LocaleManagerClass.");
+      }
+      return manager || null;
+    },
+    changed() {
+      if (this._disconnectLocaleManager) {
+        this._unwatchLocaleManager();
+        this._watchLocaleManager();
+      }
+      if (!this._ownLocaleManager) {
+        this._onEffectiveLocaleChange();
+      }
+    }
+  }
+});
+
+// src/i18n/string-formatter.js
+var PLACEHOLDER_REGEXP = /(?:(\d+)\$)?((?:[-+ 0]|'.)*)(\d+)?(?:\.(\d+))?([%bcdeEufFgGosxX])/uy;
+var UNSIGNED_SPECIFIERS = /* @__PURE__ */ new Set(["%", "c", "s", "F"]);
+var UPPERCASE_SPECIFIERS = /* @__PURE__ */ new Set(["E", "G", "X"]);
+var MAXIMUM_FRACTION_DIGITS = 20;
+function toInteger(value) {
+  if (typeof value === "bigint") {
+    return value;
+  }
+  return Math.trunc(toFloat(value));
+}
+__name(toInteger, "toInteger");
+function toFloat(value) {
+  if (typeof value === "string") {
+    return parseFloat(value);
+  }
+  return Number(value);
+}
+__name(toFloat, "toFloat");
+function toAbsolute(value) {
+  return typeof value === "bigint" ? value < 0n ? -value : value : Math.abs(value);
+}
+__name(toAbsolute, "toAbsolute");
+var StringFormatter = class extends LocaleAware {
+  static {
+    __name(this, "StringFormatter");
+  }
+  /**
+   * Formats a string by replacing the placeholders in it.
+   *
+   * @param {string} format
+   * @param {...unknown} args The arguments of the placeholders.
+   * @returns {string}
+   * @throws {TypeError} If the format is not a string.
+   * @throws {RangeError} If an argument is missing.
+   */
+  format(format, ...args) {
+    if (typeof format !== "string") {
+      throw new TypeError("The format must be a string.");
+    }
+    const output = [];
+    let index = 0;
+    let position = 0;
+    while (position < format.length) {
+      const percent = format.indexOf("%", position);
+      if (percent < 0) {
+        output.push(format.slice(position));
+        break;
+      }
+      output.push(format.slice(position, percent));
+      PLACEHOLDER_REGEXP.lastIndex = percent + 1;
+      const matches = PLACEHOLDER_REGEXP.exec(format);
+      if (!matches) {
+        output.push("%");
+        position = percent + 1;
+        continue;
+      }
+      const [placeholder, argumentNumber, flags, width, precision, specifier] = matches;
+      let argument;
+      if (specifier !== "%") {
+        let argumentIndex;
+        if (argumentNumber === void 0) {
+          argumentIndex = index;
+          index += 1;
+        } else {
+          argumentIndex = Number(argumentNumber) - 1;
+        }
+        if (argumentIndex < 0 || argumentIndex >= args.length) {
+          throw new RangeError(
+            `Missing argument ${argumentIndex + 1} for '%${placeholder}' in format '${format}'.`
+          );
+        }
+        argument = args[argumentIndex];
+      }
+      output.push(
+        this._formatPlaceholder(
+          argument,
+          flags,
+          width === void 0 ? 0 : Number(width),
+          precision === void 0 ? -1 : Number(precision),
+          specifier
+        )
+      );
+      position = percent + 1 + placeholder.length;
+    }
+    return output.join("");
+  }
+  /**
+   * Formats a number in the locale, with its decimal and group separators (as set in the locale
+   * manager) and digit grouping.
+   *
+   * @param {number | bigint} value
+   * @param {Intl.NumberFormatOptions & {decimals?: number}} [options] `Intl.NumberFormat`
+   *     options. `decimals` is a shortcut for an exact number of fraction digits.
+   * @returns {string}
+   * @throws {TypeError} If the value is not a number.
+   */
+  formatNumber(value, options = {}) {
+    if (typeof value !== "number" && typeof value !== "bigint") {
+      throw new TypeError("The value must be a number.");
+    }
+    const { decimals, ...intlOptions } = options;
+    if (decimals !== void 0) {
+      if (!Number.isInteger(decimals) || decimals < 0 || decimals > 100) {
+        throw new RangeError("The number of decimals must be an integer from 0 to 100.");
+      }
+      intlOptions.minimumFractionDigits = decimals;
+      intlOptions.maximumFractionDigits = decimals;
+    }
+    const manager = this.effectiveLocaleManager;
+    const parts = getNumberFormat(manager.locale, intlOptions).formatToParts(value);
+    return parts.map((part) => {
+      if (part.type === "group") {
+        return manager.groupSeparator;
+      }
+      if (part.type === "decimal") {
+        return manager.decimalSeparator;
+      }
+      return part.value;
+    }).join("");
+  }
+  _formatPlaceholder(argument, flags, width, precision, specifier) {
+    let text;
+    switch (specifier) {
+      case "%":
+        text = "%";
+        break;
+      case "b":
+        text = toInteger(argument).toString(2);
+        break;
+      case "c":
+        text = String.fromCodePoint(Number(toInteger(argument)));
+        break;
+      case "d":
+        text = String(toInteger(argument));
+        break;
+      case "u":
+        text = String(toAbsolute(toInteger(argument)));
+        break;
+      case "e":
+      case "E": {
+        const value = toFloat(argument);
+        text = precision >= 0 ? value.toExponential(precision) : value.toExponential();
+        break;
+      }
+      case "f": {
+        const value = toFloat(argument);
+        text = precision >= 0 ? value.toFixed(precision) : String(value);
+        break;
+      }
+      case "F": {
+        const value = toFloat(argument);
+        text = this.formatNumber(value, {
+          minimumFractionDigits: precision >= 0 ? precision : 0,
+          maximumFractionDigits: precision >= 0 ? precision : MAXIMUM_FRACTION_DIGITS,
+          signDisplay: flags.includes("+") ? "always" : "auto"
+        });
+        break;
+      }
+      case "g":
+      case "G": {
+        const value = toFloat(argument);
+        const fixed = precision >= 0 ? value.toFixed(precision) : String(value);
+        const exponential = precision >= 0 ? value.toExponential(precision) : value.toExponential();
+        text = fixed.length <= exponential.length ? fixed : exponential;
+        break;
+      }
+      case "o":
+        text = toInteger(argument).toString(8);
+        break;
+      case "s":
+        text = String(argument);
+        if (precision >= 0) {
+          text = Array.from(text).slice(0, precision).join("");
+        }
+        break;
+      case "x":
+      case "X":
+        text = toInteger(argument).toString(16);
+        break;
+    }
+    if (flags.includes("+") && !UNSIGNED_SPECIFIERS.has(specifier) && !text.startsWith("-") && text !== "NaN") {
+      text = "+" + text;
+    }
+    if (UPPERCASE_SPECIFIERS.has(specifier)) {
+      text = text.toUpperCase();
+    }
+    return this._pad(text, flags, width, specifier);
+  }
+  _pad(text, flags, width, specifier) {
+    const length = Array.from(text).length;
+    if (width <= length) {
+      return text;
+    }
+    let paddingCharacter = " ";
+    for (const flag of flags.match(/'.|[ 0]/gu) || []) {
+      paddingCharacter = flag.length > 1 ? Array.from(flag)[1] : flag;
+    }
+    const padding = paddingCharacter.repeat(width - length);
+    if (flags.includes("-")) {
+      return text + padding;
+    }
+    const numeric = !["%", "c", "s"].includes(specifier);
+    if (paddingCharacter === "0" && numeric && /^[-+\u2212]/.test(text)) {
+      return text[0] + padding + text.slice(1);
+    }
+    return padding + text;
+  }
+};
+var getStringFormatter = lazySingleton(() => new StringFormatter());
+function formatString(format, ...args) {
+  return getStringFormatter().format(format, ...args);
+}
+__name(formatString, "formatString");
+function formatNumber(value, options) {
+  return getStringFormatter().formatNumber(value, options);
+}
+__name(formatNumber, "formatNumber");
+
+// src/i18n/translator.js
+var PLURAL_CATEGORIES = /* @__PURE__ */ new Set(["zero", "one", "two", "few", "many", "other"]);
+var SOURCE_LANGUAGE = "en";
+function isPlainObject(value) {
+  if (value === null || typeof value !== "object") {
+    return false;
+  }
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+__name(isPlainObject, "isPlainObject");
+function checkEntry(id, entry) {
+  if (typeof entry === "string") {
+    return;
+  }
+  if (!isPlainObject(entry)) {
+    throw new TypeError(`The translation of '${id}' must be a string or an object.`);
+  }
+  for (const [key, form] of Object.entries(entry)) {
+    if (!PLURAL_CATEGORIES.has(key) && !/^=\d+$/.test(key)) {
+      throw new TypeError(`Invalid plural form '${key}' in the translation of '${id}'.`);
+    }
+    if (typeof form !== "string") {
+      throw new TypeError(`The plural forms of '${id}' must be strings.`);
+    }
+  }
+  if (entry.other === void 0) {
+    throw new TypeError(`The translation of '${id}' has no 'other' plural form.`);
+  }
+}
+__name(checkEntry, "checkEntry");
+function canonicalizeLanguage(language) {
+  if (typeof language !== "string" || !language) {
+    throw new TypeError("The language must be a non-empty string.");
+  }
+  return Intl.getCanonicalLocales(language.replace(/_/g, "-"))[0];
+}
+__name(canonicalizeLanguage, "canonicalizeLanguage");
+function getTagChain(tag) {
+  const subtags = tag.split("-");
+  return subtags.map((_x, i) => subtags.slice(0, subtags.length - i).join("-"));
+}
+__name(getTagChain, "getTagChain");
+var Translator = class extends LocaleAware {
+  static {
+    __name(this, "Translator");
+  }
+  _initialize() {
+    super._initialize();
+    this._dictionaries = /* @__PURE__ */ new Map();
+    this._requestedLanguages = /* @__PURE__ */ new Set();
+    this._pendingLoads = /* @__PURE__ */ new Map();
+    this._formatter = new StringFormatter();
+    this._watchLocaleManager();
+  }
+  /**
+   * The languages of the loaded dictionaries.
+   *
+   * @type {string[]}
+   */
+  get languages() {
+    return [...this._dictionaries.keys()];
+  }
+  /**
+   * Gets a translation with its placeholders replaced, like the original toolkit's `getEntry`.
+   *
+   * @param {string} id The identifier: a key or the source text.
+   * @param {unknown[]} [args] The arguments of the placeholders. The first one chooses the
+   *     plural form.
+   * @returns {string} The translation, or the identifier if there is none.
+   */
+  getEntry(id, args = []) {
+    if (typeof id !== "string") {
+      throw new TypeError("The identifier must be a string.");
+    }
+    if (!Array.isArray(args)) {
+      throw new TypeError("The arguments must be an array.");
+    }
+    const found = this._lookup(id);
+    if (!found) {
+      return this._format(id, args);
+    }
+    return this._format(this._choosePluralForm(found.entry, found.language, args[0]), args);
+  }
+  /**
+   * Translates a text.
+   *
+   * @param {string} id
+   * @param {...unknown} args
+   * @returns {string}
+   */
+  translate(id, ...args) {
+    return this.getEntry(id, args);
+  }
+  /**
+   * Translates a text with a singular and a plural form, like gettext's `ngettext`. The
+   * translation of `singular` (which should have plural forms) is used; without one, `singular`
+   * is used for a count of 1 and `plural` otherwise. The count is the first argument of the
+   * placeholders.
+   *
+   * @param {string} singular
+   * @param {string} plural
+   * @param {number} count
+   * @param {...unknown} args More arguments.
+   * @returns {string}
+   */
+  translatePlural(singular, plural, count, ...args) {
+    if (typeof singular !== "string" || typeof plural !== "string") {
+      throw new TypeError("The singular and plural texts must be strings.");
+    }
+    if (typeof count !== "number") {
+      throw new TypeError("The count must be a number.");
+    }
+    const found = this._lookup(singular);
+    if (found) {
+      return this.getEntry(singular, [count, ...args]);
+    }
+    const category = getPluralRules(SOURCE_LANGUAGE).select(count);
+    return this._format(category === "one" ? singular : plural, [count, ...args]);
+  }
+  /**
+   * Checks whether there is a translation for an identifier in the current language chain.
+   *
+   * @param {string} id
+   * @returns {boolean}
+   */
+  hasEntry(id) {
+    return this._lookup(id) !== null;
+  }
+  /**
+   * Adds entries to the dictionary of a language, replacing entries with the same identifier.
+   *
+   * @param {Record<string, TranslationEntry>} entries
+   * @param {string} [language] A language or locale tag. Defaults to the current language.
+   * @throws {TypeError} If the entries are malformed.
+   */
+  addEntries(entries, language = this.effectiveLocaleManager.language) {
+    if (!isPlainObject(entries)) {
+      throw new TypeError("The entries must be an object.");
+    }
+    for (const [id, entry] of Object.entries(entries)) {
+      checkEntry(id, entry);
+    }
+    const tag = canonicalizeLanguage(language);
+    this._dictionaries.set(tag, { ...this._dictionaries.get(tag), ...entries });
+    this.emit("entries-change", this, tag);
+    this.emit("change", this);
+  }
+  /**
+   * Removes the dictionary of a language.
+   *
+   * @param {string} language
+   */
+  removeEntries(language) {
+    const tag = canonicalizeLanguage(language);
+    if (this._dictionaries.delete(tag)) {
+      this.emit("entries-change", this, tag);
+      this.emit("change", this);
+    }
+  }
+  /**
+   * Returns a promise that settles when the dictionaries being loaded by the `loader` are
+   * loaded. It rejects if one failed to load.
+   *
+   * @returns {Promise<void>}
+   */
+  whenLoaded() {
+    this._requestDictionaries();
+    return Promise.all(this._pendingLoads.values()).then(() => void 0);
+  }
+  _onEffectiveLocaleChange() {
+    super._onEffectiveLocaleChange();
+    this._requestDictionaries();
+    this.emit("language-change", this);
+    this.emit("change", this);
+  }
+  /**
+   * Returns the tags that are searched for entries, most specific first.
+   *
+   * @returns {string[]}
+   */
+  _getLanguageChain() {
+    const chain = getTagChain(canonicalizeLanguage(this.effectiveLocale));
+    if (this._fallbackLanguage) {
+      for (const tag of getTagChain(this._fallbackLanguage)) {
+        if (!chain.includes(tag)) {
+          chain.push(tag);
+        }
+      }
+    }
+    return chain;
+  }
+  _lookup(id) {
+    this._requestDictionaries();
+    for (const language of this._getLanguageChain()) {
+      const dictionary = this._dictionaries.get(language);
+      if (dictionary && Object.hasOwn(dictionary, id)) {
+        return { entry: dictionary[id], language };
+      }
+    }
+    return null;
+  }
+  _choosePluralForm(entry, language, count) {
+    if (typeof entry === "string") {
+      return entry;
+    }
+    if (typeof count !== "number") {
+      return entry.other;
+    }
+    const exact = entry["=" + count];
+    if (exact !== void 0) {
+      return exact;
+    }
+    return entry[getPluralRules(language).select(count)] ?? entry.other;
+  }
+  _format(text, args) {
+    this._formatter.localeManager = this.effectiveLocaleManager;
+    return this._formatter.format(text, ...args);
+  }
+  _requestDictionaries() {
+    if (!this._loader) {
+      return;
+    }
+    for (const language of this._getLanguageChain()) {
+      if (this._requestedLanguages.has(language)) {
+        continue;
+      }
+      this._requestedLanguages.add(language);
+      this.emit("load-entries", this, language);
+      const result = this._loader(language);
+      if (result && typeof result.then === "function") {
+        const promise = Promise.resolve(result).then((entries) => {
+          if (entries) {
+            this.addEntries(entries, language);
+          }
+        }).catch((error) => {
+          this._requestedLanguages.delete(language);
+          this.emit("load-error", this, language, error);
+          throw error;
+        }).finally(() => {
+          this._pendingLoads.delete(language);
+        });
+        promise.catch(() => {
+        });
+        this._pendingLoads.set(language, promise);
+      } else if (result) {
+        this.addEntries(result, language);
+      }
+    }
+  }
+};
+defineProperties(Translator, {
+  /**
+   * The dictionary of the current language (as in `getLocaleManager().language`). Setting it
+   * replaces that dictionary. Do not modify the returned object; use `addEntries()`.
+   */
+  entries: {
+    get() {
+      return this._dictionaries.get(this.effectiveLocaleManager.language) || {};
+    },
+    set(entries) {
+      const language = this.effectiveLocaleManager.language;
+      this._dictionaries.delete(language);
+      this.addEntries(entries, language);
+    },
+    signal: false
+  },
+  /**
+   * The language to use when the current language has no translation, e.g. `'en'` when
+   * identifiers are keys and the English dictionary has the source texts. `null` (the default)
+   * falls back to the identifier.
+   */
+  fallbackLanguage: {
+    value: null,
+    coerce(language) {
+      return language ? canonicalizeLanguage(language) : null;
+    },
+    changed() {
+      this._requestDictionaries();
+      this.emit("change", this);
+    }
+  },
+  /**
+   * A function that loads the dictionary of a language on demand: `(language) => entries`, where
+   * the result may also be a promise, or `null` for no dictionary. It is called once per
+   * language (and locale tag) that is needed, such as `'nl-BE'` and `'nl'`.
+   */
+  loader: {
+    value: null,
+    coerce(loader) {
+      if (loader !== null && typeof loader !== "function") {
+        throw new TypeError("The loader must be a function.");
+      }
+      return loader;
+    },
+    changed() {
+      this._requestedLanguages.clear();
+    }
+  }
+});
+var getTranslator = lazySingleton(() => new Translator());
+function translate(id, ...args) {
+  return getTranslator().getEntry(id, args);
+}
+__name(translate, "translate");
+var tr = translate;
+function translatePlural(singular, plural, count, ...args) {
+  return getTranslator().translatePlural(singular, plural, count, ...args);
+}
+__name(translatePlural, "translatePlural");
+var trn = translatePlural;
+
+// src/i18n/toolkit-text.js
+var TOOLKIT_TRANSLATIONS = Object.freeze({
+  nl: Object.freeze({
+    _Select: "_Selecteren",
+    "Pick a Color": "Kies een kleur",
+    _OK: "_OK",
+    _Cancel: "_Annuleren",
+    _Close: "_Sluiten",
+    _Yes: "_Ja",
+    _No: "_Nee",
+    _Apply: "_Toepassen",
+    _Help: "_Hulp",
+    Close: "Sluiten",
+    Maximize: "Maximaliseren",
+    Restore: "Herstellen",
+    More: "Meer",
+    "Choose date": "Kies een datum",
+    "Previous month": "Vorige maand",
+    "Next month": "Volgende maand",
+    "Previous year": "Vorig jaar",
+    "Next year": "Volgend jaar",
+    Palette: "Palet",
+    "Saturation and value": "Verzadiging en helderheid",
+    Hue: "Tint",
+    Alpha: "Dekking",
+    "Color name": "Kleurnaam"
+  }),
+  de: Object.freeze({
+    _Select: "_Ausw\xE4hlen",
+    "Pick a Color": "Farbe w\xE4hlen",
+    _OK: "_OK",
+    _Cancel: "_Abbrechen",
+    _Close: "_Schlie\xDFen",
+    _Yes: "_Ja",
+    _No: "_Nein",
+    _Apply: "_Anwenden",
+    _Help: "_Hilfe",
+    Close: "Schlie\xDFen",
+    Maximize: "Maximieren",
+    Restore: "Wiederherstellen",
+    More: "Mehr",
+    "Choose date": "Datum w\xE4hlen",
+    "Previous month": "Vorheriger Monat",
+    "Next month": "N\xE4chster Monat",
+    "Previous year": "Vorheriges Jahr",
+    "Next year": "N\xE4chstes Jahr",
+    Palette: "Palette",
+    "Saturation and value": "S\xE4ttigung und Helligkeit",
+    Hue: "Farbton",
+    Alpha: "Deckkraft",
+    "Color name": "Farbname"
+  }),
+  fr: Object.freeze({
+    _Select: "_S\xE9lectionner",
+    "Pick a Color": "Choisir une couleur",
+    _OK: "_Valider",
+    _Cancel: "_Annuler",
+    _Close: "_Fermer",
+    _Yes: "_Oui",
+    _No: "_Non",
+    _Apply: "_Appliquer",
+    _Help: "Ai_de",
+    Close: "Fermer",
+    Maximize: "Agrandir",
+    Restore: "Restaurer",
+    More: "Plus",
+    "Choose date": "Choisir une date",
+    "Previous month": "Mois pr\xE9c\xE9dent",
+    "Next month": "Mois suivant",
+    "Previous year": "Ann\xE9e pr\xE9c\xE9dente",
+    "Next year": "Ann\xE9e suivante",
+    Palette: "Palette",
+    "Saturation and value": "Saturation et luminosit\xE9",
+    Hue: "Teinte",
+    Alpha: "Opacit\xE9",
+    "Color name": "Nom de la couleur"
+  }),
+  es: Object.freeze({
+    _Select: "_Seleccionar",
+    "Pick a Color": "Elegir un color",
+    _OK: "_Aceptar",
+    _Cancel: "_Cancelar",
+    _Close: "_Cerrar",
+    _Yes: "_S\xED",
+    _No: "_No",
+    _Apply: "_Aplicar",
+    _Help: "Ay_uda",
+    Close: "Cerrar",
+    Maximize: "Maximizar",
+    Restore: "Restaurar",
+    More: "M\xE1s",
+    "Choose date": "Elegir fecha",
+    "Previous month": "Mes anterior",
+    "Next month": "Mes siguiente",
+    "Previous year": "A\xF1o anterior",
+    "Next year": "A\xF1o siguiente",
+    Palette: "Paleta",
+    "Saturation and value": "Saturaci\xF3n y brillo",
+    Hue: "Tono",
+    Alpha: "Opacidad",
+    "Color name": "Nombre del color"
+  })
+});
+function toolkitText(text) {
+  const translator = getTranslator();
+  if (translator.hasEntry(text)) {
+    return translator.translate(text);
+  }
+  const language = getLocaleManager().language;
+  return TOOLKIT_TRANSLATIONS[language]?.[text] ?? text;
+}
+__name(toolkitText, "toolkitText");
+function bindToolkitText(owner, update) {
+  const translator = getTranslator();
+  update();
+  const disconnect = translator.connect("change", update);
+  owner.connect("destroy", disconnect);
+  return disconnect;
+}
+__name(bindToolkitText, "bindToolkitText");
+function translateLabels(root) {
+  const elements = root.matches("[data-wy-label]") ? [root] : [];
+  elements.push(...root.querySelectorAll("[data-wy-label]"));
+  for (const element of elements) {
+    element.setAttribute("aria-label", toolkitText(element.dataset.wyLabel));
+  }
+}
+__name(translateLabels, "translateLabels");
+
 // src/widgets/widget.js
 var WIDGET_BY_ELEMENT = /* @__PURE__ */ new WeakMap();
 var LAYOUT_QUEUE = /* @__PURE__ */ new Set();
@@ -1334,6 +2414,9 @@ var Widget = class _Widget extends Instance {
     this.el.addEventListener("blur", (event) => this._onFocusElementFocus(event, false), true);
     this._updateTabIndex();
     this._refreshExpand();
+    if (this.el.matches("[data-wy-label]") || this.el.querySelector("[data-wy-label]")) {
+      bindToolkitText(this, () => translateLabels(this.el));
+    }
   }
   /**
    * Creates the root element. Subclasses must implement this. It runs first during
@@ -1789,13 +2872,29 @@ var Widget = class _Widget extends Instance {
     }
   }
   _onDomEvent(nativeEvent, type, capture) {
-    if (type === EventType.BUTTON_PRESS && !capture && this._events & GRAB_MASK && !nativeEvent.wyGrabbed) {
-      nativeEvent.wyGrabbed = true;
-      try {
-        nativeEvent.target.setPointerCapture?.(nativeEvent.pointerId);
-      } catch (_error) {
-      }
+    try {
+      this._handleDomEvent(nativeEvent, type, capture);
+    } finally {
+      this._grabAfterPress(nativeEvent, type, capture);
     }
+  }
+  /**
+   * Grabs the pointer while a button is pressed, so motion and release keep coming to us. This
+   * runs after the press handlers, because moving the pressed element in the document (which a
+   * handler may do) makes the browser drop a pointer capture.
+   */
+  _grabAfterPress(nativeEvent, type, capture) {
+    if (type !== EventType.BUTTON_PRESS || capture || !(this._events & GRAB_MASK) || nativeEvent.wyGrabbed) {
+      return;
+    }
+    nativeEvent.wyGrabbed = true;
+    const target = nativeEvent.target?.isConnected && this.el.contains(nativeEvent.target) ? nativeEvent.target : this.el;
+    try {
+      target.setPointerCapture?.(nativeEvent.pointerId);
+    } catch (_error) {
+    }
+  }
+  _handleDomEvent(nativeEvent, type, capture) {
     const mask = EVENT_BINDINGS.find((x) => x[3] === type)[capture ? 1 : 0];
     if (!(this._events & mask)) {
       return;
@@ -2623,6 +3722,287 @@ defineProperties(ApplicationClass, {
   }
 });
 var Application = new ApplicationClass();
+
+// src/core/color.js
+var ANGLE_UNITS = Object.freeze({
+  deg: 1,
+  grad: 360 / 400,
+  rad: 180 / Math.PI,
+  turn: 360
+});
+var NUMBER = "[+-]?(?:\\d+\\.?\\d*|\\.\\d+)(?:e[+-]?\\d+)?";
+var COMPONENT_PATTERN = new RegExp(`^(?:(${NUMBER})(%|deg|grad|rad|turn)?|none)$`, "i");
+var FUNCTION_PATTERN = /^([a-z-]+)\(\s*(.*?)\s*\)$/i;
+function parseComponent(text) {
+  const match = COMPONENT_PATTERN.exec(text);
+  if (!match) {
+    return null;
+  }
+  if (match[1] === void 0) {
+    return { value: 0, unit: "" };
+  }
+  return { value: Number(match[1]), unit: (match[2] || "").toLowerCase() };
+}
+__name(parseComponent, "parseComponent");
+function splitArguments(text) {
+  if (text.includes(",")) {
+    const parts = text.split(",").map((x) => x.trim());
+    if (parts.length !== 3 && parts.length !== 4) {
+      return null;
+    }
+    return { channels: parts.slice(0, 3), alpha: parts[3] ?? null };
+  }
+  const [channelText, alphaText, ...rest] = text.split("/").map((x) => x.trim());
+  if (rest.length) {
+    return null;
+  }
+  const channels = channelText.split(/\s+/).filter(Boolean);
+  if (channels.length !== 3 || alphaText === "") {
+    return null;
+  }
+  return { channels, alpha: alphaText ?? null };
+}
+__name(splitArguments, "splitArguments");
+function parseAlpha(text) {
+  if (text === null) {
+    return 1;
+  }
+  const component = parseComponent(text);
+  if (!component || component.unit && component.unit !== "%") {
+    return null;
+  }
+  const value = component.unit === "%" ? component.value / 100 : component.value;
+  return clamp(value, 0, 1);
+}
+__name(parseAlpha, "parseAlpha");
+function parseHue(text) {
+  const component = parseComponent(text);
+  if (!component || component.unit === "%") {
+    return null;
+  }
+  const degrees = component.value * (ANGLE_UNITS[component.unit] ?? 1);
+  return (degrees % 360 + 360) % 360;
+}
+__name(parseHue, "parseHue");
+function parsePercentage(text) {
+  const component = parseComponent(text);
+  if (!component || component.unit && component.unit !== "%") {
+    return null;
+  }
+  return clamp(component.value / 100, 0, 1);
+}
+__name(parsePercentage, "parsePercentage");
+function parseHex(text) {
+  const digits = text.slice(1);
+  if (!/^[0-9a-f]+$/i.test(digits) || ![3, 4, 6, 8].includes(digits.length)) {
+    return null;
+  }
+  const full = digits.length <= 4 ? [...digits].map((x) => x + x).join("") : digits;
+  const channel = /* @__PURE__ */ __name((index) => parseInt(full.slice(index * 2, index * 2 + 2), 16), "channel");
+  return {
+    r: channel(0),
+    g: channel(1),
+    b: channel(2),
+    a: full.length === 8 ? channel(3) / 255 : 1
+  };
+}
+__name(parseHex, "parseHex");
+function parseRgbFunction(argumentsText) {
+  const parts = splitArguments(argumentsText);
+  if (!parts) {
+    return null;
+  }
+  const channels = parts.channels.map((text) => {
+    const component = parseComponent(text);
+    if (!component || component.unit && component.unit !== "%") {
+      return null;
+    }
+    const value = component.unit === "%" ? component.value / 100 * 255 : component.value;
+    return clamp(value, 0, 255);
+  });
+  const alpha = parseAlpha(parts.alpha);
+  if (channels.includes(null) || alpha === null) {
+    return null;
+  }
+  return { r: channels[0], g: channels[1], b: channels[2], a: alpha };
+}
+__name(parseRgbFunction, "parseRgbFunction");
+function parseHslFunction(argumentsText) {
+  const parts = splitArguments(argumentsText);
+  if (!parts) {
+    return null;
+  }
+  const h = parseHue(parts.channels[0]);
+  const s = parsePercentage(parts.channels[1]);
+  const l = parsePercentage(parts.channels[2]);
+  const alpha = parseAlpha(parts.alpha);
+  if (h === null || s === null || l === null || alpha === null) {
+    return null;
+  }
+  return { ...hslToRgb(h, s, l), a: alpha };
+}
+__name(parseHslFunction, "parseHslFunction");
+function parseColorFunction(argumentsText) {
+  const match = /^srgb\s+(.*)$/i.exec(argumentsText);
+  if (!match) {
+    return null;
+  }
+  const parts = splitArguments(match[1]);
+  if (!parts || argumentsText.includes(",")) {
+    return null;
+  }
+  const channels = parts.channels.map((text) => {
+    const component = parseComponent(text);
+    if (!component || component.unit && component.unit !== "%") {
+      return null;
+    }
+    const fraction = component.unit === "%" ? component.value / 100 : component.value;
+    return clamp(fraction, 0, 1) * 255;
+  });
+  const alpha = parseAlpha(parts.alpha);
+  if (channels.includes(null) || alpha === null) {
+    return null;
+  }
+  return { r: channels[0], g: channels[1], b: channels[2], a: alpha };
+}
+__name(parseColorFunction, "parseColorFunction");
+function parseColorSyntax(text) {
+  if (typeof text !== "string") {
+    return null;
+  }
+  const trimmed = text.trim();
+  if (trimmed.startsWith("#")) {
+    return parseHex(trimmed);
+  }
+  if (trimmed.toLowerCase() === "transparent") {
+    return { r: 0, g: 0, b: 0, a: 0 };
+  }
+  const match = FUNCTION_PATTERN.exec(trimmed);
+  if (!match) {
+    return null;
+  }
+  switch (match[1].toLowerCase()) {
+    case "rgb":
+    case "rgba":
+      return parseRgbFunction(match[2]);
+    case "hsl":
+    case "hsla":
+      return parseHslFunction(match[2]);
+    case "color":
+      return parseColorFunction(match[2]);
+    default:
+      return null;
+  }
+}
+__name(parseColorSyntax, "parseColorSyntax");
+function resolveWithBrowser(text) {
+  if (typeof document === "undefined" || typeof CSS === "undefined" || typeof getComputedStyle === "undefined" || !CSS.supports("color", text)) {
+    return null;
+  }
+  const element = document.createElement("span");
+  element.style.display = "none";
+  document.documentElement.append(element);
+  try {
+    for (const value of [text, `color-mix(in srgb, ${text} 100%, transparent)`]) {
+      element.style.color = "";
+      element.style.color = value;
+      if (!element.style.color) {
+        continue;
+      }
+      const color = parseColorSyntax(getComputedStyle(element).color);
+      if (color) {
+        return color;
+      }
+    }
+    return null;
+  } finally {
+    element.remove();
+  }
+}
+__name(resolveWithBrowser, "resolveWithBrowser");
+function parseColor(text) {
+  if (typeof text !== "string" || !text.trim()) {
+    return null;
+  }
+  return parseColorSyntax(text) || resolveWithBrowser(text.trim());
+}
+__name(parseColor, "parseColor");
+function toHexByte(value) {
+  return Math.round(clamp(value, 0, 255)).toString(16).padStart(2, "0");
+}
+__name(toHexByte, "toHexByte");
+function formatHex(color, alpha) {
+  const hex = `#${toHexByte(color.r)}${toHexByte(color.g)}${toHexByte(color.b)}`;
+  const opacity = color.a ?? 1;
+  const withAlpha = alpha ?? Math.round(clamp(opacity, 0, 1) * 255) < 255;
+  return withAlpha ? hex + toHexByte(opacity * 255) : hex;
+}
+__name(formatHex, "formatHex");
+function formatRgb(color) {
+  const channels = [color.r, color.g, color.b].map((x) => Math.round(clamp(x, 0, 255)));
+  const opacity = Math.round(clamp(color.a ?? 1, 0, 1) * 1e3) / 1e3;
+  return opacity < 1 ? `rgba(${channels.join(", ")}, ${opacity})` : `rgb(${channels.join(", ")})`;
+}
+__name(formatRgb, "formatRgb");
+function normalizeColor(text) {
+  const color = parseColor(text);
+  return color ? formatHex(color) : null;
+}
+__name(normalizeColor, "normalizeColor");
+function rgbToHsv(r, g, b) {
+  const red = r / 255;
+  const green = g / 255;
+  const blue = b / 255;
+  const maximum = Math.max(red, green, blue);
+  const minimum = Math.min(red, green, blue);
+  const delta = maximum - minimum;
+  let h = 0;
+  if (delta > 0) {
+    if (maximum === red) {
+      h = (green - blue) / delta % 6;
+    } else if (maximum === green) {
+      h = (blue - red) / delta + 2;
+    } else {
+      h = (red - green) / delta + 4;
+    }
+    h = (h * 60 + 360) % 360;
+  }
+  return { h, s: maximum > 0 ? delta / maximum : 0, v: maximum };
+}
+__name(rgbToHsv, "rgbToHsv");
+function hsvToRgb(h, s, v) {
+  const hue = (h % 360 + 360) % 360 / 60;
+  const saturation = clamp(s, 0, 1);
+  const value = clamp(v, 0, 1);
+  const channel = /* @__PURE__ */ __name((n) => {
+    const k = (n + hue) % 6;
+    return value - value * saturation * Math.max(0, Math.min(k, 4 - k, 1));
+  }, "channel");
+  return { r: channel(5) * 255, g: channel(3) * 255, b: channel(1) * 255 };
+}
+__name(hsvToRgb, "hsvToRgb");
+function rgbToHsl(r, g, b) {
+  const { h, s, v } = rgbToHsv(r, g, b);
+  const l = v * (1 - s / 2);
+  const saturation = l > 0 && l < 1 ? (v - l) / Math.min(l, 1 - l) : 0;
+  return { h, s: saturation, l };
+}
+__name(rgbToHsl, "rgbToHsl");
+function hslToRgb(h, s, l) {
+  const saturation = clamp(s, 0, 1);
+  const lightness = clamp(l, 0, 1);
+  const v = lightness + saturation * Math.min(lightness, 1 - lightness);
+  return hsvToRgb(h, v > 0 ? 2 * (1 - lightness / v) : 0, v);
+}
+__name(hslToRgb, "hslToRgb");
+function getLuminance(color) {
+  const linear = /* @__PURE__ */ __name((value) => {
+    const channel = clamp(value, 0, 255) / 255;
+    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  }, "linear");
+  return 0.2126 * linear(color.r) + 0.7152 * linear(color.g) + 0.0722 * linear(color.b);
+}
+__name(getLuminance, "getLuminance");
 
 // src/core/cursor.js
 var CSS_CURSORS = Object.freeze({
@@ -6043,25 +7423,29 @@ var ICON_PATHS = {
   "zoom-original": ["M10.5 6.5a4 4 0 1 1-8 0 4 4 0 0 1 8 0z", "M9.5 9.5l5 5", "M5.5 5l1-.5v4"],
   "help-about": [
     "M14.5 8a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z",
-    "M8 7v4.5",
-    "F7.1 4.2h1.8v1.8H7.1z"
+    "M8 7.4v4.1",
+    "F7.05 4.75a0.95 0.95 0 1 0 1.9 0a0.95 0.95 0 1 0 -1.9 0z"
   ],
   "help-contents": [
     "M14.5 8a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z",
-    "M6 6.2a2 2 0 1 1 2.8 1.8c-.6.3-.8.7-.8 1.3v.5",
-    "F7.1 11h1.8v1.8H7.1z"
+    "M6.1 6.1a1.95 1.95 0 1 1 2.75 1.8c-.55.25-.85.65-.85 1.2v.3",
+    "F7.05 12a0.95 0.95 0 1 0 1.9 0a0.95 0.95 0 1 0 -1.9 0z"
   ],
   "dialog-information": [
     "M14.5 8a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z",
-    "M8 7v4.5",
-    "F7.1 4.2h1.8v1.8H7.1z"
+    "M8 7.4v4.1",
+    "F7.05 4.75a0.95 0.95 0 1 0 1.9 0a0.95 0.95 0 1 0 -1.9 0z"
   ],
-  "dialog-warning": ["M8 1.8L14.8 13.8H1.2z", "M8 6v3.8", "F7.1 10.8h1.8v1.8H7.1z"],
+  "dialog-warning": [
+    "M8 1.8L14.8 13.8H1.2z",
+    "M8 6.3v3.2",
+    "F7.05 11.75a0.95 0.95 0 1 0 1.9 0a0.95 0.95 0 1 0 -1.9 0z"
+  ],
   "dialog-error": ["M14.5 8a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z", "M5.5 5.5l5 5m0-5l-5 5"],
   "dialog-question": [
     "M14.5 8a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z",
-    "M6 6.2a2 2 0 1 1 2.8 1.8c-.6.3-.8.7-.8 1.3v.5",
-    "F7.1 11h1.8v1.8H7.1z"
+    "M6.1 6.1a1.95 1.95 0 1 1 2.75 1.8c-.55.25-.85.65-.85 1.2v.3",
+    "F7.05 12a0.95 0.95 0 1 0 1.9 0a0.95 0.95 0 1 0 -1.9 0z"
   ],
   "preferences-system": [
     "M10 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0z",
@@ -6072,7 +7456,11 @@ var ICON_PATHS = {
   "application-exit": ["M9.5 4.5v-3h-7v13h7v-3", "M6.5 8h8M12 5.5L14.5 8 12 10.5"],
   folder: ["M1.5 13.5v-11h4.5l1.5 2h7v9z"],
   "folder-new": ["M1.5 13.5v-11h4.5l1.5 2h7v9z", "M8 7.5v4M6 9.5h4"],
-  "text-x-generic": ["M4 1.5h5.5L13 5v9.5H4z", "M9.5 1.5V5H13", "M6 8h5M6 10.5h5M6 13h3"],
+  "text-x-generic": [
+    "M4 1.5h5.5L13 5v9.5H4z",
+    "M9.5 1.5V5H13",
+    "M6.25 7.25h4.5M6.25 9.75h4.5M6.25 12.25h2.5"
+  ],
   "x-office-spreadsheet": ["M2.5 2.5h11v11h-11z", "M2.5 6h11M2.5 9.5h11M6.5 2.5v11"],
   "x-office-presentation": ["M1.5 2.5h13v8h-13z", "M8 10.5v3M5 14.5l3-1 3 1"],
   "office-chart-line": ["M1.5 1.5v13h13", "M3.5 11l3-4 3 2 4-6"],
@@ -6127,7 +7515,7 @@ function toSvg(paths, color) {
   const stroke = color || "currentColor";
   const elements = paths.map((path) => {
     if (path.startsWith("F")) {
-      return `<path d="${path.slice(1)}" fill="${stroke}"/>`;
+      return `<path d="M${path.slice(1)}" fill="${stroke}"/>`;
     }
     return `<path d="${path}" fill="none" stroke="${stroke}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`;
   });
@@ -7184,153 +8572,30 @@ defineProperties(Button, {
 });
 registerType("button", Button);
 
-// src/i18n/locale-manager.js
-function getDefaultLocale() {
-  if (typeof navigator !== "undefined" && navigator.language) {
-    return navigator.language;
-  }
-  return Intl.DateTimeFormat().resolvedOptions().locale || "en-US";
-}
-__name(getDefaultLocale, "getDefaultLocale");
-function getNames(locale, kind, width) {
-  if (kind === "month") {
-    const format2 = new Intl.DateTimeFormat(locale, { month: width, timeZone: "UTC" });
-    return Array.from({ length: 12 }, (_x, i) => format2.format(Date.UTC(2021, i, 1)));
-  }
-  const format = new Intl.DateTimeFormat(locale, { weekday: width, timeZone: "UTC" });
-  return Array.from({ length: 7 }, (_x, i) => format.format(Date.UTC(2021, 0, 3 + i)));
-}
-__name(getNames, "getNames");
-function getFirstDayOfWeek(locale) {
-  try {
-    const info = new Intl.Locale(locale);
-    const weekInfo = info.getWeekInfo?.() || info.weekInfo;
-    if (weekInfo?.firstDay) {
-      return weekInfo.firstDay % 7;
+// src/widgets/double-press.js
+var MAX_DISTANCE = 5;
+function attachDoublePress(element, handler, options = {}) {
+  let last = null;
+  function onPointerDown(event) {
+    if (event.button !== 0) {
+      last = null;
+      return;
     }
-  } catch (_error) {
-  }
-  return /-(US|CA|JP|BR|IL|MX|PH|KR|TW|HK|IN|ZA|SA)\b/i.test(locale) ? 0 : 1;
-}
-__name(getFirstDayOfWeek, "getFirstDayOfWeek");
-function getDayPeriods(locale) {
-  const format = new Intl.DateTimeFormat(locale, {
-    hour: "numeric",
-    hourCycle: "h12",
-    timeZone: "UTC"
-  });
-  return [1, 13].map((hour, i) => {
-    const parts = format.formatToParts(Date.UTC(2021, 0, 1, hour));
-    return parts.find((x) => x.type === "dayPeriod")?.value || (i ? "PM" : "AM");
-  });
-}
-__name(getDayPeriods, "getDayPeriods");
-var LocaleManagerClass = class extends Instance {
-  static {
-    __name(this, "LocaleManagerClass");
-  }
-  _initialize() {
-    super._initialize();
-    this._locale = getDefaultLocale();
-    this._applyLocale();
-  }
-  _applyLocale() {
-    const locale = this._locale;
-    const [language, country] = locale.split(/[-_]/);
-    this._language = (language || "en").toLowerCase();
-    this._country = (country || "").toUpperCase();
-    this._shortMonthNames = getNames(locale, "month", "short");
-    this._longMonthNames = getNames(locale, "month", "long");
-    this._shortDayNames = getNames(locale, "day", "short");
-    this._longDayNames = getNames(locale, "day", "long");
-    this._firstDayOfWeek = getFirstDayOfWeek(locale);
-    [this._amDesignator, this._pmDesignator] = getDayPeriods(locale);
-    const parts = new Intl.NumberFormat(locale).formatToParts(12345.6);
-    this._decimalSeparator = parts.find((x) => x.type === "decimal")?.value || ".";
-    this._groupSeparator = parts.find((x) => x.type === "group")?.value || ",";
-  }
-};
-defineProperties(LocaleManagerClass, {
-  /**
-   * The current locale as a BCP 47 tag, e.g. `'en-US'` or `'nl-NL'`. Defaults to the browser's.
-   */
-  locale: {
-    value: "en-US",
-    coerce(locale) {
-      const tag = String(locale).replace(/_/g, "-");
-      return Intl.getCanonicalLocales(tag)[0];
-    },
-    changed() {
-      const oldLanguage = this._language;
-      this._applyLocale();
-      if (this._language !== oldLanguage) {
-        this.emit("language-change", this);
-      }
+    const key = options.key ? options.key(event) : null;
+    const now = event.timeStamp || performance.now();
+    const isDouble = last && now - last.time <= settings.multiplePressInterval && Math.hypot(event.clientX - last.x, event.clientY - last.y) <= MAX_DISTANCE && key === last.key;
+    if (isDouble) {
+      last = null;
+      handler(event);
+    } else {
+      last = { time: now, x: event.clientX, y: event.clientY, key };
     }
-  },
-  /**
-   * The language of the locale, e.g. `'en'`.
-   */
-  language: { readOnly: true },
-  /**
-   * The country (region) of the locale, e.g. `'US'`, or `''` if the locale has none.
-   */
-  country: { readOnly: true },
-  /**
-   * The short month names, January first.
-   */
-  shortMonthNames: { value: null },
-  /**
-   * The long month names, January first.
-   */
-  longMonthNames: { value: null },
-  /**
-   * The short day names, Sunday first.
-   */
-  shortDayNames: { value: null },
-  /**
-   * The long day names, Sunday first.
-   */
-  longDayNames: { value: null },
-  /**
-   * The first day of the week: 0 for Sunday, 1 for Monday and so on.
-   */
-  firstDayOfWeek: { value: 1 },
-  /**
-   * The designator of times before noon on a 12-hour clock, e.g. `'AM'`.
-   */
-  amDesignator: { value: "AM" },
-  /**
-   * The designator of times after noon on a 12-hour clock, e.g. `'PM'`.
-   */
-  pmDesignator: { value: "PM" },
-  /**
-   * The time zone dates are formatted and parsed in: an IANA time zone name such as
-   * `'Europe/Amsterdam'`, `'UTC'` (the default, like the original toolkit) or `'local'` for the
-   * time zone of the system. It does not change with the locale.
-   */
-  timeZone: {
-    value: "UTC",
-    coerce(timeZone) {
-      if (typeof timeZone !== "string") {
-        throw new TypeError("The time zone must be a string.");
-      }
-      if (timeZone === "local") {
-        return timeZone;
-      }
-      return new Intl.DateTimeFormat("en-US", { timeZone }).resolvedOptions().timeZone;
-    }
-  },
-  /**
-   * The decimal separator of numbers, e.g. `'.'`.
-   */
-  decimalSeparator: { value: "." },
-  /**
-   * The digit group (thousands) separator of numbers, e.g. `','`.
-   */
-  groupSeparator: { value: "," }
-});
-var getLocaleManager = lazySingleton(() => new LocaleManagerClass());
+  }
+  __name(onPointerDown, "onPointerDown");
+  element.addEventListener("pointerdown", onPointerDown);
+  return () => element.removeEventListener("pointerdown", onPointerDown);
+}
+__name(attachDoublePress, "attachDoublePress");
 
 // src/widgets/calendar.js
 var WEEKS = 6;
@@ -7350,17 +8615,17 @@ __name(startOfDay, "startOfDay");
 function makeDate(year, month, day) {
   const date = new Date(2e3, 0, 1);
   date.setFullYear(year, month, 1);
-  const last = getDaysInMonth(date.getFullYear(), date.getMonth());
+  const last = getDaysInMonth2(date.getFullYear(), date.getMonth());
   date.setDate(Math.min(day, last));
   return date;
 }
 __name(makeDate, "makeDate");
-function getDaysInMonth(year, month) {
+function getDaysInMonth2(year, month) {
   const date = new Date(2e3, 0, 1);
   date.setFullYear(year, month + 1, 0);
   return date.getDate();
 }
-__name(getDaysInMonth, "getDaysInMonth");
+__name(getDaysInMonth2, "getDaysInMonth");
 function compareDays(first, second) {
   return first.getFullYear() - second.getFullYear() || first.getMonth() - second.getMonth() || first.getDate() - second.getDate();
 }
@@ -7407,7 +8672,9 @@ var Calendar = class extends Widget {
     this._headerEl.addEventListener("pointerdown", (event) => this._onHeaderPointerDown(event));
     this._gridEl.addEventListener("pointerdown", (event) => this._onGridPointerDown(event));
     this._gridEl.addEventListener("click", (event) => this._onGridClick(event));
-    this._gridEl.addEventListener("dblclick", (event) => this._onGridDoubleClick(event));
+    attachDoublePress(this._gridEl, (event) => this._onGridDoubleClick(event), {
+      key: /* @__PURE__ */ __name((event) => event.target.closest?.(".wy-calendar-day") || null, "key")
+    });
     this._gridEl.addEventListener("keydown", (event) => {
       if (this.handleKey(event)) {
         event.preventDefault();
@@ -7423,7 +8690,7 @@ var Calendar = class extends Widget {
   }
   _render() {
     const monthId = uniqueId("wy-calendar-month");
-    const navigation = /* @__PURE__ */ __name((action) => `<span class="wy-calendar-navigation" data-action="${action}" role="button" aria-label="${NAVIGATION_LABELS[action]}"></span>`, "navigation");
+    const navigation = /* @__PURE__ */ __name((action) => `<span class="wy-calendar-navigation" data-action="${action}" role="button" data-wy-label="${NAVIGATION_LABELS[action]}"></span>`, "navigation");
     const cells = Array.from({ length: WEEKS }, () => {
       const days = Array.from(
         { length: 7 },
@@ -8812,6 +10079,2560 @@ defineProperties(CheckToolItem, {
 });
 registerType("check-tool-item", CheckToolItem);
 
+// src/widgets/line-edit.js
+var EntryIconPosition = Object.freeze({
+  PRIMARY: "primary",
+  // At the start (the left in left-to-right text).
+  SECONDARY: "secondary"
+  // At the end.
+});
+function checkValidator(validator) {
+  if (validator === null || validator === void 0) {
+    return null;
+  }
+  if (typeof validator === "function" || typeof validator?.validate === "function" || typeof validator?.isValid === "function") {
+    return validator;
+  }
+  throw new TypeError("A validator must be a function or have a validate(text) method.");
+}
+__name(checkValidator, "checkValidator");
+var LineEdit = class extends Widget {
+  static {
+    __name(this, "LineEdit");
+  }
+  _initialize() {
+    super._initialize();
+    this._inputEl.addEventListener("input", () => this._onInput());
+    this._inputEl.addEventListener("keydown", (event) => this._onInputKeyDown(event));
+    this._inputEl.addEventListener("blur", () => this._onInputBlur());
+    for (const position of Object.values(EntryIconPosition)) {
+      const iconEl = this._iconEls[position];
+      iconEl.addEventListener("pointerdown", (event) => {
+        if (this._isIconActivatable(position)) {
+          this.emit("icon-press", this, position, event);
+        }
+      });
+      iconEl.addEventListener("pointerup", (event) => {
+        if (this._isIconActivatable(position)) {
+          this.emit("icon-release", this, position, event);
+        }
+      });
+    }
+    this._updateEditable();
+    this._updateAlignment();
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-line-edit wy-entry">
+                <span class="wy-line-edit-icon wy-primary" hidden></span>
+                <input class="wy-line-edit-input" type="text" autocomplete="off" spellcheck="false" />
+                <span class="wy-line-edit-icon wy-secondary" hidden></span>
+            </div>
+        `);
+    this._inputEl = element.querySelector("input");
+    this._iconEls = {
+      [EntryIconPosition.PRIMARY]: element.querySelector(".wy-primary"),
+      [EntryIconPosition.SECONDARY]: element.querySelector(".wy-secondary")
+    };
+    return element;
+  }
+  /**
+   * The native input element.
+   *
+   * @type {HTMLInputElement}
+   */
+  get focusElement() {
+    return this._inputEl;
+  }
+  /**
+   * Emits `activate`, as pressing Enter does. An invalid text is corrected first if the
+   * validator can fix it up.
+   */
+  activate() {
+    this._fixup();
+    this.emit("activate", this);
+  }
+  /**
+   * Selects a range of characters. The selection is kept when the line edit gets the focus.
+   *
+   * @param {number} start The first character.
+   * @param {number} [end] The character after the last one, or -1 (the default) for the end of
+   *     the text. When smaller than `start`, the selection extends backward.
+   */
+  selectRegion(start, end = -1) {
+    const length = this._inputEl.value.length;
+    start = Math.max(0, Math.min(start, length));
+    end = end < 0 ? length : Math.min(end, length);
+    if (end < start) {
+      this._inputEl.setSelectionRange(end, start, "backward");
+    } else {
+      this._inputEl.setSelectionRange(start, end);
+    }
+  }
+  /**
+   * Selects all text.
+   */
+  selectAll() {
+    this.selectRegion(0, -1);
+  }
+  /**
+   * Returns the selected range, or `null` if nothing is selected.
+   *
+   * @returns {{start: number, end: number} | null}
+   */
+  getSelectionBounds() {
+    const start = this._inputEl.selectionStart ?? 0;
+    const end = this._inputEl.selectionEnd ?? 0;
+    return start === end ? null : { start, end };
+  }
+  /**
+   * Returns the selected text, or `''`.
+   *
+   * @returns {string}
+   */
+  getSelectedText() {
+    const bounds = this.getSelectionBounds();
+    return bounds ? this._inputEl.value.slice(bounds.start, bounds.end) : "";
+  }
+  /**
+   * Inserts text at a position, as if typed there (subject to `maxLength`).
+   *
+   * @param {string} text
+   * @param {number} [position] The character to insert before, or -1 (the default) for the
+   *     cursor position.
+   * @returns {number} The position after the inserted text.
+   */
+  insertText(text, position = -1) {
+    const value = this._inputEl.value;
+    const at = position < 0 ? this._inputEl.selectionStart ?? value.length : position;
+    const index = Math.max(0, Math.min(at, value.length));
+    let inserted = String(text);
+    if (this._maxLength > 0) {
+      inserted = inserted.slice(0, Math.max(0, this._maxLength - value.length));
+    }
+    this.text = value.slice(0, index) + inserted + value.slice(index);
+    const end = index + inserted.length;
+    this._inputEl.setSelectionRange(end, end);
+    return end;
+  }
+  /**
+   * Deletes a range of characters.
+   *
+   * @param {number} start
+   * @param {number} [end] The character after the last one, or -1 (the default) for the end.
+   */
+  deleteText(start, end = -1) {
+    const value = this._inputEl.value;
+    start = Math.max(0, Math.min(start, value.length));
+    end = end < 0 ? value.length : Math.max(start, Math.min(end, value.length));
+    this.text = value.slice(0, start) + value.slice(end);
+    this._inputEl.setSelectionRange(start, start);
+  }
+  /**
+   * Deletes the selected text, if any.
+   */
+  deleteSelection() {
+    const bounds = this.getSelectionBounds();
+    if (bounds) {
+      this.deleteText(bounds.start, bounds.end);
+    }
+  }
+  /**
+   * Checks a text with the validator. Subclasses extend this with their own rules.
+   *
+   * @protected
+   * @param {string} text
+   * @returns {boolean}
+   */
+  _validate(text) {
+    const validator = this._validator;
+    if (!validator) {
+      return true;
+    }
+    if (typeof validator === "function") {
+      return Boolean(validator(text));
+    }
+    if (typeof validator.validate === "function") {
+      return Boolean(validator.validate(text));
+    }
+    return Boolean(validator.isValid(text));
+  }
+  /**
+   * Validates the current text and updates `isValid` and the invalid state.
+   *
+   * @protected
+   */
+  _revalidate() {
+    const valid = this._validate(this._text);
+    this.el.classList.toggle("wy-invalid", !valid);
+    if (valid) {
+      this._inputEl.removeAttribute("aria-invalid");
+    } else {
+      this._inputEl.setAttribute("aria-invalid", "true");
+    }
+    if (valid !== this._isValid) {
+      this._isValid = valid;
+      this.emit("is-valid-change", this);
+    }
+  }
+  /**
+   * Lets the validator correct an invalid text.
+   *
+   * @protected
+   */
+  _fixup() {
+    const validator = this._validator;
+    if (this._isValid || typeof validator?.fixup !== "function") {
+      return;
+    }
+    const fixed = validator.fixup(this._text);
+    if (typeof fixed === "string") {
+      this.text = fixed;
+    }
+  }
+  /**
+   * Called after the text changed, by the user or programmatically. Emits `change`.
+   *
+   * @protected
+   * @param {string} _text
+   */
+  _onTextChange(_text) {
+    this.emit("change", this);
+  }
+  /**
+   * Puts a text in the input. When the input has the focus, the selection is kept as far as
+   * possible, and a cursor at the end of the text stays at the end.
+   *
+   * @protected
+   * @param {string} text
+   */
+  _setInputValue(text) {
+    const input = this._inputEl;
+    if (input.value === text) {
+      return;
+    }
+    if (document.activeElement !== input) {
+      input.value = text;
+      return;
+    }
+    const oldLength = input.value.length;
+    const start = input.selectionStart ?? oldLength;
+    const end = input.selectionEnd ?? oldLength;
+    const direction = input.selectionDirection || "none";
+    input.value = text;
+    if (start === oldLength && end === oldLength) {
+      input.setSelectionRange(text.length, text.length);
+    } else {
+      input.setSelectionRange(
+        Math.min(start, text.length),
+        Math.min(end, text.length),
+        direction
+      );
+    }
+  }
+  _isIconActivatable(position) {
+    return this.isSensitive && Boolean(this[`_${position}Icon`]) && this[`_${position}IconActivatable`];
+  }
+  _updateIcon(position) {
+    const element = this._iconEls[position];
+    const name = this[`_${position}Icon`];
+    const tooltip = this[`_${position}IconTooltip`];
+    const activatable = this[`_${position}IconActivatable`];
+    element.hidden = !name;
+    element.innerHTML = name ? getIcon(name) || "" : "";
+    element.classList.toggle("wy-activatable", activatable);
+    element.title = tooltip || "";
+    if (name && activatable && tooltip) {
+      element.setAttribute("role", "button");
+      element.setAttribute("aria-label", tooltip);
+      element.removeAttribute("aria-hidden");
+    } else {
+      element.removeAttribute("role");
+      element.removeAttribute("aria-label");
+      element.setAttribute("aria-hidden", "true");
+    }
+    this.el.classList.toggle(`wy-has-${position}-icon`, Boolean(name));
+  }
+  _updateEditable() {
+    const editable = this._editable && this.isSensitive;
+    this._inputEl.readOnly = !editable;
+    this.el.classList.toggle("wy-read-only", !this._editable);
+    if (this._editable) {
+      this._inputEl.removeAttribute("aria-readonly");
+    } else {
+      this._inputEl.setAttribute("aria-readonly", "true");
+    }
+    if (editable !== this._isEditable) {
+      this._isEditable = editable;
+      this.emit("is-editable-change", this);
+    }
+  }
+  _updateAlignment() {
+    const xAlign = this._xAlign;
+    const align = xAlign <= 0.25 ? "start" : xAlign >= 0.75 ? "end" : "center";
+    this._inputEl.style.textAlign = align === "start" ? "" : align;
+  }
+  _onIsSensitiveChange(isSensitive) {
+    super._onIsSensitiveChange(isSensitive);
+    this._updateEditable();
+  }
+  _onInput() {
+    const value = this._inputEl.value;
+    this.text = value;
+    this._setInputValue(this._text);
+  }
+  _onInputKeyDown(event) {
+    if (event.key === Key.ENTER && !event.isComposing && !event.altKey && !event.ctrlKey) {
+      this.activate();
+    }
+  }
+  _onInputBlur() {
+    this._fixup();
+  }
+};
+defineProperties(LineEdit, {
+  canFocus: { value: true },
+  vAlign: { value: Align.CENTER },
+  /**
+   * The text.
+   */
+  text: {
+    value: "",
+    coerce(text) {
+      text = text === null || text === void 0 ? "" : String(text);
+      text = text.replace(/\r\n|[\r\n]/g, " ");
+      if (this._maxLength > 0 && text.length > this._maxLength) {
+        text = text.slice(0, this._maxLength);
+      }
+      return text;
+    },
+    changed(text) {
+      this._setInputValue(text);
+      this._revalidate();
+      this._onTextChange(text);
+    }
+  },
+  /**
+   * The value: the text, or `null` if it is not valid. Setting it sets the text.
+   */
+  value: {
+    signal: false,
+    get() {
+      return this._isValid ? this._text : null;
+    },
+    set(value) {
+      this.text = value;
+      return false;
+    }
+  },
+  /**
+   * Text shown while the line edit is empty, as a hint.
+   */
+  placeholder: {
+    value: "",
+    changed(placeholder) {
+      this._inputEl.placeholder = placeholder || "";
+    }
+  },
+  /**
+   * Whether the user can change the text. A line edit that is not sensitive is never editable.
+   */
+  editable: {
+    value: true,
+    coerce: Boolean,
+    changed() {
+      this._updateEditable();
+    }
+  },
+  /**
+   * Whether the user can currently change the text: it is `editable` and sensitive.
+   */
+  isEditable: { value: true, readOnly: true },
+  /**
+   * Whether the text is shown. When `false`, the line edit is a password entry that shows every
+   * character as a dot.
+   */
+  visibility: {
+    value: true,
+    coerce: Boolean,
+    changed(visibility) {
+      const input = this._inputEl;
+      const focused = document.activeElement === input;
+      const start = input.selectionStart;
+      const end = input.selectionEnd;
+      const direction = input.selectionDirection || "none";
+      input.type = visibility ? "text" : "password";
+      if (focused && start !== null) {
+        input.setSelectionRange(start, end, direction);
+      }
+    }
+  },
+  /**
+   * The maximum number of characters, or 0 for no limit. A longer text is truncated.
+   */
+  maxLength: {
+    value: 0,
+    coerce(maxLength) {
+      return Math.max(0, Math.floor(Number(maxLength) || 0));
+    },
+    changed(maxLength) {
+      if (maxLength > 0) {
+        this._inputEl.maxLength = maxLength;
+      } else {
+        this._inputEl.removeAttribute("maxlength");
+      }
+      if (maxLength > 0 && this._text.length > maxLength) {
+        this.text = this._text.slice(0, maxLength);
+      }
+    }
+  },
+  /**
+   * The natural width in characters, or -1 for the default width.
+   */
+  widthChars: {
+    value: -1,
+    coerce(widthChars) {
+      return Math.max(-1, Math.floor(Number(widthChars)));
+    },
+    changed(widthChars) {
+      this.el.style.setProperty(
+        "--wy-entry-width",
+        widthChars >= 0 ? `calc(${widthChars}ch + 2px)` : null
+      );
+    }
+  },
+  /**
+   * The horizontal alignment of the text, from 0 (at the start) to 1 (at the end).
+   */
+  xAlign: {
+    value: 0,
+    coerce(xAlign) {
+      const value = Number(xAlign);
+      if (!Number.isFinite(value)) {
+        throw new RangeError(`Invalid alignment ${xAlign}.`);
+      }
+      return Math.max(0, Math.min(1, value));
+    },
+    changed() {
+      this._updateAlignment();
+      this.emit("alignment-change", this);
+    }
+  },
+  /**
+   * The alignment of the text as a `Justification`: `START`, `CENTER` or `END`. The same as
+   * `xAlign` 0, 0.5 or 1.
+   */
+  alignment: {
+    signal: false,
+    get() {
+      return this._xAlign <= 0.25 ? Justification.START : this._xAlign >= 0.75 ? Justification.END : Justification.CENTER;
+    },
+    set(alignment) {
+      const xAligns = {
+        [Justification.START]: 0,
+        [Justification.FILL]: 0,
+        [Justification.CENTER]: 0.5,
+        [Justification.END]: 1
+      };
+      if (!(alignment in xAligns)) {
+        throw new RangeError(`Invalid alignment '${alignment}'.`);
+      }
+      this.xAlign = xAligns[alignment];
+      return false;
+    }
+  },
+  /**
+   * Whether the line edit has a frame. Without one it blends into its surroundings, e.g. when
+   * editing a table cell.
+   */
+  hasFrame: {
+    value: true,
+    coerce: Boolean,
+    changed(hasFrame) {
+      this.el.classList.toggle("wy-no-frame", !hasFrame);
+    }
+  },
+  /**
+   * The border style: one of `ShadowType`. `NONE` is the same as having no frame.
+   */
+  shadowType: {
+    value: ShadowType.IN,
+    coerce(shadowType) {
+      if (!Object.values(ShadowType).includes(shadowType)) {
+        throw new RangeError(`Invalid shadow type '${shadowType}'.`);
+      }
+      return shadowType;
+    },
+    changed(shadowType) {
+      this.el.classList.toggle("wy-shadow-none", shadowType === ShadowType.NONE);
+    }
+  },
+  /**
+   * The validator of the text, or `null`: an object with a `validate(text)` method (and
+   * optionally `fixup(text)`), or a function. An invalid text is shown in the invalid state.
+   */
+  validator: {
+    value: null,
+    coerce: checkValidator,
+    changed() {
+      this._revalidate();
+    }
+  },
+  /**
+   * Whether the text is valid according to the validator.
+   */
+  isValid: { value: true, readOnly: true },
+  /**
+   * The name of the icon at the start, or `''` for none.
+   */
+  primaryIcon: {
+    value: "",
+    coerce: /* @__PURE__ */ __name((name) => name || "", "coerce"),
+    changed() {
+      this._updateIcon(EntryIconPosition.PRIMARY);
+    }
+  },
+  /**
+   * The name of the icon at the end, or `''` for none.
+   */
+  secondaryIcon: {
+    value: "",
+    coerce: /* @__PURE__ */ __name((name) => name || "", "coerce"),
+    changed() {
+      this._updateIcon(EntryIconPosition.SECONDARY);
+    }
+  },
+  /**
+   * Whether the icon at the start emits `icon-press` and `icon-release`.
+   */
+  primaryIconActivatable: {
+    value: true,
+    coerce: Boolean,
+    changed() {
+      this._updateIcon(EntryIconPosition.PRIMARY);
+    }
+  },
+  /**
+   * Whether the icon at the end emits `icon-press` and `icon-release`.
+   */
+  secondaryIconActivatable: {
+    value: true,
+    coerce: Boolean,
+    changed() {
+      this._updateIcon(EntryIconPosition.SECONDARY);
+    }
+  },
+  /**
+   * The tooltip (and accessible name) of the icon at the start.
+   */
+  primaryIconTooltip: {
+    value: "",
+    changed() {
+      this._updateIcon(EntryIconPosition.PRIMARY);
+    }
+  },
+  /**
+   * The tooltip (and accessible name) of the icon at the end.
+   */
+  secondaryIconTooltip: {
+    value: "",
+    changed() {
+      this._updateIcon(EntryIconPosition.SECONDARY);
+    }
+  },
+  /**
+   * The cursor position, as a character index.
+   */
+  cursorPosition: {
+    signal: false,
+    get() {
+      return this._inputEl.selectionEnd ?? this._inputEl.value.length;
+    },
+    set(position) {
+      const index = Math.max(0, Math.min(Number(position) || 0, this._inputEl.value.length));
+      this._inputEl.setSelectionRange(index, index);
+      return false;
+    }
+  },
+  /**
+   * The accessible name of the input, for line edits without a visible label.
+   */
+  accessibleName: {
+    value: "",
+    changed(name) {
+      if (name) {
+        this._inputEl.setAttribute("aria-label", name);
+      } else {
+        this._inputEl.removeAttribute("aria-label");
+      }
+    }
+  }
+});
+registerType("line-edit", LineEdit);
+
+// src/widgets/slider.js
+var UNROUNDED_DIGITS = 6;
+function toMark(value, position, label) {
+  const mark = {
+    value: Number(value),
+    position: checkPosition(position),
+    label: label === null || label === void 0 ? null : String(label)
+  };
+  if (!Number.isFinite(mark.value)) {
+    throw new RangeError(`Invalid mark value ${value}.`);
+  }
+  return mark;
+}
+__name(toMark, "toMark");
+function checkPosition(position) {
+  if (!Object.values(Position).includes(position)) {
+    throw new RangeError(`Invalid position '${position}'.`);
+  }
+  return position;
+}
+__name(checkPosition, "checkPosition");
+var Slider = class extends AbstractSlider {
+  static {
+    __name(this, "Slider");
+  }
+  _initialize() {
+    super._initialize();
+    this._marks = [];
+    this._formatter = null;
+    this._wheelRemainder = 0;
+    this._localeDisconnect = getLocaleManager().connect("locale-change", () => {
+      this._formatter = null;
+      this._update();
+    });
+    this._updateValuePosition();
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-slider" role="slider" tabindex="0">
+                <div class="wy-slider-value-area" aria-hidden="true">
+                    <span class="wy-slider-sizer"></span>
+                    <span class="wy-slider-sizer"></span>
+                    <span class="wy-slider-value"></span>
+                </div>
+                <div class="wy-slider-marks wy-before" aria-hidden="true"></div>
+                <div class="wy-slider-trough">
+                    <div class="wy-slider-track"></div>
+                    <div class="wy-slider-fill"></div>
+                    <div class="wy-slider-thumb"></div>
+                </div>
+                <div class="wy-slider-marks wy-after" aria-hidden="true"></div>
+            </div>
+        `);
+    this._valueAreaEl = element.querySelector(".wy-slider-value-area");
+    this._sizerEls = [...element.querySelectorAll(".wy-slider-sizer")];
+    this._valueEl = element.querySelector(".wy-slider-value");
+    this._marksEls = {
+      before: element.querySelector(".wy-slider-marks.wy-before"),
+      after: element.querySelector(".wy-slider-marks.wy-after")
+    };
+    this._troughEl = element.querySelector(".wy-slider-trough");
+    this._thumbEl = element.querySelector(".wy-slider-thumb");
+    return element;
+  }
+  /**
+   * Adds a mark along the trough.
+   *
+   * @param {number} value
+   * @param {string} [position] One of `Position`: where the mark is drawn. `TOP` and `LEFT` are
+   *     before the trough, `BOTTOM` and `RIGHT` after it. Defaults to `BOTTOM`.
+   * @param {string | null} [label] Text shown at the mark.
+   */
+  addMark(value, position = Position.BOTTOM, label = null) {
+    this._marks = [...this._marks, toMark(value, position, label)];
+    this._renderMarks();
+    this.emit("marks-change", this);
+  }
+  /**
+   * Removes all marks.
+   */
+  clearMarks() {
+    this.marks = [];
+  }
+  /**
+   * Formats a value for display. Override to show values differently.
+   *
+   * @param {number} value
+   * @returns {string}
+   */
+  formatValue(value) {
+    if (!this._formatter) {
+      const digits = this._digits < 0 ? UNROUNDED_DIGITS : this._digits;
+      this._formatter = new Intl.NumberFormat(getLocaleManager().locale, {
+        minimumFractionDigits: this._digits < 0 ? 0 : digits,
+        maximumFractionDigits: digits,
+        useGrouping: false
+      });
+    }
+    return this._formatter.format(value);
+  }
+  destroy() {
+    this._localeDisconnect();
+    super.destroy();
+  }
+  _setValueFromUser(value) {
+    if (this._digits >= 0) {
+      const factor = 10 ** this._digits;
+      value = Math.round(value * factor) / factor;
+    }
+    super._setValueFromUser(value);
+  }
+  _applyWheel(notches) {
+    this._wheelRemainder += notches;
+    const whole = Math.trunc(this._wheelRemainder);
+    if (!whole) {
+      return;
+    }
+    this._wheelRemainder -= whole;
+    super._applyWheel(whole);
+  }
+  _update() {
+    super._update();
+    const adjustment = this._adjustment;
+    const text = this.formatValue(adjustment.value);
+    this._valueEl.textContent = text;
+    this.el.setAttribute("aria-valuetext", text);
+    this._sizerEls[0].textContent = this.formatValue(adjustment.lower);
+    this._sizerEls[1].textContent = this.formatValue(adjustment.maximum);
+    this._updateMarkPositions();
+  }
+  _getMarkFraction(value) {
+    const adjustment = this._adjustment;
+    const range = adjustment.maximum - adjustment.lower;
+    const fraction = range > 0 ? clamp((value - adjustment.lower) / range, 0, 1) : 0;
+    return this._isReversed() ? 1 - fraction : fraction;
+  }
+  _renderMarks() {
+    const marks = this._marks || [];
+    for (const [side, element] of Object.entries(this._marksEls)) {
+      element.textContent = "";
+      const sideMarks = marks.filter((x) => {
+        const before = x.position === Position.TOP || x.position === Position.LEFT;
+        return side === "before" === before;
+      });
+      let hasLabels = false;
+      for (const mark of sideMarks) {
+        const markEl = document.createElement("span");
+        markEl.className = "wy-slider-mark";
+        markEl.dataset.value = String(mark.value);
+        if (mark.label) {
+          hasLabels = true;
+          const label = document.createElement("span");
+          label.className = "wy-slider-mark-label";
+          label.textContent = mark.label;
+          markEl.append(label);
+          const sizer = document.createElement("span");
+          sizer.className = "wy-slider-mark-sizer";
+          sizer.textContent = mark.label;
+          element.append(sizer);
+        }
+        element.append(markEl);
+      }
+      element.classList.toggle("wy-has-marks", sideMarks.length > 0);
+      element.classList.toggle("wy-has-labels", hasLabels);
+    }
+    this._updateMarkPositions();
+  }
+  _updateMarkPositions() {
+    if (!this._marksEls) {
+      return;
+    }
+    for (const element of Object.values(this._marksEls)) {
+      for (const mark of element.querySelectorAll(".wy-slider-mark")) {
+        const fraction = this._getMarkFraction(Number(mark.dataset.value));
+        mark.style.setProperty("--wy-mark-fraction", String(fraction));
+      }
+    }
+  }
+  _updateValuePosition() {
+    this.el.dataset.valuePos = this._valuePos;
+    this.el.classList.toggle("wy-draw-value", this._drawValue);
+    this._valueAreaEl.hidden = !this._drawValue;
+  }
+};
+defineProperties(Slider, {
+  canFocus: { value: true },
+  /**
+   * The number of decimals of the value shown. Values set by the user are rounded to it. Use -1
+   * to not round.
+   */
+  digits: {
+    value: 1,
+    coerce(digits) {
+      const value = Math.floor(Number(digits));
+      if (!(value >= -1 && value <= 20)) {
+        throw new RangeError(`Invalid number of digits ${digits}.`);
+      }
+      return value;
+    },
+    changed() {
+      this._formatter = null;
+      this._update();
+    }
+  },
+  /**
+   * Whether the value is shown next to the thumb.
+   */
+  drawValue: {
+    value: true,
+    coerce: Boolean,
+    changed() {
+      this._updateValuePosition();
+    }
+  },
+  /**
+   * Where the value is shown: one of `Position`. On the sides along the trough it follows the
+   * thumb.
+   */
+  valuePos: {
+    value: Position.TOP,
+    coerce: checkPosition,
+    changed() {
+      this._updateValuePosition();
+    }
+  },
+  /**
+   * Whether the trough is filled from the lower end up to the thumb.
+   */
+  hasOrigin: {
+    value: true,
+    coerce: Boolean,
+    changed(hasOrigin) {
+      this.el.classList.toggle("wy-no-origin", !hasOrigin);
+    }
+  },
+  /**
+   * The marks, as objects with `value`, `position` and `label`. See `addMark()`.
+   */
+  marks: {
+    get() {
+      return this._marks.map((x) => ({ ...x }));
+    },
+    set(marks) {
+      if (!Array.isArray(marks)) {
+        throw new TypeError("The marks of a slider must be an array.");
+      }
+      this._marks = marks.map((x) => toMark(x.value, x.position ?? Position.BOTTOM, x.label));
+      this._renderMarks();
+    }
+  }
+});
+registerType("slider", Slider);
+
+// src/widgets/color-chooser.js
+var TANGO_HUES = Object.freeze([
+  ["Scarlet Red", ["#ef2929", "#cc0000", "#a40000"]],
+  ["Orange", ["#fcaf3e", "#f57900", "#ce5c00"]],
+  ["Butter", ["#fce94f", "#edd400", "#c4a000"]],
+  ["Chameleon", ["#8ae234", "#73d216", "#4e9a06"]],
+  ["Sky Blue", ["#729fcf", "#3465a4", "#204a87"]],
+  ["Plum", ["#ad7fa8", "#75507b", "#5c3566"]],
+  ["Chocolate", ["#e9b96e", "#c17d11", "#8f5902"]],
+  ["Aluminium", ["#888a85", "#555753", "#2e3436"]],
+  ["Light Aluminium", ["#eeeeec", "#d3d7cf", "#babdb6"]]
+]);
+var TANGO_GRAYS = Object.freeze([
+  ["Black", "#000000"],
+  ["Very Dark Gray", "#2e3436"],
+  ["Darker Gray", "#555753"],
+  ["Medium Dark Gray", "#888a85"],
+  ["Medium Gray", "#babdb6"],
+  ["Light Gray", "#d3d7cf"],
+  ["Lighter Gray", "#eeeeec"],
+  ["Very Light Gray", "#f3f3f3"],
+  ["White", "#ffffff"]
+]);
+var DEFAULT_PALETTE = Object.freeze(
+  [
+    ...[0, 1, 2].flatMap(
+      (shade) => TANGO_HUES.map(([name, colors]) => ({
+        color: colors[shade],
+        name: ["Light ", "", "Dark "][shade] + name
+      }))
+    ),
+    ...TANGO_GRAYS.map(([name, color]) => ({ color, name }))
+  ].map((x) => Object.freeze(x))
+);
+var PLANE_STEP = 0.01;
+function toPaletteColor(entry) {
+  const text = typeof entry === "string" ? entry : entry?.color;
+  const color = normalizeColor(text);
+  if (!color) {
+    throw new TypeError(`Invalid palette color '${String(text)}'.`);
+  }
+  const name = typeof entry === "object" && entry.name ? String(entry.name) : color;
+  return { color, name };
+}
+__name(toPaletteColor, "toPaletteColor");
+function checkColor(color) {
+  const normalized = typeof color === "string" ? normalizeColor(color) : null;
+  if (!normalized) {
+    throw new TypeError(`Invalid color '${String(color)}'.`);
+  }
+  return normalized;
+}
+__name(checkColor, "checkColor");
+var ColorSwatch = class extends Widget {
+  static {
+    __name(this, "ColorSwatch");
+  }
+  _initialize() {
+    super._initialize();
+    this._syncColor();
+  }
+  _render() {
+    return createElement(`
+            <div class="wy-color-swatch" role="img">
+                <span class="wy-color-swatch-color"></span>
+            </div>
+        `);
+  }
+  _syncColor() {
+    const color = parseColor(this._color) || { r: 0, g: 0, b: 0, a: 1 };
+    this.el.style.setProperty("--wy-swatch-color", formatHex(color));
+    this.el.style.setProperty("--wy-swatch-opaque", formatHex(color, false));
+    this.el.classList.toggle("wy-translucent", color.a < 1);
+    this.el.setAttribute("aria-label", formatHex(color));
+  }
+};
+defineProperties(ColorSwatch, {
+  hAlign: { value: Align.START },
+  vAlign: { value: Align.CENTER },
+  /**
+   * The color shown, as a CSS color. It is normalized to a hex color.
+   */
+  color: {
+    value: "#000000",
+    coerce: checkColor,
+    changed() {
+      this._syncColor();
+    }
+  }
+});
+var ColorPalette = class extends Widget {
+  static {
+    __name(this, "ColorPalette");
+  }
+  _initialize() {
+    super._initialize();
+    this._cursor = -1;
+    this._listId = uniqueId("wy-color-palette");
+    this.el.id = this._listId;
+    this.el.addEventListener("pointerdown", (event) => this._onPointerDown(event));
+    this.el.addEventListener("keydown", (event) => this._onKeyDown(event));
+    attachDoublePress(this.el, (event) => this._onDoublePress(event), {
+      key: /* @__PURE__ */ __name((event) => this._getSwatchIndex(event.target), "key")
+    });
+    this._renderSwatches();
+  }
+  _render() {
+    return createElement(
+      '<div class="wy-color-palette" role="listbox" data-wy-label="Palette"></div>'
+    );
+  }
+  /**
+   * Selects the swatch at an index as if the user chose it.
+   *
+   * @protected
+   * @param {number} index
+   */
+  _choose(index) {
+    const entry = this._colors[index];
+    if (!entry) {
+      return;
+    }
+    this._cursor = index;
+    this._selected = entry.color;
+    this._syncSwatches();
+    this.emit("selected-change", this);
+    this.emit("select", this, entry.color);
+  }
+  _renderSwatches() {
+    this.el.textContent = "";
+    this.el.style.setProperty("--wy-palette-columns", String(this._columns));
+    this._colors.forEach((entry, index) => {
+      const swatch = document.createElement("div");
+      const color = parseColor(entry.color);
+      swatch.className = "wy-color-palette-swatch";
+      swatch.id = `${this._listId}-${index}`;
+      swatch.dataset.index = String(index);
+      swatch.setAttribute("role", "option");
+      swatch.setAttribute("aria-label", entry.name);
+      swatch.title = entry.name;
+      swatch.style.setProperty("--wy-swatch-color", entry.color);
+      swatch.classList.toggle("wy-light", getLuminance(color) > 0.45);
+      this.el.append(swatch);
+    });
+    this._cursor = Math.min(this._cursor, this._colors.length - 1);
+    this._syncSwatches();
+  }
+  _syncSwatches() {
+    const selected = this._selected;
+    const selectedIndex = this._colors.findIndex((x) => x.color === selected);
+    if (selectedIndex >= 0 && this._colors[this._cursor]?.color !== selected) {
+      this._cursor = selectedIndex;
+    }
+    for (const swatch of this.el.children) {
+      const index = Number(swatch.dataset.index);
+      const isSelected = this._colors[index].color === selected;
+      swatch.classList.toggle("wy-selected", isSelected);
+      swatch.classList.toggle("wy-cursor", index === this._cursor);
+      swatch.setAttribute("aria-selected", String(isSelected));
+    }
+    if (this._cursor >= 0) {
+      this.el.setAttribute("aria-activedescendant", `${this._listId}-${this._cursor}`);
+    } else {
+      this.el.removeAttribute("aria-activedescendant");
+    }
+  }
+  _getSwatchIndex(target) {
+    const swatch = target instanceof Element ? target.closest(".wy-color-palette-swatch") : null;
+    return swatch && swatch.parentElement === this.el ? Number(swatch.dataset.index) : -1;
+  }
+  _onPointerDown(event) {
+    const index = this._getSwatchIndex(event.target);
+    if (event.button !== 0 || index < 0 || !this.isSensitive) {
+      return;
+    }
+    this._choose(index);
+  }
+  _onDoublePress(event) {
+    const index = this._getSwatchIndex(event.target);
+    if (index >= 0 && this.isSensitive) {
+      this.emit("activate", this, this._colors[index].color);
+    }
+  }
+  _onKeyDown(event) {
+    if (!this.isSensitive || event.altKey || event.metaKey || event.defaultPrevented) {
+      return;
+    }
+    const count = this._colors.length;
+    const columns = this._columns;
+    const cursor = this._cursor;
+    let index;
+    switch (event.key) {
+      case Key.LEFT:
+        index = cursor - 1;
+        break;
+      case Key.RIGHT:
+        index = cursor + 1;
+        break;
+      case Key.UP:
+        index = cursor < 0 ? 0 : cursor - columns;
+        break;
+      case Key.DOWN:
+        index = cursor < 0 ? 0 : cursor + columns;
+        break;
+      case Key.HOME:
+        index = 0;
+        break;
+      case Key.END:
+        index = count - 1;
+        break;
+      case Key.ENTER:
+      case Key.SPACE:
+        if (cursor >= 0) {
+          event.preventDefault();
+          this._choose(cursor);
+          this.emit("activate", this, this._colors[cursor].color);
+        }
+        return;
+      default:
+        return;
+    }
+    event.preventDefault();
+    if (index >= 0 && index < count && index !== cursor) {
+      this._choose(index);
+      this.el.children[index]?.scrollIntoView?.({ block: "nearest" });
+    }
+  }
+};
+defineProperties(ColorPalette, {
+  canFocus: { value: true },
+  /**
+   * The colors, as palette colors with `color` and `name`.
+   */
+  colors: {
+    value: DEFAULT_PALETTE,
+    coerce(colors) {
+      if (!Array.isArray(colors)) {
+        throw new TypeError("The palette colors must be an array.");
+      }
+      return Object.freeze(colors.map(toPaletteColor));
+    },
+    changed() {
+      this._renderSwatches();
+    }
+  },
+  /**
+   * The number of swatches per row.
+   */
+  columns: {
+    value: 9,
+    coerce(columns) {
+      const value = Math.floor(Number(columns));
+      if (!(value >= 1)) {
+        throw new RangeError(`Invalid number of palette columns ${columns}.`);
+      }
+      return value;
+    },
+    changed() {
+      this._renderSwatches();
+    }
+  },
+  /**
+   * The selected hex color, or `null`. A color that is not in the palette selects no swatch.
+   */
+  selected: {
+    value: null,
+    changed() {
+      this._syncSwatches();
+    }
+  }
+});
+var ColorPlane = class extends Widget {
+  static {
+    __name(this, "ColorPlane");
+  }
+  _initialize() {
+    super._initialize();
+    this._pointerId = null;
+    this.el.addEventListener("pointerdown", (event) => this._onPointerDown(event));
+    this.el.addEventListener("pointermove", (event) => this._onPointerMove(event));
+    this.el.addEventListener("pointerup", (event) => this._onPointerUp(event));
+    this.el.addEventListener("pointercancel", (event) => this._onPointerUp(event));
+    this.el.addEventListener("keydown", (event) => this._onKeyDown(event));
+    this._sync();
+  }
+  _render() {
+    return createElement(`
+            <div class="wy-color-plane" role="slider" data-wy-label="Saturation and value" aria-valuemin="0" aria-valuemax="100">
+                <span class="wy-color-plane-marker" aria-hidden="true"></span>
+            </div>
+        `);
+  }
+  /**
+   * Sets the saturation and value because the user moved the marker, and emits `change`.
+   *
+   * @protected
+   * @param {number} saturation
+   * @param {number} value
+   */
+  _setFromUser(saturation, value) {
+    saturation = clamp(saturation, 0, 1);
+    value = clamp(value, 0, 1);
+    if (saturation === this._saturation && value === this._value) {
+      return;
+    }
+    this.set({ saturation, value });
+    this.emit("change", this);
+  }
+  _sync() {
+    const hue = hsvToRgb(this._hue, 1, 1);
+    const saturation = Math.round(this._saturation * 100);
+    const value = Math.round(this._value * 100);
+    this.el.style.setProperty("--wy-plane-hue", formatHex({ ...hue, a: 1 }));
+    this.el.style.setProperty("--wy-plane-x", String(this._saturation));
+    this.el.style.setProperty("--wy-plane-y", String(1 - this._value));
+    this.el.setAttribute("aria-valuenow", String(value));
+    this.el.setAttribute("aria-valuetext", `Saturation ${saturation}%, value ${value}%`);
+  }
+  _setFromPointer(event) {
+    const rect = this.el.getBoundingClientRect();
+    const x = rect.width > 0 ? (event.clientX - rect.left) / rect.width : 0;
+    const y = rect.height > 0 ? (event.clientY - rect.top) / rect.height : 0;
+    this._setFromUser(x, 1 - y);
+  }
+  _onPointerDown(event) {
+    if (event.button !== 0 || !this.isSensitive || this._pointerId !== null) {
+      return;
+    }
+    event.preventDefault();
+    this._pointerId = event.pointerId;
+    this.el.classList.add("wy-dragging");
+    try {
+      this.el.setPointerCapture(event.pointerId);
+    } catch (_error) {
+    }
+    this._setFromPointer(event);
+  }
+  _onPointerMove(event) {
+    if (event.pointerId === this._pointerId) {
+      this._setFromPointer(event);
+    }
+  }
+  _onPointerUp(event) {
+    if (event.pointerId === this._pointerId) {
+      this._pointerId = null;
+      this.el.classList.remove("wy-dragging");
+    }
+  }
+  _onKeyDown(event) {
+    if (!this.isSensitive || event.altKey || event.metaKey || event.defaultPrevented) {
+      return;
+    }
+    const step = event.ctrlKey ? PLANE_STEP * 10 : PLANE_STEP;
+    const saturation = this._saturation;
+    const value = this._value;
+    switch (event.key) {
+      case Key.LEFT:
+        this._setFromUser(saturation - step, value);
+        break;
+      case Key.RIGHT:
+        this._setFromUser(saturation + step, value);
+        break;
+      case Key.UP:
+        this._setFromUser(saturation, value + step);
+        break;
+      case Key.DOWN:
+        this._setFromUser(saturation, value - step);
+        break;
+      case Key.PAGE_UP:
+        this._setFromUser(saturation, value + PLANE_STEP * 10);
+        break;
+      case Key.PAGE_DOWN:
+        this._setFromUser(saturation, value - PLANE_STEP * 10);
+        break;
+      case Key.HOME:
+        this._setFromUser(0, value);
+        break;
+      case Key.END:
+        this._setFromUser(1, value);
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+  }
+};
+defineProperties(ColorPlane, {
+  canFocus: { value: true },
+  /**
+   * The hue in degrees, which colors the plane.
+   */
+  hue: {
+    value: 0,
+    coerce: Number,
+    changed() {
+      this._sync();
+    }
+  },
+  /**
+   * The saturation, from 0 at the left to 1 at the right.
+   */
+  saturation: {
+    value: 0,
+    coerce: /* @__PURE__ */ __name((x) => clamp(Number(x), 0, 1), "coerce"),
+    changed() {
+      this._sync();
+    }
+  },
+  /**
+   * The value, from 0 at the bottom to 1 at the top.
+   */
+  value: {
+    value: 1,
+    coerce: /* @__PURE__ */ __name((x) => clamp(Number(x), 0, 1), "coerce"),
+    changed() {
+      this._sync();
+    }
+  }
+});
+var ColorChooser = class extends Box {
+  static {
+    __name(this, "ColorChooser");
+  }
+  _initialize() {
+    this._hsv = { h: 0, s: 0, v: 0 };
+    this._alpha = 1;
+    this._syncing = false;
+    this._editingEntry = false;
+    super._initialize();
+    this.el.classList.add("wy-color-chooser");
+    this._palette = new ColorPalette();
+    this._palette.connect("select", (_palette, color) => this._setFromUser(color));
+    this._palette.connect("activate", (_palette, color) => this._activateColor(color));
+    this._plane = new ColorPlane({ hExpand: true, vExpand: true });
+    this._plane.connect("change", () => this._onPlaneChange());
+    this._hueSlider = new Slider({
+      orientation: Orientation.VERTICAL,
+      lower: 0,
+      upper: 360,
+      stepIncrement: 1,
+      pageIncrement: 15,
+      digits: 0,
+      drawValue: false,
+      hasOrigin: false
+    });
+    this._hueSlider.addStyleClass("wy-color-chooser-hue");
+    bindToolkitText(
+      this._hueSlider,
+      () => this._hueSlider.el.setAttribute("aria-label", toolkitText("Hue"))
+    );
+    this._hueSlider.connect("value-change", () => this._onHueChange());
+    this._alphaSlider = new Slider({
+      lower: 0,
+      upper: 100,
+      stepIncrement: 1,
+      pageIncrement: 10,
+      digits: 0,
+      drawValue: false,
+      hasOrigin: false,
+      visible: false
+    });
+    this._alphaSlider.addStyleClass("wy-color-chooser-alpha");
+    bindToolkitText(
+      this._alphaSlider,
+      () => this._alphaSlider.el.setAttribute("aria-label", toolkitText("Alpha"))
+    );
+    this._alphaSlider.connect("value-change", () => this._onAlphaChange());
+    this._preview = new ColorSwatch();
+    this._preview.addStyleClass("wy-color-chooser-preview");
+    this._entry = new LineEdit({
+      hExpand: true,
+      widthChars: 12,
+      accessibleName: toolkitText("Color name"),
+      validator: /* @__PURE__ */ __name((text) => parseColor(text) !== null, "validator")
+    });
+    this._entry.addStyleClass("wy-color-chooser-entry");
+    this._entry.connect("change", () => this._onEntryChange());
+    this._entry.connect("activate", () => this._onEntryActivate());
+    this._entry.focusElement.addEventListener("blur", () => this._syncEntry());
+    const plane = new Box({ spacing: 6, vExpand: true });
+    plane.addChild(this._plane);
+    plane.addChild(this._hueSlider);
+    const entryRow = new Box({ spacing: 6 });
+    entryRow.addChild(this._preview);
+    entryRow.addChild(this._entry);
+    this._editor = new Box({ orientation: Orientation.VERTICAL, spacing: 6, vExpand: true });
+    this._editor.addStyleClass("wy-color-chooser-editor");
+    this._editor.addChild(plane);
+    this._editor.addChild(this._alphaSlider);
+    this._editor.addChild(entryRow);
+    this.addChild(this._palette);
+    this.addChild(this._editor);
+    this.el.addEventListener("pointerdown", (event) => this._onPointerDown(event), true);
+    this.el.addEventListener("keydown", (event) => this._onKeyDown(event));
+    this._setHsv(rgbToHsv(0, 0, 0), 1);
+    this._syncAll();
+  }
+  /**
+   * The palette of swatches.
+   *
+   * @type {ColorPalette}
+   */
+  get palette() {
+    return this._palette;
+  }
+  /**
+   * The entry for typing a color.
+   *
+   * @type {LineEdit}
+   */
+  get entry() {
+    return this._entry;
+  }
+  /**
+   * Sets several properties, applying `useAlpha` before the color so that the alpha of the color
+   * is kept.
+   *
+   * @param {Record<string, unknown>} properties
+   * @returns {boolean}
+   */
+  set(properties) {
+    const { useAlpha, ...rest } = properties;
+    const alpha = useAlpha ?? properties["use-alpha"];
+    delete rest["use-alpha"];
+    let changed = alpha !== void 0 && this.setProperty("useAlpha", alpha);
+    if (super.set(rest)) {
+      changed = true;
+    }
+    return changed;
+  }
+  /**
+   * Gives the keyboard focus to the chooser: to the selected swatch of the palette, or to the
+   * square of the editor when the color is not in the palette.
+   *
+   * @returns {boolean} Whether a part got the focus.
+   */
+  focusChooser() {
+    const inPalette = this._palette.colors.some((x) => x.color === this.color);
+    const target = inPalette || !this._showEditor ? this._palette : this._plane;
+    return this._focusPart(target);
+  }
+  /**
+   * Focuses a part of the chooser. Outside a window (in a popover) the widget cannot take the
+   * focus itself, so its element is focused directly.
+   *
+   * @protected
+   * @param {Widget} widget
+   * @returns {boolean}
+   */
+  _focusPart(widget) {
+    if (!widget.isVisible || !widget.isSensitive) {
+      return false;
+    }
+    if (widget.window) {
+      return widget.focus();
+    }
+    widget.focusElement.focus({ preventScroll: true });
+    return document.activeElement === widget.focusElement;
+  }
+  _computeExpand(_direction) {
+    return false;
+  }
+  /**
+   * Sets the color because the user changed it.
+   *
+   * @protected
+   * @param {string} color
+   */
+  _setFromUser(color) {
+    this.color = color;
+  }
+  /**
+   * Activates a color: makes it the color and emits `color-activate`.
+   *
+   * @protected
+   * @param {string} color
+   */
+  _activateColor(color) {
+    this.color = color;
+    this.emit("color-activate", this, this.color);
+  }
+  /**
+   * Stores the editor state and the color it gives.
+   *
+   * @protected
+   * @param {{h: number, s: number, v: number}} hsv
+   * @param {number} alpha
+   */
+  _setHsv(hsv, alpha) {
+    this._hsv = { ...hsv };
+    this._alpha = this._useAlpha ? clamp(alpha, 0, 1) : 1;
+  }
+  /**
+   * Returns the color of the editor state.
+   *
+   * @protected
+   * @returns {string}
+   */
+  _getHsvColor() {
+    const { h, s, v } = this._hsv;
+    return formatHex({ ...hsvToRgb(h, s, v), a: this._alpha });
+  }
+  /**
+   * Applies a change of the editor state: updates the color and the other parts.
+   *
+   * @protected
+   */
+  _applyEditor() {
+    const color = this._getHsvColor();
+    if (color === this._color) {
+      this._syncAll();
+      return;
+    }
+    this._color = color;
+    this._syncAll();
+    this.emit("color-change", this);
+  }
+  _syncAll() {
+    const { h, s, v } = this._hsv;
+    const opaque = formatHex({ ...hsvToRgb(h, s, v), a: 1 });
+    this._syncing = true;
+    try {
+      this._plane.set({ hue: h, saturation: s, value: v });
+      this._hueSlider.value = h;
+      this._alphaSlider.value = Math.round(this._alpha * 100);
+    } finally {
+      this._syncing = false;
+    }
+    this.el.style.setProperty("--wy-chooser-opaque", opaque);
+    this._preview.color = this._color;
+    this._palette.selected = this._color;
+    if (!this._editingEntry) {
+      this._syncEntry();
+    }
+  }
+  _syncEntry() {
+    this._editingEntry = false;
+    if (this._entry.text !== this._color) {
+      this._syncing = true;
+      try {
+        this._entry.text = this._color;
+      } finally {
+        this._syncing = false;
+      }
+    }
+  }
+  _onPlaneChange() {
+    if (this._syncing) {
+      return;
+    }
+    this._setHsv(
+      { ...this._hsv, s: this._plane.saturation, v: this._plane.value },
+      this._alpha
+    );
+    this._applyEditor();
+  }
+  _onHueChange() {
+    if (this._syncing) {
+      return;
+    }
+    this._setHsv({ ...this._hsv, h: this._hueSlider.value % 360 }, this._alpha);
+    this._applyEditor();
+  }
+  _onAlphaChange() {
+    if (this._syncing) {
+      return;
+    }
+    this._setHsv(this._hsv, this._alphaSlider.value / 100);
+    this._applyEditor();
+  }
+  _onEntryChange() {
+    if (this._syncing) {
+      return;
+    }
+    const color = parseColor(this._entry.text);
+    if (color) {
+      this._editingEntry = true;
+      this.color = formatHex(color);
+    }
+  }
+  _onEntryActivate() {
+    const color = parseColor(this._entry.text);
+    this._editingEntry = false;
+    if (color) {
+      this._activateColor(formatHex(color));
+    }
+    this._syncEntry();
+  }
+  _onPointerDown(event) {
+    if (event.button !== 0 || !this.isSensitive) {
+      return;
+    }
+    for (const part of [this._palette, this._plane, this._hueSlider, this._alphaSlider]) {
+      if (part.el.contains(event.target)) {
+        this._focusPart(part);
+        return;
+      }
+    }
+  }
+  _onKeyDown(event) {
+    if (event.key !== Key.TAB || event.defaultPrevented || event.ctrlKey || event.altKey || event.metaKey || this.window) {
+      return;
+    }
+    const chain = this._getFocusChain();
+    if (!chain.length) {
+      return;
+    }
+    event.preventDefault();
+    const current = chain.findIndex((x) => x.focusElement.contains(document.activeElement));
+    const step = event.shiftKey ? -1 : 1;
+    let index = current >= 0 ? current : step > 0 ? -1 : 0;
+    for (let count = 0; count < chain.length; ++count) {
+      index = (index + step + chain.length) % chain.length;
+      if (this._focusPart(chain[index])) {
+        return;
+      }
+    }
+  }
+};
+defineProperties(ColorChooser, {
+  orientation: { value: Orientation.VERTICAL },
+  spacing: { value: 8 },
+  /**
+   * The color, as a CSS color. Reading it gives a hex color: `#rrggbb`, or `#rrggbbaa` when it
+   * is translucent (only with `useAlpha`).
+   */
+  color: {
+    value: "#000000",
+    coerce(color) {
+      const parsed = typeof color === "string" ? parseColor(color) : null;
+      if (!parsed) {
+        throw new TypeError(`Invalid color '${String(color)}'.`);
+      }
+      return formatHex({ ...parsed, a: this._useAlpha ? parsed.a : 1 });
+    },
+    set(color) {
+      const parsed = parseColor(color);
+      const hsv = rgbToHsv(parsed.r, parsed.g, parsed.b);
+      if (hsv.s === 0 || hsv.v === 0) {
+        hsv.h = this._hsv.h;
+      }
+      if (hsv.v === 0) {
+        hsv.s = this._hsv.s;
+      }
+      this._color = color;
+      this._setHsv(hsv, parsed.a);
+      this._syncAll();
+    }
+  },
+  /**
+   * The color as channels: an object with `r`, `g` and `b` in [0, 255] and `a` in [0, 1].
+   * Setting it sets `color`.
+   */
+  rgba: {
+    signal: false,
+    get() {
+      return parseColor(this._color);
+    },
+    set(rgba) {
+      if (!rgba || typeof rgba !== "object") {
+        throw new TypeError("The rgba of a color chooser must be an object.");
+      }
+      this.color = formatHex({ r: rgba.r, g: rgba.g, b: rgba.b, a: rgba.a ?? 1 });
+      return false;
+    }
+  },
+  /**
+   * Whether the color can be translucent: shows the alpha slider and keeps the alpha of colors.
+   */
+  useAlpha: {
+    value: false,
+    coerce: Boolean,
+    changed(useAlpha) {
+      this._alphaSlider.visible = useAlpha;
+      this.el.classList.toggle("wy-use-alpha", useAlpha);
+      if (!useAlpha && this._alpha < 1) {
+        this._setHsv(this._hsv, 1);
+        this._applyEditor();
+      }
+    }
+  },
+  /**
+   * Whether the editor (the square, the sliders and the entry) is shown below the palette.
+   */
+  showEditor: {
+    value: true,
+    coerce: Boolean,
+    changed(showEditor) {
+      this._editor.visible = showEditor;
+    }
+  },
+  /**
+   * The colors of the palette: CSS colors, or objects with `color` and `name`. Reading gives
+   * objects with a hex `color` and a `name`. Defaults to `DEFAULT_PALETTE`.
+   */
+  paletteColors: {
+    get() {
+      return this._palette.colors;
+    },
+    set(colors) {
+      this._palette.colors = colors ?? DEFAULT_PALETTE;
+      this._palette.selected = this._color;
+    }
+  },
+  /**
+   * The number of swatches per row of the palette.
+   */
+  paletteColumns: {
+    get() {
+      return this._palette.columns;
+    },
+    set(columns) {
+      this._palette.columns = columns;
+    }
+  }
+});
+registerType("color-chooser", ColorChooser);
+registerType("color-swatch", ColorSwatch);
+
+// src/widgets/window.js
+var RESIZE_CURSORS = Object.freeze({
+  n: CursorShape.RESIZE_N,
+  ne: CursorShape.RESIZE_NE,
+  e: CursorShape.RESIZE_E,
+  se: CursorShape.RESIZE_SE,
+  s: CursorShape.RESIZE_S,
+  sw: CursorShape.RESIZE_SW,
+  w: CursorShape.RESIZE_W,
+  nw: CursorShape.RESIZE_NW
+});
+var Window = class extends AbstractWindow {
+  static {
+    __name(this, "Window");
+  }
+  _initialize() {
+    super._initialize();
+    this._placed = false;
+    this._userSize = null;
+    this._restoreRect = null;
+    this._overlayEl = null;
+    this._gesture = null;
+    this._onScreenSizeChange = this._onScreenSizeChange.bind(this);
+    getScreen().connect("size-change", this._onScreenSizeChange);
+    this._headerEl.addEventListener("pointerdown", (event) => this._onHeaderPointerDown(event));
+    attachDoublePress(this._headerEl, (event) => this._onHeaderDoubleClick(event));
+    for (const button of this._headerEl.querySelectorAll("button")) {
+      button.addEventListener(
+        "click",
+        () => this._onHeaderButtonClick(button.dataset.action)
+      );
+    }
+    for (const resizer of this.el.querySelectorAll("[data-resize]")) {
+      resizer.addEventListener(
+        "pointerdown",
+        (event) => this._onResizerPointerDown(event, resizer.dataset.resize)
+      );
+    }
+    this._syncDecorations();
+  }
+  _render() {
+    const titleId = uniqueId("wy-window-title");
+    const element = createElement(`
+            <div class="wy-window" role="dialog" aria-labelledby="${titleId}">
+                <div class="wy-window-header">
+                    <div class="wy-window-title" id="${titleId}"></div>
+                    <div class="wy-window-buttons">
+                        <button type="button" class="wy-window-button wy-window-maximize" data-action="maximize" tabindex="-1" data-wy-label="Maximize"></button>
+                        <button type="button" class="wy-window-button wy-window-restore" data-action="restore" tabindex="-1" data-wy-label="Restore"></button>
+                        <button type="button" class="wy-window-button wy-window-close" data-action="close" tabindex="-1" data-wy-label="Close"></button>
+                    </div>
+                </div>
+                <div class="wy-window-body"></div>
+                <div class="wy-window-resizer" data-resize="n"></div>
+                <div class="wy-window-resizer" data-resize="e"></div>
+                <div class="wy-window-resizer" data-resize="s"></div>
+                <div class="wy-window-resizer" data-resize="w"></div>
+                <div class="wy-window-resizer" data-resize="ne"></div>
+                <div class="wy-window-resizer" data-resize="se"></div>
+                <div class="wy-window-resizer" data-resize="sw"></div>
+                <div class="wy-window-resizer" data-resize="nw"></div>
+                <div class="wy-window-grip" data-resize="se"></div>
+            </div>
+        `);
+    this._headerEl = element.querySelector(".wy-window-header");
+    this._titleEl = element.querySelector(".wy-window-title");
+    this._bodyEl = element.querySelector(".wy-window-body");
+    return element;
+  }
+  /**
+   * Moves the window. The same as setting `position`.
+   *
+   * @param {number} x
+   * @param {number} y
+   */
+  move(x, y) {
+    this.position = { x, y };
+  }
+  /**
+   * Resizes the window.
+   *
+   * @param {number} width
+   * @param {number} height
+   */
+  resize(width, height) {
+    this._userSize = { width, height };
+    this._applySize();
+    this._constrain();
+    this.emit("size-change", this);
+  }
+  /**
+   * Centers the window on the screen, or over `transientFor` if set.
+   */
+  center() {
+    const size = this._getSize();
+    const screen = getScreen().size;
+    let x = (screen.width - size.width) / 2;
+    let y = (screen.height - size.height) / 2;
+    const parent = this._transientFor;
+    if (parent?.visible && !parent.el.classList.contains("wy-main-window")) {
+      const rect = parent.el.getBoundingClientRect();
+      x = rect.left + (rect.width - size.width) / 2;
+      y = rect.top + (rect.height - size.height) / 3;
+    }
+    this._setPosition(Math.round(x), Math.round(y));
+  }
+  /**
+   * Requests to close the window, as if the close button was clicked. Handlers of
+   * `close-request` can cancel it by returning `true`.
+   *
+   * @returns {boolean} Whether the window closed.
+   */
+  close() {
+    if (this.emit("close-request", this)) {
+      return false;
+    }
+    this.emit("close", this);
+    if (this.destroyed) {
+      return true;
+    }
+    if (this._destroyOnClose) {
+      this.destroy();
+    } else {
+      this.hide();
+    }
+    return true;
+  }
+  destroy() {
+    getScreen().disconnect("size-change", this._onScreenSizeChange);
+    this._endGesture();
+    this._overlayEl?.remove();
+    super.destroy();
+  }
+  _onVisibleChange(visible) {
+    if (visible) {
+      getScreen().layer.append(this.el);
+    }
+    super._onVisibleChange(visible);
+    if (visible) {
+      this._raise();
+      this._syncOverlay();
+      if (!this._placed) {
+        this._placed = true;
+        if (this._x < 0 || this._y < 0) {
+          const x = this._x;
+          const y = this._y;
+          this.center();
+          this._setPosition(x < 0 ? this._x : x, y < 0 ? this._y : y);
+        } else {
+          this._setPosition(this._x, this._y);
+        }
+      }
+      this._constrain();
+    } else {
+      this._endGesture();
+      this._syncOverlay();
+      this.el.remove();
+    }
+  }
+  _raise() {
+    if (!this._visible) {
+      return;
+    }
+    const screen = getScreen();
+    if (this._modal && this._overlayEl) {
+      this._overlayEl.style.zIndex = String(screen.nextZIndex());
+    }
+    this.el.style.zIndex = String(screen.nextZIndex());
+  }
+  _syncOverlay() {
+    const wanted = this._modal && this._visible;
+    if (wanted && !this._overlayEl) {
+      this._overlayEl = createElement('<div class="wy-overlay"></div>');
+      this._overlayEl.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        this._blink();
+      });
+    }
+    if (wanted) {
+      this.el.before(this._overlayEl);
+      this._overlayEl.style.zIndex = String(Math.max(0, this.zIndex - 1));
+    } else {
+      this._overlayEl?.remove();
+    }
+  }
+  _applyLayoutStyle() {
+    this._applySize();
+  }
+  _applySize() {
+    const style = this.el.style;
+    const size = this._userSize || { width: this._width, height: this._height };
+    style.width = size.width >= 0 ? `${size.width}px` : "";
+    style.height = size.height >= 0 ? `${size.height}px` : "";
+  }
+  _getSize() {
+    return { width: this.el.offsetWidth, height: this.el.offsetHeight };
+  }
+  _setPosition(x, y) {
+    this._x = x;
+    this._y = y;
+    this.el.style.left = `${x}px`;
+    this.el.style.top = `${y}px`;
+  }
+  _constrain() {
+    if (!this._visible || this._maximized) {
+      return;
+    }
+    const screen = getScreen().size;
+    const size = this._getSize();
+    if (size.width > screen.width || size.height > screen.height) {
+      this._userSize = this._userSize || { ...size };
+    }
+    if (this._userSize) {
+      let changed = false;
+      if (size.width > screen.width) {
+        this._userSize.width = screen.width;
+        changed = true;
+      }
+      if (size.height > screen.height) {
+        this._userSize.height = screen.height;
+        changed = true;
+      }
+      if (changed) {
+        this._applySize();
+      }
+    }
+    const width = Math.min(this.el.offsetWidth, screen.width);
+    const height = Math.min(this.el.offsetHeight, screen.height);
+    this._setPosition(
+      clamp(this._x, 0, Math.max(0, screen.width - width)),
+      clamp(this._y, 0, Math.max(0, screen.height - height))
+    );
+  }
+  _syncDecorations() {
+    const decorated = this._decorated;
+    const resizable = this._resizable && decorated && !this._maximized;
+    this.el.classList.toggle("wy-undecorated", !decorated);
+    this.el.classList.toggle("wy-resizable", resizable);
+    this.el.classList.toggle("wy-maximized", this._maximized);
+    this.el.classList.toggle("wy-has-grip", resizable && this._hasResizeGrip);
+    this.el.classList.toggle("wy-closable", this._closable);
+    this.el.classList.toggle("wy-maximizable", this._maximizable);
+  }
+  _onScreenSizeChange() {
+    this._constrain();
+  }
+  _onHeaderButtonClick(action) {
+    switch (action) {
+      case "close":
+        this.close();
+        break;
+      case "maximize":
+        this.maximized = true;
+        break;
+      case "restore":
+        this.maximized = false;
+        break;
+    }
+  }
+  _onHeaderDoubleClick(event) {
+    if (event.target.closest("button") || !this._maximizable) {
+      return;
+    }
+    this.maximized = !this._maximized;
+  }
+  _onHeaderPointerDown(event) {
+    if (event.button !== MouseButton.PRIMARY - 1 || event.target.closest("button")) {
+      return;
+    }
+    if (!this._movable || this._maximized) {
+      return;
+    }
+    const rect = this.el.getBoundingClientRect();
+    this._startGesture(
+      event,
+      CursorShape.MOVE,
+      (moveEvent) => {
+        const screen = getScreen().size;
+        const x = moveEvent.clientX - (event.clientX - rect.left);
+        const y = moveEvent.clientY - (event.clientY - rect.top);
+        this._setPosition(
+          Math.round(clamp(x, 0, Math.max(0, screen.width - rect.width))),
+          Math.round(clamp(y, 0, Math.max(0, screen.height - rect.height)))
+        );
+      },
+      () => this.emit("position-change", this)
+    );
+  }
+  _onResizerPointerDown(event, direction) {
+    if (event.button !== MouseButton.PRIMARY - 1 || !this._resizable || this._maximized) {
+      return;
+    }
+    event.stopPropagation();
+    const start = this.el.getBoundingClientRect();
+    const screen = getScreen().size;
+    this._startGesture(
+      event,
+      RESIZE_CURSORS[direction],
+      (moveEvent) => {
+        const dx = clamp(moveEvent.clientX, 0, screen.width) - event.clientX;
+        const dy = clamp(moveEvent.clientY, 0, screen.height) - event.clientY;
+        let width = start.width;
+        let height = start.height;
+        if (direction.includes("e")) {
+          width = start.width + dx;
+        } else if (direction.includes("w")) {
+          width = start.width - dx;
+        }
+        if (direction.includes("s")) {
+          height = start.height + dy;
+        } else if (direction.includes("n")) {
+          height = start.height - dy;
+        }
+        this._userSize = { width: Math.round(width), height: Math.round(height) };
+        this._applySize();
+        const actual = this._getSize();
+        const x = direction.includes("w") ? start.right - actual.width : start.left;
+        const y = direction.includes("n") ? start.bottom - actual.height : start.top;
+        this._setPosition(Math.round(x), Math.round(y));
+      },
+      () => {
+        this._userSize = this._getSize();
+        this._applySize();
+        this.emit("size-change", this);
+      }
+    );
+  }
+  _startGesture(event, shape, onMove, onEnd) {
+    this._endGesture();
+    const target = event.currentTarget;
+    target.setPointerCapture(event.pointerId);
+    const move = /* @__PURE__ */ __name((moveEvent) => onMove(moveEvent), "move");
+    const end = /* @__PURE__ */ __name(() => {
+      this._endGesture();
+      onEnd?.();
+    }, "end");
+    target.addEventListener("pointermove", move);
+    target.addEventListener("pointerup", end);
+    target.addEventListener("pointercancel", end);
+    getCursor().pushShape(shape, "window");
+    this._gesture = { target, move, end };
+    event.preventDefault();
+  }
+  _endGesture() {
+    const gesture = this._gesture;
+    if (!gesture) {
+      return;
+    }
+    this._gesture = null;
+    gesture.target.removeEventListener("pointermove", gesture.move);
+    gesture.target.removeEventListener("pointerup", gesture.end);
+    gesture.target.removeEventListener("pointercancel", gesture.end);
+    getCursor().popShape("window");
+  }
+};
+defineProperties(Window, {
+  title: {
+    value: "",
+    changed(title) {
+      this._titleEl.textContent = title;
+    }
+  },
+  /**
+   * The position of the window's top-left corner on the screen, as `{x, y}`. A negative
+   * coordinate centers the window in that direction when it is first shown.
+   */
+  position: {
+    get() {
+      return { x: this._x, y: this._y };
+    },
+    set(position) {
+      if (position.x === this._x && position.y === this._y) {
+        return false;
+      }
+      this._placed = this._visible || this._placed;
+      if (this._visible) {
+        this._setPosition(position.x, position.y);
+        this._constrain();
+      } else {
+        this._x = position.x;
+        this._y = position.y;
+      }
+    }
+  },
+  /**
+   * The x coordinate of the window, or -1 to center it.
+   */
+  x: {
+    value: -1,
+    signal: false,
+    set(x) {
+      this.position = { x, y: this._y };
+      return false;
+    }
+  },
+  /**
+   * The y coordinate of the window, or -1 to center it.
+   */
+  y: {
+    value: -1,
+    signal: false,
+    set(y) {
+      this.position = { x: this._x, y };
+      return false;
+    }
+  },
+  /**
+   * The window whose top this window floats on, e.g. the parent of a dialog. It is centered over
+   * it when first shown.
+   */
+  transientFor: { value: null },
+  /**
+   * Whether the window fills the screen. Only has an effect when `maximizable`.
+   */
+  maximized: {
+    value: false,
+    set(maximized) {
+      if (maximized && !this._maximizable) {
+        return false;
+      }
+      if (maximized) {
+        this._restoreRect = {
+          x: this._x,
+          y: this._y,
+          size: this._userSize && { ...this._userSize }
+        };
+      }
+      this._maximized = maximized;
+      this._syncDecorations();
+      if (!maximized && this._restoreRect) {
+        this._userSize = this._restoreRect.size;
+        this._applySize();
+        this._setPosition(this._restoreRect.x, this._restoreRect.y);
+        this._constrain();
+        this._restoreRect = null;
+      }
+    }
+  },
+  /**
+   * Whether the window can be maximized. Shows or hides the maximize button.
+   */
+  maximizable: {
+    value: true,
+    changed(maximizable) {
+      if (!maximizable && this._maximized) {
+        this.maximized = false;
+      }
+      this._syncDecorations();
+    }
+  },
+  /**
+   * Whether the user can resize the window.
+   */
+  resizable: {
+    value: true,
+    changed() {
+      this._syncDecorations();
+    }
+  },
+  /**
+   * Whether the window has a close button.
+   */
+  closable: {
+    value: true,
+    changed() {
+      this._syncDecorations();
+    }
+  },
+  /**
+   * Whether the user can move the window by dragging its title bar.
+   */
+  movable: { value: true },
+  /**
+   * Whether closing destroys the window. If `false`, closing hides it, so it can be shown again.
+   */
+  destroyOnClose: { value: true },
+  modal: {
+    value: false,
+    changed() {
+      this._syncOverlay();
+      this._raise();
+    }
+  },
+  /**
+   * The opacity of the window, from 0 to 1.
+   */
+  opacity: {
+    value: 1,
+    coerce(opacity) {
+      return clamp(Number(opacity), 0, 1);
+    },
+    changed(opacity) {
+      this.el.style.opacity = opacity === 1 ? "" : String(opacity);
+    }
+  },
+  /**
+   * Whether the window has a title bar and border. Undecorated windows cannot be resized by the
+   * user.
+   */
+  decorated: {
+    value: true,
+    changed() {
+      this._syncDecorations();
+    }
+  },
+  /**
+   * Whether a resizable window shows a resize grip in its bottom-right corner.
+   */
+  hasResizeGrip: {
+    value: true,
+    changed() {
+      this._syncDecorations();
+    }
+  }
+});
+registerType("window", Window);
+
+// src/widgets/dialog.js
+var RESPONSE_LABELS = Object.freeze({
+  [Response.OK]: "_OK",
+  [Response.CANCEL]: "_Cancel",
+  [Response.CLOSE]: "_Close",
+  [Response.YES]: "_Yes",
+  [Response.NO]: "_No",
+  [Response.APPLY]: "_Apply",
+  [Response.HELP]: "_Help"
+});
+var RESPONSES = new Set(Object.values(Response));
+var ESCAPE_RESPONSES = [Response.CANCEL, Response.CLOSE, Response.NO];
+var Dialog = class extends Window {
+  static {
+    __name(this, "Dialog");
+  }
+  _initialize() {
+    super._initialize();
+    this._buttons = /* @__PURE__ */ new Map();
+    this._runResolvers = [];
+    this._responding = 0;
+    this._closeAfterResponse = false;
+    this._parentHandler = null;
+    this.el.classList.add("wy-dialog");
+    this._vbox = new Box({ orientation: Orientation.VERTICAL });
+    this._vbox.addStyleClass("wy-dialog-vbox");
+    this._contentArea = new Box({
+      orientation: Orientation.VERTICAL,
+      spacing: 6,
+      vExpand: true
+    });
+    this._contentArea.addStyleClass("wy-dialog-content");
+    this._actionArea = new ButtonBox({ layoutStyle: ButtonBoxStyle.END, spacing: 6 });
+    this._actionArea.addStyleClass("wy-dialog-actions");
+    this._vbox.addChild(this._contentArea);
+    this._vbox.addChild(this._actionArea);
+    this.insertChild(this._vbox, 0);
+    this.el.addEventListener("keydown", (event) => this._onDialogKeyDown(event));
+    this.connect("close", () => {
+      if (!this._responding && !this._closeAfterResponse) {
+        this.response(Response.NONE);
+      }
+    });
+  }
+  /**
+   * The vertical box for the content, above the buttons.
+   *
+   * @type {Box}
+   */
+  get contentArea() {
+    return this._contentArea;
+  }
+  /**
+   * The button box with the buttons.
+   *
+   * @type {ButtonBox}
+   */
+  get actionArea() {
+    return this._actionArea;
+  }
+  /**
+   * Adds a widget to the content area.
+   *
+   * @param {Widget} widget
+   * @returns {Widget}
+   */
+  addChild(widget) {
+    return this._contentArea.addChild(widget);
+  }
+  /**
+   * Adds a button for a response. The label defaults to the standard label of the response
+   * (such as `'_OK'`); underscores mark mnemonics. The argument order is the original
+   * toolkit's; `addButton(label, response)` works as well when `response` is a standard
+   * `Response` and `label` is not.
+   *
+   * @param {string} response The response id.
+   * @param {string | Button} [label] The label, or a button to use.
+   * @returns {Widget} The button.
+   * @throws {Error} If there already is a button for the response.
+   */
+  addButton(response, label) {
+    if (typeof label === "string" && RESPONSES.has(label) && !RESPONSES.has(response) && !this._buttons.has(label)) {
+      [response, label] = [label, response];
+    }
+    if (label instanceof Widget) {
+      return this.addActionWidget(label, response);
+    }
+    const button = new Button({ label: label ?? String(response), useUnderline: true });
+    if (label === void 0 || label === null) {
+      const standard = RESPONSE_LABELS[response];
+      if (standard) {
+        bindToolkitText(button, () => button.label = toolkitText(standard));
+      }
+    }
+    return this.addActionWidget(button, response);
+  }
+  /**
+   * Adds buttons, as `[response, label]` pairs.
+   *
+   * @param {...([string, string?] | string)} buttons
+   */
+  addButtons(...buttons) {
+    for (const button of buttons) {
+      if (Array.isArray(button)) {
+        this.addButton(button[0], button[1]);
+      } else {
+        this.addButton(button);
+      }
+    }
+  }
+  /**
+   * Adds a widget to the action area for a response. Buttons emit the response when
+   * activated. A Help button is placed apart, at the other end.
+   *
+   * @param {Widget} widget
+   * @param {string} response
+   * @returns {Widget} The widget.
+   * @throws {Error} If there already is a widget for the response.
+   */
+  addActionWidget(widget, response) {
+    response = String(response);
+    if (this._buttons.has(response)) {
+      throw new Error(`The dialog already has a button for response '${response}'.`);
+    }
+    this._actionArea.addChild(widget);
+    this._buttons.set(response, widget);
+    if (response === Response.HELP) {
+      this._actionArea.setChildSecondary(widget, true);
+    }
+    if (typeof widget.activate === "function") {
+      widget.connect("activate", () => this.response(response));
+    }
+    widget.connect("destroy", () => {
+      if (this._buttons.get(response) === widget) {
+        this._buttons.delete(response);
+      }
+    });
+    if (response === this._defaultResponse && "isDefault" in widget) {
+      widget.isDefault = true;
+    }
+    return widget;
+  }
+  /**
+   * Removes (and destroys) the button of a response.
+   *
+   * @param {string} response
+   * @throws {Error} If there is no button for the response.
+   */
+  removeButton(response) {
+    const button = this._buttons.get(response);
+    if (!button) {
+      throw new Error(`The dialog has no button for response '${response}'.`);
+    }
+    this._buttons.delete(response);
+    button.destroy();
+  }
+  /**
+   * Returns the button of a response, or `null`.
+   *
+   * @param {string} response
+   * @returns {Widget | null}
+   */
+  getButton(response) {
+    return this._buttons.get(response) || null;
+  }
+  /**
+   * Returns the button of a response, or `null`. GTK's name of `getButton()`.
+   *
+   * @param {string} response
+   * @returns {Widget | null}
+   */
+  getWidgetForResponse(response) {
+    return this.getButton(response);
+  }
+  /**
+   * Makes the button of a response sensitive or not.
+   *
+   * @param {string} response
+   * @param {boolean} sensitive
+   */
+  setResponseSensitive(response, sensitive) {
+    const button = this._buttons.get(response);
+    if (button) {
+      button.sensitive = sensitive;
+    }
+  }
+  /**
+   * Gives a response: emits `response`, and settles the promise of `run()`.
+   *
+   * @param {string} response
+   */
+  response(response) {
+    this._settle(response);
+    this._responding += 1;
+    try {
+      this.emit("response", this, response);
+    } finally {
+      this._responding -= 1;
+    }
+  }
+  /**
+   * Shows the dialog modally and waits for a response. The dialog closes after the response.
+   *
+   * @returns {Promise<string>} The response; `Response.NONE` when the dialog was closed
+   *     otherwise.
+   */
+  run() {
+    if (this.destroyed) {
+      return Promise.reject(new Error("The dialog has been destroyed."));
+    }
+    const wasModal = this._modal;
+    this.modal = true;
+    const promise = new Promise((resolve) => this._runResolvers.push(resolve));
+    this.present();
+    return promise.then((response) => {
+      if (!this.destroyed) {
+        this.modal = wasModal;
+        if (this._visible) {
+          this._closeAfterResponse = true;
+          try {
+            this.close();
+          } finally {
+            this._closeAfterResponse = false;
+          }
+        }
+      }
+      return response;
+    });
+  }
+  destroy() {
+    if (this.destroyed) {
+      return;
+    }
+    this._parentHandler?.();
+    this._parentHandler = null;
+    super.destroy();
+    this._settle(Response.NONE);
+  }
+  _onVisibleChange(visible) {
+    super._onVisibleChange(visible);
+    const button = this._defaultResponse !== null && this._buttons.get(this._defaultResponse);
+    const focusWidget = this._focusWidget;
+    if (visible && button && (!focusWidget || this._actionArea.isAncestorOf(focusWidget)) && button !== focusWidget) {
+      button.focus();
+    }
+  }
+  _settle(response) {
+    const resolvers = this._runResolvers;
+    this._runResolvers = [];
+    for (const resolve of resolvers) {
+      resolve(response);
+    }
+  }
+  _onDialogKeyDown(event) {
+    if (event.key !== Key.ESCAPE || event.defaultPrevented || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) {
+      return;
+    }
+    const source = Widget.fromElement(event.target);
+    if (source && source.window !== this) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    for (const response of ESCAPE_RESPONSES) {
+      const button = this._buttons.get(response);
+      if (button && button.isVisible && button.isSensitive) {
+        this.response(response);
+        return;
+      }
+    }
+    if (this._closable) {
+      this.close();
+    }
+  }
+  _syncDefaultButton(response, oldResponse) {
+    const old = oldResponse !== null ? this._buttons.get(oldResponse) : null;
+    if (old && "isDefault" in old) {
+      old.isDefault = false;
+    }
+    const button = response !== null ? this._buttons.get(response) : null;
+    if (button && "isDefault" in button) {
+      button.isDefault = true;
+    }
+  }
+  _syncParentHandler() {
+    this._parentHandler?.();
+    this._parentHandler = null;
+    const parent = this._transientFor;
+    if (parent && this._destroyWithParent) {
+      this._parentHandler = parent.connect("destroy", () => {
+        if (!this.destroyed) {
+          this.destroy();
+        }
+      });
+    }
+  }
+};
+defineProperties(Dialog, {
+  resizable: { value: false },
+  maximizable: { value: false },
+  /**
+   * The child of a dialog is its content: setting it replaces the content area's children.
+   */
+  child: {
+    get() {
+      return this._contentArea?.children[0] || null;
+    },
+    set(widget) {
+      this._contentArea.removeAllChildren();
+      if (widget) {
+        this._contentArea.addChild(widget);
+      }
+    }
+  },
+  /**
+   * The response whose button Enter activates, or `null`. That button is drawn as the default
+   * button.
+   */
+  defaultResponse: {
+    value: null,
+    changed(response, oldResponse) {
+      this._syncDefaultButton(response, oldResponse);
+    }
+  },
+  /**
+   * The window the dialog belongs to. The dialog is centered over it when first shown.
+   */
+  transientFor: {
+    value: null,
+    changed() {
+      this._syncParentHandler();
+    }
+  },
+  /**
+   * Whether the dialog is destroyed when its `transientFor` window is destroyed.
+   */
+  destroyWithParent: {
+    value: false,
+    changed() {
+      this._syncParentHandler();
+    }
+  }
+});
+Dialog.builderProperties = {
+  /**
+   * Adds buttons: an array of `[response, label]` pairs, response ids, or objects with a
+   * `response` and further button properties (such as `label`).
+   *
+   * @param {object} builder
+   * @param {Dialog} dialog
+   * @param {Array<string | [string, string?] | {response: string}>} buttons
+   */
+  buttons(builder, dialog, buttons) {
+    if (!Array.isArray(buttons)) {
+      throw new Error("Dialog buttons must be an array.");
+    }
+    for (const button of buttons) {
+      if (Array.isArray(button)) {
+        dialog.addButton(button[0], button[1]);
+      } else if (button && typeof button === "object") {
+        const { response, ...spec } = button;
+        if (spec.type) {
+          dialog.addActionWidget(builder.build(spec)[0], response);
+        } else {
+          dialog.addButton(response, spec.label);
+        }
+      } else {
+        dialog.addButton(button);
+      }
+    }
+  }
+};
+registerType("dialog", Dialog);
+
 // src/widgets/popover.js
 var PopoverCloseReason = Object.freeze({
   API: "api",
@@ -9137,6 +12958,262 @@ defineProperties(Popover, {
   closeOnScroll: { value: true }
 });
 registerType("popover", Popover);
+
+// src/widgets/color-button.js
+var ColorButton = class extends Button {
+  static {
+    __name(this, "ColorButton");
+  }
+  _initialize() {
+    super._initialize();
+    this._popover = null;
+    this._popoverChooser = null;
+    this._dialog = null;
+    this._dialogChooser = null;
+    this._originalColor = null;
+    this.el.classList.add("wy-color-button");
+    this.el.setAttribute("aria-haspopup", "dialog");
+    this.el.setAttribute("aria-expanded", "false");
+    this._swatch = new ColorSwatch({ hAlign: Align.CENTER });
+    this._swatch.addStyleClass("wy-color-button-swatch");
+    this.addChild(this._swatch);
+    this._syncColor();
+  }
+  /**
+   * The chooser of the open popover or dialog, or of the popover when nothing is open. It is
+   * created on first use.
+   *
+   * @type {ColorChooser}
+   */
+  get chooser() {
+    return this._dialogChooser || this._getPopoverChooser();
+  }
+  /**
+   * The popover of the chooser, or `null` before it was first opened.
+   *
+   * @type {Popover | null}
+   */
+  get popover() {
+    return this._popover;
+  }
+  /**
+   * Sets several properties, applying `useAlpha` before the color so that the alpha of the color
+   * is kept.
+   *
+   * @param {Record<string, unknown>} properties
+   * @returns {boolean}
+   */
+  set(properties) {
+    const { useAlpha, ...rest } = properties;
+    const alpha = useAlpha ?? properties["use-alpha"];
+    delete rest["use-alpha"];
+    let changed = alpha !== void 0 && this.setProperty("useAlpha", alpha);
+    if (super.set(rest)) {
+      changed = true;
+    }
+    return changed;
+  }
+  /**
+   * Opens the chooser: in a popover, or in a modal dialog with `modal`.
+   */
+  openChooser() {
+    if (!this.isSensitive || this.isChooserOpen) {
+      return;
+    }
+    if (this._modal) {
+      this._openDialog();
+    } else {
+      this._openPopover();
+    }
+  }
+  /**
+   * Closes the chooser, keeping the chosen color.
+   */
+  closeChooser() {
+    this._popover?.popdown();
+    this._dialog?.response(Response.OK);
+  }
+  destroy() {
+    this._dialog?.destroy();
+    this._popover?.destroy();
+    super.destroy();
+  }
+  _onClicked() {
+    if (this._popover?.isOpen) {
+      this._popover.popdown();
+    } else {
+      this.openChooser();
+    }
+    this.activate();
+  }
+  _getPopoverChooser() {
+    if (!this._popoverChooser) {
+      const chooser = this._createChooser();
+      chooser.connect("color-change", () => {
+        if (this._popover?.isOpen) {
+          this.color = chooser.color;
+        }
+      });
+      chooser.connect("color-activate", () => this._popover?.popdown());
+      this._popover = new Popover({ owner: this, align: "start" });
+      this._popover.addStyleClass("wy-color-button-popover");
+      this._popover.child = chooser;
+      this._popover.connect("close", (_popover, reason) => this._onPopoverClose(reason));
+      this._popoverChooser = chooser;
+    }
+    return this._popoverChooser;
+  }
+  _createChooser() {
+    return new ColorChooser({
+      useAlpha: this._useAlpha,
+      color: this._color,
+      showEditor: this._showEditor,
+      margin: 8
+    });
+  }
+  _openPopover() {
+    const chooser = this._getPopoverChooser();
+    chooser.set({ useAlpha: this._useAlpha, showEditor: this._showEditor });
+    chooser.color = this._color;
+    this._originalColor = this._color;
+    flushLayout();
+    this._popover.popup(this.el);
+    this._setExpanded(true);
+    chooser.focusChooser();
+  }
+  _onPopoverClose(reason) {
+    const original = this._originalColor;
+    this._originalColor = null;
+    this._setExpanded(false);
+    if (reason === PopoverCloseReason.ESCAPE && original !== null) {
+      this.color = original;
+    } else if (original !== null && original !== this._color) {
+      this.emit("color-set", this);
+    }
+    if (!this.destroyed && reason !== PopoverCloseReason.OWNER) {
+      this.focus();
+    }
+  }
+  _openDialog() {
+    const chooser = this._createChooser();
+    const dialog = new Dialog({ title: toolkitText(this._title), modal: true });
+    dialog.addStyleClass("wy-color-button-dialog");
+    dialog.addChild(chooser);
+    dialog.addButton(Response.CANCEL);
+    dialog.addButton(Response.OK, toolkitText("_Select"));
+    dialog.defaultResponse = Response.OK;
+    chooser.connect("color-activate", () => dialog.response(Response.OK));
+    dialog.connect("response", (_dialog, response) => {
+      this._dialog = null;
+      this._dialogChooser = null;
+      this._setExpanded(false);
+      if (response === Response.OK && chooser.color !== this._color) {
+        this.color = chooser.color;
+        this.emit("color-set", this);
+      }
+      if (!dialog.destroyed) {
+        dialog.close();
+      }
+      if (!this.destroyed && this.isVisible && this.isSensitive) {
+        this.hasFocus = true;
+      }
+    });
+    this._dialog = dialog;
+    this._dialogChooser = chooser;
+    this._setExpanded(true);
+    flushLayout();
+    dialog.present();
+    chooser.focusChooser();
+  }
+  _setExpanded(expanded) {
+    this.el.setAttribute("aria-expanded", String(expanded));
+    this.el.classList.toggle("wy-active", expanded);
+  }
+  _syncColor() {
+    this._swatch.color = this._color;
+    this.el.setAttribute("aria-label", `${toolkitText(this._title)}: ${this._color}`);
+  }
+};
+defineProperties(ColorButton, {
+  hAlign: { value: Align.START },
+  vAlign: { value: Align.CENTER },
+  /**
+   * The color, as a CSS color. Reading it gives a hex color: `#rrggbb`, or `#rrggbbaa` when it
+   * is translucent (only with `useAlpha`).
+   */
+  color: {
+    value: "#000000",
+    coerce(color) {
+      const parsed = typeof color === "string" ? parseColor(color) : null;
+      if (!parsed) {
+        throw new TypeError(`Invalid color '${String(color)}'.`);
+      }
+      return formatHex({ ...parsed, a: this._useAlpha ? parsed.a : 1 });
+    },
+    changed() {
+      this._syncColor();
+    }
+  },
+  /**
+   * The color as channels: an object with `r`, `g` and `b` in [0, 255] and `a` in [0, 1].
+   * Setting it sets `color`.
+   */
+  rgba: {
+    signal: false,
+    get() {
+      return parseColor(this._color);
+    },
+    set(rgba) {
+      if (!rgba || typeof rgba !== "object") {
+        throw new TypeError("The rgba of a color button must be an object.");
+      }
+      this.color = formatHex({ r: rgba.r, g: rgba.g, b: rgba.b, a: rgba.a ?? 1 });
+      return false;
+    }
+  },
+  /**
+   * Whether the color can be translucent. Turning it off makes the color opaque.
+   */
+  useAlpha: {
+    value: false,
+    coerce: Boolean,
+    changed(useAlpha) {
+      if (!useAlpha) {
+        this.color = this._color;
+      }
+    }
+  },
+  /**
+   * The title of the dialog (with `modal`), also used as the accessible name of the button.
+   */
+  title: {
+    value: "Pick a Color",
+    coerce(title) {
+      return title === null || title === void 0 ? "" : String(title);
+    },
+    changed() {
+      this._syncColor();
+    }
+  },
+  /**
+   * Whether the chooser opens in a modal dialog instead of a popover.
+   */
+  modal: { value: false, coerce: Boolean },
+  /**
+   * Whether the chooser shows its editor below the palette.
+   */
+  showEditor: { value: true, coerce: Boolean },
+  /**
+   * Whether the chooser is open.
+   */
+  isChooserOpen: {
+    readOnly: true,
+    get() {
+      return Boolean(this._dialog || this._popover?.isOpen);
+    }
+  }
+});
+registerType("color-button", ColorButton);
 
 // src/widgets/combo-box.js
 var TYPE_AHEAD_TIMEOUT = 1e3;
@@ -9914,597 +13991,6 @@ defineProperties(ComboBox, {
 });
 registerType("combo-box", ComboBox);
 
-// src/widgets/line-edit.js
-var EntryIconPosition = Object.freeze({
-  PRIMARY: "primary",
-  // At the start (the left in left-to-right text).
-  SECONDARY: "secondary"
-  // At the end.
-});
-function checkValidator(validator) {
-  if (validator === null || validator === void 0) {
-    return null;
-  }
-  if (typeof validator === "function" || typeof validator?.validate === "function" || typeof validator?.isValid === "function") {
-    return validator;
-  }
-  throw new TypeError("A validator must be a function or have a validate(text) method.");
-}
-__name(checkValidator, "checkValidator");
-var LineEdit = class extends Widget {
-  static {
-    __name(this, "LineEdit");
-  }
-  _initialize() {
-    super._initialize();
-    this._inputEl.addEventListener("input", () => this._onInput());
-    this._inputEl.addEventListener("keydown", (event) => this._onInputKeyDown(event));
-    this._inputEl.addEventListener("blur", () => this._onInputBlur());
-    for (const position of Object.values(EntryIconPosition)) {
-      const iconEl = this._iconEls[position];
-      iconEl.addEventListener("pointerdown", (event) => {
-        if (this._isIconActivatable(position)) {
-          this.emit("icon-press", this, position, event);
-        }
-      });
-      iconEl.addEventListener("pointerup", (event) => {
-        if (this._isIconActivatable(position)) {
-          this.emit("icon-release", this, position, event);
-        }
-      });
-    }
-    this._updateEditable();
-    this._updateAlignment();
-  }
-  _render() {
-    const element = createElement(`
-            <div class="wy-line-edit wy-entry">
-                <span class="wy-line-edit-icon wy-primary" hidden></span>
-                <input class="wy-line-edit-input" type="text" autocomplete="off" spellcheck="false" />
-                <span class="wy-line-edit-icon wy-secondary" hidden></span>
-            </div>
-        `);
-    this._inputEl = element.querySelector("input");
-    this._iconEls = {
-      [EntryIconPosition.PRIMARY]: element.querySelector(".wy-primary"),
-      [EntryIconPosition.SECONDARY]: element.querySelector(".wy-secondary")
-    };
-    return element;
-  }
-  /**
-   * The native input element.
-   *
-   * @type {HTMLInputElement}
-   */
-  get focusElement() {
-    return this._inputEl;
-  }
-  /**
-   * Emits `activate`, as pressing Enter does. An invalid text is corrected first if the
-   * validator can fix it up.
-   */
-  activate() {
-    this._fixup();
-    this.emit("activate", this);
-  }
-  /**
-   * Selects a range of characters. The selection is kept when the line edit gets the focus.
-   *
-   * @param {number} start The first character.
-   * @param {number} [end] The character after the last one, or -1 (the default) for the end of
-   *     the text. When smaller than `start`, the selection extends backward.
-   */
-  selectRegion(start, end = -1) {
-    const length = this._inputEl.value.length;
-    start = Math.max(0, Math.min(start, length));
-    end = end < 0 ? length : Math.min(end, length);
-    if (end < start) {
-      this._inputEl.setSelectionRange(end, start, "backward");
-    } else {
-      this._inputEl.setSelectionRange(start, end);
-    }
-  }
-  /**
-   * Selects all text.
-   */
-  selectAll() {
-    this.selectRegion(0, -1);
-  }
-  /**
-   * Returns the selected range, or `null` if nothing is selected.
-   *
-   * @returns {{start: number, end: number} | null}
-   */
-  getSelectionBounds() {
-    const start = this._inputEl.selectionStart ?? 0;
-    const end = this._inputEl.selectionEnd ?? 0;
-    return start === end ? null : { start, end };
-  }
-  /**
-   * Returns the selected text, or `''`.
-   *
-   * @returns {string}
-   */
-  getSelectedText() {
-    const bounds = this.getSelectionBounds();
-    return bounds ? this._inputEl.value.slice(bounds.start, bounds.end) : "";
-  }
-  /**
-   * Inserts text at a position, as if typed there (subject to `maxLength`).
-   *
-   * @param {string} text
-   * @param {number} [position] The character to insert before, or -1 (the default) for the
-   *     cursor position.
-   * @returns {number} The position after the inserted text.
-   */
-  insertText(text, position = -1) {
-    const value = this._inputEl.value;
-    const at = position < 0 ? this._inputEl.selectionStart ?? value.length : position;
-    const index = Math.max(0, Math.min(at, value.length));
-    let inserted = String(text);
-    if (this._maxLength > 0) {
-      inserted = inserted.slice(0, Math.max(0, this._maxLength - value.length));
-    }
-    this.text = value.slice(0, index) + inserted + value.slice(index);
-    const end = index + inserted.length;
-    this._inputEl.setSelectionRange(end, end);
-    return end;
-  }
-  /**
-   * Deletes a range of characters.
-   *
-   * @param {number} start
-   * @param {number} [end] The character after the last one, or -1 (the default) for the end.
-   */
-  deleteText(start, end = -1) {
-    const value = this._inputEl.value;
-    start = Math.max(0, Math.min(start, value.length));
-    end = end < 0 ? value.length : Math.max(start, Math.min(end, value.length));
-    this.text = value.slice(0, start) + value.slice(end);
-    this._inputEl.setSelectionRange(start, start);
-  }
-  /**
-   * Deletes the selected text, if any.
-   */
-  deleteSelection() {
-    const bounds = this.getSelectionBounds();
-    if (bounds) {
-      this.deleteText(bounds.start, bounds.end);
-    }
-  }
-  /**
-   * Checks a text with the validator. Subclasses extend this with their own rules.
-   *
-   * @protected
-   * @param {string} text
-   * @returns {boolean}
-   */
-  _validate(text) {
-    const validator = this._validator;
-    if (!validator) {
-      return true;
-    }
-    if (typeof validator === "function") {
-      return Boolean(validator(text));
-    }
-    if (typeof validator.validate === "function") {
-      return Boolean(validator.validate(text));
-    }
-    return Boolean(validator.isValid(text));
-  }
-  /**
-   * Validates the current text and updates `isValid` and the invalid state.
-   *
-   * @protected
-   */
-  _revalidate() {
-    const valid = this._validate(this._text);
-    this.el.classList.toggle("wy-invalid", !valid);
-    if (valid) {
-      this._inputEl.removeAttribute("aria-invalid");
-    } else {
-      this._inputEl.setAttribute("aria-invalid", "true");
-    }
-    if (valid !== this._isValid) {
-      this._isValid = valid;
-      this.emit("is-valid-change", this);
-    }
-  }
-  /**
-   * Lets the validator correct an invalid text.
-   *
-   * @protected
-   */
-  _fixup() {
-    const validator = this._validator;
-    if (this._isValid || typeof validator?.fixup !== "function") {
-      return;
-    }
-    const fixed = validator.fixup(this._text);
-    if (typeof fixed === "string") {
-      this.text = fixed;
-    }
-  }
-  /**
-   * Called after the text changed, by the user or programmatically. Emits `change`.
-   *
-   * @protected
-   * @param {string} _text
-   */
-  _onTextChange(_text) {
-    this.emit("change", this);
-  }
-  /**
-   * Puts a text in the input. When the input has the focus, the selection is kept as far as
-   * possible, and a cursor at the end of the text stays at the end.
-   *
-   * @protected
-   * @param {string} text
-   */
-  _setInputValue(text) {
-    const input = this._inputEl;
-    if (input.value === text) {
-      return;
-    }
-    if (document.activeElement !== input) {
-      input.value = text;
-      return;
-    }
-    const oldLength = input.value.length;
-    const start = input.selectionStart ?? oldLength;
-    const end = input.selectionEnd ?? oldLength;
-    const direction = input.selectionDirection || "none";
-    input.value = text;
-    if (start === oldLength && end === oldLength) {
-      input.setSelectionRange(text.length, text.length);
-    } else {
-      input.setSelectionRange(
-        Math.min(start, text.length),
-        Math.min(end, text.length),
-        direction
-      );
-    }
-  }
-  _isIconActivatable(position) {
-    return this.isSensitive && Boolean(this[`_${position}Icon`]) && this[`_${position}IconActivatable`];
-  }
-  _updateIcon(position) {
-    const element = this._iconEls[position];
-    const name = this[`_${position}Icon`];
-    const tooltip = this[`_${position}IconTooltip`];
-    const activatable = this[`_${position}IconActivatable`];
-    element.hidden = !name;
-    element.innerHTML = name ? getIcon(name) || "" : "";
-    element.classList.toggle("wy-activatable", activatable);
-    element.title = tooltip || "";
-    if (name && activatable && tooltip) {
-      element.setAttribute("role", "button");
-      element.setAttribute("aria-label", tooltip);
-      element.removeAttribute("aria-hidden");
-    } else {
-      element.removeAttribute("role");
-      element.removeAttribute("aria-label");
-      element.setAttribute("aria-hidden", "true");
-    }
-    this.el.classList.toggle(`wy-has-${position}-icon`, Boolean(name));
-  }
-  _updateEditable() {
-    const editable = this._editable && this.isSensitive;
-    this._inputEl.readOnly = !editable;
-    this.el.classList.toggle("wy-read-only", !this._editable);
-    if (this._editable) {
-      this._inputEl.removeAttribute("aria-readonly");
-    } else {
-      this._inputEl.setAttribute("aria-readonly", "true");
-    }
-    if (editable !== this._isEditable) {
-      this._isEditable = editable;
-      this.emit("is-editable-change", this);
-    }
-  }
-  _updateAlignment() {
-    const xAlign = this._xAlign;
-    const align = xAlign <= 0.25 ? "start" : xAlign >= 0.75 ? "end" : "center";
-    this._inputEl.style.textAlign = align === "start" ? "" : align;
-  }
-  _onIsSensitiveChange(isSensitive) {
-    super._onIsSensitiveChange(isSensitive);
-    this._updateEditable();
-  }
-  _onInput() {
-    const value = this._inputEl.value;
-    this.text = value;
-    this._setInputValue(this._text);
-  }
-  _onInputKeyDown(event) {
-    if (event.key === Key.ENTER && !event.isComposing && !event.altKey && !event.ctrlKey) {
-      this.activate();
-    }
-  }
-  _onInputBlur() {
-    this._fixup();
-  }
-};
-defineProperties(LineEdit, {
-  canFocus: { value: true },
-  vAlign: { value: Align.CENTER },
-  /**
-   * The text.
-   */
-  text: {
-    value: "",
-    coerce(text) {
-      text = text === null || text === void 0 ? "" : String(text);
-      text = text.replace(/\r\n|[\r\n]/g, " ");
-      if (this._maxLength > 0 && text.length > this._maxLength) {
-        text = text.slice(0, this._maxLength);
-      }
-      return text;
-    },
-    changed(text) {
-      this._setInputValue(text);
-      this._revalidate();
-      this._onTextChange(text);
-    }
-  },
-  /**
-   * The value: the text, or `null` if it is not valid. Setting it sets the text.
-   */
-  value: {
-    signal: false,
-    get() {
-      return this._isValid ? this._text : null;
-    },
-    set(value) {
-      this.text = value;
-      return false;
-    }
-  },
-  /**
-   * Text shown while the line edit is empty, as a hint.
-   */
-  placeholder: {
-    value: "",
-    changed(placeholder) {
-      this._inputEl.placeholder = placeholder || "";
-    }
-  },
-  /**
-   * Whether the user can change the text. A line edit that is not sensitive is never editable.
-   */
-  editable: {
-    value: true,
-    coerce: Boolean,
-    changed() {
-      this._updateEditable();
-    }
-  },
-  /**
-   * Whether the user can currently change the text: it is `editable` and sensitive.
-   */
-  isEditable: { value: true, readOnly: true },
-  /**
-   * Whether the text is shown. When `false`, the line edit is a password entry that shows every
-   * character as a dot.
-   */
-  visibility: {
-    value: true,
-    coerce: Boolean,
-    changed(visibility) {
-      const input = this._inputEl;
-      const focused = document.activeElement === input;
-      const start = input.selectionStart;
-      const end = input.selectionEnd;
-      const direction = input.selectionDirection || "none";
-      input.type = visibility ? "text" : "password";
-      if (focused && start !== null) {
-        input.setSelectionRange(start, end, direction);
-      }
-    }
-  },
-  /**
-   * The maximum number of characters, or 0 for no limit. A longer text is truncated.
-   */
-  maxLength: {
-    value: 0,
-    coerce(maxLength) {
-      return Math.max(0, Math.floor(Number(maxLength) || 0));
-    },
-    changed(maxLength) {
-      if (maxLength > 0) {
-        this._inputEl.maxLength = maxLength;
-      } else {
-        this._inputEl.removeAttribute("maxlength");
-      }
-      if (maxLength > 0 && this._text.length > maxLength) {
-        this.text = this._text.slice(0, maxLength);
-      }
-    }
-  },
-  /**
-   * The natural width in characters, or -1 for the default width.
-   */
-  widthChars: {
-    value: -1,
-    coerce(widthChars) {
-      return Math.max(-1, Math.floor(Number(widthChars)));
-    },
-    changed(widthChars) {
-      this.el.style.setProperty(
-        "--wy-entry-width",
-        widthChars >= 0 ? `calc(${widthChars}ch + 2px)` : null
-      );
-    }
-  },
-  /**
-   * The horizontal alignment of the text, from 0 (at the start) to 1 (at the end).
-   */
-  xAlign: {
-    value: 0,
-    coerce(xAlign) {
-      const value = Number(xAlign);
-      if (!Number.isFinite(value)) {
-        throw new RangeError(`Invalid alignment ${xAlign}.`);
-      }
-      return Math.max(0, Math.min(1, value));
-    },
-    changed() {
-      this._updateAlignment();
-      this.emit("alignment-change", this);
-    }
-  },
-  /**
-   * The alignment of the text as a `Justification`: `START`, `CENTER` or `END`. The same as
-   * `xAlign` 0, 0.5 or 1.
-   */
-  alignment: {
-    signal: false,
-    get() {
-      return this._xAlign <= 0.25 ? Justification.START : this._xAlign >= 0.75 ? Justification.END : Justification.CENTER;
-    },
-    set(alignment) {
-      const xAligns = {
-        [Justification.START]: 0,
-        [Justification.FILL]: 0,
-        [Justification.CENTER]: 0.5,
-        [Justification.END]: 1
-      };
-      if (!(alignment in xAligns)) {
-        throw new RangeError(`Invalid alignment '${alignment}'.`);
-      }
-      this.xAlign = xAligns[alignment];
-      return false;
-    }
-  },
-  /**
-   * Whether the line edit has a frame. Without one it blends into its surroundings, e.g. when
-   * editing a table cell.
-   */
-  hasFrame: {
-    value: true,
-    coerce: Boolean,
-    changed(hasFrame) {
-      this.el.classList.toggle("wy-no-frame", !hasFrame);
-    }
-  },
-  /**
-   * The border style: one of `ShadowType`. `NONE` is the same as having no frame.
-   */
-  shadowType: {
-    value: ShadowType.IN,
-    coerce(shadowType) {
-      if (!Object.values(ShadowType).includes(shadowType)) {
-        throw new RangeError(`Invalid shadow type '${shadowType}'.`);
-      }
-      return shadowType;
-    },
-    changed(shadowType) {
-      this.el.classList.toggle("wy-shadow-none", shadowType === ShadowType.NONE);
-    }
-  },
-  /**
-   * The validator of the text, or `null`: an object with a `validate(text)` method (and
-   * optionally `fixup(text)`), or a function. An invalid text is shown in the invalid state.
-   */
-  validator: {
-    value: null,
-    coerce: checkValidator,
-    changed() {
-      this._revalidate();
-    }
-  },
-  /**
-   * Whether the text is valid according to the validator.
-   */
-  isValid: { value: true, readOnly: true },
-  /**
-   * The name of the icon at the start, or `''` for none.
-   */
-  primaryIcon: {
-    value: "",
-    coerce: /* @__PURE__ */ __name((name) => name || "", "coerce"),
-    changed() {
-      this._updateIcon(EntryIconPosition.PRIMARY);
-    }
-  },
-  /**
-   * The name of the icon at the end, or `''` for none.
-   */
-  secondaryIcon: {
-    value: "",
-    coerce: /* @__PURE__ */ __name((name) => name || "", "coerce"),
-    changed() {
-      this._updateIcon(EntryIconPosition.SECONDARY);
-    }
-  },
-  /**
-   * Whether the icon at the start emits `icon-press` and `icon-release`.
-   */
-  primaryIconActivatable: {
-    value: true,
-    coerce: Boolean,
-    changed() {
-      this._updateIcon(EntryIconPosition.PRIMARY);
-    }
-  },
-  /**
-   * Whether the icon at the end emits `icon-press` and `icon-release`.
-   */
-  secondaryIconActivatable: {
-    value: true,
-    coerce: Boolean,
-    changed() {
-      this._updateIcon(EntryIconPosition.SECONDARY);
-    }
-  },
-  /**
-   * The tooltip (and accessible name) of the icon at the start.
-   */
-  primaryIconTooltip: {
-    value: "",
-    changed() {
-      this._updateIcon(EntryIconPosition.PRIMARY);
-    }
-  },
-  /**
-   * The tooltip (and accessible name) of the icon at the end.
-   */
-  secondaryIconTooltip: {
-    value: "",
-    changed() {
-      this._updateIcon(EntryIconPosition.SECONDARY);
-    }
-  },
-  /**
-   * The cursor position, as a character index.
-   */
-  cursorPosition: {
-    signal: false,
-    get() {
-      return this._inputEl.selectionEnd ?? this._inputEl.value.length;
-    },
-    set(position) {
-      const index = Math.max(0, Math.min(Number(position) || 0, this._inputEl.value.length));
-      this._inputEl.setSelectionRange(index, index);
-      return false;
-    }
-  },
-  /**
-   * The accessible name of the input, for line edits without a visible label.
-   */
-  accessibleName: {
-    value: "",
-    changed(name) {
-      if (name) {
-        this._inputEl.setAttribute("aria-label", name);
-      } else {
-        this._inputEl.removeAttribute("aria-label");
-      }
-    }
-  }
-});
-registerType("line-edit", LineEdit);
-
 // src/widgets/date-edit.js
 var DEFAULT_DATE_FORMAT = Object.freeze({ dateStyle: "medium" });
 function getDateFieldOrder(locale) {
@@ -10613,7 +14099,7 @@ function parseLocaleDate(text, locale, reference) {
   if (!(monthNumber >= 1 && monthNumber <= 12)) {
     return null;
   }
-  if (!(day >= 1 && day <= getDaysInMonth(year, monthNumber - 1))) {
+  if (!(day >= 1 && day <= getDaysInMonth2(year, monthNumber - 1))) {
     return null;
   }
   return makeDate(year, monthNumber - 1, day);
@@ -10667,7 +14153,7 @@ var DateEdit = class extends LineEdit {
   _render() {
     const element = super._render();
     this._buttonEl = createElement(`
-            <span class="wy-date-edit-button" role="button" aria-label="Choose date"></span>
+            <span class="wy-date-edit-button" role="button" data-wy-label="Choose date"></span>
         `);
     element.classList.add("wy-date-edit");
     element.append(this._buttonEl);
@@ -10980,892 +14466,6 @@ defineProperties(DateEdit, {
   }
 });
 registerType("date-edit", DateEdit);
-
-// src/widgets/window.js
-var RESIZE_CURSORS = Object.freeze({
-  n: CursorShape.RESIZE_N,
-  ne: CursorShape.RESIZE_NE,
-  e: CursorShape.RESIZE_E,
-  se: CursorShape.RESIZE_SE,
-  s: CursorShape.RESIZE_S,
-  sw: CursorShape.RESIZE_SW,
-  w: CursorShape.RESIZE_W,
-  nw: CursorShape.RESIZE_NW
-});
-var Window = class extends AbstractWindow {
-  static {
-    __name(this, "Window");
-  }
-  _initialize() {
-    super._initialize();
-    this._placed = false;
-    this._userSize = null;
-    this._restoreRect = null;
-    this._overlayEl = null;
-    this._gesture = null;
-    this._onScreenSizeChange = this._onScreenSizeChange.bind(this);
-    getScreen().connect("size-change", this._onScreenSizeChange);
-    this._headerEl.addEventListener("pointerdown", (event) => this._onHeaderPointerDown(event));
-    this._headerEl.addEventListener("dblclick", (event) => this._onHeaderDoubleClick(event));
-    for (const button of this._headerEl.querySelectorAll("button")) {
-      button.addEventListener(
-        "click",
-        () => this._onHeaderButtonClick(button.dataset.action)
-      );
-    }
-    for (const resizer of this.el.querySelectorAll("[data-resize]")) {
-      resizer.addEventListener(
-        "pointerdown",
-        (event) => this._onResizerPointerDown(event, resizer.dataset.resize)
-      );
-    }
-    this._syncDecorations();
-  }
-  _render() {
-    const titleId = uniqueId("wy-window-title");
-    const element = createElement(`
-            <div class="wy-window" role="dialog" aria-labelledby="${titleId}">
-                <div class="wy-window-header">
-                    <div class="wy-window-title" id="${titleId}"></div>
-                    <div class="wy-window-buttons">
-                        <button type="button" class="wy-window-button wy-window-maximize" data-action="maximize" tabindex="-1" aria-label="Maximize"></button>
-                        <button type="button" class="wy-window-button wy-window-restore" data-action="restore" tabindex="-1" aria-label="Restore"></button>
-                        <button type="button" class="wy-window-button wy-window-close" data-action="close" tabindex="-1" aria-label="Close"></button>
-                    </div>
-                </div>
-                <div class="wy-window-body"></div>
-                <div class="wy-window-resizer" data-resize="n"></div>
-                <div class="wy-window-resizer" data-resize="e"></div>
-                <div class="wy-window-resizer" data-resize="s"></div>
-                <div class="wy-window-resizer" data-resize="w"></div>
-                <div class="wy-window-resizer" data-resize="ne"></div>
-                <div class="wy-window-resizer" data-resize="se"></div>
-                <div class="wy-window-resizer" data-resize="sw"></div>
-                <div class="wy-window-resizer" data-resize="nw"></div>
-                <div class="wy-window-grip" data-resize="se"></div>
-            </div>
-        `);
-    this._headerEl = element.querySelector(".wy-window-header");
-    this._titleEl = element.querySelector(".wy-window-title");
-    this._bodyEl = element.querySelector(".wy-window-body");
-    return element;
-  }
-  /**
-   * Moves the window. The same as setting `position`.
-   *
-   * @param {number} x
-   * @param {number} y
-   */
-  move(x, y) {
-    this.position = { x, y };
-  }
-  /**
-   * Resizes the window.
-   *
-   * @param {number} width
-   * @param {number} height
-   */
-  resize(width, height) {
-    this._userSize = { width, height };
-    this._applySize();
-    this._constrain();
-    this.emit("size-change", this);
-  }
-  /**
-   * Centers the window on the screen, or over `transientFor` if set.
-   */
-  center() {
-    const size = this._getSize();
-    const screen = getScreen().size;
-    let x = (screen.width - size.width) / 2;
-    let y = (screen.height - size.height) / 2;
-    const parent = this._transientFor;
-    if (parent?.visible && !parent.el.classList.contains("wy-main-window")) {
-      const rect = parent.el.getBoundingClientRect();
-      x = rect.left + (rect.width - size.width) / 2;
-      y = rect.top + (rect.height - size.height) / 3;
-    }
-    this._setPosition(Math.round(x), Math.round(y));
-  }
-  /**
-   * Requests to close the window, as if the close button was clicked. Handlers of
-   * `close-request` can cancel it by returning `true`.
-   *
-   * @returns {boolean} Whether the window closed.
-   */
-  close() {
-    if (this.emit("close-request", this)) {
-      return false;
-    }
-    this.emit("close", this);
-    if (this.destroyed) {
-      return true;
-    }
-    if (this._destroyOnClose) {
-      this.destroy();
-    } else {
-      this.hide();
-    }
-    return true;
-  }
-  destroy() {
-    getScreen().disconnect("size-change", this._onScreenSizeChange);
-    this._endGesture();
-    this._overlayEl?.remove();
-    super.destroy();
-  }
-  _onVisibleChange(visible) {
-    if (visible) {
-      getScreen().layer.append(this.el);
-    }
-    super._onVisibleChange(visible);
-    if (visible) {
-      this._raise();
-      this._syncOverlay();
-      if (!this._placed) {
-        this._placed = true;
-        if (this._x < 0 || this._y < 0) {
-          const x = this._x;
-          const y = this._y;
-          this.center();
-          this._setPosition(x < 0 ? this._x : x, y < 0 ? this._y : y);
-        } else {
-          this._setPosition(this._x, this._y);
-        }
-      }
-      this._constrain();
-    } else {
-      this._endGesture();
-      this._syncOverlay();
-      this.el.remove();
-    }
-  }
-  _raise() {
-    if (!this._visible) {
-      return;
-    }
-    const screen = getScreen();
-    if (this._modal && this._overlayEl) {
-      this._overlayEl.style.zIndex = String(screen.nextZIndex());
-    }
-    this.el.style.zIndex = String(screen.nextZIndex());
-  }
-  _syncOverlay() {
-    const wanted = this._modal && this._visible;
-    if (wanted && !this._overlayEl) {
-      this._overlayEl = createElement('<div class="wy-overlay"></div>');
-      this._overlayEl.addEventListener("pointerdown", (event) => {
-        event.preventDefault();
-        this._blink();
-      });
-    }
-    if (wanted) {
-      this.el.before(this._overlayEl);
-      this._overlayEl.style.zIndex = String(Math.max(0, this.zIndex - 1));
-    } else {
-      this._overlayEl?.remove();
-    }
-  }
-  _applyLayoutStyle() {
-    this._applySize();
-  }
-  _applySize() {
-    const style = this.el.style;
-    const size = this._userSize || { width: this._width, height: this._height };
-    style.width = size.width >= 0 ? `${size.width}px` : "";
-    style.height = size.height >= 0 ? `${size.height}px` : "";
-  }
-  _getSize() {
-    return { width: this.el.offsetWidth, height: this.el.offsetHeight };
-  }
-  _setPosition(x, y) {
-    this._x = x;
-    this._y = y;
-    this.el.style.left = `${x}px`;
-    this.el.style.top = `${y}px`;
-  }
-  _constrain() {
-    if (!this._visible || this._maximized) {
-      return;
-    }
-    const screen = getScreen().size;
-    const size = this._getSize();
-    if (size.width > screen.width || size.height > screen.height) {
-      this._userSize = this._userSize || { ...size };
-    }
-    if (this._userSize) {
-      let changed = false;
-      if (size.width > screen.width) {
-        this._userSize.width = screen.width;
-        changed = true;
-      }
-      if (size.height > screen.height) {
-        this._userSize.height = screen.height;
-        changed = true;
-      }
-      if (changed) {
-        this._applySize();
-      }
-    }
-    const width = Math.min(this.el.offsetWidth, screen.width);
-    const height = Math.min(this.el.offsetHeight, screen.height);
-    this._setPosition(
-      clamp(this._x, 0, Math.max(0, screen.width - width)),
-      clamp(this._y, 0, Math.max(0, screen.height - height))
-    );
-  }
-  _syncDecorations() {
-    const decorated = this._decorated;
-    const resizable = this._resizable && decorated && !this._maximized;
-    this.el.classList.toggle("wy-undecorated", !decorated);
-    this.el.classList.toggle("wy-resizable", resizable);
-    this.el.classList.toggle("wy-maximized", this._maximized);
-    this.el.classList.toggle("wy-has-grip", resizable && this._hasResizeGrip);
-    this.el.classList.toggle("wy-closable", this._closable);
-    this.el.classList.toggle("wy-maximizable", this._maximizable);
-  }
-  _onScreenSizeChange() {
-    this._constrain();
-  }
-  _onHeaderButtonClick(action) {
-    switch (action) {
-      case "close":
-        this.close();
-        break;
-      case "maximize":
-        this.maximized = true;
-        break;
-      case "restore":
-        this.maximized = false;
-        break;
-    }
-  }
-  _onHeaderDoubleClick(event) {
-    if (event.target.closest("button") || !this._maximizable) {
-      return;
-    }
-    this.maximized = !this._maximized;
-  }
-  _onHeaderPointerDown(event) {
-    if (event.button !== MouseButton.PRIMARY - 1 || event.target.closest("button")) {
-      return;
-    }
-    if (!this._movable || this._maximized) {
-      return;
-    }
-    const rect = this.el.getBoundingClientRect();
-    this._startGesture(
-      event,
-      CursorShape.MOVE,
-      (moveEvent) => {
-        const screen = getScreen().size;
-        const x = moveEvent.clientX - (event.clientX - rect.left);
-        const y = moveEvent.clientY - (event.clientY - rect.top);
-        this._setPosition(
-          Math.round(clamp(x, 0, Math.max(0, screen.width - rect.width))),
-          Math.round(clamp(y, 0, Math.max(0, screen.height - rect.height)))
-        );
-      },
-      () => this.emit("position-change", this)
-    );
-  }
-  _onResizerPointerDown(event, direction) {
-    if (event.button !== MouseButton.PRIMARY - 1 || !this._resizable || this._maximized) {
-      return;
-    }
-    event.stopPropagation();
-    const start = this.el.getBoundingClientRect();
-    const screen = getScreen().size;
-    this._startGesture(
-      event,
-      RESIZE_CURSORS[direction],
-      (moveEvent) => {
-        const dx = clamp(moveEvent.clientX, 0, screen.width) - event.clientX;
-        const dy = clamp(moveEvent.clientY, 0, screen.height) - event.clientY;
-        let width = start.width;
-        let height = start.height;
-        if (direction.includes("e")) {
-          width = start.width + dx;
-        } else if (direction.includes("w")) {
-          width = start.width - dx;
-        }
-        if (direction.includes("s")) {
-          height = start.height + dy;
-        } else if (direction.includes("n")) {
-          height = start.height - dy;
-        }
-        this._userSize = { width: Math.round(width), height: Math.round(height) };
-        this._applySize();
-        const actual = this._getSize();
-        const x = direction.includes("w") ? start.right - actual.width : start.left;
-        const y = direction.includes("n") ? start.bottom - actual.height : start.top;
-        this._setPosition(Math.round(x), Math.round(y));
-      },
-      () => {
-        this._userSize = this._getSize();
-        this._applySize();
-        this.emit("size-change", this);
-      }
-    );
-  }
-  _startGesture(event, shape, onMove, onEnd) {
-    this._endGesture();
-    const target = event.currentTarget;
-    target.setPointerCapture(event.pointerId);
-    const move = /* @__PURE__ */ __name((moveEvent) => onMove(moveEvent), "move");
-    const end = /* @__PURE__ */ __name(() => {
-      this._endGesture();
-      onEnd?.();
-    }, "end");
-    target.addEventListener("pointermove", move);
-    target.addEventListener("pointerup", end);
-    target.addEventListener("pointercancel", end);
-    getCursor().pushShape(shape, "window");
-    this._gesture = { target, move, end };
-    event.preventDefault();
-  }
-  _endGesture() {
-    const gesture = this._gesture;
-    if (!gesture) {
-      return;
-    }
-    this._gesture = null;
-    gesture.target.removeEventListener("pointermove", gesture.move);
-    gesture.target.removeEventListener("pointerup", gesture.end);
-    gesture.target.removeEventListener("pointercancel", gesture.end);
-    getCursor().popShape("window");
-  }
-};
-defineProperties(Window, {
-  title: {
-    value: "",
-    changed(title) {
-      this._titleEl.textContent = title;
-    }
-  },
-  /**
-   * The position of the window's top-left corner on the screen, as `{x, y}`. A negative
-   * coordinate centers the window in that direction when it is first shown.
-   */
-  position: {
-    get() {
-      return { x: this._x, y: this._y };
-    },
-    set(position) {
-      if (position.x === this._x && position.y === this._y) {
-        return false;
-      }
-      this._placed = this._visible || this._placed;
-      if (this._visible) {
-        this._setPosition(position.x, position.y);
-        this._constrain();
-      } else {
-        this._x = position.x;
-        this._y = position.y;
-      }
-    }
-  },
-  /**
-   * The x coordinate of the window, or -1 to center it.
-   */
-  x: {
-    value: -1,
-    signal: false,
-    set(x) {
-      this.position = { x, y: this._y };
-      return false;
-    }
-  },
-  /**
-   * The y coordinate of the window, or -1 to center it.
-   */
-  y: {
-    value: -1,
-    signal: false,
-    set(y) {
-      this.position = { x: this._x, y };
-      return false;
-    }
-  },
-  /**
-   * The window whose top this window floats on, e.g. the parent of a dialog. It is centered over
-   * it when first shown.
-   */
-  transientFor: { value: null },
-  /**
-   * Whether the window fills the screen. Only has an effect when `maximizable`.
-   */
-  maximized: {
-    value: false,
-    set(maximized) {
-      if (maximized && !this._maximizable) {
-        return false;
-      }
-      if (maximized) {
-        this._restoreRect = {
-          x: this._x,
-          y: this._y,
-          size: this._userSize && { ...this._userSize }
-        };
-      }
-      this._maximized = maximized;
-      this._syncDecorations();
-      if (!maximized && this._restoreRect) {
-        this._userSize = this._restoreRect.size;
-        this._applySize();
-        this._setPosition(this._restoreRect.x, this._restoreRect.y);
-        this._constrain();
-        this._restoreRect = null;
-      }
-    }
-  },
-  /**
-   * Whether the window can be maximized. Shows or hides the maximize button.
-   */
-  maximizable: {
-    value: true,
-    changed(maximizable) {
-      if (!maximizable && this._maximized) {
-        this.maximized = false;
-      }
-      this._syncDecorations();
-    }
-  },
-  /**
-   * Whether the user can resize the window.
-   */
-  resizable: {
-    value: true,
-    changed() {
-      this._syncDecorations();
-    }
-  },
-  /**
-   * Whether the window has a close button.
-   */
-  closable: {
-    value: true,
-    changed() {
-      this._syncDecorations();
-    }
-  },
-  /**
-   * Whether the user can move the window by dragging its title bar.
-   */
-  movable: { value: true },
-  /**
-   * Whether closing destroys the window. If `false`, closing hides it, so it can be shown again.
-   */
-  destroyOnClose: { value: true },
-  modal: {
-    value: false,
-    changed() {
-      this._syncOverlay();
-      this._raise();
-    }
-  },
-  /**
-   * The opacity of the window, from 0 to 1.
-   */
-  opacity: {
-    value: 1,
-    coerce(opacity) {
-      return clamp(Number(opacity), 0, 1);
-    },
-    changed(opacity) {
-      this.el.style.opacity = opacity === 1 ? "" : String(opacity);
-    }
-  },
-  /**
-   * Whether the window has a title bar and border. Undecorated windows cannot be resized by the
-   * user.
-   */
-  decorated: {
-    value: true,
-    changed() {
-      this._syncDecorations();
-    }
-  },
-  /**
-   * Whether a resizable window shows a resize grip in its bottom-right corner.
-   */
-  hasResizeGrip: {
-    value: true,
-    changed() {
-      this._syncDecorations();
-    }
-  }
-});
-registerType("window", Window);
-
-// src/widgets/dialog.js
-var RESPONSE_LABELS = Object.freeze({
-  [Response.OK]: "_OK",
-  [Response.CANCEL]: "_Cancel",
-  [Response.CLOSE]: "_Close",
-  [Response.YES]: "_Yes",
-  [Response.NO]: "_No",
-  [Response.APPLY]: "_Apply",
-  [Response.HELP]: "_Help"
-});
-var RESPONSES = new Set(Object.values(Response));
-var ESCAPE_RESPONSES = [Response.CANCEL, Response.CLOSE, Response.NO];
-var Dialog = class extends Window {
-  static {
-    __name(this, "Dialog");
-  }
-  _initialize() {
-    super._initialize();
-    this._buttons = /* @__PURE__ */ new Map();
-    this._runResolvers = [];
-    this._responding = 0;
-    this._closeAfterResponse = false;
-    this._parentHandler = null;
-    this.el.classList.add("wy-dialog");
-    this._vbox = new Box({ orientation: Orientation.VERTICAL });
-    this._vbox.addStyleClass("wy-dialog-vbox");
-    this._contentArea = new Box({
-      orientation: Orientation.VERTICAL,
-      spacing: 6,
-      vExpand: true
-    });
-    this._contentArea.addStyleClass("wy-dialog-content");
-    this._actionArea = new ButtonBox({ layoutStyle: ButtonBoxStyle.END, spacing: 6 });
-    this._actionArea.addStyleClass("wy-dialog-actions");
-    this._vbox.addChild(this._contentArea);
-    this._vbox.addChild(this._actionArea);
-    this.insertChild(this._vbox, 0);
-    this.el.addEventListener("keydown", (event) => this._onDialogKeyDown(event));
-    this.connect("close", () => {
-      if (!this._responding && !this._closeAfterResponse) {
-        this.response(Response.NONE);
-      }
-    });
-  }
-  /**
-   * The vertical box for the content, above the buttons.
-   *
-   * @type {Box}
-   */
-  get contentArea() {
-    return this._contentArea;
-  }
-  /**
-   * The button box with the buttons.
-   *
-   * @type {ButtonBox}
-   */
-  get actionArea() {
-    return this._actionArea;
-  }
-  /**
-   * Adds a widget to the content area.
-   *
-   * @param {Widget} widget
-   * @returns {Widget}
-   */
-  addChild(widget) {
-    return this._contentArea.addChild(widget);
-  }
-  /**
-   * Adds a button for a response. The label defaults to the standard label of the response
-   * (such as `'_OK'`); underscores mark mnemonics. The argument order is the original
-   * toolkit's; `addButton(label, response)` works as well when `response` is a standard
-   * `Response` and `label` is not.
-   *
-   * @param {string} response The response id.
-   * @param {string | Button} [label] The label, or a button to use.
-   * @returns {Widget} The button.
-   * @throws {Error} If there already is a button for the response.
-   */
-  addButton(response, label) {
-    if (typeof label === "string" && RESPONSES.has(label) && !RESPONSES.has(response) && !this._buttons.has(label)) {
-      [response, label] = [label, response];
-    }
-    if (label instanceof Widget) {
-      return this.addActionWidget(label, response);
-    }
-    const text = label ?? RESPONSE_LABELS[response] ?? String(response);
-    const button = new Button({ label: text, useUnderline: true });
-    return this.addActionWidget(button, response);
-  }
-  /**
-   * Adds buttons, as `[response, label]` pairs.
-   *
-   * @param {...([string, string?] | string)} buttons
-   */
-  addButtons(...buttons) {
-    for (const button of buttons) {
-      if (Array.isArray(button)) {
-        this.addButton(button[0], button[1]);
-      } else {
-        this.addButton(button);
-      }
-    }
-  }
-  /**
-   * Adds a widget to the action area for a response. Buttons emit the response when
-   * activated. A Help button is placed apart, at the other end.
-   *
-   * @param {Widget} widget
-   * @param {string} response
-   * @returns {Widget} The widget.
-   * @throws {Error} If there already is a widget for the response.
-   */
-  addActionWidget(widget, response) {
-    response = String(response);
-    if (this._buttons.has(response)) {
-      throw new Error(`The dialog already has a button for response '${response}'.`);
-    }
-    this._actionArea.addChild(widget);
-    this._buttons.set(response, widget);
-    if (response === Response.HELP) {
-      this._actionArea.setChildSecondary(widget, true);
-    }
-    if (typeof widget.activate === "function") {
-      widget.connect("activate", () => this.response(response));
-    }
-    widget.connect("destroy", () => {
-      if (this._buttons.get(response) === widget) {
-        this._buttons.delete(response);
-      }
-    });
-    if (response === this._defaultResponse && "isDefault" in widget) {
-      widget.isDefault = true;
-    }
-    return widget;
-  }
-  /**
-   * Removes (and destroys) the button of a response.
-   *
-   * @param {string} response
-   * @throws {Error} If there is no button for the response.
-   */
-  removeButton(response) {
-    const button = this._buttons.get(response);
-    if (!button) {
-      throw new Error(`The dialog has no button for response '${response}'.`);
-    }
-    this._buttons.delete(response);
-    button.destroy();
-  }
-  /**
-   * Returns the button of a response, or `null`.
-   *
-   * @param {string} response
-   * @returns {Widget | null}
-   */
-  getButton(response) {
-    return this._buttons.get(response) || null;
-  }
-  /**
-   * Returns the button of a response, or `null`. GTK's name of `getButton()`.
-   *
-   * @param {string} response
-   * @returns {Widget | null}
-   */
-  getWidgetForResponse(response) {
-    return this.getButton(response);
-  }
-  /**
-   * Makes the button of a response sensitive or not.
-   *
-   * @param {string} response
-   * @param {boolean} sensitive
-   */
-  setResponseSensitive(response, sensitive) {
-    const button = this._buttons.get(response);
-    if (button) {
-      button.sensitive = sensitive;
-    }
-  }
-  /**
-   * Gives a response: emits `response`, and settles the promise of `run()`.
-   *
-   * @param {string} response
-   */
-  response(response) {
-    this._settle(response);
-    this._responding += 1;
-    try {
-      this.emit("response", this, response);
-    } finally {
-      this._responding -= 1;
-    }
-  }
-  /**
-   * Shows the dialog modally and waits for a response. The dialog closes after the response.
-   *
-   * @returns {Promise<string>} The response; `Response.NONE` when the dialog was closed
-   *     otherwise.
-   */
-  run() {
-    if (this.destroyed) {
-      return Promise.reject(new Error("The dialog has been destroyed."));
-    }
-    const wasModal = this._modal;
-    this.modal = true;
-    const promise = new Promise((resolve) => this._runResolvers.push(resolve));
-    this.present();
-    return promise.then((response) => {
-      if (!this.destroyed) {
-        this.modal = wasModal;
-        if (this._visible) {
-          this._closeAfterResponse = true;
-          try {
-            this.close();
-          } finally {
-            this._closeAfterResponse = false;
-          }
-        }
-      }
-      return response;
-    });
-  }
-  destroy() {
-    if (this.destroyed) {
-      return;
-    }
-    this._parentHandler?.();
-    this._parentHandler = null;
-    super.destroy();
-    this._settle(Response.NONE);
-  }
-  _onVisibleChange(visible) {
-    super._onVisibleChange(visible);
-    const button = this._defaultResponse !== null && this._buttons.get(this._defaultResponse);
-    const focusWidget = this._focusWidget;
-    if (visible && button && (!focusWidget || this._actionArea.isAncestorOf(focusWidget)) && button !== focusWidget) {
-      button.focus();
-    }
-  }
-  _settle(response) {
-    const resolvers = this._runResolvers;
-    this._runResolvers = [];
-    for (const resolve of resolvers) {
-      resolve(response);
-    }
-  }
-  _onDialogKeyDown(event) {
-    if (event.key !== Key.ESCAPE || event.defaultPrevented || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) {
-      return;
-    }
-    const source = Widget.fromElement(event.target);
-    if (source && source.window !== this) {
-      return;
-    }
-    event.preventDefault();
-    event.stopPropagation();
-    for (const response of ESCAPE_RESPONSES) {
-      const button = this._buttons.get(response);
-      if (button && button.isVisible && button.isSensitive) {
-        this.response(response);
-        return;
-      }
-    }
-    if (this._closable) {
-      this.close();
-    }
-  }
-  _syncDefaultButton(response, oldResponse) {
-    const old = oldResponse !== null ? this._buttons.get(oldResponse) : null;
-    if (old && "isDefault" in old) {
-      old.isDefault = false;
-    }
-    const button = response !== null ? this._buttons.get(response) : null;
-    if (button && "isDefault" in button) {
-      button.isDefault = true;
-    }
-  }
-  _syncParentHandler() {
-    this._parentHandler?.();
-    this._parentHandler = null;
-    const parent = this._transientFor;
-    if (parent && this._destroyWithParent) {
-      this._parentHandler = parent.connect("destroy", () => {
-        if (!this.destroyed) {
-          this.destroy();
-        }
-      });
-    }
-  }
-};
-defineProperties(Dialog, {
-  resizable: { value: false },
-  maximizable: { value: false },
-  /**
-   * The child of a dialog is its content: setting it replaces the content area's children.
-   */
-  child: {
-    get() {
-      return this._contentArea?.children[0] || null;
-    },
-    set(widget) {
-      this._contentArea.removeAllChildren();
-      if (widget) {
-        this._contentArea.addChild(widget);
-      }
-    }
-  },
-  /**
-   * The response whose button Enter activates, or `null`. That button is drawn as the default
-   * button.
-   */
-  defaultResponse: {
-    value: null,
-    changed(response, oldResponse) {
-      this._syncDefaultButton(response, oldResponse);
-    }
-  },
-  /**
-   * The window the dialog belongs to. The dialog is centered over it when first shown.
-   */
-  transientFor: {
-    value: null,
-    changed() {
-      this._syncParentHandler();
-    }
-  },
-  /**
-   * Whether the dialog is destroyed when its `transientFor` window is destroyed.
-   */
-  destroyWithParent: {
-    value: false,
-    changed() {
-      this._syncParentHandler();
-    }
-  }
-});
-Dialog.builderProperties = {
-  /**
-   * Adds buttons: an array of `[response, label]` pairs, response ids, or objects with a
-   * `response` and further button properties (such as `label`).
-   *
-   * @param {object} builder
-   * @param {Dialog} dialog
-   * @param {Array<string | [string, string?] | {response: string}>} buttons
-   */
-  buttons(builder, dialog, buttons) {
-    if (!Array.isArray(buttons)) {
-      throw new Error("Dialog buttons must be an array.");
-    }
-    for (const button of buttons) {
-      if (Array.isArray(button)) {
-        dialog.addButton(button[0], button[1]);
-      } else if (button && typeof button === "object") {
-        const { response, ...spec } = button;
-        if (spec.type) {
-          dialog.addActionWidget(builder.build(spec)[0], response);
-        } else {
-          dialog.addButton(response, spec.label);
-        }
-      } else {
-        dialog.addButton(button);
-      }
-    }
-  }
-};
-registerType("dialog", Dialog);
 
 // src/widgets/expander.js
 var Expander = class extends Bin {
@@ -12703,6 +15303,610 @@ Grid.builderProperties = {
 };
 registerType("grid", Grid);
 
+// src/widgets/message-dialog.js
+var MessageType = Object.freeze({
+  INFO: "info",
+  WARNING: "warning",
+  QUESTION: "question",
+  ERROR: "error",
+  OTHER: "other"
+  // No icon.
+});
+var ButtonsType = Object.freeze({
+  NONE: "none",
+  OK: "ok",
+  CLOSE: "close",
+  CANCEL: "cancel",
+  YES_NO: "yes-no",
+  OK_CANCEL: "ok-cancel"
+});
+var ICONS2 = Object.freeze({
+  [MessageType.INFO]: "dialog-information",
+  [MessageType.WARNING]: "dialog-warning",
+  [MessageType.QUESTION]: "dialog-question",
+  [MessageType.ERROR]: "dialog-error",
+  [MessageType.OTHER]: ""
+});
+var BUTTONS = Object.freeze({
+  [ButtonsType.NONE]: { responses: [], defaultResponse: null },
+  [ButtonsType.OK]: { responses: [Response.OK], defaultResponse: Response.OK },
+  [ButtonsType.CLOSE]: { responses: [Response.CLOSE], defaultResponse: Response.CLOSE },
+  [ButtonsType.CANCEL]: { responses: [Response.CANCEL], defaultResponse: Response.CANCEL },
+  [ButtonsType.YES_NO]: { responses: [Response.NO, Response.YES], defaultResponse: Response.YES },
+  [ButtonsType.OK_CANCEL]: {
+    responses: [Response.CANCEL, Response.OK],
+    defaultResponse: Response.OK
+  }
+});
+var ICON_SIZE = 48;
+var MessageDialog = class extends Dialog {
+  static {
+    __name(this, "MessageDialog");
+  }
+  _initialize() {
+    super._initialize();
+    this.el.classList.add("wy-message-dialog");
+    this._image = new Image({ pixelSize: ICON_SIZE, vAlign: Align.START });
+    this._image.addStyleClass("wy-message-dialog-icon");
+    this._textLabel = new Label({ wrap: true, selectable: true, maxWidthChars: 50 });
+    this._textLabel.addStyleClass("wy-message-dialog-text");
+    this._secondaryLabel = new Label({ wrap: true, selectable: true, maxWidthChars: 50 });
+    this._secondaryLabel.addStyleClass("wy-message-dialog-secondary-text");
+    this._messageArea = new Box({ orientation: Orientation.VERTICAL, spacing: 6 });
+    this._messageArea.addChild(this._textLabel);
+    this._messageArea.addChild(this._secondaryLabel);
+    const box = new Box({ spacing: 12 });
+    box.addStyleClass("wy-message-dialog-box");
+    box.addChild(this._image);
+    box.addChild(this._messageArea);
+    this.contentArea.addChild(box);
+    this._syncIcon();
+    this._syncTexts();
+  }
+  /**
+   * The vertical box with the texts, to add more widgets to.
+   *
+   * @type {Box}
+   */
+  get messageArea() {
+    return this._messageArea;
+  }
+  /**
+   * The image showing the icon of the message type.
+   *
+   * @type {Image}
+   */
+  get image() {
+    return this._image;
+  }
+  _syncIcon() {
+    const icon = ICONS2[this._messageType];
+    this._image.icon = icon;
+    this._image.visible = Boolean(icon);
+  }
+  _syncTexts() {
+    this._textLabel.useMarkup = this._useMarkup;
+    this._textLabel.text = this._text;
+    this._secondaryLabel.useMarkup = this._secondaryUseMarkup;
+    this._secondaryLabel.text = this._secondaryText;
+    this._secondaryLabel.visible = Boolean(this._secondaryText);
+  }
+  _addButtons(buttonsType) {
+    const { responses, defaultResponse } = BUTTONS[buttonsType];
+    for (const response of responses) {
+      this.addButton(response);
+    }
+    if (defaultResponse) {
+      this.defaultResponse = defaultResponse;
+    }
+  }
+};
+defineProperties(MessageDialog, {
+  /**
+   * The kind of message: one of `MessageType`, which selects the icon.
+   */
+  messageType: {
+    value: MessageType.INFO,
+    coerce(messageType) {
+      if (!Object.hasOwn(ICONS2, messageType)) {
+        throw new TypeError(`Invalid message type: ${messageType}.`);
+      }
+      return messageType;
+    },
+    changed() {
+      this._syncIcon();
+    }
+  },
+  /**
+   * The primary text, shown bold.
+   */
+  text: {
+    value: "",
+    coerce(text) {
+      return text === null || text === void 0 ? "" : String(text);
+    },
+    changed() {
+      this._syncTexts();
+    }
+  },
+  /**
+   * The secondary text, shown below the primary text, or `''`.
+   */
+  secondaryText: {
+    value: "",
+    coerce(text) {
+      return text === null || text === void 0 ? "" : String(text);
+    },
+    changed() {
+      this._syncTexts();
+    }
+  },
+  /**
+   * Whether the primary text is markup (see `Label`).
+   */
+  useMarkup: {
+    value: false,
+    changed() {
+      this._syncTexts();
+    }
+  },
+  /**
+   * Whether the secondary text is markup (see `Label`).
+   */
+  secondaryUseMarkup: {
+    value: false,
+    changed() {
+      this._syncTexts();
+    }
+  },
+  /**
+   * The standard buttons: one of `ButtonsType`. They are added when this is set, so set it
+   * once.
+   */
+  buttonsType: {
+    value: ButtonsType.NONE,
+    coerce(buttonsType) {
+      if (!Object.hasOwn(BUTTONS, buttonsType)) {
+        throw new TypeError(`Invalid buttons type: ${buttonsType}.`);
+      }
+      return buttonsType;
+    },
+    set(buttonsType) {
+      if (this._buttonsType !== ButtonsType.NONE) {
+        throw new Error("The buttons of a message dialog can only be set once.");
+      }
+      this._buttonsType = buttonsType;
+      this._addButtons(buttonsType);
+    }
+  }
+});
+MessageDialog.builderProperties = {
+  ...Dialog.builderProperties,
+  /**
+   * Adds buttons: a `ButtonsType` preset, or buttons like for a `Dialog`.
+   *
+   * @param {object} builder
+   * @param {MessageDialog} dialog
+   * @param {string | Array} buttons
+   */
+  buttons(builder, dialog, buttons) {
+    if (typeof buttons === "string") {
+      dialog.buttonsType = buttons;
+    } else {
+      Dialog.builderProperties.buttons(builder, dialog, buttons);
+    }
+  }
+};
+registerType("message-dialog", MessageDialog);
+function createMessageDialog(text, options, defaults) {
+  const { title, secondaryText, messageType, transientFor, buttonsType } = {
+    ...defaults,
+    ...options
+  };
+  return new MessageDialog({
+    title: title ?? "",
+    text,
+    secondaryText: secondaryText ?? "",
+    messageType,
+    transientFor: transientFor ?? null,
+    buttonsType
+  });
+}
+__name(createMessageDialog, "createMessageDialog");
+async function alert(text, options = {}) {
+  const dialog = createMessageDialog(text, options, {
+    messageType: MessageType.INFO,
+    buttonsType: ButtonsType.OK
+  });
+  await dialog.run();
+}
+__name(alert, "alert");
+async function confirm(text, options = {}) {
+  const dialog = createMessageDialog(text, options, {
+    messageType: MessageType.QUESTION,
+    buttonsType: ButtonsType.OK_CANCEL
+  });
+  const response = await dialog.run();
+  return response === Response.OK || response === Response.YES;
+}
+__name(confirm, "confirm");
+async function prompt(text, options = {}) {
+  const dialog = createMessageDialog(text, options, {
+    messageType: MessageType.QUESTION,
+    buttonsType: ButtonsType.OK_CANCEL
+  });
+  const lineEdit = new LineEdit({
+    text: options.value ?? "",
+    placeholder: options.placeholder ?? "",
+    hExpand: true
+  });
+  dialog.messageArea.addChild(lineEdit);
+  const result = dialog.run();
+  lineEdit.focus();
+  lineEdit.selectAll?.();
+  const response = await result;
+  return response === Response.OK ? lineEdit.text : null;
+}
+__name(prompt, "prompt");
+
+// src/widgets/info-bar.js
+var ICONS3 = Object.freeze({
+  [MessageType.INFO]: "dialog-information",
+  [MessageType.WARNING]: "dialog-warning",
+  [MessageType.QUESTION]: "dialog-question",
+  [MessageType.ERROR]: "dialog-error",
+  [MessageType.OTHER]: ""
+});
+var RESPONSES2 = new Set(Object.values(Response));
+var ICON_SIZE2 = 24;
+var MAX_TRANSITION_TIME = 1e3;
+var InfoBar = class extends Bin {
+  static {
+    __name(this, "InfoBar");
+  }
+  _initialize() {
+    super._initialize();
+    this._buttons = /* @__PURE__ */ new Map();
+    this._transitionTimer = 0;
+    this._image = new Image({ pixelSize: ICON_SIZE2, vAlign: Align.CENTER });
+    this._image.addStyleClass("wy-info-bar-icon");
+    this._contentArea = new Box({ spacing: 6, hExpand: true, vAlign: Align.CENTER });
+    this._contentArea.addStyleClass("wy-info-bar-content");
+    this._actionArea = new ButtonBox({
+      layoutStyle: ButtonBoxStyle.END,
+      spacing: 6,
+      vAlign: Align.CENTER
+    });
+    this._actionArea.addStyleClass("wy-info-bar-actions");
+    this._closeButton = new Button({
+      icon: "window-close",
+      relief: Relief.NONE,
+      vAlign: Align.CENTER,
+      visible: false
+    });
+    this._closeButton.addStyleClass("wy-info-bar-close");
+    bindToolkitText(
+      this._closeButton,
+      () => this._closeButton.el.setAttribute("aria-label", toolkitText("Close"))
+    );
+    this._closeButton.connect("activate", () => this.response(Response.CLOSE));
+    this._box = new Box({ spacing: 8 });
+    this._box.addStyleClass("wy-info-bar-box");
+    this._box.addChild(this._image);
+    this._box.addChild(this._contentArea);
+    this._box.addChild(this._actionArea);
+    this._box.addChild(this._closeButton);
+    super.insertChild(this._box, 0);
+    this.el.addEventListener("transitionend", (event) => {
+      if (event.target === this.el) {
+        this._finishTransition();
+      }
+    });
+    this._syncMessageType();
+    this._syncActionArea();
+    this._finishTransition();
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-info-bar wy-revealed">
+                <div class="wy-info-bar-clip">
+                    <div class="wy-info-bar-frame"></div>
+                </div>
+            </div>
+        `);
+    this._clipEl = element.querySelector(".wy-info-bar-clip");
+    this._frameEl = element.querySelector(".wy-info-bar-frame");
+    this._bodyEl = this._frameEl;
+    return element;
+  }
+  /**
+   * The box for the message, next to the icon. `addChild()` adds to it too.
+   *
+   * @type {Box}
+   */
+  get contentArea() {
+    return this._contentArea;
+  }
+  /**
+   * The button box with the buttons.
+   *
+   * @type {ButtonBox}
+   */
+  get actionArea() {
+    return this._actionArea;
+  }
+  /**
+   * The image showing the icon of the message type.
+   *
+   * @type {Image}
+   */
+  get image() {
+    return this._image;
+  }
+  /**
+   * Adds a widget to the content area.
+   *
+   * @param {Widget} widget
+   * @returns {Widget}
+   */
+  addChild(widget) {
+    return this._contentArea.addChild(widget);
+  }
+  /**
+   * Adds a button for a response, as in a dialog. The label defaults to the standard label of
+   * the response (such as `'_OK'`); underscores mark mnemonics. `addButton(label, response)`
+   * works as well when `response` is a standard `Response` and `label` is not.
+   *
+   * @param {string} response The response id.
+   * @param {string | Button} [label] The label, or a button to use.
+   * @returns {Widget} The button.
+   * @throws {Error} If there already is a button for the response.
+   */
+  addButton(response, label) {
+    if (typeof label === "string" && RESPONSES2.has(label) && !RESPONSES2.has(response) && !this._buttons.has(label)) {
+      [response, label] = [label, response];
+    }
+    if (label instanceof Widget) {
+      return this.addActionWidget(label, response);
+    }
+    const button = new Button({ label: label ?? String(response), useUnderline: true });
+    if ((label === void 0 || label === null) && RESPONSE_LABELS[response]) {
+      bindToolkitText(button, () => button.label = toolkitText(RESPONSE_LABELS[response]));
+    }
+    return this.addActionWidget(button, response);
+  }
+  /**
+   * Adds buttons, as `[response, label]` pairs or response ids.
+   *
+   * @param {...([string, string?] | string)} buttons
+   */
+  addButtons(...buttons) {
+    for (const button of buttons) {
+      if (Array.isArray(button)) {
+        this.addButton(button[0], button[1]);
+      } else {
+        this.addButton(button);
+      }
+    }
+  }
+  /**
+   * Adds a widget to the action area for a response. Buttons emit the response when
+   * activated.
+   *
+   * @param {Widget} widget
+   * @param {string} response
+   * @returns {Widget} The widget.
+   * @throws {Error} If there already is a widget for the response.
+   */
+  addActionWidget(widget, response) {
+    response = String(response);
+    if (this._buttons.has(response)) {
+      throw new Error(`The info bar already has a button for response '${response}'.`);
+    }
+    this._actionArea.addChild(widget);
+    this._buttons.set(response, widget);
+    if (typeof widget.activate === "function") {
+      widget.connect("activate", () => this.response(response));
+    }
+    widget.connect("destroy", () => {
+      if (this._buttons.get(response) === widget) {
+        this._buttons.delete(response);
+        this._syncActionArea();
+      }
+    });
+    this._syncActionArea();
+    return widget;
+  }
+  /**
+   * Removes (and destroys) the button of a response.
+   *
+   * @param {string} response
+   * @throws {Error} If there is no button for the response.
+   */
+  removeButton(response) {
+    const button = this._buttons.get(response);
+    if (!button) {
+      throw new Error(`The info bar has no button for response '${response}'.`);
+    }
+    this._buttons.delete(response);
+    button.destroy();
+    this._syncActionArea();
+  }
+  /**
+   * Returns the button of a response, or `null`.
+   *
+   * @param {string} response
+   * @returns {Widget | null}
+   */
+  getButton(response) {
+    return this._buttons.get(response) || null;
+  }
+  /**
+   * Makes the button of a response sensitive or not.
+   *
+   * @param {string} response
+   * @param {boolean} sensitive
+   */
+  setResponseSensitive(response, sensitive) {
+    const button = this._buttons.get(response);
+    if (button) {
+      button.sensitive = sensitive;
+    }
+  }
+  /**
+   * Gives a response: emits `response`.
+   *
+   * @param {string} response
+   */
+  response(response) {
+    this.emit("response", this, response);
+  }
+  destroy() {
+    clearTimeout(this._transitionTimer);
+    super.destroy();
+  }
+  _getFocusChain() {
+    return this._revealed ? super._getFocusChain() : [];
+  }
+  _computeExpand(direction) {
+    return direction === "h" && super._computeExpand(direction);
+  }
+  _syncMessageType() {
+    const messageType = this._messageType;
+    const icon = ICONS3[messageType];
+    for (const type of Object.values(MessageType)) {
+      this.el.classList.toggle(`wy-${type}`, type === messageType);
+    }
+    this._image.icon = icon;
+    this._image.visible = Boolean(icon);
+    const urgent = messageType === MessageType.ERROR || messageType === MessageType.WARNING;
+    this.el.setAttribute("role", urgent ? "alert" : "status");
+  }
+  _syncActionArea() {
+    this._actionArea.visible = this._buttons.size > 0;
+  }
+  _syncRevealed() {
+    const revealed = this._revealed;
+    clearTimeout(this._transitionTimer);
+    this._clipEl.inert = !revealed;
+    if (revealed) {
+      this.el.removeAttribute("aria-hidden");
+    } else {
+      this.el.setAttribute("aria-hidden", "true");
+    }
+    if (revealed) {
+      this.el.classList.remove("wy-collapsed");
+      void this.el.offsetHeight;
+    } else if (this.focusChild && this.window) {
+      this.window.moveFocus(FocusDirection.FORWARD);
+    }
+    this.el.classList.toggle("wy-revealed", revealed);
+    const duration = this.el.isConnected ? getTransitionTime(this.el) : 0;
+    if (duration > 0) {
+      this._transitionTimer = setTimeout(
+        () => this._finishTransition(),
+        Math.min(duration + 50, MAX_TRANSITION_TIME)
+      );
+    } else {
+      this._finishTransition();
+    }
+  }
+  _finishTransition() {
+    clearTimeout(this._transitionTimer);
+    this._transitionTimer = 0;
+    this.el.classList.toggle("wy-collapsed", !this._revealed);
+  }
+};
+function getTransitionTime(element) {
+  const style = getComputedStyle(element);
+  const toTimes = /* @__PURE__ */ __name((text) => text.split(",").map((x) => parseFloat(x) * (x.trim().endsWith("ms") ? 1 : 1e3) || 0), "toTimes");
+  const durations = toTimes(style.transitionDuration);
+  const delays = toTimes(style.transitionDelay);
+  return Math.max(0, ...durations.map((x, i) => x + (delays[i % delays.length] || 0)));
+}
+__name(getTransitionTime, "getTransitionTime");
+defineProperties(InfoBar, {
+  /**
+   * The child of an info bar is its content: setting it replaces the content area's children.
+   */
+  child: {
+    get() {
+      return this._contentArea?.children[0] || null;
+    },
+    set(widget) {
+      this._contentArea.removeAllChildren();
+      if (widget) {
+        this._contentArea.addChild(widget);
+      }
+    }
+  },
+  /**
+   * The kind of message: one of `MessageType`, which selects the icon and the colors.
+   */
+  messageType: {
+    value: MessageType.INFO,
+    coerce(messageType) {
+      if (!Object.hasOwn(ICONS3, messageType)) {
+        throw new TypeError(`Invalid message type: ${messageType}.`);
+      }
+      return messageType;
+    },
+    changed() {
+      this._syncMessageType();
+    }
+  },
+  /**
+   * Whether a close button is shown at the end, which gives the response `Response.CLOSE`.
+   */
+  showCloseButton: {
+    value: false,
+    coerce: Boolean,
+    changed(showCloseButton) {
+      this._closeButton.visible = showCloseButton;
+    }
+  },
+  /**
+   * Whether the info bar is shown. Changing it slides the bar open or closed.
+   */
+  revealed: {
+    value: true,
+    coerce: Boolean,
+    changed() {
+      this._syncRevealed();
+    }
+  }
+});
+InfoBar.builderProperties = {
+  /**
+   * Adds buttons: an array of `[response, label]` pairs, response ids, or objects with a
+   * `response` and further button properties (such as `label`), like a dialog's.
+   *
+   * @param {object} builder
+   * @param {InfoBar} infoBar
+   * @param {Array<string | [string, string?] | {response: string}>} buttons
+   */
+  buttons(builder, infoBar, buttons) {
+    if (!Array.isArray(buttons)) {
+      throw new Error("Info bar buttons must be an array.");
+    }
+    for (const button of buttons) {
+      if (Array.isArray(button)) {
+        infoBar.addButton(button[0], button[1]);
+      } else if (button && typeof button === "object") {
+        const { response, ...spec } = button;
+        if (spec.type) {
+          infoBar.addActionWidget(builder.build(spec)[0], response);
+        } else {
+          infoBar.addButton(response, spec.label);
+        }
+      } else {
+        infoBar.addButton(button);
+      }
+    }
+  }
+};
+registerType("info-bar", InfoBar);
+
 // src/widgets/link-button.js
 var LinkButton = class extends Button {
   static {
@@ -12757,6 +15961,1862 @@ defineProperties(LinkButton, {
   }
 });
 registerType("link-button", LinkButton);
+
+// src/data/abstract-model.js
+var COLUMN_TYPES = Object.freeze([
+  "auto",
+  "string",
+  "number",
+  "float",
+  "double",
+  "int",
+  "integer",
+  "timestamp",
+  "bool",
+  "boolean",
+  "date",
+  "time",
+  "date-time",
+  "datetime"
+]);
+var NUMBER_TYPES = /* @__PURE__ */ new Set(["number", "float", "double", "int", "integer", "timestamp"]);
+var DATE_TYPES = /* @__PURE__ */ new Set(["date", "time", "date-time", "datetime"]);
+var COLLATORS = /* @__PURE__ */ new Map();
+function getCollator(locale, caseSensitive) {
+  const key = `${locale}|${caseSensitive}`;
+  let collator = COLLATORS.get(key);
+  if (!collator) {
+    collator = new Intl.Collator(locale, {
+      sensitivity: caseSensitive ? "variant" : "accent",
+      usage: "sort"
+    });
+    COLLATORS.set(key, collator);
+  }
+  return collator;
+}
+__name(getCollator, "getCollator");
+function toTimestamp(value) {
+  if (value instanceof Date) {
+    return value.getTime();
+  }
+  if (typeof value === "number") {
+    return value;
+  }
+  if (typeof value === "string" && value.trim() !== "") {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : Date.parse(value);
+  }
+  return NaN;
+}
+__name(toTimestamp, "toTimestamp");
+function isCaseSensitive(info) {
+  const value = info.caseSensitive ?? info["case-sensitive"];
+  return value !== false;
+}
+__name(isCaseSensitive, "isCaseSensitive");
+var AbstractModel = class extends Instance {
+  static {
+    __name(this, "AbstractModel");
+  }
+  /**
+   * @param {Record<string, unknown> | object[]} [properties] Property values, or (like the
+   *     original toolkit) the initial rows, followed by the other arguments.
+   * @param {string | null} [idColumn] The id column, when the rows are passed as an array.
+   * @param {string | null} [sortColumn] The sort column, when the rows are passed as an array.
+   * @param {number} [sortOrder] The sort order, when the rows are passed as an array.
+   */
+  constructor(properties, idColumn, sortColumn, sortOrder) {
+    if (Array.isArray(properties)) {
+      properties = {
+        rows: properties,
+        idColumn: idColumn ?? null,
+        sortColumn: sortColumn ?? null,
+        sortOrder: sortColumn ? sortOrder ?? SortOrder.ASCENDING : SortOrder.NONE
+      };
+    }
+    super(properties);
+  }
+  _initialize() {
+    super._initialize();
+    this._rows = [];
+    this._indexById = null;
+    this._indexDirty = true;
+    this._columnsInfo = {};
+  }
+  /**
+   * Sets several properties. The sort column and order are applied together, so the rows are
+   * sorted once.
+   *
+   * @param {Record<string, unknown>} properties
+   * @returns {boolean}
+   */
+  set(properties) {
+    const { sortColumn, sortOrder, ...rest } = properties;
+    const { "sort-column": sortColumnKebab, "sort-order": sortOrderKebab, ...others } = rest;
+    let changed = super.set(others);
+    const column = sortColumn !== void 0 ? sortColumn : sortColumnKebab;
+    const order = sortOrder !== void 0 ? sortOrder : sortOrderKebab;
+    if (column !== void 0 || order !== void 0) {
+      const oldColumn = this.sortColumn;
+      const oldOrder = this.sortOrder;
+      if (column !== void 0) {
+        this.sortByColumn(column, order ?? (column ? SortOrder.ASCENDING : SortOrder.NONE));
+      } else {
+        this.sortOrder = order;
+      }
+      changed = changed || oldColumn !== this.sortColumn || oldOrder !== this.sortOrder;
+    }
+    return changed;
+  }
+  /**
+   * Whether rows have ids (`getRowIdByIndex()`, `getRowIndexById()` and so on work), which is
+   * when the model has an id column. Selections select rows by id when they do. Tree models
+   * always do: without an id column, a row object is its own id.
+   *
+   * @type {boolean}
+   */
+  get hasRowIds() {
+    return Boolean(this.idColumn);
+  }
+  /**
+   * Gets a row.
+   *
+   * @param {number} index
+   * @returns {object}
+   * @throws {RangeError} If there is no row at the index.
+   */
+  getRow(index) {
+    const row = Number.isInteger(index) ? this._rows[index] : void 0;
+    if (row === void 0) {
+      throw new RangeError(`There is no row at index ${index}.`);
+    }
+    return row;
+  }
+  /**
+   * Gets a row by its id.
+   *
+   * @param {unknown} id
+   * @returns {object}
+   * @throws {Error} If there is no id column or no row with the id.
+   */
+  getRowById(id) {
+    return this.getRow(this.getRowIndexById(id));
+  }
+  /**
+   * Gets the index of a row by its id.
+   *
+   * @param {unknown} id
+   * @returns {number}
+   * @throws {Error} If there is no id column or no row with the id.
+   */
+  getRowIndexById(id) {
+    const index = this._getIndexById().get(id);
+    if (index === void 0) {
+      throw new RangeError(`There is no row with id ${String(id)}.`);
+    }
+    return index;
+  }
+  /**
+   * Gets the id of the row at an index.
+   *
+   * @param {number} index
+   * @returns {unknown}
+   * @throws {Error} If there is no id column or no row at the index.
+   */
+  getRowIdByIndex(index) {
+    if (!this.idColumn) {
+      throw new Error("The model has no id column.");
+    }
+    return this.getRow(index)[this.idColumn];
+  }
+  /**
+   * Checks whether there is a row with an id.
+   *
+   * @param {unknown} id
+   * @returns {boolean}
+   * @throws {Error} If there is no id column.
+   */
+  hasRowId(id) {
+    return this._getIndexById().has(id);
+  }
+  /**
+   * Gets a value.
+   *
+   * @param {number} index The row index.
+   * @param {string} column
+   * @returns {unknown}
+   */
+  getCellValue(index, column) {
+    return this.getRow(index)[column];
+  }
+  /**
+   * Gets a value by row id.
+   *
+   * @param {unknown} id
+   * @param {string} column
+   * @returns {unknown}
+   */
+  getCellValueById(id, column) {
+    return this.getRowById(id)[column];
+  }
+  /**
+   * Appends a row. If the model is sorted, the row is placed at its sorted position instead.
+   *
+   * @param {object} row
+   * @returns {number} The index of the new row.
+   */
+  appendRow(row) {
+    return this.insertRow(this.rowsCount, row);
+  }
+  /**
+   * Prepends a row. If the model is sorted, the row is placed at its sorted position instead.
+   *
+   * @param {object} row
+   * @returns {number} The index of the new row.
+   */
+  prependRow(row) {
+    return this.insertRow(0, row);
+  }
+  /**
+   * Inserts a row at an index. If the model is sorted, the row is placed at its sorted position
+   * instead.
+   *
+   * @param {number} index Between 0 and `rowsCount`.
+   * @param {object} row
+   * @returns {number} The index the row got.
+   * @throws {RangeError} If the index is invalid.
+   * @throws {Error} If the model has an id column and the id is already in use.
+   */
+  insertRow(_index, _row) {
+    throw new Error(`${this.constructor.name} does not implement insertRow().`);
+  }
+  /**
+   * Appends several rows at once. If the model is sorted, the rows are placed at their sorted
+   * positions. With more than one row, listeners get a single `rows-reorder` signal instead of
+   * one `row-insert` per row.
+   *
+   * @param {object[]} rows
+   */
+  appendRows(rows) {
+    this.insertRows(this.rowsCount, rows);
+  }
+  /**
+   * Inserts several rows at an index. If the model is sorted, the rows are placed at their
+   * sorted positions. With more than one row, listeners get a single `rows-reorder` signal
+   * instead of one `row-insert` per row.
+   *
+   * @param {number} index
+   * @param {object[]} rows
+   */
+  insertRows(_index, _rows) {
+    throw new Error(`${this.constructor.name} does not implement insertRows().`);
+  }
+  /**
+   * Removes a row.
+   *
+   * @param {number} index
+   * @returns {object} The removed row.
+   */
+  removeRow(_index) {
+    throw new Error(`${this.constructor.name} does not implement removeRow().`);
+  }
+  /**
+   * Removes a row by id.
+   *
+   * @param {unknown} id
+   * @returns {object} The removed row.
+   */
+  removeRowById(id) {
+    return this.removeRow(this.getRowIndexById(id));
+  }
+  /**
+   * Removes all rows.
+   */
+  removeAllRows() {
+    throw new Error(`${this.constructor.name} does not implement removeAllRows().`);
+  }
+  /**
+   * Replaces a row by another row object. The model stays sorted.
+   *
+   * @param {number} index
+   * @param {object} row
+   * @returns {number} The index of the new row.
+   */
+  replaceRow(_index, _row) {
+    throw new Error(`${this.constructor.name} does not implement replaceRow().`);
+  }
+  /**
+   * Replaces a row by id.
+   *
+   * @param {unknown} id
+   * @param {object} row
+   * @returns {number} The index of the new row.
+   */
+  replaceRowById(id, row) {
+    return this.replaceRow(this.getRowIndexById(id), row);
+  }
+  /**
+   * Changes values of a row: the given columns are assigned to the row object. The model stays
+   * sorted, so the row may move.
+   *
+   * @param {number} index
+   * @param {Record<string, unknown>} changes Values by column.
+   * @returns {number} The index of the row after the change.
+   */
+  updateRow(_index, _changes) {
+    throw new Error(`${this.constructor.name} does not implement updateRow().`);
+  }
+  /**
+   * Changes values of a row by id.
+   *
+   * @param {unknown} id
+   * @param {Record<string, unknown>} changes
+   * @returns {number} The index of the row after the change.
+   */
+  updateRowById(id, changes) {
+    return this.updateRow(this.getRowIndexById(id), changes);
+  }
+  /**
+   * Sets a single value. The model stays sorted, so the row may move.
+   *
+   * @param {number} index
+   * @param {string} column
+   * @param {unknown} value
+   * @returns {number} The index of the row after the change.
+   */
+  setCellValue(index, column, value) {
+    return this.updateRow(index, { [column]: value });
+  }
+  /**
+   * Sets a single value by row id.
+   *
+   * @param {unknown} id
+   * @param {string} column
+   * @param {unknown} value
+   * @returns {number} The index of the row after the change.
+   */
+  setCellValueById(id, column, value) {
+    return this.setCellValue(this.getRowIndexById(id), column, value);
+  }
+  /**
+   * Calls a function for every row, in order.
+   *
+   * @param {(row: object, index: number) => void} method
+   * @param {object} [context]
+   */
+  forEachRow(method, context) {
+    this._rows.forEach((row, index) => method.call(context, row, index));
+  }
+  /**
+   * Sorts the model on a column. The model keeps itself sorted when rows change.
+   *
+   * @param {string | null} column The column, or `null` to stop sorting.
+   * @param {number} [order] One of `SortOrder`. `SortOrder.NONE` stops sorting.
+   */
+  sortByColumn(_column, _order = SortOrder.ASCENDING) {
+    throw new Error(`${this.constructor.name} does not implement sortByColumn().`);
+  }
+  /**
+   * Compares two rows on a column, using `columnsInfo`.
+   *
+   * @param {number} firstIndex
+   * @param {number} secondIndex
+   * @param {string} column
+   * @returns {number} -1, 0 or 1.
+   */
+  compareRows(firstIndex, secondIndex, column) {
+    return this._compareColumn(this.getRow(firstIndex), this.getRow(secondIndex), column);
+  }
+  /**
+   * Compares two rows on a column by row id.
+   *
+   * @param {unknown} firstId
+   * @param {unknown} secondId
+   * @param {string} column
+   * @returns {number} -1, 0 or 1.
+   */
+  compareRowsById(firstId, secondId, column) {
+    return this._compareColumn(this.getRowById(firstId), this.getRowById(secondId), column);
+  }
+  /**
+   * Compares two values the way the model sorts them. Values that are not values of the type
+   * (such as `null`, `undefined` and `NaN`) come after all other values.
+   *
+   * @param {unknown} first
+   * @param {unknown} second
+   * @param {string} [type] One of {@link COLUMN_TYPES}.
+   * @param {boolean} [caseSensitive]
+   * @returns {number} -1, 0 or 1.
+   */
+  compareValues(first, second, type = "auto", caseSensitive = true) {
+    return this._compareTyped(
+      first,
+      second,
+      type,
+      caseSensitive,
+      1,
+      this._getCollator(caseSensitive)
+    );
+  }
+  /**
+   * Returns the info of a column (see `columnsInfo`).
+   *
+   * @param {string} column
+   * @returns {ColumnInfo}
+   */
+  getColumnInfo(column) {
+    return this.columnsInfo[column] || {};
+  }
+  /**
+   * Sets the info of a single column, keeping the other columns' info.
+   *
+   * @param {string} column
+   * @param {ColumnInfo} info
+   */
+  setColumnInfo(column, info) {
+    this.columnsInfo = { ...this.columnsInfo, [column]: info };
+  }
+  /**
+   * Returns the id index, building it when the rows changed.
+   *
+   * @protected
+   * @returns {Map<unknown, number>}
+   */
+  _getIndexById() {
+    const idColumn = this.idColumn;
+    if (!idColumn) {
+      throw new Error("The model has no id column.");
+    }
+    if (this._indexDirty || !this._indexById) {
+      const index = /* @__PURE__ */ new Map();
+      const rows = this.rows;
+      for (let i = 0; i < rows.length; ++i) {
+        const id = rows[i][idColumn];
+        if (index.has(id)) {
+          throw new Error(`Duplicate row id ${String(id)}.`);
+        }
+        index.set(id, i);
+      }
+      this._indexById = index;
+      this._indexDirty = false;
+    }
+    return this._indexById;
+  }
+  /**
+   * Marks the id index as outdated.
+   *
+   * @protected
+   */
+  _invalidateIndex() {
+    this._indexDirty = true;
+  }
+  _compareColumn(firstRow, secondRow, column) {
+    const info = this.getColumnInfo(column);
+    const first = firstRow[column];
+    const second = secondRow[column];
+    if (info.compare) {
+      return Math.sign(info.compare(first, second)) || 0;
+    }
+    return this.compareValues(first, second, info.type || "auto", isCaseSensitive(info));
+  }
+  /**
+   * Creates the comparison function of rows for the current sort column and order. Values that
+   * are not values always come last, in both orders.
+   *
+   * @protected
+   * @returns {((first: object, second: object) => number) | null}
+   */
+  _createSortComparator() {
+    const column = this.sortColumn;
+    if (!column || this.sortOrder === SortOrder.NONE) {
+      return null;
+    }
+    const info = this.getColumnInfo(column);
+    const factor = this.sortOrder === SortOrder.DESCENDING ? -1 : 1;
+    if (info.compare) {
+      const compare = info.compare;
+      return (first, second) => factor * (Math.sign(compare(first[column], second[column])) || 0);
+    }
+    const type = info.type || "auto";
+    const caseSensitive = isCaseSensitive(info);
+    const collator = this._getCollator(caseSensitive);
+    return (first, second) => this._compareTyped(
+      first[column],
+      second[column],
+      type,
+      caseSensitive,
+      factor,
+      collator
+    );
+  }
+  /**
+   * Finds the index where a row goes in the sorted rows: after all rows it is equal to, so
+   * sorting stays stable.
+   *
+   * @protected
+   * @param {object[]} rows Sorted rows.
+   * @param {object} row
+   * @param {(first: object, second: object) => number} compare
+   * @returns {number}
+   */
+  _findInsertIndex(rows, row, compare) {
+    let low = 0;
+    let high = rows.length;
+    while (low < high) {
+      const middle = low + high >>> 1;
+      if (compare(row, rows[middle]) < 0) {
+        high = middle;
+      } else {
+        low = middle + 1;
+      }
+    }
+    return low;
+  }
+  /**
+   * Returns the collator for string comparisons, or `null` to compare by character code.
+   *
+   * @param {boolean} caseSensitive
+   * @returns {Intl.Collator | null}
+   */
+  _getCollator(caseSensitive) {
+    return this.localeAware ? getCollator(getLocaleManager().locale, caseSensitive) : null;
+  }
+  /**
+   * Compares two values of a type, multiplying the result by `factor` (-1 to sort descending).
+   * Values that are not values of the type come last, whatever the factor.
+   *
+   * @param {unknown} first
+   * @param {unknown} second
+   * @param {string} type
+   * @param {boolean} caseSensitive
+   * @param {number} factor
+   * @param {Intl.Collator | null} collator
+   * @returns {number}
+   */
+  _compareTyped(first, second, type, caseSensitive, factor, collator) {
+    let kind = type;
+    if (type === "auto") {
+      if (typeof first === "string" && typeof second === "string") {
+        kind = "string";
+      } else if (first instanceof Date || second instanceof Date) {
+        kind = "date";
+      } else if (typeof first === "boolean" && typeof second === "boolean") {
+        kind = "boolean";
+      } else {
+        kind = "number";
+      }
+    }
+    let a;
+    let b;
+    let aIsValue;
+    let bIsValue;
+    let text = false;
+    if (NUMBER_TYPES.has(kind)) {
+      a = typeof first === "number" ? first : parseFloat(first);
+      b = typeof second === "number" ? second : parseFloat(second);
+      aIsValue = Number.isFinite(a);
+      bIsValue = Number.isFinite(b);
+    } else if (DATE_TYPES.has(kind)) {
+      a = toTimestamp(first);
+      b = toTimestamp(second);
+      aIsValue = Number.isFinite(a);
+      bIsValue = Number.isFinite(b);
+    } else if (kind === "bool" || kind === "boolean") {
+      a = first ? 1 : 0;
+      b = second ? 1 : 0;
+      aIsValue = first !== null && first !== void 0 && !Number.isNaN(first);
+      bIsValue = second !== null && second !== void 0 && !Number.isNaN(second);
+    } else {
+      text = true;
+      aIsValue = typeof first === "string" || typeof first === "number" && Number.isFinite(first);
+      bIsValue = typeof second === "string" || typeof second === "number" && Number.isFinite(second);
+      a = aIsValue ? String(first) : "";
+      b = bIsValue ? String(second) : "";
+      if (!caseSensitive && !collator) {
+        a = a.toLowerCase();
+        b = b.toLowerCase();
+      }
+    }
+    if (!aIsValue) {
+      return bIsValue ? 1 : 0;
+    }
+    if (!bIsValue) {
+      return -1;
+    }
+    if (text && collator) {
+      return factor * Math.sign(collator.compare(a, b));
+    }
+    return a === b ? 0 : factor * (a < b ? -1 : 1);
+  }
+};
+defineProperties(AbstractModel, {
+  /**
+   * The rows, in order. Do not modify the array; setting it replaces all rows (the array is
+   * copied, the row objects are not).
+   */
+  rows: {
+    signal: false,
+    get() {
+      return this._rows;
+    },
+    set(rows) {
+      this._setRows(rows);
+    }
+  },
+  /**
+   * The number of rows.
+   */
+  rowsCount: {
+    readOnly: true,
+    get() {
+      return this.rows.length;
+    }
+  },
+  /**
+   * Information about columns that helps sorting and filtering, keyed by column name. See
+   * {@link ColumnInfo}: e.g. `{ price: { type: 'number' }, name: { caseSensitive: false } }`.
+   */
+  columnsInfo: {
+    value: null,
+    get() {
+      return this._columnsInfo;
+    },
+    set(columnsInfo) {
+      if (columnsInfo !== null && typeof columnsInfo !== "object") {
+        throw new TypeError("Columns info must be an object.");
+      }
+      for (const [column, info] of Object.entries(columnsInfo || {})) {
+        if (info.type && !COLUMN_TYPES.includes(info.type)) {
+          throw new RangeError(`Unknown type '${info.type}' of column '${column}'.`);
+        }
+      }
+      this._columnsInfo = { ...columnsInfo };
+      this._onSortingChange();
+    }
+  },
+  /**
+   * The column that identifies rows, or `null`. With an id column, rows can be addressed by
+   * id, and selections keep rows selected while they are sorted or filtered. Ids must be
+   * unique.
+   */
+  idColumn: {
+    value: null,
+    changed() {
+      this._invalidateIndex();
+      if (this._idColumn) {
+        this._getIndexById();
+      }
+    }
+  },
+  /**
+   * The column the rows are sorted on, or `null`. Setting a column while the order is
+   * `SortOrder.NONE` sorts ascending; setting `null` sets the order to `SortOrder.NONE`.
+   */
+  sortColumn: {
+    value: null,
+    set(column) {
+      this.sortByColumn(
+        column,
+        !column ? SortOrder.NONE : this.sortOrder === SortOrder.NONE ? SortOrder.ASCENDING : this.sortOrder
+      );
+      return false;
+    }
+  },
+  /**
+   * The sort order: one of `SortOrder`. Setting `SortOrder.NONE` also sets `sortColumn` to
+   * `null`.
+   */
+  sortOrder: {
+    value: SortOrder.NONE,
+    set(order) {
+      this.sortByColumn(order === SortOrder.NONE ? null : this.sortColumn, order);
+      return false;
+    }
+  },
+  /**
+   * Whether strings are compared with the rules of the current locale (`Intl.Collator`), so
+   * `'é'` sorts next to `'e'`. When `false`, strings are compared by character code, like the
+   * original toolkit.
+   */
+  localeAware: {
+    value: true,
+    changed() {
+      this._onSortingChange();
+    }
+  }
+});
+
+// src/widgets/list-box.js
+var SelectionMode = Object.freeze({
+  NONE: "none",
+  // No row can be selected.
+  SINGLE: "single",
+  // At most one row; Control+click deselects it.
+  BROWSE: "browse",
+  // One row, which the user cannot deselect.
+  MULTIPLE: "multiple"
+  // Any number of rows, extended with Shift and Control.
+});
+var SELECTION_MODES = new Set(Object.values(SelectionMode));
+function toSelectionMode(mode) {
+  if (typeof mode === "number") {
+    if (mode & SelectionModes.MULTI) {
+      return SelectionMode.MULTIPLE;
+    }
+    if (mode & SelectionModes.SINGLE) {
+      return mode & SelectionModes.TOGGLE ? SelectionMode.SINGLE : SelectionMode.BROWSE;
+    }
+    return SelectionMode.NONE;
+  }
+  if (!SELECTION_MODES.has(mode)) {
+    throw new RangeError(`Invalid selection mode '${mode}'.`);
+  }
+  return mode;
+}
+__name(toSelectionMode, "toSelectionMode");
+function checkFunction(value, name) {
+  if (value !== null && value !== void 0 && typeof value !== "function") {
+    throw new TypeError(`The ${name} must be a function or null.`);
+  }
+  return value || null;
+}
+__name(checkFunction, "checkFunction");
+var ListBoxRow = class extends Bin {
+  static {
+    __name(this, "ListBoxRow");
+  }
+  _initialize() {
+    this._releaseHeader = null;
+    this._filtered = false;
+    this._modelKey = void 0;
+    super._initialize();
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-list-box-row" role="none">
+                <div class="wy-list-box-row-header" hidden></div>
+                <div class="wy-list-box-row-body" role="option"></div>
+            </div>
+        `);
+    this._headerEl = element.querySelector(".wy-list-box-row-header");
+    this._bodyEl = element.querySelector(".wy-list-box-row-body");
+    return element;
+  }
+  /**
+   * The element with the focus and the selection: the row without its header.
+   *
+   * @type {HTMLElement}
+   */
+  get focusElement() {
+    return this._bodyEl;
+  }
+  /**
+   * The list box the row is in, or `null`.
+   *
+   * @type {ListBox | null}
+   */
+  get listBox() {
+    return this._parent instanceof ListBox ? this._parent : null;
+  }
+  /**
+   * Activates the row, as a click (or Enter) does: emits `activate`, and `row-activate` on the
+   * list box. Nothing happens when the row is not `activatable`.
+   */
+  activate() {
+    if (!this._activatable || !this.isSensitive) {
+      return;
+    }
+    this.emit("activate", this);
+    this.listBox?.emit("row-activate", this.listBox, this);
+  }
+  /**
+   * Tells the list box that the row changed in a way that affects its filtering, sorting or
+   * header, so that they are updated.
+   */
+  changed() {
+    this.listBox?._onRowChanged(this);
+  }
+  destroy() {
+    this._header?.destroy();
+    super.destroy();
+  }
+  /**
+   * Whether the row is shown: it is `visible` and not filtered out.
+   *
+   * @protected
+   * @returns {boolean}
+   */
+  _isRowShown() {
+    return this._visible && !this._filtered;
+  }
+  _getFocusChain() {
+    return [...getAuxiliaryFocusChain(this._header), ...super._getFocusChain()];
+  }
+  _onIsVisibleChange(isVisible) {
+    super._onIsVisibleChange(isVisible);
+    refreshAuxiliaryWidgets([this._header]);
+  }
+  _onIsSensitiveChange(isSensitive) {
+    super._onIsSensitiveChange(isSensitive);
+    refreshAuxiliaryWidgets([this._header]);
+  }
+  _updateTabIndex() {
+    super._updateTabIndex();
+    const listBox = this.listBox;
+    if (listBox && this.focusElement.tabIndex === 0 && listBox._getTabStop() !== this) {
+      this.focusElement.tabIndex = -1;
+    }
+  }
+  /**
+   * Sets whether the filter of the list box hides the row.
+   *
+   * @protected
+   * @param {boolean} filtered
+   */
+  _setFiltered(filtered) {
+    this._filtered = filtered;
+    this.el.classList.toggle("wy-filtered-out", filtered);
+  }
+  /**
+   * Updates the selected state. Called by the list box.
+   *
+   * @protected
+   * @param {boolean} selected
+   * @returns {boolean} Whether the state changed.
+   */
+  _setSelected(selected) {
+    if (selected === this._selected) {
+      return false;
+    }
+    this._selected = selected;
+    this._syncSelected();
+    this.emit("selected-change", this);
+    return true;
+  }
+  _syncSelected() {
+    const selectable = this.listBox?.selectionMode !== SelectionMode.NONE;
+    this.el.classList.toggle("wy-selected", this._selected);
+    if (selectable) {
+      this._bodyEl.setAttribute("aria-selected", String(this._selected));
+    } else {
+      this._bodyEl.removeAttribute("aria-selected");
+    }
+  }
+  _setCursor(cursor) {
+    this.el.classList.toggle("wy-cursor", cursor);
+  }
+  _onHeaderDestroy() {
+    this._releaseHeader = null;
+    this._header = null;
+    this._headerEl.hidden = true;
+    this.emit("header-change", this);
+  }
+};
+defineProperties(ListBoxRow, {
+  canFocus: { value: true },
+  /**
+   * Whether the row can be activated (by a click or Enter), emitting `row-activate`.
+   */
+  activatable: {
+    value: true,
+    coerce: Boolean,
+    changed(activatable) {
+      this.el.classList.toggle("wy-activatable", activatable);
+    }
+  },
+  /**
+   * Whether the row can be selected.
+   */
+  selectable: {
+    value: true,
+    coerce: Boolean,
+    changed(selectable) {
+      if (!selectable) {
+        this.listBox?.unselectRow(this);
+      }
+    }
+  },
+  /**
+   * Whether the row is selected. Use the list box's `selectRow()` and `unselectRow()` to change
+   * it.
+   */
+  selected: { value: false, readOnly: true },
+  /**
+   * The position of the row in its list box, or -1.
+   */
+  index: {
+    readOnly: true,
+    get() {
+      return this._parent ? this._parent.indexOf(this) : -1;
+    }
+  },
+  /**
+   * A widget shown above the row, such as a section title or a separator, or `null`. The row
+   * owns it: replacing it destroys the old header.
+   */
+  header: {
+    value: null,
+    set(widget) {
+      if (widget !== null && !(widget instanceof Widget)) {
+        throw new TypeError("The header of a row must be a widget or null.");
+      }
+      const old = this._header;
+      if (old) {
+        this._releaseHeader?.();
+        this._releaseHeader = null;
+        old.destroy();
+      }
+      this._header = widget;
+      this._headerEl.hidden = !widget;
+      if (widget) {
+        this._releaseHeader = attachAuxiliaryWidget(
+          this,
+          widget,
+          this._headerEl,
+          () => this._onHeaderDestroy()
+        );
+      }
+    }
+  }
+});
+var ListBox = class extends Container {
+  static {
+    __name(this, "ListBox");
+  }
+  _initialize() {
+    this._releasePlaceholder = null;
+    this._selectionBatch = 0;
+    this._tabStopRow = null;
+    this._lastSelection = [];
+    this._lastSelectedRow = null;
+    this._modelDisconnects = [];
+    this._binding = false;
+    super._initialize();
+    this.el.addEventListener("pointerdown", (event) => this._onPointerDown(event));
+    this.el.addEventListener("click", (event) => this._onClick(event));
+    this.el.addEventListener("keydown", (event) => this._onKeyDown(event));
+    this.el.addEventListener("focusin", (event) => this._onFocusIn(event));
+    attachDoublePress(this.el, (event) => this._onDoublePress(event), {
+      key: /* @__PURE__ */ __name((event) => this._getRowFromTarget(event.target, true), "key")
+    });
+    this._syncSelectionMode();
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-list-box" role="listbox" aria-orientation="vertical">
+                <div class="wy-list-box-rows" role="none"></div>
+                <div class="wy-list-box-placeholder" hidden></div>
+            </div>
+        `);
+    this._bodyEl = element.querySelector(".wy-list-box-rows");
+    this._placeholderEl = element.querySelector(".wy-list-box-placeholder");
+    return element;
+  }
+  /**
+   * Adds a widget at an index. A widget that is not a `ListBoxRow` is wrapped in a new row. With
+   * a `sortFunction`, the row is inserted at its sorted position instead.
+   *
+   * @param {Widget} widget
+   * @param {number} index Between 0 and `childrenCount`.
+   * @returns {ListBoxRow} The row.
+   * @throws {Error} If the list box is bound to a model.
+   */
+  insertChild(widget, index) {
+    if (this._model && !this._binding) {
+      throw new Error("A list box bound to a model gets its rows from the model.");
+    }
+    const row = widget instanceof ListBoxRow ? widget : this._wrap(widget);
+    if (this._sortFunction && !this._model) {
+      index = this._findSortedIndex(row);
+    }
+    super.insertChild(row, index);
+    return row;
+  }
+  /**
+   * Removes a row. For a widget in a row, its row is removed.
+   *
+   * @param {Widget} widget A row, or the child of a row.
+   * @returns {number} The index the row had.
+   * @throws {Error} If the widget is not in the list box.
+   */
+  removeChild(widget) {
+    if (this._model && !this._binding && !widget.destroyed) {
+      throw new Error("A list box bound to a model gets its rows from the model.");
+    }
+    const row = !this._children.includes(widget) && widget?.parent instanceof ListBoxRow ? widget.parent : widget;
+    return super.removeChild(row);
+  }
+  /**
+   * Returns the row at an index, or `null`.
+   *
+   * @param {number} index
+   * @returns {ListBoxRow | null}
+   */
+  getRowAtIndex(index) {
+    return this._children[index] || null;
+  }
+  /**
+   * Selects a row. Except with `multiple`, the other rows are deselected.
+   *
+   * @param {ListBoxRow | null} row The row, or `null` to deselect all rows (except with
+   *     `browse`).
+   */
+  selectRow(row) {
+    if (row === null) {
+      this.unselectAll();
+      return;
+    }
+    this._checkRow(row);
+    if (!this._canSelect(row)) {
+      return;
+    }
+    this._changeSelection(() => {
+      if (this._selectionMode !== SelectionMode.MULTIPLE) {
+        this._unselectAllExcept(row);
+      }
+      row._setSelected(true);
+    });
+  }
+  /**
+   * Deselects a row.
+   *
+   * @param {ListBoxRow} row
+   */
+  unselectRow(row) {
+    this._checkRow(row);
+    this._changeSelection(() => row._setSelected(false));
+  }
+  /**
+   * Selects all rows that are shown and selectable. Only with `multiple`.
+   */
+  selectAll() {
+    if (this._selectionMode !== SelectionMode.MULTIPLE) {
+      return;
+    }
+    this._changeSelection(() => {
+      for (const row of this._children) {
+        if (this._canSelect(row)) {
+          row._setSelected(true);
+        }
+      }
+    });
+  }
+  /**
+   * Deselects all rows, except with `browse`.
+   */
+  unselectAll() {
+    if (this._selectionMode === SelectionMode.BROWSE) {
+      return;
+    }
+    this._changeSelection(() => this._unselectAllExcept(null));
+  }
+  /**
+   * Returns the first selected row, or `null`.
+   *
+   * @returns {ListBoxRow | null}
+   */
+  getSelectedRow() {
+    return this._children.find((x) => x.selected) || null;
+  }
+  /**
+   * Calls a function for every selected row, in order.
+   *
+   * @param {(row: ListBoxRow) => void} method
+   * @param {object} [context]
+   */
+  forEachSelected(method, context) {
+    for (const row of this.selectedRows) {
+      method.call(context, row);
+    }
+  }
+  /**
+   * Sets the filter function. GTK's name for setting `filterFunction`.
+   *
+   * @param {((row: ListBoxRow) => boolean) | null} filterFunction
+   */
+  setFilterFunction(filterFunction) {
+    this.filterFunction = filterFunction;
+  }
+  /**
+   * Sets the sort function. GTK's name for setting `sortFunction`.
+   *
+   * @param {((first: ListBoxRow, second: ListBoxRow) => number) | null} sortFunction
+   */
+  setSortFunction(sortFunction) {
+    this.sortFunction = sortFunction;
+  }
+  /**
+   * Sets the header function, which is called for every shown row with the row and the shown row
+   * before it (or `null` for the first row), and sets the row's `header`, for example to a
+   * label when a new section starts. It may keep the row's current header. Setting `null` removes
+   * all headers.
+   *
+   * @param {((row: ListBoxRow, before: ListBoxRow | null) => void) | null} headerFunction
+   */
+  setHeaderFunction(headerFunction) {
+    this.headerFunction = headerFunction;
+  }
+  /**
+   * Filters all rows again with the filter function.
+   */
+  invalidateFilter() {
+    this._changeSelection(() => {
+      for (const row of this._children) {
+        this._applyFilter(row);
+      }
+    });
+    this._updateShownRows();
+  }
+  /**
+   * Sorts all rows again with the sort function. Rows bound to a model keep its order.
+   */
+  invalidateSort() {
+    const compare = this._sortFunction;
+    if (!compare || this._model) {
+      return;
+    }
+    const sorted = [...this._children].sort((a, b) => compare(a, b));
+    sorted.forEach((row, index) => {
+      if (this._children[index] !== row) {
+        this.reorderChild(row, index);
+      }
+    });
+    this._updateShownRows();
+  }
+  /**
+   * Updates the headers of all rows with the header function.
+   */
+  invalidateHeaders() {
+    const headerFunction = this._headerFunction;
+    if (!headerFunction) {
+      return;
+    }
+    let before = null;
+    for (const row of this._children) {
+      if (row._isRowShown()) {
+        headerFunction(row, before);
+        before = row;
+      }
+    }
+  }
+  /**
+   * Makes the rows from a model, and keeps them in sync with it: rows are added, removed, moved
+   * and recreated as the model changes. While bound, rows cannot be added or removed otherwise,
+   * and `sortFunction` does not apply. `bindModel(null)` unbinds the model and removes the rows.
+   *
+   * @param {AbstractModel | null} model A model, such as a `ListModel` or `FilteredListModel`.
+   * @param {(row: object, index: number) => Widget} [createWidgetFunction] Creates the widget
+   *     for a row of the model: a `ListBoxRow`, or another widget, which is wrapped in one.
+   * @throws {TypeError} If the model or the function is invalid.
+   */
+  bindModel(model, createWidgetFunction) {
+    if (model !== null && !(model instanceof AbstractModel)) {
+      throw new TypeError("A list box can only be bound to a model.");
+    }
+    if (model && typeof createWidgetFunction !== "function") {
+      throw new TypeError("Binding a model needs a function that creates the widgets.");
+    }
+    for (const disconnect of this._modelDisconnects) {
+      disconnect();
+    }
+    this._modelDisconnects = [];
+    this._binding = true;
+    try {
+      this._changeSelection(() => this.removeAllChildren());
+    } finally {
+      this._binding = false;
+    }
+    this._model = model;
+    this._createWidgetFunction = model ? createWidgetFunction : null;
+    if (!model) {
+      this.emit("model-change", this);
+      return;
+    }
+    this._modelDisconnects = [
+      model.connect("row-insert", (_model, index) => this._onModelRowInsert(index)),
+      model.connect("row-remove", (_model, index) => this._onModelRowRemove(index)),
+      model.connect("row-move", (_model, from, to) => this._onModelRowMove(from, to)),
+      model.connect("row-update", (_model, index) => this._onModelRowUpdate(index)),
+      model.connect("rows-reorder", () => this._rebuildFromModel()),
+      model.connect("destroy", () => this.bindModel(null))
+    ];
+    this._rebuildFromModel();
+    this.emit("model-change", this);
+  }
+  destroy() {
+    for (const disconnect of this._modelDisconnects) {
+      disconnect();
+    }
+    this._modelDisconnects = [];
+    this._model = null;
+    this._placeholder?.destroy();
+    super.destroy();
+  }
+  /**
+   * The row that is the tab stop of the list: the cursor row, or else the first shown row.
+   *
+   * @protected
+   * @returns {ListBoxRow | null}
+   */
+  _getTabStop() {
+    return this._tabStopRow;
+  }
+  /**
+   * Updates the tab stop row after the cursor or the shown rows changed, and the tab indexes of
+   * the rows that stopped or started being the tab stop.
+   *
+   * @protected
+   */
+  _refreshTabStop() {
+    const shown = /* @__PURE__ */ __name((row) => row.visible && row._isRowShown(), "shown");
+    const cursor = this._cursorRow;
+    const tabStop = cursor && cursor.parent === this && shown(cursor) ? cursor : this._children.find(shown) || null;
+    const old = this._tabStopRow;
+    if (tabStop === old) {
+      return;
+    }
+    this._tabStopRow = tabStop;
+    if (old && !old.destroyed) {
+      old._updateTabIndex();
+    }
+    tabStop?._updateTabIndex();
+  }
+  _getFocusChain() {
+    const tabStop = this._getTabStop();
+    const chain = [];
+    for (const row of this._children) {
+      if (!row.isVisible || !row.isSensitive || !row._isRowShown()) {
+        continue;
+      }
+      if (row === tabStop) {
+        chain.push(row);
+      }
+      chain.push(...row._getFocusChain());
+    }
+    if (!this._placeholderEl.hidden) {
+      chain.push(...getAuxiliaryFocusChain(this._placeholder));
+    }
+    return chain;
+  }
+  _onIsVisibleChange(isVisible) {
+    super._onIsVisibleChange(isVisible);
+    refreshAuxiliaryWidgets([this._placeholder]);
+  }
+  _onIsSensitiveChange(isSensitive) {
+    super._onIsSensitiveChange(isSensitive);
+    refreshAuxiliaryWidgets([this._placeholder]);
+  }
+  _attachChildElement(widget, index) {
+    super._attachChildElement(widget, index);
+    this._applyFilter(widget);
+    widget._syncSelected();
+    widget._updateTabIndex();
+  }
+  _onChildVisibleChange(widget) {
+    super._onChildVisibleChange(widget);
+    this._updateShownRows();
+  }
+  _onChildrenChange() {
+    super._onChildrenChange();
+    if (this._cursorRow && !this._children.includes(this._cursorRow)) {
+      this._cursorRow._setCursor(false);
+      this._cursorRow = null;
+    }
+    if (this._anchorRow && !this._children.includes(this._anchorRow)) {
+      this._anchorRow = null;
+    }
+    this._syncSelectionState();
+    this._updateShownRows();
+  }
+  _detachChildElement(widget) {
+    super._detachChildElement(widget);
+    if (widget instanceof ListBoxRow && widget.selected) {
+      this._changeSelection(() => widget._setSelected(false));
+    }
+    widget._setCursor(false);
+  }
+  _updateLayout() {
+    super._updateLayout();
+    this.invalidateHeaders();
+  }
+  /**
+   * Updates everything that depends on which rows are shown: the placeholder, the tab stop and
+   * (at the end of the task) the headers.
+   *
+   * @protected
+   */
+  _updateShownRows() {
+    const hasRows = this._children.some((x) => x.visible && x._isRowShown());
+    this._placeholderEl.hidden = hasRows || !this._placeholder;
+    this.el.classList.toggle("wy-empty", !hasRows);
+    refreshAuxiliaryWidgets([this._placeholder]);
+    this._refreshTabStop();
+    this._queueLayout();
+  }
+  _onRowChanged(row) {
+    this._changeSelection(() => this._applyFilter(row));
+    if (this._sortFunction && !this._model) {
+      const index = this._findSortedIndex(row);
+      const current = this._children.indexOf(row);
+      this.reorderChild(row, index > current ? index - 1 : index);
+    }
+    this._updateShownRows();
+  }
+  _wrap(widget) {
+    if (!(widget instanceof Widget)) {
+      throw new TypeError("Only widgets can be added to a list box.");
+    }
+    const row = new ListBoxRow();
+    row.addChild(widget);
+    return row;
+  }
+  _checkRow(row) {
+    if (!(row instanceof ListBoxRow) || row.parent !== this) {
+      throw new Error("The row is not in this list box.");
+    }
+  }
+  _findSortedIndex(row) {
+    const compare = this._sortFunction;
+    const index = this._children.findIndex((x) => x !== row && compare(row, x) < 0);
+    return index < 0 ? this._children.length : index;
+  }
+  _applyFilter(row) {
+    const shown = !this._filterFunction || Boolean(this._filterFunction(row));
+    if (shown === !row._filtered) {
+      return;
+    }
+    const hadFocus = row._containsFocusWidget();
+    row._setFiltered(!shown);
+    if (!shown) {
+      row._setSelected(false);
+      if (row === this._cursorRow) {
+        row._setCursor(false);
+        this._cursorRow = null;
+      }
+      if (hadFocus) {
+        const next = this._getNavigableRows()[0];
+        if (next) {
+          this._setCursorRow(next, true);
+        } else {
+          this.window?._onFocusWidgetGone(row);
+        }
+      }
+    }
+  }
+  _isNavigable(row) {
+    return row.visible && row._isRowShown() && row.isSensitive;
+  }
+  _getNavigableRows() {
+    return this._children.filter((x) => this._isNavigable(x));
+  }
+  _canSelect(row) {
+    return this._selectionMode !== SelectionMode.NONE && row.selectable && row._isRowShown();
+  }
+  /**
+   * Runs a function that changes the selection, and emits the selection signals once afterwards
+   * if it changed.
+   *
+   * @protected
+   * @param {() => void} method
+   */
+  _changeSelection(method) {
+    this._selectionBatch += 1;
+    try {
+      method();
+    } finally {
+      this._selectionBatch -= 1;
+    }
+    if (!this._selectionBatch) {
+      this._syncSelectionState();
+    }
+  }
+  _syncSelectionState() {
+    if (this._selectionBatch) {
+      return;
+    }
+    const selected = this._children.filter((x) => x.selected);
+    const old = this._lastSelection;
+    const changed = old.length !== selected.length || old.some((row, index) => row !== selected[index]);
+    this._lastSelection = selected;
+    if (!changed) {
+      return;
+    }
+    this.emit("selected-rows-change", this);
+    if (this._selectionMode === SelectionMode.SINGLE || this._selectionMode === SelectionMode.BROWSE) {
+      const row = selected[0] || null;
+      if (row !== this._lastSelectedRow) {
+        this._lastSelectedRow = row;
+        this.emit("row-select", this, row);
+      }
+    }
+  }
+  _unselectAllExcept(keep) {
+    for (const row of this._children) {
+      if (row !== keep) {
+        row._setSelected(false);
+      }
+    }
+  }
+  _selectRange(from, to, replace) {
+    const start = Math.min(this._children.indexOf(from), this._children.indexOf(to));
+    const end = Math.max(this._children.indexOf(from), this._children.indexOf(to));
+    this._children.forEach((row, index) => {
+      const inRange = index >= start && index <= end && this._canSelect(row);
+      if (inRange) {
+        row._setSelected(true);
+      } else if (replace) {
+        row._setSelected(false);
+      }
+    });
+  }
+  /**
+   * Moves the cursor to a row.
+   *
+   * @protected
+   * @param {ListBoxRow | null} row
+   * @param {boolean} focus Whether to give the row the keyboard focus.
+   */
+  _setCursorRow(row, focus) {
+    if (this._cursorRow !== row) {
+      this._cursorRow?._setCursor(false);
+      this._cursorRow = row;
+      row?._setCursor(true);
+      this._refreshTabStop();
+    }
+    if (row && focus) {
+      if (!row.focus()) {
+        row.focusElement.focus();
+      }
+      row.focusElement.scrollIntoView?.({ block: "nearest" });
+    }
+  }
+  /**
+   * Selects a row because the user pressed it, like GTK: with `multiple`, Control toggles it and
+   * Shift selects the range from the anchor; with `single`, Control deselects a selected row.
+   *
+   * @protected
+   * @param {ListBoxRow} row
+   * @param {boolean} modify Whether Control was held.
+   * @param {boolean} extend Whether Shift was held.
+   */
+  _updateSelection(row, modify, extend) {
+    this._setCursorRow(row, true);
+    if (!this._canSelect(row)) {
+      return;
+    }
+    const mode = this._selectionMode;
+    this._changeSelection(() => {
+      if (mode === SelectionMode.MULTIPLE) {
+        if (extend && this._anchorRow) {
+          this._selectRange(this._anchorRow, row, !modify);
+          return;
+        }
+        if (modify) {
+          row._setSelected(!row.selected);
+        } else {
+          this._unselectAllExcept(row);
+          row._setSelected(true);
+        }
+        this._anchorRow = row;
+      } else if (mode === SelectionMode.SINGLE && modify && row.selected) {
+        row._setSelected(false);
+      } else {
+        this._unselectAllExcept(row);
+        row._setSelected(true);
+      }
+    });
+  }
+  /**
+   * Moves the cursor with the keyboard, selecting as GTK does.
+   *
+   * @protected
+   * @param {ListBoxRow | null} row
+   * @param {boolean} modify Whether Control was held: only the cursor moves.
+   * @param {boolean} extend Whether Shift was held: the selection is extended (with `multiple`).
+   */
+  _moveCursor(row, modify, extend) {
+    if (!row) {
+      return;
+    }
+    const previous = this._cursorRow;
+    this._setCursorRow(row, true);
+    if (!this._canSelect(row)) {
+      return;
+    }
+    const mode = this._selectionMode;
+    this._changeSelection(() => {
+      if (mode === SelectionMode.MULTIPLE && extend) {
+        if (!this._anchorRow) {
+          this._anchorRow = previous || row;
+        }
+        this._selectRange(this._anchorRow, row, !modify);
+      } else if (!modify) {
+        this._unselectAllExcept(row);
+        row._setSelected(true);
+        this._anchorRow = row;
+      }
+    });
+  }
+  /**
+   * Returns the row a page away from the cursor row, as far as the visible part of the list.
+   *
+   * @protected
+   * @param {number} direction 1 for Page Down, -1 for Page Up.
+   * @returns {ListBoxRow | null}
+   */
+  _getPageRow(direction) {
+    const rows = this._getNavigableRows();
+    const cursor = rows.includes(this._cursorRow) ? this._cursorRow : null;
+    if (!cursor) {
+      return direction > 0 ? rows[rows.length - 1] || null : rows[0] || null;
+    }
+    const page = this._getViewportHeight();
+    const top = cursor.focusElement.getBoundingClientRect().top;
+    const target = top + direction * page;
+    let result = cursor;
+    for (const row of direction > 0 ? rows : [...rows].reverse()) {
+      const rowTop = row.focusElement.getBoundingClientRect().top;
+      if (direction > 0 ? rowTop > target : rowTop < target) {
+        break;
+      }
+      result = row;
+    }
+    if (result === cursor) {
+      const index = rows.indexOf(cursor) + direction;
+      result = rows[Math.max(0, Math.min(index, rows.length - 1))];
+    }
+    return result;
+  }
+  _getViewportHeight() {
+    for (let element = this.el.parentElement; element; element = element.parentElement) {
+      const style = getComputedStyle(element);
+      if (/(auto|scroll)/.test(style.overflowY) && element.scrollHeight > element.clientHeight) {
+        return element.clientHeight;
+      }
+    }
+    return Math.min(this.el.clientHeight, window.innerHeight);
+  }
+  _getRowFromTarget(target, onlyBody) {
+    let widget = Widget.fromElement(target);
+    while (widget && widget.parent !== this) {
+      if (onlyBody && widget.canFocus && !(widget instanceof ListBoxRow)) {
+        return null;
+      }
+      widget = widget.parent;
+    }
+    if (!(widget instanceof ListBoxRow) || !widget.focusElement.contains(target)) {
+      return null;
+    }
+    return widget;
+  }
+  _onPointerDown(event) {
+    if (event.button !== 0 || !this.isSensitive) {
+      return;
+    }
+    const row = this._getRowFromTarget(event.target, true);
+    if (!row || !row.isSensitive) {
+      return;
+    }
+    this._updateSelection(row, event.ctrlKey || event.metaKey, event.shiftKey);
+  }
+  _onClick(event) {
+    const row = this._getRowFromTarget(event.target, true);
+    if (!row || !this._activateOnSingleClick || event.detail > 1 || event.ctrlKey || event.metaKey || event.shiftKey) {
+      return;
+    }
+    row.activate();
+  }
+  _onDoublePress(event) {
+    const row = this._getRowFromTarget(event.target, true);
+    if (row && !this._activateOnSingleClick) {
+      row.activate();
+    }
+  }
+  _onFocusIn(event) {
+    const row = this._getRowFromTarget(event.target, false);
+    if (row && event.target === row.focusElement) {
+      this._setCursorRow(row, false);
+    }
+  }
+  _onKeyDown(event) {
+    if (event.defaultPrevented || event.altKey || !this.isSensitive) {
+      return;
+    }
+    const row = this._getRowFromTarget(event.target, false);
+    if (!row || event.target !== row.focusElement) {
+      return;
+    }
+    const modify = event.ctrlKey || event.metaKey;
+    const extend = event.shiftKey;
+    const rows = this._getNavigableRows();
+    const index = rows.indexOf(row);
+    switch (event.key) {
+      case Key.UP:
+        this._moveCursor(rows[Math.max(0, index - 1)], modify, extend);
+        break;
+      case Key.DOWN:
+        this._moveCursor(rows[Math.min(rows.length - 1, index + 1)], modify, extend);
+        break;
+      case Key.HOME:
+        this._moveCursor(rows[0], modify, extend);
+        break;
+      case Key.END:
+        this._moveCursor(rows[rows.length - 1], modify, extend);
+        break;
+      case Key.PAGE_UP:
+        this._moveCursor(this._getPageRow(-1), modify, extend);
+        break;
+      case Key.PAGE_DOWN:
+        this._moveCursor(this._getPageRow(1), modify, extend);
+        break;
+      case Key.SPACE:
+      case Key.ENTER:
+        if (modify && event.key === Key.SPACE) {
+          this._updateSelection(row, true, false);
+        } else {
+          this._updateSelection(row, false, extend);
+          row.activate();
+        }
+        break;
+      default:
+        if (modify && event.key.toLowerCase() === Key.A) {
+          if (extend) {
+            this.unselectAll();
+          } else {
+            this.selectAll();
+          }
+          break;
+        }
+        return;
+    }
+    event.preventDefault();
+  }
+  _syncSelectionMode() {
+    const mode = this._selectionMode;
+    this.el.classList.toggle("wy-selectable-rows", mode !== SelectionMode.NONE);
+    if (mode === SelectionMode.MULTIPLE) {
+      this.el.setAttribute("aria-multiselectable", "true");
+    } else {
+      this.el.removeAttribute("aria-multiselectable");
+    }
+    for (const row of this._children) {
+      row._syncSelected();
+    }
+  }
+  _createModelRow(index) {
+    const widget = this._createWidgetFunction(this._model.getRow(index), index);
+    if (!(widget instanceof Widget)) {
+      throw new TypeError("The function of a bound list box must return a widget.");
+    }
+    return widget instanceof ListBoxRow ? widget : this._wrap(widget);
+  }
+  _runBinding(method) {
+    this._binding = true;
+    try {
+      this._changeSelection(method);
+    } finally {
+      this._binding = false;
+    }
+  }
+  _getModelKey(index) {
+    const model = this._model;
+    return model.idColumn ? model.getRowIdByIndex(index) : model.getRow(index);
+  }
+  _rebuildFromModel() {
+    const model = this._model;
+    const selectedKeys = /* @__PURE__ */ new Set();
+    let cursorKey;
+    let cursorHadFocus = false;
+    for (const row of this._children) {
+      if (row.selected) {
+        selectedKeys.add(row._modelKey);
+      }
+      if (row === this._cursorRow) {
+        cursorKey = row._modelKey;
+        cursorHadFocus = row._containsFocusWidget();
+      }
+    }
+    this._runBinding(() => {
+      this.removeAllChildren();
+      for (let index = 0; index < model.rowsCount; ++index) {
+        const row = this._createModelRow(index);
+        row._modelKey = this._getModelKey(index);
+        super.insertChild(row, index);
+        if (selectedKeys.has(row._modelKey)) {
+          row._setSelected(true);
+        }
+        if (cursorKey !== void 0 && row._modelKey === cursorKey) {
+          this._setCursorRow(row, cursorHadFocus);
+        }
+      }
+    });
+  }
+  _onModelRowInsert(index) {
+    this._runBinding(() => {
+      const row = this._createModelRow(index);
+      row._modelKey = this._getModelKey(index);
+      super.insertChild(row, index);
+    });
+  }
+  _onModelRowRemove(index) {
+    const row = this._children[index];
+    if (!row) {
+      return;
+    }
+    const hadFocus = row._containsFocusWidget();
+    this._runBinding(() => row.destroy());
+    if (hadFocus) {
+      const rows = this._getNavigableRows();
+      this._setCursorRow(rows[Math.min(index, rows.length - 1)] || null, true);
+    }
+  }
+  _onModelRowMove(from, to) {
+    const row = this._children[from];
+    if (row) {
+      this.reorderChild(row, to);
+    }
+  }
+  _onModelRowUpdate(index) {
+    const old = this._children[index];
+    if (!old) {
+      return;
+    }
+    const selected = old.selected;
+    const cursor = old === this._cursorRow;
+    const hadFocus = old._containsFocusWidget();
+    this._runBinding(() => {
+      old.destroy();
+      const row = this._createModelRow(index);
+      row._modelKey = this._getModelKey(index);
+      super.insertChild(row, index);
+      if (selected) {
+        row._setSelected(true);
+      }
+      if (cursor) {
+        this._setCursorRow(row, hadFocus);
+      }
+    });
+  }
+};
+defineProperties(ListBox, {
+  /**
+   * How rows can be selected: one of `SelectionMode`. A mask of `SelectionModes` (as tables use)
+   * is converted. Changing it keeps at most the first selected row, except with `multiple`.
+   */
+  selectionMode: {
+    value: SelectionMode.SINGLE,
+    coerce: toSelectionMode,
+    changed(mode) {
+      this._changeSelection(() => {
+        if (mode === SelectionMode.NONE) {
+          this._unselectAllExcept(null);
+        } else if (mode !== SelectionMode.MULTIPLE) {
+          this._unselectAllExcept(this.getSelectedRow());
+        }
+      });
+      this._syncSelectionMode();
+    }
+  },
+  /**
+   * Whether a single click activates a row. Otherwise a double click does.
+   */
+  activateOnSingleClick: { value: true, coerce: Boolean },
+  /**
+   * The selected rows, in order.
+   */
+  selectedRows: {
+    readOnly: true,
+    get() {
+      return this._children.filter((x) => x.selected);
+    }
+  },
+  /**
+   * The row with the keyboard cursor, or `null`.
+   */
+  cursorRow: {
+    readOnly: true,
+    get() {
+      return this._cursorRow || null;
+    }
+  },
+  /**
+   * A function that decides which rows are shown, or `null` to show all rows. It gets a row and
+   * returns whether to show it. Rows that are filtered out are deselected.
+   */
+  filterFunction: {
+    value: null,
+    coerce: /* @__PURE__ */ __name((x) => checkFunction(x, "filter function"), "coerce"),
+    changed() {
+      this.invalidateFilter();
+    }
+  },
+  /**
+   * A function that orders the rows, or `null` to keep them in the order they were added. It
+   * gets two rows and returns a negative number, zero or a positive number, like the compare
+   * function of `Array.prototype.sort()`.
+   */
+  sortFunction: {
+    value: null,
+    coerce: /* @__PURE__ */ __name((x) => checkFunction(x, "sort function"), "coerce"),
+    changed() {
+      this.invalidateSort();
+    }
+  },
+  /**
+   * The header function (see `setHeaderFunction()`), or `null`.
+   */
+  headerFunction: {
+    value: null,
+    coerce: /* @__PURE__ */ __name((x) => checkFunction(x, "header function"), "coerce"),
+    changed(headerFunction) {
+      if (headerFunction) {
+        this.invalidateHeaders();
+      } else {
+        for (const row of this._children) {
+          row.header = null;
+        }
+      }
+    }
+  },
+  /**
+   * A widget shown instead of the rows while no row is shown, such as a label saying the list is
+   * empty, or `null`. The list box owns it.
+   */
+  placeholder: {
+    value: null,
+    set(widget) {
+      if (widget !== null && !(widget instanceof Widget)) {
+        throw new TypeError("The placeholder of a list box must be a widget or null.");
+      }
+      const old = this._placeholder;
+      if (old) {
+        this._releasePlaceholder?.();
+        this._releasePlaceholder = null;
+        old.destroy();
+      }
+      this._placeholder = widget;
+      if (widget) {
+        this._releasePlaceholder = attachAuxiliaryWidget(
+          this,
+          widget,
+          this._placeholderEl,
+          () => {
+            this._releasePlaceholder = null;
+            this._placeholder = null;
+            this._updateShownRows();
+          }
+        );
+      }
+      this._updateShownRows();
+    }
+  },
+  /**
+   * The bound model (see `bindModel()`), or `null`.
+   */
+  model: { value: null, readOnly: true }
+});
+registerType("list-box", ListBox);
+registerType("list-box-row", ListBoxRow);
 
 // src/widgets/main-window.js
 var MainWindow = class extends AbstractWindow {
@@ -14208,252 +19268,6 @@ defineProperties(Menu, {
 });
 registerType("menu", Menu);
 
-// src/widgets/message-dialog.js
-var MessageType = Object.freeze({
-  INFO: "info",
-  WARNING: "warning",
-  QUESTION: "question",
-  ERROR: "error",
-  OTHER: "other"
-  // No icon.
-});
-var ButtonsType = Object.freeze({
-  NONE: "none",
-  OK: "ok",
-  CLOSE: "close",
-  CANCEL: "cancel",
-  YES_NO: "yes-no",
-  OK_CANCEL: "ok-cancel"
-});
-var ICONS2 = Object.freeze({
-  [MessageType.INFO]: "dialog-information",
-  [MessageType.WARNING]: "dialog-warning",
-  [MessageType.QUESTION]: "dialog-question",
-  [MessageType.ERROR]: "dialog-error",
-  [MessageType.OTHER]: ""
-});
-var BUTTONS = Object.freeze({
-  [ButtonsType.NONE]: { responses: [], defaultResponse: null },
-  [ButtonsType.OK]: { responses: [Response.OK], defaultResponse: Response.OK },
-  [ButtonsType.CLOSE]: { responses: [Response.CLOSE], defaultResponse: Response.CLOSE },
-  [ButtonsType.CANCEL]: { responses: [Response.CANCEL], defaultResponse: Response.CANCEL },
-  [ButtonsType.YES_NO]: { responses: [Response.NO, Response.YES], defaultResponse: Response.YES },
-  [ButtonsType.OK_CANCEL]: {
-    responses: [Response.CANCEL, Response.OK],
-    defaultResponse: Response.OK
-  }
-});
-var ICON_SIZE = 48;
-var MessageDialog = class extends Dialog {
-  static {
-    __name(this, "MessageDialog");
-  }
-  _initialize() {
-    super._initialize();
-    this.el.classList.add("wy-message-dialog");
-    this._image = new Image({ pixelSize: ICON_SIZE, vAlign: Align.START });
-    this._image.addStyleClass("wy-message-dialog-icon");
-    this._textLabel = new Label({ wrap: true, selectable: true, maxWidthChars: 50 });
-    this._textLabel.addStyleClass("wy-message-dialog-text");
-    this._secondaryLabel = new Label({ wrap: true, selectable: true, maxWidthChars: 50 });
-    this._secondaryLabel.addStyleClass("wy-message-dialog-secondary-text");
-    this._messageArea = new Box({ orientation: Orientation.VERTICAL, spacing: 6 });
-    this._messageArea.addChild(this._textLabel);
-    this._messageArea.addChild(this._secondaryLabel);
-    const box = new Box({ spacing: 12 });
-    box.addStyleClass("wy-message-dialog-box");
-    box.addChild(this._image);
-    box.addChild(this._messageArea);
-    this.contentArea.addChild(box);
-    this._syncIcon();
-    this._syncTexts();
-  }
-  /**
-   * The vertical box with the texts, to add more widgets to.
-   *
-   * @type {Box}
-   */
-  get messageArea() {
-    return this._messageArea;
-  }
-  /**
-   * The image showing the icon of the message type.
-   *
-   * @type {Image}
-   */
-  get image() {
-    return this._image;
-  }
-  _syncIcon() {
-    const icon = ICONS2[this._messageType];
-    this._image.icon = icon;
-    this._image.visible = Boolean(icon);
-  }
-  _syncTexts() {
-    this._textLabel.useMarkup = this._useMarkup;
-    this._textLabel.text = this._text;
-    this._secondaryLabel.useMarkup = this._secondaryUseMarkup;
-    this._secondaryLabel.text = this._secondaryText;
-    this._secondaryLabel.visible = Boolean(this._secondaryText);
-  }
-  _addButtons(buttonsType) {
-    const { responses, defaultResponse } = BUTTONS[buttonsType];
-    for (const response of responses) {
-      this.addButton(response);
-    }
-    if (defaultResponse) {
-      this.defaultResponse = defaultResponse;
-    }
-  }
-};
-defineProperties(MessageDialog, {
-  /**
-   * The kind of message: one of `MessageType`, which selects the icon.
-   */
-  messageType: {
-    value: MessageType.INFO,
-    coerce(messageType) {
-      if (!Object.hasOwn(ICONS2, messageType)) {
-        throw new TypeError(`Invalid message type: ${messageType}.`);
-      }
-      return messageType;
-    },
-    changed() {
-      this._syncIcon();
-    }
-  },
-  /**
-   * The primary text, shown bold.
-   */
-  text: {
-    value: "",
-    coerce(text) {
-      return text === null || text === void 0 ? "" : String(text);
-    },
-    changed() {
-      this._syncTexts();
-    }
-  },
-  /**
-   * The secondary text, shown below the primary text, or `''`.
-   */
-  secondaryText: {
-    value: "",
-    coerce(text) {
-      return text === null || text === void 0 ? "" : String(text);
-    },
-    changed() {
-      this._syncTexts();
-    }
-  },
-  /**
-   * Whether the primary text is markup (see `Label`).
-   */
-  useMarkup: {
-    value: false,
-    changed() {
-      this._syncTexts();
-    }
-  },
-  /**
-   * Whether the secondary text is markup (see `Label`).
-   */
-  secondaryUseMarkup: {
-    value: false,
-    changed() {
-      this._syncTexts();
-    }
-  },
-  /**
-   * The standard buttons: one of `ButtonsType`. They are added when this is set, so set it
-   * once.
-   */
-  buttonsType: {
-    value: ButtonsType.NONE,
-    coerce(buttonsType) {
-      if (!Object.hasOwn(BUTTONS, buttonsType)) {
-        throw new TypeError(`Invalid buttons type: ${buttonsType}.`);
-      }
-      return buttonsType;
-    },
-    set(buttonsType) {
-      if (this._buttonsType !== ButtonsType.NONE) {
-        throw new Error("The buttons of a message dialog can only be set once.");
-      }
-      this._buttonsType = buttonsType;
-      this._addButtons(buttonsType);
-    }
-  }
-});
-MessageDialog.builderProperties = {
-  ...Dialog.builderProperties,
-  /**
-   * Adds buttons: a `ButtonsType` preset, or buttons like for a `Dialog`.
-   *
-   * @param {object} builder
-   * @param {MessageDialog} dialog
-   * @param {string | Array} buttons
-   */
-  buttons(builder, dialog, buttons) {
-    if (typeof buttons === "string") {
-      dialog.buttonsType = buttons;
-    } else {
-      Dialog.builderProperties.buttons(builder, dialog, buttons);
-    }
-  }
-};
-registerType("message-dialog", MessageDialog);
-function createMessageDialog(text, options, defaults) {
-  const { title, secondaryText, messageType, transientFor, buttonsType } = {
-    ...defaults,
-    ...options
-  };
-  return new MessageDialog({
-    title: title ?? "",
-    text,
-    secondaryText: secondaryText ?? "",
-    messageType,
-    transientFor: transientFor ?? null,
-    buttonsType
-  });
-}
-__name(createMessageDialog, "createMessageDialog");
-async function alert(text, options = {}) {
-  const dialog = createMessageDialog(text, options, {
-    messageType: MessageType.INFO,
-    buttonsType: ButtonsType.OK
-  });
-  await dialog.run();
-}
-__name(alert, "alert");
-async function confirm(text, options = {}) {
-  const dialog = createMessageDialog(text, options, {
-    messageType: MessageType.QUESTION,
-    buttonsType: ButtonsType.OK_CANCEL
-  });
-  const response = await dialog.run();
-  return response === Response.OK || response === Response.YES;
-}
-__name(confirm, "confirm");
-async function prompt(text, options = {}) {
-  const dialog = createMessageDialog(text, options, {
-    messageType: MessageType.QUESTION,
-    buttonsType: ButtonsType.OK_CANCEL
-  });
-  const lineEdit = new LineEdit({
-    text: options.value ?? "",
-    placeholder: options.placeholder ?? "",
-    hExpand: true
-  });
-  dialog.messageArea.addChild(lineEdit);
-  const result = dialog.run();
-  lineEdit.focus();
-  lineEdit.selectAll?.();
-  const response = await result;
-  return response === Response.OK ? lineEdit.text : null;
-}
-__name(prompt, "prompt");
-
 // src/widgets/notebook.js
 var TAB_POSITIONS = new Set(Object.values(Position));
 var Notebook = class extends Container {
@@ -14784,12 +19598,13 @@ var Notebook = class extends Container {
     const tabEl = createElement(`
             <div class="wy-notebook-tab" role="tab" id="${tabId}" aria-controls="${pageId}" aria-selected="false">
                 <span class="wy-notebook-tab-label"></span>
-                <button type="button" class="wy-notebook-tab-close" tabindex="-1" aria-label="Close"></button>
+                <button type="button" class="wy-notebook-tab-close" tabindex="-1" data-wy-label="Close"></button>
             </div>
         `);
     const pageEl = createElement(
       `<div class="wy-notebook-page" role="tabpanel" id="${pageId}" aria-labelledby="${tabId}"></div>`
     );
+    translateLabels(tabEl);
     const closeEl = tabEl.querySelector(".wy-notebook-tab-close");
     closeEl.addEventListener("pointerdown", (event) => event.stopPropagation());
     closeEl.addEventListener("click", (event) => {
@@ -17173,259 +21988,6 @@ defineProperties(Separator, {
 });
 registerType("separator", Separator);
 
-// src/widgets/slider.js
-var UNROUNDED_DIGITS = 6;
-function toMark(value, position, label) {
-  const mark = {
-    value: Number(value),
-    position: checkPosition(position),
-    label: label === null || label === void 0 ? null : String(label)
-  };
-  if (!Number.isFinite(mark.value)) {
-    throw new RangeError(`Invalid mark value ${value}.`);
-  }
-  return mark;
-}
-__name(toMark, "toMark");
-function checkPosition(position) {
-  if (!Object.values(Position).includes(position)) {
-    throw new RangeError(`Invalid position '${position}'.`);
-  }
-  return position;
-}
-__name(checkPosition, "checkPosition");
-var Slider = class extends AbstractSlider {
-  static {
-    __name(this, "Slider");
-  }
-  _initialize() {
-    super._initialize();
-    this._marks = [];
-    this._formatter = null;
-    this._wheelRemainder = 0;
-    this._localeDisconnect = getLocaleManager().connect("locale-change", () => {
-      this._formatter = null;
-      this._update();
-    });
-    this._updateValuePosition();
-  }
-  _render() {
-    const element = createElement(`
-            <div class="wy-slider" role="slider" tabindex="0">
-                <div class="wy-slider-value-area" aria-hidden="true">
-                    <span class="wy-slider-sizer"></span>
-                    <span class="wy-slider-sizer"></span>
-                    <span class="wy-slider-value"></span>
-                </div>
-                <div class="wy-slider-marks wy-before" aria-hidden="true"></div>
-                <div class="wy-slider-trough">
-                    <div class="wy-slider-track"></div>
-                    <div class="wy-slider-fill"></div>
-                    <div class="wy-slider-thumb"></div>
-                </div>
-                <div class="wy-slider-marks wy-after" aria-hidden="true"></div>
-            </div>
-        `);
-    this._valueAreaEl = element.querySelector(".wy-slider-value-area");
-    this._sizerEls = [...element.querySelectorAll(".wy-slider-sizer")];
-    this._valueEl = element.querySelector(".wy-slider-value");
-    this._marksEls = {
-      before: element.querySelector(".wy-slider-marks.wy-before"),
-      after: element.querySelector(".wy-slider-marks.wy-after")
-    };
-    this._troughEl = element.querySelector(".wy-slider-trough");
-    this._thumbEl = element.querySelector(".wy-slider-thumb");
-    return element;
-  }
-  /**
-   * Adds a mark along the trough.
-   *
-   * @param {number} value
-   * @param {string} [position] One of `Position`: where the mark is drawn. `TOP` and `LEFT` are
-   *     before the trough, `BOTTOM` and `RIGHT` after it. Defaults to `BOTTOM`.
-   * @param {string | null} [label] Text shown at the mark.
-   */
-  addMark(value, position = Position.BOTTOM, label = null) {
-    this._marks = [...this._marks, toMark(value, position, label)];
-    this._renderMarks();
-    this.emit("marks-change", this);
-  }
-  /**
-   * Removes all marks.
-   */
-  clearMarks() {
-    this.marks = [];
-  }
-  /**
-   * Formats a value for display. Override to show values differently.
-   *
-   * @param {number} value
-   * @returns {string}
-   */
-  formatValue(value) {
-    if (!this._formatter) {
-      const digits = this._digits < 0 ? UNROUNDED_DIGITS : this._digits;
-      this._formatter = new Intl.NumberFormat(getLocaleManager().locale, {
-        minimumFractionDigits: this._digits < 0 ? 0 : digits,
-        maximumFractionDigits: digits,
-        useGrouping: false
-      });
-    }
-    return this._formatter.format(value);
-  }
-  destroy() {
-    this._localeDisconnect();
-    super.destroy();
-  }
-  _setValueFromUser(value) {
-    if (this._digits >= 0) {
-      const factor = 10 ** this._digits;
-      value = Math.round(value * factor) / factor;
-    }
-    super._setValueFromUser(value);
-  }
-  _applyWheel(notches) {
-    this._wheelRemainder += notches;
-    const whole = Math.trunc(this._wheelRemainder);
-    if (!whole) {
-      return;
-    }
-    this._wheelRemainder -= whole;
-    super._applyWheel(whole);
-  }
-  _update() {
-    super._update();
-    const adjustment = this._adjustment;
-    const text = this.formatValue(adjustment.value);
-    this._valueEl.textContent = text;
-    this.el.setAttribute("aria-valuetext", text);
-    this._sizerEls[0].textContent = this.formatValue(adjustment.lower);
-    this._sizerEls[1].textContent = this.formatValue(adjustment.maximum);
-    this._updateMarkPositions();
-  }
-  _getMarkFraction(value) {
-    const adjustment = this._adjustment;
-    const range = adjustment.maximum - adjustment.lower;
-    const fraction = range > 0 ? clamp((value - adjustment.lower) / range, 0, 1) : 0;
-    return this._isReversed() ? 1 - fraction : fraction;
-  }
-  _renderMarks() {
-    const marks = this._marks || [];
-    for (const [side, element] of Object.entries(this._marksEls)) {
-      element.textContent = "";
-      const sideMarks = marks.filter((x) => {
-        const before = x.position === Position.TOP || x.position === Position.LEFT;
-        return side === "before" === before;
-      });
-      let hasLabels = false;
-      for (const mark of sideMarks) {
-        const markEl = document.createElement("span");
-        markEl.className = "wy-slider-mark";
-        markEl.dataset.value = String(mark.value);
-        if (mark.label) {
-          hasLabels = true;
-          const label = document.createElement("span");
-          label.className = "wy-slider-mark-label";
-          label.textContent = mark.label;
-          markEl.append(label);
-          const sizer = document.createElement("span");
-          sizer.className = "wy-slider-mark-sizer";
-          sizer.textContent = mark.label;
-          element.append(sizer);
-        }
-        element.append(markEl);
-      }
-      element.classList.toggle("wy-has-marks", sideMarks.length > 0);
-      element.classList.toggle("wy-has-labels", hasLabels);
-    }
-    this._updateMarkPositions();
-  }
-  _updateMarkPositions() {
-    if (!this._marksEls) {
-      return;
-    }
-    for (const element of Object.values(this._marksEls)) {
-      for (const mark of element.querySelectorAll(".wy-slider-mark")) {
-        const fraction = this._getMarkFraction(Number(mark.dataset.value));
-        mark.style.setProperty("--wy-mark-fraction", String(fraction));
-      }
-    }
-  }
-  _updateValuePosition() {
-    this.el.dataset.valuePos = this._valuePos;
-    this.el.classList.toggle("wy-draw-value", this._drawValue);
-    this._valueAreaEl.hidden = !this._drawValue;
-  }
-};
-defineProperties(Slider, {
-  canFocus: { value: true },
-  /**
-   * The number of decimals of the value shown. Values set by the user are rounded to it. Use -1
-   * to not round.
-   */
-  digits: {
-    value: 1,
-    coerce(digits) {
-      const value = Math.floor(Number(digits));
-      if (!(value >= -1 && value <= 20)) {
-        throw new RangeError(`Invalid number of digits ${digits}.`);
-      }
-      return value;
-    },
-    changed() {
-      this._formatter = null;
-      this._update();
-    }
-  },
-  /**
-   * Whether the value is shown next to the thumb.
-   */
-  drawValue: {
-    value: true,
-    coerce: Boolean,
-    changed() {
-      this._updateValuePosition();
-    }
-  },
-  /**
-   * Where the value is shown: one of `Position`. On the sides along the trough it follows the
-   * thumb.
-   */
-  valuePos: {
-    value: Position.TOP,
-    coerce: checkPosition,
-    changed() {
-      this._updateValuePosition();
-    }
-  },
-  /**
-   * Whether the trough is filled from the lower end up to the thumb.
-   */
-  hasOrigin: {
-    value: true,
-    coerce: Boolean,
-    changed(hasOrigin) {
-      this.el.classList.toggle("wy-no-origin", !hasOrigin);
-    }
-  },
-  /**
-   * The marks, as objects with `value`, `position` and `label`. See `addMark()`.
-   */
-  marks: {
-    get() {
-      return this._marks.map((x) => ({ ...x }));
-    },
-    set(marks) {
-      if (!Array.isArray(marks)) {
-        throw new TypeError("The marks of a slider must be an array.");
-      }
-      this._marks = marks.map((x) => toMark(x.value, x.position ?? Position.BOTTOM, x.label));
-      this._renderMarks();
-    }
-  }
-});
-registerType("slider", Slider);
-
 // src/widgets/spacer.js
 var Spacer = class extends Widget {
   static {
@@ -18130,6 +22692,168 @@ defineProperties(StatusBar, {
 });
 registerType("status-bar", StatusBar);
 
+// src/widgets/switch.js
+var Switch = class extends Widget {
+  static {
+    __name(this, "Switch");
+  }
+  _initialize() {
+    super._initialize();
+    this._drag = null;
+    this.el.addEventListener("pointerdown", (event) => this._onPointerDown(event));
+    this.el.addEventListener("pointermove", (event) => this._onPointerMove(event));
+    this.el.addEventListener("pointerup", (event) => this._onPointerUp(event, true));
+    this.el.addEventListener("pointercancel", (event) => this._onPointerUp(event, false));
+    this.el.addEventListener("keydown", (event) => this._onKeyDown(event));
+    this._updateState();
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-switch" role="switch" aria-checked="false">
+                <span class="wy-switch-trough" aria-hidden="true">
+                    <span class="wy-switch-on-symbol"></span>
+                    <span class="wy-switch-off-symbol"></span>
+                </span>
+                <span class="wy-switch-slider" aria-hidden="true"></span>
+            </div>
+        `);
+    this._sliderEl = element.querySelector(".wy-switch-slider");
+    return element;
+  }
+  /**
+   * Toggles the switch as if the user clicked it: emits `state-set`, and changes `active` unless
+   * a handler vetoed it.
+   *
+   * @returns {boolean} Whether `active` changed.
+   */
+  activate() {
+    return this._requestState(!this._active);
+  }
+  /**
+   * Asks for a new state on behalf of the user, as described for `state-set`.
+   *
+   * @protected
+   * @param {boolean} state
+   * @returns {boolean} Whether `active` changed.
+   */
+  _requestState(state) {
+    if (!this.isSensitive || this.destroyed) {
+      return false;
+    }
+    if (this.emit("state-set", this, state) || this.destroyed) {
+      this._updateState();
+      return false;
+    }
+    this.active = state;
+    this.emit("activate", this);
+    return true;
+  }
+  /**
+   * Focuses and toggles the switch for its mnemonic, or only focuses it when other widgets share
+   * the mnemonic.
+   *
+   * @protected
+   * @param {boolean} groupCycling
+   */
+  _mnemonicActivate(groupCycling) {
+    this.focus();
+    if (!groupCycling) {
+      this.activate();
+    }
+  }
+  /**
+   * Updates the state classes, the accessible state and the slider position.
+   *
+   * @protected
+   */
+  _updateState() {
+    this.el.classList.toggle("wy-active", this._active);
+    this.el.setAttribute("aria-checked", String(this._active));
+    this.el.style.removeProperty("--wy-switch-position");
+  }
+  _onPointerDown(event) {
+    if (event.button !== 0 || !this.isSensitive || this._drag) {
+      return;
+    }
+    event.preventDefault();
+    this.focus();
+    const trough = this.el.getBoundingClientRect();
+    const slider = this._sliderEl.getBoundingClientRect();
+    this._drag = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startLeft: slider.left - trough.left,
+      range: Math.max(1, trough.width - slider.width),
+      dragging: false
+    };
+    try {
+      this.el.setPointerCapture(event.pointerId);
+    } catch (_error) {
+    }
+    this.el.classList.add("wy-pressed");
+  }
+  _onPointerMove(event) {
+    const drag = this._drag;
+    if (!drag || event.pointerId !== drag.pointerId) {
+      return;
+    }
+    const distance = event.clientX - drag.startX;
+    if (!drag.dragging && Math.abs(distance) < settings.dragThreshold) {
+      return;
+    }
+    drag.dragging = true;
+    this.el.classList.add("wy-dragging");
+    const position = clamp((drag.startLeft + distance) / drag.range, 0, 1);
+    this.el.style.setProperty("--wy-switch-position", String(position));
+  }
+  _onPointerUp(event, released) {
+    const drag = this._drag;
+    if (!drag || event.pointerId !== drag.pointerId) {
+      return;
+    }
+    this._drag = null;
+    const position = Number(this.el.style.getPropertyValue("--wy-switch-position") || 0);
+    this.el.classList.remove("wy-pressed", "wy-dragging");
+    this._updateState();
+    if (!released) {
+      return;
+    }
+    if (drag.dragging) {
+      const state = position >= 0.5;
+      if (state !== this._active) {
+        this._requestState(state);
+      }
+    } else {
+      this.activate();
+    }
+  }
+  _onKeyDown(event) {
+    if (!this.isSensitive || event.target !== this.el || event.altKey || event.ctrlKey || event.metaKey || event.key !== Key.SPACE && event.key !== Key.ENTER) {
+      return;
+    }
+    event.preventDefault();
+    if (!event.repeat) {
+      this.activate();
+    }
+  }
+};
+defineProperties(Switch, {
+  canFocus: { value: true },
+  hAlign: { value: Align.START },
+  vAlign: { value: Align.CENTER },
+  /**
+   * Whether the switch is on.
+   */
+  active: {
+    value: false,
+    coerce: Boolean,
+    changed() {
+      this._updateState();
+    }
+  }
+});
+registerType("switch", Switch);
+
 // src/columns/abstract-column.js
 var ColumnChange = Object.freeze({
   STRUCTURE: "structure",
@@ -18741,680 +23465,6 @@ var TextColumn = class extends DataColumn {
 };
 registerType("text-column", TextColumn);
 
-// src/data/abstract-model.js
-var COLUMN_TYPES = Object.freeze([
-  "auto",
-  "string",
-  "number",
-  "float",
-  "double",
-  "int",
-  "integer",
-  "timestamp",
-  "bool",
-  "boolean",
-  "date",
-  "time",
-  "date-time",
-  "datetime"
-]);
-var NUMBER_TYPES = /* @__PURE__ */ new Set(["number", "float", "double", "int", "integer", "timestamp"]);
-var DATE_TYPES = /* @__PURE__ */ new Set(["date", "time", "date-time", "datetime"]);
-var COLLATORS = /* @__PURE__ */ new Map();
-function getCollator(locale, caseSensitive) {
-  const key = `${locale}|${caseSensitive}`;
-  let collator = COLLATORS.get(key);
-  if (!collator) {
-    collator = new Intl.Collator(locale, {
-      sensitivity: caseSensitive ? "variant" : "accent",
-      usage: "sort"
-    });
-    COLLATORS.set(key, collator);
-  }
-  return collator;
-}
-__name(getCollator, "getCollator");
-function toTimestamp(value) {
-  if (value instanceof Date) {
-    return value.getTime();
-  }
-  if (typeof value === "number") {
-    return value;
-  }
-  if (typeof value === "string" && value.trim() !== "") {
-    const number = Number(value);
-    return Number.isFinite(number) ? number : Date.parse(value);
-  }
-  return NaN;
-}
-__name(toTimestamp, "toTimestamp");
-function isCaseSensitive(info) {
-  const value = info.caseSensitive ?? info["case-sensitive"];
-  return value !== false;
-}
-__name(isCaseSensitive, "isCaseSensitive");
-var AbstractModel = class extends Instance {
-  static {
-    __name(this, "AbstractModel");
-  }
-  /**
-   * @param {Record<string, unknown> | object[]} [properties] Property values, or (like the
-   *     original toolkit) the initial rows, followed by the other arguments.
-   * @param {string | null} [idColumn] The id column, when the rows are passed as an array.
-   * @param {string | null} [sortColumn] The sort column, when the rows are passed as an array.
-   * @param {number} [sortOrder] The sort order, when the rows are passed as an array.
-   */
-  constructor(properties, idColumn, sortColumn, sortOrder) {
-    if (Array.isArray(properties)) {
-      properties = {
-        rows: properties,
-        idColumn: idColumn ?? null,
-        sortColumn: sortColumn ?? null,
-        sortOrder: sortColumn ? sortOrder ?? SortOrder.ASCENDING : SortOrder.NONE
-      };
-    }
-    super(properties);
-  }
-  _initialize() {
-    super._initialize();
-    this._rows = [];
-    this._indexById = null;
-    this._indexDirty = true;
-    this._columnsInfo = {};
-  }
-  /**
-   * Sets several properties. The sort column and order are applied together, so the rows are
-   * sorted once.
-   *
-   * @param {Record<string, unknown>} properties
-   * @returns {boolean}
-   */
-  set(properties) {
-    const { sortColumn, sortOrder, ...rest } = properties;
-    const { "sort-column": sortColumnKebab, "sort-order": sortOrderKebab, ...others } = rest;
-    let changed = super.set(others);
-    const column = sortColumn !== void 0 ? sortColumn : sortColumnKebab;
-    const order = sortOrder !== void 0 ? sortOrder : sortOrderKebab;
-    if (column !== void 0 || order !== void 0) {
-      const oldColumn = this.sortColumn;
-      const oldOrder = this.sortOrder;
-      if (column !== void 0) {
-        this.sortByColumn(column, order ?? (column ? SortOrder.ASCENDING : SortOrder.NONE));
-      } else {
-        this.sortOrder = order;
-      }
-      changed = changed || oldColumn !== this.sortColumn || oldOrder !== this.sortOrder;
-    }
-    return changed;
-  }
-  /**
-   * Gets a row.
-   *
-   * @param {number} index
-   * @returns {object}
-   * @throws {RangeError} If there is no row at the index.
-   */
-  getRow(index) {
-    const row = Number.isInteger(index) ? this._rows[index] : void 0;
-    if (row === void 0) {
-      throw new RangeError(`There is no row at index ${index}.`);
-    }
-    return row;
-  }
-  /**
-   * Gets a row by its id.
-   *
-   * @param {unknown} id
-   * @returns {object}
-   * @throws {Error} If there is no id column or no row with the id.
-   */
-  getRowById(id) {
-    return this.getRow(this.getRowIndexById(id));
-  }
-  /**
-   * Gets the index of a row by its id.
-   *
-   * @param {unknown} id
-   * @returns {number}
-   * @throws {Error} If there is no id column or no row with the id.
-   */
-  getRowIndexById(id) {
-    const index = this._getIndexById().get(id);
-    if (index === void 0) {
-      throw new RangeError(`There is no row with id ${String(id)}.`);
-    }
-    return index;
-  }
-  /**
-   * Gets the id of the row at an index.
-   *
-   * @param {number} index
-   * @returns {unknown}
-   * @throws {Error} If there is no id column or no row at the index.
-   */
-  getRowIdByIndex(index) {
-    if (!this.idColumn) {
-      throw new Error("The model has no id column.");
-    }
-    return this.getRow(index)[this.idColumn];
-  }
-  /**
-   * Checks whether there is a row with an id.
-   *
-   * @param {unknown} id
-   * @returns {boolean}
-   * @throws {Error} If there is no id column.
-   */
-  hasRowId(id) {
-    return this._getIndexById().has(id);
-  }
-  /**
-   * Gets a value.
-   *
-   * @param {number} index The row index.
-   * @param {string} column
-   * @returns {unknown}
-   */
-  getCellValue(index, column) {
-    return this.getRow(index)[column];
-  }
-  /**
-   * Gets a value by row id.
-   *
-   * @param {unknown} id
-   * @param {string} column
-   * @returns {unknown}
-   */
-  getCellValueById(id, column) {
-    return this.getRowById(id)[column];
-  }
-  /**
-   * Appends a row. If the model is sorted, the row is placed at its sorted position instead.
-   *
-   * @param {object} row
-   * @returns {number} The index of the new row.
-   */
-  appendRow(row) {
-    return this.insertRow(this.rowsCount, row);
-  }
-  /**
-   * Prepends a row. If the model is sorted, the row is placed at its sorted position instead.
-   *
-   * @param {object} row
-   * @returns {number} The index of the new row.
-   */
-  prependRow(row) {
-    return this.insertRow(0, row);
-  }
-  /**
-   * Inserts a row at an index. If the model is sorted, the row is placed at its sorted position
-   * instead.
-   *
-   * @param {number} index Between 0 and `rowsCount`.
-   * @param {object} row
-   * @returns {number} The index the row got.
-   * @throws {RangeError} If the index is invalid.
-   * @throws {Error} If the model has an id column and the id is already in use.
-   */
-  insertRow(_index, _row) {
-    throw new Error(`${this.constructor.name} does not implement insertRow().`);
-  }
-  /**
-   * Appends several rows at once. If the model is sorted, the rows are placed at their sorted
-   * positions. With more than one row, listeners get a single `rows-reorder` signal instead of
-   * one `row-insert` per row.
-   *
-   * @param {object[]} rows
-   */
-  appendRows(rows) {
-    this.insertRows(this.rowsCount, rows);
-  }
-  /**
-   * Inserts several rows at an index. If the model is sorted, the rows are placed at their
-   * sorted positions. With more than one row, listeners get a single `rows-reorder` signal
-   * instead of one `row-insert` per row.
-   *
-   * @param {number} index
-   * @param {object[]} rows
-   */
-  insertRows(_index, _rows) {
-    throw new Error(`${this.constructor.name} does not implement insertRows().`);
-  }
-  /**
-   * Removes a row.
-   *
-   * @param {number} index
-   * @returns {object} The removed row.
-   */
-  removeRow(_index) {
-    throw new Error(`${this.constructor.name} does not implement removeRow().`);
-  }
-  /**
-   * Removes a row by id.
-   *
-   * @param {unknown} id
-   * @returns {object} The removed row.
-   */
-  removeRowById(id) {
-    return this.removeRow(this.getRowIndexById(id));
-  }
-  /**
-   * Removes all rows.
-   */
-  removeAllRows() {
-    throw new Error(`${this.constructor.name} does not implement removeAllRows().`);
-  }
-  /**
-   * Replaces a row by another row object. The model stays sorted.
-   *
-   * @param {number} index
-   * @param {object} row
-   * @returns {number} The index of the new row.
-   */
-  replaceRow(_index, _row) {
-    throw new Error(`${this.constructor.name} does not implement replaceRow().`);
-  }
-  /**
-   * Replaces a row by id.
-   *
-   * @param {unknown} id
-   * @param {object} row
-   * @returns {number} The index of the new row.
-   */
-  replaceRowById(id, row) {
-    return this.replaceRow(this.getRowIndexById(id), row);
-  }
-  /**
-   * Changes values of a row: the given columns are assigned to the row object. The model stays
-   * sorted, so the row may move.
-   *
-   * @param {number} index
-   * @param {Record<string, unknown>} changes Values by column.
-   * @returns {number} The index of the row after the change.
-   */
-  updateRow(_index, _changes) {
-    throw new Error(`${this.constructor.name} does not implement updateRow().`);
-  }
-  /**
-   * Changes values of a row by id.
-   *
-   * @param {unknown} id
-   * @param {Record<string, unknown>} changes
-   * @returns {number} The index of the row after the change.
-   */
-  updateRowById(id, changes) {
-    return this.updateRow(this.getRowIndexById(id), changes);
-  }
-  /**
-   * Sets a single value. The model stays sorted, so the row may move.
-   *
-   * @param {number} index
-   * @param {string} column
-   * @param {unknown} value
-   * @returns {number} The index of the row after the change.
-   */
-  setCellValue(index, column, value) {
-    return this.updateRow(index, { [column]: value });
-  }
-  /**
-   * Sets a single value by row id.
-   *
-   * @param {unknown} id
-   * @param {string} column
-   * @param {unknown} value
-   * @returns {number} The index of the row after the change.
-   */
-  setCellValueById(id, column, value) {
-    return this.setCellValue(this.getRowIndexById(id), column, value);
-  }
-  /**
-   * Calls a function for every row, in order.
-   *
-   * @param {(row: object, index: number) => void} method
-   * @param {object} [context]
-   */
-  forEachRow(method, context) {
-    this._rows.forEach((row, index) => method.call(context, row, index));
-  }
-  /**
-   * Sorts the model on a column. The model keeps itself sorted when rows change.
-   *
-   * @param {string | null} column The column, or `null` to stop sorting.
-   * @param {number} [order] One of `SortOrder`. `SortOrder.NONE` stops sorting.
-   */
-  sortByColumn(_column, _order = SortOrder.ASCENDING) {
-    throw new Error(`${this.constructor.name} does not implement sortByColumn().`);
-  }
-  /**
-   * Compares two rows on a column, using `columnsInfo`.
-   *
-   * @param {number} firstIndex
-   * @param {number} secondIndex
-   * @param {string} column
-   * @returns {number} -1, 0 or 1.
-   */
-  compareRows(firstIndex, secondIndex, column) {
-    return this._compareColumn(this.getRow(firstIndex), this.getRow(secondIndex), column);
-  }
-  /**
-   * Compares two rows on a column by row id.
-   *
-   * @param {unknown} firstId
-   * @param {unknown} secondId
-   * @param {string} column
-   * @returns {number} -1, 0 or 1.
-   */
-  compareRowsById(firstId, secondId, column) {
-    return this._compareColumn(this.getRowById(firstId), this.getRowById(secondId), column);
-  }
-  /**
-   * Compares two values the way the model sorts them. Values that are not values of the type
-   * (such as `null`, `undefined` and `NaN`) come after all other values.
-   *
-   * @param {unknown} first
-   * @param {unknown} second
-   * @param {string} [type] One of {@link COLUMN_TYPES}.
-   * @param {boolean} [caseSensitive]
-   * @returns {number} -1, 0 or 1.
-   */
-  compareValues(first, second, type = "auto", caseSensitive = true) {
-    return this._compareTyped(
-      first,
-      second,
-      type,
-      caseSensitive,
-      1,
-      this._getCollator(caseSensitive)
-    );
-  }
-  /**
-   * Returns the info of a column (see `columnsInfo`).
-   *
-   * @param {string} column
-   * @returns {ColumnInfo}
-   */
-  getColumnInfo(column) {
-    return this.columnsInfo[column] || {};
-  }
-  /**
-   * Sets the info of a single column, keeping the other columns' info.
-   *
-   * @param {string} column
-   * @param {ColumnInfo} info
-   */
-  setColumnInfo(column, info) {
-    this.columnsInfo = { ...this.columnsInfo, [column]: info };
-  }
-  /**
-   * Returns the id index, building it when the rows changed.
-   *
-   * @protected
-   * @returns {Map<unknown, number>}
-   */
-  _getIndexById() {
-    const idColumn = this.idColumn;
-    if (!idColumn) {
-      throw new Error("The model has no id column.");
-    }
-    if (this._indexDirty || !this._indexById) {
-      const index = /* @__PURE__ */ new Map();
-      const rows = this.rows;
-      for (let i = 0; i < rows.length; ++i) {
-        const id = rows[i][idColumn];
-        if (index.has(id)) {
-          throw new Error(`Duplicate row id ${String(id)}.`);
-        }
-        index.set(id, i);
-      }
-      this._indexById = index;
-      this._indexDirty = false;
-    }
-    return this._indexById;
-  }
-  /**
-   * Marks the id index as outdated.
-   *
-   * @protected
-   */
-  _invalidateIndex() {
-    this._indexDirty = true;
-  }
-  _compareColumn(firstRow, secondRow, column) {
-    const info = this.getColumnInfo(column);
-    const first = firstRow[column];
-    const second = secondRow[column];
-    if (info.compare) {
-      return Math.sign(info.compare(first, second)) || 0;
-    }
-    return this.compareValues(first, second, info.type || "auto", isCaseSensitive(info));
-  }
-  /**
-   * Creates the comparison function of rows for the current sort column and order. Values that
-   * are not values always come last, in both orders.
-   *
-   * @protected
-   * @returns {((first: object, second: object) => number) | null}
-   */
-  _createSortComparator() {
-    const column = this.sortColumn;
-    if (!column || this.sortOrder === SortOrder.NONE) {
-      return null;
-    }
-    const info = this.getColumnInfo(column);
-    const factor = this.sortOrder === SortOrder.DESCENDING ? -1 : 1;
-    if (info.compare) {
-      const compare = info.compare;
-      return (first, second) => factor * (Math.sign(compare(first[column], second[column])) || 0);
-    }
-    const type = info.type || "auto";
-    const caseSensitive = isCaseSensitive(info);
-    const collator = this._getCollator(caseSensitive);
-    return (first, second) => this._compareTyped(
-      first[column],
-      second[column],
-      type,
-      caseSensitive,
-      factor,
-      collator
-    );
-  }
-  /**
-   * Finds the index where a row goes in the sorted rows: after all rows it is equal to, so
-   * sorting stays stable.
-   *
-   * @protected
-   * @param {object[]} rows Sorted rows.
-   * @param {object} row
-   * @param {(first: object, second: object) => number} compare
-   * @returns {number}
-   */
-  _findInsertIndex(rows, row, compare) {
-    let low = 0;
-    let high = rows.length;
-    while (low < high) {
-      const middle = low + high >>> 1;
-      if (compare(row, rows[middle]) < 0) {
-        high = middle;
-      } else {
-        low = middle + 1;
-      }
-    }
-    return low;
-  }
-  /**
-   * Returns the collator for string comparisons, or `null` to compare by character code.
-   *
-   * @param {boolean} caseSensitive
-   * @returns {Intl.Collator | null}
-   */
-  _getCollator(caseSensitive) {
-    return this.localeAware ? getCollator(getLocaleManager().locale, caseSensitive) : null;
-  }
-  /**
-   * Compares two values of a type, multiplying the result by `factor` (-1 to sort descending).
-   * Values that are not values of the type come last, whatever the factor.
-   *
-   * @param {unknown} first
-   * @param {unknown} second
-   * @param {string} type
-   * @param {boolean} caseSensitive
-   * @param {number} factor
-   * @param {Intl.Collator | null} collator
-   * @returns {number}
-   */
-  _compareTyped(first, second, type, caseSensitive, factor, collator) {
-    let kind = type;
-    if (type === "auto") {
-      if (typeof first === "string" && typeof second === "string") {
-        kind = "string";
-      } else if (first instanceof Date || second instanceof Date) {
-        kind = "date";
-      } else if (typeof first === "boolean" && typeof second === "boolean") {
-        kind = "boolean";
-      } else {
-        kind = "number";
-      }
-    }
-    let a;
-    let b;
-    let aIsValue;
-    let bIsValue;
-    let text = false;
-    if (NUMBER_TYPES.has(kind)) {
-      a = typeof first === "number" ? first : parseFloat(first);
-      b = typeof second === "number" ? second : parseFloat(second);
-      aIsValue = Number.isFinite(a);
-      bIsValue = Number.isFinite(b);
-    } else if (DATE_TYPES.has(kind)) {
-      a = toTimestamp(first);
-      b = toTimestamp(second);
-      aIsValue = Number.isFinite(a);
-      bIsValue = Number.isFinite(b);
-    } else if (kind === "bool" || kind === "boolean") {
-      a = first ? 1 : 0;
-      b = second ? 1 : 0;
-      aIsValue = first !== null && first !== void 0 && !Number.isNaN(first);
-      bIsValue = second !== null && second !== void 0 && !Number.isNaN(second);
-    } else {
-      text = true;
-      aIsValue = typeof first === "string" || typeof first === "number" && Number.isFinite(first);
-      bIsValue = typeof second === "string" || typeof second === "number" && Number.isFinite(second);
-      a = aIsValue ? String(first) : "";
-      b = bIsValue ? String(second) : "";
-      if (!caseSensitive && !collator) {
-        a = a.toLowerCase();
-        b = b.toLowerCase();
-      }
-    }
-    if (!aIsValue) {
-      return bIsValue ? 1 : 0;
-    }
-    if (!bIsValue) {
-      return -1;
-    }
-    if (text && collator) {
-      return factor * Math.sign(collator.compare(a, b));
-    }
-    return a === b ? 0 : factor * (a < b ? -1 : 1);
-  }
-};
-defineProperties(AbstractModel, {
-  /**
-   * The rows, in order. Do not modify the array; setting it replaces all rows (the array is
-   * copied, the row objects are not).
-   */
-  rows: {
-    signal: false,
-    get() {
-      return this._rows;
-    },
-    set(rows) {
-      this._setRows(rows);
-    }
-  },
-  /**
-   * The number of rows.
-   */
-  rowsCount: {
-    readOnly: true,
-    get() {
-      return this.rows.length;
-    }
-  },
-  /**
-   * Information about columns that helps sorting and filtering, keyed by column name. See
-   * {@link ColumnInfo}: e.g. `{ price: { type: 'number' }, name: { caseSensitive: false } }`.
-   */
-  columnsInfo: {
-    value: null,
-    get() {
-      return this._columnsInfo;
-    },
-    set(columnsInfo) {
-      if (columnsInfo !== null && typeof columnsInfo !== "object") {
-        throw new TypeError("Columns info must be an object.");
-      }
-      for (const [column, info] of Object.entries(columnsInfo || {})) {
-        if (info.type && !COLUMN_TYPES.includes(info.type)) {
-          throw new RangeError(`Unknown type '${info.type}' of column '${column}'.`);
-        }
-      }
-      this._columnsInfo = { ...columnsInfo };
-      this._onSortingChange();
-    }
-  },
-  /**
-   * The column that identifies rows, or `null`. With an id column, rows can be addressed by
-   * id, and selections keep rows selected while they are sorted or filtered. Ids must be
-   * unique.
-   */
-  idColumn: {
-    value: null,
-    changed() {
-      this._invalidateIndex();
-      if (this._idColumn) {
-        this._getIndexById();
-      }
-    }
-  },
-  /**
-   * The column the rows are sorted on, or `null`. Setting a column while the order is
-   * `SortOrder.NONE` sorts ascending; setting `null` sets the order to `SortOrder.NONE`.
-   */
-  sortColumn: {
-    value: null,
-    set(column) {
-      this.sortByColumn(
-        column,
-        !column ? SortOrder.NONE : this.sortOrder === SortOrder.NONE ? SortOrder.ASCENDING : this.sortOrder
-      );
-      return false;
-    }
-  },
-  /**
-   * The sort order: one of `SortOrder`. Setting `SortOrder.NONE` also sets `sortColumn` to
-   * `null`.
-   */
-  sortOrder: {
-    value: SortOrder.NONE,
-    set(order) {
-      this.sortByColumn(order === SortOrder.NONE ? null : this.sortColumn, order);
-      return false;
-    }
-  },
-  /**
-   * Whether strings are compared with the rules of the current locale (`Intl.Collator`), so
-   * `'é'` sorts next to `'e'`. When `false`, strings are compared by character code, like the
-   * original toolkit.
-   */
-  localeAware: {
-    value: true,
-    changed() {
-      this._onSortingChange();
-    }
-  }
-});
-
 // src/data/selection.js
 var Selection = class extends Instance {
   static {
@@ -19432,12 +23482,12 @@ var Selection = class extends Instance {
     super.destroy();
   }
   /**
-   * Whether rows are selected by id (the model has an id column).
+   * Whether rows are selected by id (the model has row ids, see `AbstractModel#hasRowIds`).
    *
    * @type {boolean}
    */
   get byId() {
-    return Boolean(this._model?.idColumn);
+    return Boolean(this._model?.hasRowIds);
   }
   /**
    * Returns the key of the row at an index: its id, or the index itself.
@@ -19965,6 +24015,1476 @@ defineProperties(Selection, {
 registerType("selection", Selection);
 registerType("selection-model", Selection);
 
+// src/data/filters/filter.js
+var Filter = class extends Instance {
+  static {
+    __name(this, "Filter");
+  }
+  /**
+   * Checks whether a row passes the filter.
+   *
+   * @param {object} row
+   * @returns {boolean}
+   */
+  isVisibleRow(_row) {
+    throw new Error(`${this.constructor.name} does not implement isVisibleRow().`);
+  }
+  /**
+   * Emits `change`. Subclasses call this when a property that affects the outcome changed.
+   *
+   * @protected
+   */
+  _changed() {
+    this.emit("change", this);
+  }
+};
+
+// src/data/tree-model.js
+var INCREMENTAL_LIMIT = 200;
+var NO_CHILDREN = Object.freeze([]);
+function checkRow(row) {
+  if (row === null || typeof row !== "object") {
+    throw new TypeError("A row must be an object.");
+  }
+}
+__name(checkRow, "checkRow");
+var TreeModel = class extends AbstractModel {
+  static {
+    __name(this, "TreeModel");
+  }
+  _initialize() {
+    super._initialize();
+    this._rootRows = [];
+    this._nodes = /* @__PURE__ */ new Map();
+    this._rowsById = null;
+    this._layout = null;
+    this._filters = [];
+    this._hidden = /* @__PURE__ */ new Set();
+    this._revealed = /* @__PURE__ */ new Set();
+    this._batch = 0;
+    this._dirty = void 0;
+    this._queuedSignals = [];
+  }
+  /**
+   * Rows always have ids: the value in `idColumn`, or the row object itself.
+   *
+   * @type {boolean}
+   */
+  get hasRowIds() {
+    return true;
+  }
+  /**
+   * Returns the id of a row: its value in `idColumn`, or the row itself without an id column.
+   *
+   * @param {object} row
+   * @returns {unknown}
+   */
+  getRowId(row) {
+    const idColumn = this.idColumn;
+    return idColumn ? row[idColumn] : row;
+  }
+  getRowIdByIndex(index) {
+    return this.getRowId(this.getRow(index));
+  }
+  /**
+   * Gets a row of the tree by its id, also when it is not shown (with an id column; otherwise
+   * the id is the row).
+   *
+   * @param {unknown} id
+   * @returns {object}
+   * @throws {RangeError} If there is no row with the id.
+   */
+  getRowById(id) {
+    const row = this._findRow(id);
+    if (!row) {
+      throw new RangeError(`There is no row with id ${String(id)}.`);
+    }
+    return row;
+  }
+  /**
+   * Returns the index of a row in the shown rows, or -1 when it is not shown (it is in a
+   * collapsed row or filtered out) or not in the model.
+   *
+   * @param {object} row
+   * @returns {number}
+   */
+  getRowIndex(row) {
+    if (!this._nodes.has(row)) {
+      return -1;
+    }
+    return this._getIndexById().get(this.getRowId(row)) ?? -1;
+  }
+  /**
+   * Returns the index of the row with an id, or when that row is not shown, of its nearest
+   * shown ancestor. Tables use it to keep the cursor near a row that was hidden.
+   *
+   * @param {unknown} id
+   * @returns {number} The index, or -1 when the row is not in the tree or no ancestor is shown.
+   */
+  getNearestRowIndex(id) {
+    for (let row = this._findRow(id); row; row = this._nodes.get(row).parent) {
+      const index = this.getRowIndex(row);
+      if (index >= 0) {
+        return index;
+      }
+    }
+    return -1;
+  }
+  /**
+   * Returns the parent of a row, or `null` for top-level rows.
+   *
+   * @param {object | number} row A row, or the index of a shown row.
+   * @returns {object | null}
+   */
+  getParent(row) {
+    return this._getNode(this._resolveRow(row)).parent;
+  }
+  /**
+   * Returns the children of a row (all of them, also those filtered out), in order. Do not
+   * modify the array.
+   *
+   * @param {object | number | null} row A row, the index of a shown row, or `null` for the
+   *     top-level rows.
+   * @returns {ReadonlyArray<object>}
+   */
+  getChildren(row) {
+    return row === null ? this._rootRows : this._getChildren(this._resolveRow(row));
+  }
+  /**
+   * Returns the depth of a row: 0 for top-level rows, 1 for their children and so on.
+   *
+   * @param {object | number} row A row, or the index of a shown row.
+   * @returns {number}
+   */
+  getDepth(row) {
+    return this._getNode(this._resolveRow(row)).depth;
+  }
+  /**
+   * Returns the level of a row, like `aria-level`: 1 for top-level rows.
+   *
+   * @param {object | number} row A row, or the index of a shown row.
+   * @returns {number}
+   */
+  getLevel(row) {
+    return this.getDepth(row) + 1;
+  }
+  /**
+   * Returns the path of a row: its index among its siblings, after those of its ancestors.
+   *
+   * @param {object | number} row A row, or the index of a shown row.
+   * @returns {number[]}
+   */
+  getPath(row) {
+    const path = [];
+    for (let current = this._resolveRow(row); current; ) {
+      const parent = this._nodes.get(current).parent;
+      path.unshift(this.getChildren(parent).indexOf(current));
+      current = parent;
+    }
+    return path;
+  }
+  /**
+   * Returns the row at a path (see `getPath()`), or `null` if there is none.
+   *
+   * @param {number[]} path
+   * @returns {object | null}
+   */
+  getRowByPath(path) {
+    if (!Array.isArray(path) || !path.length) {
+      return null;
+    }
+    let row = null;
+    for (const index of path) {
+      row = this.getChildren(row)[index];
+      if (!row) {
+        return null;
+      }
+    }
+    return row;
+  }
+  /**
+   * Whether a row has children, shown or still to be loaded.
+   *
+   * @param {object | number} row A row, or the index of a shown row.
+   * @returns {boolean}
+   */
+  hasChildren(row) {
+    row = this._resolveRow(row);
+    if (this._isLazy(row)) {
+      return true;
+    }
+    const info = this._getLayout().get(row);
+    return info ? info.children > 0 : this._getChildren(row).length > 0;
+  }
+  /**
+   * Whether a row is expanded (also when it is expanded because a descendant matches the
+   * filters).
+   *
+   * @param {object | number} row A row, or the index of a shown row.
+   * @returns {boolean}
+   */
+  isExpanded(row) {
+    return this._isOpen(this._resolveRow(row));
+  }
+  /**
+   * Whether the children of a row are being loaded.
+   *
+   * @param {object | number} row A row, or the index of a shown row.
+   * @returns {boolean}
+   */
+  isLoading(row) {
+    return this._getNode(this._resolveRow(row)).loading;
+  }
+  /**
+   * Expands a row, showing its children. A lazy row loads its children first.
+   *
+   * @param {object | number} row A row, or the index of a shown row.
+   * @param {boolean} [recursive] Whether to expand all descendants too.
+   * @returns {boolean} Whether a row was expanded.
+   */
+  expand(row, recursive = false) {
+    row = this._resolveRow(row);
+    const wasOpen = this._isOpen(row);
+    const expanded = [];
+    this._batch += 1;
+    try {
+      this._expandRow(row, recursive, expanded);
+      if (expanded.length) {
+        const index = !recursive && !wasOpen && this._batch === 1 ? this.getRowIndex(row) : -1;
+        if (index >= 0 && this._dirty === void 0) {
+          this._insertBlock(index + 1, this._collectRows(this._getChildren(row), []));
+        } else {
+          this._markDirty(row);
+        }
+        for (const x of expanded) {
+          this._queueSignal("row-expand", x);
+        }
+        for (const x of expanded) {
+          this._load(x);
+        }
+      }
+    } finally {
+      this._endBatch();
+    }
+    return expanded.length > 0;
+  }
+  /**
+   * Collapses a row, hiding its descendants.
+   *
+   * @param {object | number} row A row, or the index of a shown row.
+   * @param {boolean} [recursive] Whether to collapse all descendants too.
+   * @returns {boolean} Whether a row was collapsed.
+   */
+  collapse(row, recursive = false) {
+    row = this._resolveRow(row);
+    const wasOpen = this._isOpen(row);
+    const collapsed = [];
+    this._batch += 1;
+    try {
+      this._collapseRow(row, recursive, collapsed);
+      if (collapsed.length && wasOpen) {
+        const index = this._batch === 1 ? this.getRowIndex(row) : -1;
+        if (index >= 0 && this._dirty === void 0) {
+          const depth = this._nodes.get(row).depth;
+          const rows = this._rows;
+          let end = index + 1;
+          while (end < rows.length && this._nodes.get(rows[end]).depth > depth) {
+            ++end;
+          }
+          this._removeBlock(index + 1, end - index - 1);
+        } else {
+          this._markDirty(row);
+        }
+      }
+      for (const x of collapsed) {
+        this._queueSignal("row-collapse", x);
+      }
+    } finally {
+      this._endBatch();
+    }
+    return collapsed.length > 0;
+  }
+  /**
+   * Expands a collapsed row, or collapses an expanded row.
+   *
+   * @param {object | number} row A row, or the index of a shown row.
+   * @param {boolean} [recursive] Whether to expand or collapse all descendants too.
+   * @returns {boolean} Whether the row is expanded now.
+   */
+  toggle(row, recursive = false) {
+    row = this._resolveRow(row);
+    if (this._isOpen(row)) {
+      this.collapse(row, recursive);
+    } else {
+      this.expand(row, recursive);
+    }
+    return this._isOpen(row);
+  }
+  /**
+   * Expands the ancestors of a row, so it is shown (unless it is filtered out).
+   *
+   * @param {object | number} row A row, or the index of a shown row.
+   */
+  expandTo(row) {
+    row = this._resolveRow(row);
+    this._batch += 1;
+    try {
+      const ancestors = [];
+      for (let parent = this._nodes.get(row).parent; parent; ) {
+        ancestors.unshift(parent);
+        parent = this._nodes.get(parent).parent;
+      }
+      for (const ancestor of ancestors) {
+        this.expand(ancestor);
+      }
+    } finally {
+      this._endBatch();
+    }
+  }
+  /**
+   * Expands all rows. Lazy rows load their children, which are expanded as well.
+   */
+  expandAll() {
+    this._batch += 1;
+    try {
+      const expanded = [];
+      for (const row of this._rootRows) {
+        this._expandRow(row, true, expanded);
+      }
+      if (expanded.length) {
+        this._markDirty(null);
+      }
+      for (const x of expanded) {
+        this._queueSignal("row-expand", x);
+      }
+      for (const x of expanded) {
+        this._load(x);
+      }
+    } finally {
+      this._endBatch();
+    }
+  }
+  /**
+   * Collapses all rows, so only the top-level rows are shown.
+   */
+  collapseAll() {
+    this._batch += 1;
+    try {
+      const collapsed = [];
+      for (const row of this._rootRows) {
+        this._collapseRow(row, true, collapsed);
+      }
+      if (collapsed.length) {
+        this._markDirty(null);
+      }
+      for (const x of collapsed) {
+        this._queueSignal("row-collapse", x);
+      }
+    } finally {
+      this._endBatch();
+    }
+  }
+  /**
+   * Inserts a row (with its children) as a child of another row. If the model is sorted, the
+   * row is placed at its sorted position instead.
+   *
+   * @param {object | number | null} parent A row, the index of a shown row, or `null` for a
+   *     top-level row.
+   * @param {number} index The index among the children, between 0 and their number.
+   * @param {object} row
+   * @returns {number} The index of the row in the shown rows, or -1 when it is not shown.
+   * @throws {Error} If the row is already in the model or its id is in use.
+   */
+  insertChild(parent, index, row) {
+    parent = parent === null ? null : this._resolveRow(parent);
+    const siblings = parent === null ? this._rootRows : this._getChildren(parent);
+    if (!Number.isInteger(index) || index < 0 || index > siblings.length) {
+      throw new RangeError(`Invalid child insertion index ${index}.`);
+    }
+    const depth = parent === null ? 0 : this._nodes.get(parent).depth + 1;
+    const nodes = this._prepareNodes([row], parent, depth);
+    this._batch += 1;
+    try {
+      this._commitNodes(nodes);
+      let children = siblings;
+      if (parent !== null && !Array.isArray(parent[this.childrenColumn])) {
+        children = [];
+        parent[this.childrenColumn] = children;
+      }
+      const compare = this._createSortComparator();
+      if (compare) {
+        this._sortRows(this._getChildren(row), compare);
+        index = this._findInsertIndex(children, row, compare);
+      }
+      children.splice(index, 0, row);
+      this._onTreeChange(parent);
+    } finally {
+      this._endBatch();
+    }
+    return this.getRowIndex(row);
+  }
+  /**
+   * Appends a row (with its children) to the children of another row. If the model is sorted,
+   * the row is placed at its sorted position instead.
+   *
+   * @param {object | number | null} parent A row, the index of a shown row, or `null` for a
+   *     top-level row.
+   * @param {object} row
+   * @returns {number} The index of the row in the shown rows, or -1 when it is not shown.
+   */
+  appendChild(parent, row) {
+    return this.insertChild(parent, this.getChildren(parent).length, row);
+  }
+  /**
+   * Replaces the children of a row, e.g. once lazily loaded children arrived.
+   *
+   * @param {object | number | null} parent A row, the index of a shown row, or `null` to
+   *     replace the top-level rows.
+   * @param {object[]} children The new children. The array is copied, the rows are not.
+   */
+  setChildren(parent, children) {
+    if (parent === null) {
+      this.rows = children;
+      return;
+    }
+    parent = this._resolveRow(parent);
+    if (!Array.isArray(children)) {
+      throw new TypeError("Children must be an array.");
+    }
+    const node = this._nodes.get(parent);
+    const old = this._getChildren(parent);
+    const nodes = this._prepareNodes(children, parent, node.depth + 1, this._collectTree(old));
+    this._batch += 1;
+    try {
+      this._unregister(old);
+      this._commitNodes(nodes);
+      const array = [...children];
+      const compare = this._createSortComparator();
+      if (compare) {
+        this._sortRows(array, compare);
+      }
+      parent[this.childrenColumn] = array;
+      const recursive = node.recursive;
+      node.loaded = true;
+      node.loading = false;
+      node.recursive = false;
+      if (!array.length) {
+        node.expanded = false;
+      }
+      this._onTreeChange(parent);
+      if (recursive && node.expanded) {
+        const expanded = [];
+        for (const child of array) {
+          this._expandRow(child, true, expanded);
+        }
+        for (const x of expanded) {
+          this._queueSignal("row-expand", x);
+        }
+        for (const x of expanded) {
+          this._load(x);
+        }
+      }
+    } finally {
+      this._endBatch();
+    }
+  }
+  /**
+   * Inserts a row before the shown row at an index, as its sibling, or at the end of the
+   * top-level rows. If the model is sorted, the row is placed at its sorted position instead.
+   *
+   * @param {number} index Between 0 and `rowsCount`.
+   * @param {object} row
+   * @returns {number} The index the row got, or -1 when it is not shown.
+   */
+  insertRow(index, row) {
+    const { parent, position } = this._getInsertPosition(index);
+    return this.insertChild(parent, position, row);
+  }
+  insertRows(index, rows) {
+    if (!Array.isArray(rows)) {
+      throw new TypeError("Rows must be an array.");
+    }
+    const { parent, position } = this._getInsertPosition(index);
+    this._batch += 1;
+    try {
+      rows.forEach((row, i) => this.insertChild(parent, position + i, row));
+    } finally {
+      this._endBatch();
+    }
+  }
+  /**
+   * Removes a row with its descendants.
+   *
+   * @param {object | number} row A row, or the index of a shown row.
+   * @returns {object} The removed row.
+   */
+  removeRow(row) {
+    row = this._resolveRow(row);
+    const parent = this._nodes.get(row).parent;
+    const siblings = parent === null ? this._rootRows : this._getChildren(parent);
+    this._batch += 1;
+    try {
+      siblings.splice(siblings.indexOf(row), 1);
+      this._unregister([row]);
+      if (parent !== null && !siblings.length) {
+        this._nodes.get(parent).expanded = false;
+      }
+      this._onTreeChange(parent);
+    } finally {
+      this._endBatch();
+    }
+    return row;
+  }
+  removeAllRows() {
+    this.rows = [];
+  }
+  /**
+   * Replaces a row by another row object (with its children), at the same place in the tree.
+   *
+   * @param {object | number} row A row, or the index of a shown row.
+   * @param {object} newRow
+   * @returns {number} The index of the new row, or -1 when it is not shown.
+   */
+  replaceRow(row, newRow) {
+    row = this._resolveRow(row);
+    checkRow(newRow);
+    const parent = this._nodes.get(row).parent;
+    const position = this.getChildren(parent).indexOf(row);
+    this._batch += 1;
+    try {
+      this.removeRow(row);
+      this.insertChild(parent, position, newRow);
+    } finally {
+      this._endBatch();
+    }
+    return this.getRowIndex(newRow);
+  }
+  /**
+   * Changes values of a row: the given columns are assigned to the row object. The siblings stay
+   * sorted, so the row may move. Changing the `childrenColumn` replaces the children.
+   *
+   * @param {object | number} row A row, or the index of a shown row.
+   * @param {Record<string, unknown>} changes Values by column.
+   * @returns {number} The index of the row after the change, or -1 when it is not shown.
+   */
+  updateRow(row, changes) {
+    row = this._resolveRow(row);
+    if (changes === null || typeof changes !== "object") {
+      throw new TypeError("Row changes must be an object.");
+    }
+    const childrenColumn = this.childrenColumn;
+    const columns = Object.keys(changes).filter(
+      (column) => column !== childrenColumn && !Object.is(row[column], changes[column])
+    );
+    if (childrenColumn in changes && changes[childrenColumn] !== row[childrenColumn]) {
+      this.setChildren(row, changes[childrenColumn] || []);
+    }
+    if (!columns.length) {
+      return this.getRowIndex(row);
+    }
+    const idColumn = this.idColumn;
+    const oldId = this.getRowId(row);
+    const from = this.getRowIndex(row);
+    if (idColumn && columns.includes(idColumn)) {
+      const id = changes[idColumn];
+      if (this._getRowsById().has(id)) {
+        throw new Error(`Duplicate row id ${String(id)}.`);
+      }
+    }
+    for (const column of columns) {
+      row[column] = changes[column];
+    }
+    if (idColumn && columns.includes(idColumn)) {
+      this._rowsById = null;
+      this._invalidateIndex();
+    }
+    let moved = false;
+    const compare = this._createSortComparator();
+    if (compare && (columns.includes(this.sortColumn) || this.getColumnInfo(this.sortColumn).compare)) {
+      const siblings = this.getChildren(this._nodes.get(row).parent);
+      const position = siblings.indexOf(row);
+      siblings.splice(position, 1);
+      const newPosition = this._findInsertIndex(siblings, row, compare);
+      siblings.splice(newPosition, 0, row);
+      moved = newPosition !== position;
+    }
+    if (this._filters.length) {
+      this._computeFilterState();
+    }
+    if (moved || this._filters.length) {
+      this._layout = null;
+      const rows = this._collectRows(this._rootRows, []);
+      const to = rows.indexOf(row);
+      if (!this._filters.length && from >= 0 && to >= 0 && this._isMove(rows, from, to)) {
+        this._rows.splice(from, 1);
+        this._rows.splice(to, 0, row);
+        this._invalidateIndex();
+        this.emit("row-move", this, from, to, oldId);
+      } else {
+        this._applyRows(rows, moved ? null : void 0);
+      }
+    }
+    const index = this.getRowIndex(row);
+    if (index >= 0) {
+      for (const column of columns) {
+        this.emit("cell-change", this, index, column);
+      }
+      this.emit("row-update", this, index, this.getRowId(row), oldId);
+      const start = from >= 0 ? Math.min(from, index) : index;
+      this.emit("rows-change", this, start, Math.max(from, index));
+    }
+    return index;
+  }
+  /**
+   * Calls a function for every row of the tree (also those that are not shown), depth first.
+   *
+   * @param {(row: object, depth: number, parent: object | null) => void} method
+   * @param {object} [context]
+   */
+  forEachTreeRow(method, context) {
+    const visit = /* @__PURE__ */ __name((rows, depth, parent) => {
+      for (const row of [...rows]) {
+        method.call(context, row, depth, parent);
+        visit(this._getChildren(row), depth + 1, row);
+      }
+    }, "visit");
+    visit(this._rootRows, 0, null);
+  }
+  sortByColumn(column, order = SortOrder.ASCENDING) {
+    if (order !== SortOrder.NONE && order !== SortOrder.ASCENDING && order !== SortOrder.DESCENDING) {
+      throw new RangeError(`Invalid sort order ${order}.`);
+    }
+    if (!column) {
+      column = null;
+      order = SortOrder.NONE;
+    } else if (order === SortOrder.NONE) {
+      column = null;
+    }
+    const columnChanged = this._sortColumn !== column;
+    const orderChanged = this._sortOrder !== order;
+    this._sortColumn = column;
+    this._sortOrder = order;
+    if (columnChanged) {
+      this.emit("sort-column-change", this);
+    }
+    if (orderChanged) {
+      this.emit("sort-order-change", this);
+    }
+    if (columnChanged || orderChanged) {
+      this._onSortingChange();
+    }
+  }
+  /**
+   * Adds a filter.
+   *
+   * @param {Filter} filter
+   * @throws {Error} If the filter was already added.
+   */
+  addFilter(filter) {
+    if (!(filter instanceof Filter)) {
+      throw new TypeError("Only filters can be added to a tree model.");
+    }
+    if (this._filters.includes(filter)) {
+      throw new Error("The filter has already been added.");
+    }
+    this.filters = [...this._filters, filter];
+  }
+  /**
+   * Removes a filter.
+   *
+   * @param {Filter} filter
+   * @throws {Error} If the filter was not added.
+   */
+  removeFilter(filter) {
+    if (!this._filters.includes(filter)) {
+      throw new Error("The filter has not been added.");
+    }
+    this.filters = this._filters.filter((x) => x !== filter);
+  }
+  /**
+   * Removes all filters, so all rows are shown again.
+   */
+  removeAllFilters() {
+    this.filters = [];
+  }
+  /**
+   * Filters all rows again. Filters signal their changes themselves; call this when a filter
+   * depends on outside state that changed.
+   */
+  refilter() {
+    this._refilter();
+  }
+  /**
+   * Checks whether a row matches all filters (whatever its descendants).
+   *
+   * @param {object} row
+   * @returns {boolean}
+   */
+  matchesFilters(row) {
+    const filters = this._filters;
+    for (let i = 0; i < filters.length; ++i) {
+      if (!filters[i].isVisibleRow(row)) {
+        return false;
+      }
+    }
+    return true;
+  }
+  destroy() {
+    for (const filter of this._filters) {
+      filter.disconnect("change", this._onFilterChange, this);
+      filter.disconnect("destroy", this._onFilterDestroy, this);
+      if (!filter.destroyed) {
+        filter.destroy();
+      }
+    }
+    this._filters = [];
+    super.destroy();
+  }
+  /**
+   * Returns how a row is shown, for tree views.
+   *
+   * @protected
+   * @param {object} row A shown row.
+   * @returns {TreeRowInfo}
+   */
+  _getRowInfo(row) {
+    const node = this._getNode(row);
+    const info = this._getLayout().get(row);
+    const expandable = this._isLazy(row) || (info ? info.children > 0 : false);
+    return {
+      level: node.depth + 1,
+      position: info ? info.position : 1,
+      size: info ? info.size : 1,
+      expandable,
+      expanded: expandable && this._isOpen(row),
+      loading: node.loading
+    };
+  }
+  _getIndexById() {
+    if (this._indexDirty || !this._indexById) {
+      const index = /* @__PURE__ */ new Map();
+      const rows = this._rows;
+      const idColumn = this.idColumn;
+      for (let i = 0; i < rows.length; ++i) {
+        index.set(idColumn ? rows[i][idColumn] : rows[i], i);
+      }
+      this._indexById = index;
+      this._indexDirty = false;
+    }
+    return this._indexById;
+  }
+  /**
+   * Returns all rows of the tree by id, building the index when the tree changed.
+   *
+   * @returns {Map<unknown, object>}
+   */
+  _getRowsById() {
+    const idColumn = this.idColumn;
+    if (!idColumn) {
+      throw new Error("The model has no id column.");
+    }
+    if (!this._rowsById) {
+      const rows = /* @__PURE__ */ new Map();
+      for (const row of this._nodes.keys()) {
+        const id = row[idColumn];
+        if (rows.has(id)) {
+          throw new Error(`Duplicate row id ${String(id)}.`);
+        }
+        rows.set(id, row);
+      }
+      this._rowsById = rows;
+    }
+    return this._rowsById;
+  }
+  _findRow(id) {
+    if (!this.idColumn) {
+      return this._nodes.has(id) ? id : null;
+    }
+    return this._getRowsById().get(id) || null;
+  }
+  _resolveRow(row) {
+    if (typeof row === "number") {
+      return this.getRow(row);
+    }
+    this._getNode(row);
+    return row;
+  }
+  _getNode(row) {
+    const node = row !== null && typeof row === "object" ? this._nodes.get(row) : void 0;
+    if (!node) {
+      throw new Error("The row is not in the model.");
+    }
+    return node;
+  }
+  _getChildren(row) {
+    const children = row[this.childrenColumn];
+    return Array.isArray(children) ? children : NO_CHILDREN;
+  }
+  /**
+   * Whether a row has children that are not loaded yet.
+   *
+   * @param {object} row
+   * @returns {boolean}
+   */
+  _isLazy(row) {
+    const column = this.hasChildrenColumn;
+    return Boolean(column && row[column]) && !this._nodes.get(row).loaded && !this._getChildren(row).length;
+  }
+  _isOpen(row) {
+    return this._nodes.get(row).expanded || this._revealed.has(row);
+  }
+  /**
+   * Collects the shown rows of a tree, depth first.
+   *
+   * @param {ReadonlyArray<object>} children
+   * @param {object[]} rows The array to add the rows to.
+   * @returns {object[]} `rows`.
+   */
+  _collectRows(children, rows) {
+    const hidden = this._hidden;
+    const childrenColumn = this.childrenColumn;
+    for (const row of children) {
+      if (hidden.size && hidden.has(row)) {
+        continue;
+      }
+      rows.push(row);
+      const grandchildren = row[childrenColumn];
+      if (Array.isArray(grandchildren) && grandchildren.length && this._isOpen(row)) {
+        this._collectRows(grandchildren, rows);
+      }
+    }
+    return rows;
+  }
+  /**
+   * Collects all rows of subtrees.
+   *
+   * @param {ReadonlyArray<object>} rows
+   * @param {Set<object>} [collected]
+   * @returns {Set<object>}
+   */
+  _collectTree(rows, collected = /* @__PURE__ */ new Set()) {
+    for (const row of rows) {
+      collected.add(row);
+      this._collectTree(this._getChildren(row), collected);
+    }
+    return collected;
+  }
+  /**
+   * Creates the nodes of new subtrees, checking that their rows and ids are not in use.
+   *
+   * @param {object[]} rows
+   * @param {object | null} parent
+   * @param {number} depth
+   * @param {Set<object>} [replaced] Rows that are replaced, whose ids may be reused.
+   * @param {boolean} [all] Whether all rows are replaced.
+   * @returns {Map<object, TreeNode>}
+   */
+  _prepareNodes(rows, parent, depth, replaced = /* @__PURE__ */ new Set(), all = false) {
+    const nodes = /* @__PURE__ */ new Map();
+    const childrenColumn = this.childrenColumn;
+    const visit = /* @__PURE__ */ __name((children, parentRow, level) => {
+      for (const row of children) {
+        checkRow(row);
+        if (nodes.has(row) || !all && this._nodes.has(row) && !replaced.has(row)) {
+          throw new Error("A row can be in a tree model only once.");
+        }
+        const old = this._nodes.get(row);
+        nodes.set(row, {
+          parent: parentRow,
+          depth: level,
+          expanded: old ? old.expanded : false,
+          loaded: old ? old.loaded : false,
+          loading: false,
+          recursive: false
+        });
+        const grandchildren = row[childrenColumn];
+        if (Array.isArray(grandchildren)) {
+          visit(grandchildren, row, level + 1);
+        }
+      }
+    }, "visit");
+    visit(rows, parent, depth);
+    const idColumn = this.idColumn;
+    if (idColumn) {
+      const existing = all ? /* @__PURE__ */ new Map() : this._getRowsById();
+      const ids = /* @__PURE__ */ new Set();
+      for (const row of nodes.keys()) {
+        const id = row[idColumn];
+        const owner = existing.get(id);
+        if (ids.has(id) || owner && !replaced.has(owner)) {
+          throw new Error(`Duplicate row id ${String(id)}.`);
+        }
+        ids.add(id);
+      }
+    }
+    return nodes;
+  }
+  _commitNodes(nodes) {
+    const idColumn = this.idColumn;
+    const rowsById = idColumn ? this._rowsById : null;
+    for (const [row, node] of nodes) {
+      this._nodes.set(row, node);
+      rowsById?.set(row[idColumn], row);
+    }
+  }
+  _unregister(rows) {
+    const idColumn = this.idColumn;
+    for (const row of rows) {
+      this._nodes.delete(row);
+      this._revealed.delete(row);
+      if (idColumn && this._rowsById?.get(row[idColumn]) === row) {
+        this._rowsById.delete(row[idColumn]);
+      }
+      this._unregister(this._getChildren(row));
+    }
+  }
+  /**
+   * Sorts rows and all their loaded descendants.
+   *
+   * @param {object[]} rows
+   * @param {(first: object, second: object) => number} compare
+   */
+  _sortRows(rows, compare) {
+    if (rows.length > 1) {
+      rows.sort(compare);
+    }
+    for (const row of rows) {
+      const children = this._getChildren(row);
+      if (children.length) {
+        this._sortRows(children, compare);
+      }
+    }
+  }
+  /**
+   * Expands a row and optionally its descendants, without updating the shown rows.
+   *
+   * @param {object} row
+   * @param {boolean} recursive
+   * @param {object[]} expanded Receives the rows that were expanded.
+   */
+  _expandRow(row, recursive, expanded) {
+    const node = this._nodes.get(row);
+    const lazy = this._isLazy(row);
+    const children = this._getChildren(row);
+    if (!lazy && !children.length) {
+      return;
+    }
+    if (!this._isOpen(row)) {
+      expanded.push(row);
+    }
+    node.expanded = true;
+    if (lazy) {
+      node.recursive = node.recursive || recursive;
+    } else if (recursive) {
+      for (const child of children) {
+        this._expandRow(child, true, expanded);
+      }
+    }
+  }
+  /**
+   * Collapses a row and optionally its descendants, without updating the shown rows.
+   *
+   * @param {object} row
+   * @param {boolean} recursive
+   * @param {object[]} collapsed Receives the rows that were collapsed.
+   */
+  _collapseRow(row, recursive, collapsed) {
+    const node = this._nodes.get(row);
+    if (this._isOpen(row)) {
+      collapsed.push(row);
+    }
+    node.expanded = false;
+    node.recursive = false;
+    this._revealed.delete(row);
+    if (recursive) {
+      for (const child of this._getChildren(row)) {
+        this._collapseRow(child, true, collapsed);
+      }
+    }
+  }
+  /**
+   * Loads the children of a lazy row: emits `load-children` and calls `loadChildren`.
+   *
+   * @param {object} row
+   */
+  _load(row) {
+    const node = this._nodes.get(row);
+    if (!node || node.loading || !node.expanded || !this._isLazy(row)) {
+      return;
+    }
+    node.loading = true;
+    this.emit("load-children", this, row);
+    const loader = this._loadChildren;
+    if (!node.loading || !loader) {
+      return;
+    }
+    let result;
+    try {
+      result = loader(row, this);
+    } catch (error) {
+      this._onLoadError(row, node, error);
+      return;
+    }
+    if (result && typeof result.then === "function") {
+      this._markDirty(row);
+      result.then(
+        (children) => {
+          if (!this.destroyed && this._nodes.get(row) === node && node.loading) {
+            this.setChildren(row, children || []);
+          }
+        },
+        (error) => {
+          if (!this.destroyed && this._nodes.get(row) === node && node.loading) {
+            this._onLoadError(row, node, error);
+          }
+        }
+      );
+    } else if (result !== void 0) {
+      this.setChildren(row, result || []);
+    }
+  }
+  _onLoadError(row, node, error) {
+    node.loading = false;
+    node.recursive = false;
+    this.collapse(row);
+    this._emitRowChange(row);
+    if (!this.emit("load-error", this, row, error)) {
+      queueMicrotask(() => {
+        throw error;
+      });
+    }
+  }
+  _emitRowChange(row) {
+    const index = this.getRowIndex(row);
+    if (index >= 0 && !this._batch) {
+      this.emit("rows-change", this, index, index);
+    } else if (index >= 0) {
+      this._markDirty(row);
+    }
+  }
+  _getInsertPosition(index) {
+    const count = this._rows.length;
+    if (!Number.isInteger(index) || index < 0 || index > count) {
+      throw new RangeError(`Invalid row insertion index ${index}.`);
+    }
+    if (index === count) {
+      return { parent: null, position: this._rootRows.length };
+    }
+    const before = this._rows[index];
+    const parent = this._nodes.get(before).parent;
+    return { parent, position: this.getChildren(parent).indexOf(before) };
+  }
+  /**
+   * Whether the shown rows are the current ones with one row moved.
+   *
+   * @param {object[]} rows
+   * @param {number} from
+   * @param {number} to
+   * @returns {boolean}
+   */
+  _isMove(rows, from, to) {
+    const old = this._rows;
+    if (rows.length !== old.length) {
+      return false;
+    }
+    const start = Math.min(from, to);
+    const end = Math.max(from, to);
+    const shift = from < to ? 1 : -1;
+    for (let i = start; i <= end; ++i) {
+      const expected = i === to ? old[from] : old[i + shift];
+      if (rows[i] !== expected) {
+        return false;
+      }
+    }
+    return true;
+  }
+  /**
+   * Updates the state after rows were added to or removed from the tree.
+   *
+   * @param {object | null} parent The row whose children changed, or `null`.
+   */
+  _onTreeChange(parent) {
+    this._layout = null;
+    if (this._filters.length) {
+      this._computeFilterState();
+    }
+    this._markDirty(parent);
+  }
+  /**
+   * Marks the shown rows as outdated, so they are updated at the end of the change.
+   *
+   * @param {object | null} row The row from which rows need to be rendered again, or `null`
+   *     for all rows.
+   */
+  _markDirty(row) {
+    if (this._dirty === void 0) {
+      this._dirty = row;
+    } else if (this._dirty !== row) {
+      this._dirty = null;
+    }
+    if (!this._batch) {
+      this._endBatch(true);
+    }
+  }
+  _queueSignal(name, row) {
+    this._queuedSignals.push([name, row]);
+  }
+  /**
+   * Ends a change: updates the shown rows and emits the queued signals.
+   *
+   * @param {boolean} [unbatched] Whether the change was not in a batch.
+   */
+  _endBatch(unbatched = false) {
+    if (!unbatched) {
+      this._batch -= 1;
+    }
+    if (this._batch) {
+      return;
+    }
+    if (this._dirty !== void 0) {
+      const dirty = this._dirty;
+      this._dirty = void 0;
+      this._applyRows(this._collectRows(this._rootRows, []), dirty);
+    }
+    const signals = this._queuedSignals;
+    this._queuedSignals = [];
+    for (const [name, row] of signals) {
+      if (this._nodes.has(row)) {
+        this.emit(name, this, row);
+      }
+    }
+  }
+  /**
+   * Inserts shown rows at an index, signaling them.
+   *
+   * @param {number} index
+   * @param {object[]} rows
+   */
+  _insertBlock(index, rows) {
+    if (rows.length > INCREMENTAL_LIMIT) {
+      const old = this._rows;
+      this._resetRows(old.slice(0, index).concat(rows, old.slice(index)));
+      return;
+    }
+    this._rows.splice(index, 0, ...rows);
+    this._invalidateIndex();
+    rows.forEach((row, i) => this.emit("row-insert", this, index + i, this.getRowId(row)));
+    this.emit("rows-change", this, Math.max(0, index - 1), this._rows.length - 1);
+  }
+  /**
+   * Removes shown rows at an index, signaling them.
+   *
+   * @param {number} index
+   * @param {number} count
+   */
+  _removeBlock(index, count) {
+    if (count > INCREMENTAL_LIMIT) {
+      const old = this._rows;
+      this._resetRows(old.slice(0, index).concat(old.slice(index + count)));
+      return;
+    }
+    const removed = this._rows.splice(index, count);
+    this._invalidateIndex();
+    for (const row of removed) {
+      this.emit("row-remove", this, index, this.getRowId(row), row);
+    }
+    this.emit("rows-change", this, Math.max(0, index - 1), this._rows.length - 1);
+  }
+  _resetRows(rows) {
+    this._rows = rows;
+    this._invalidateIndex();
+    this.emit("rows-reorder", this);
+    this.emit("rows-change", this, 0, rows.length - 1);
+  }
+  /**
+   * Makes the shown rows the given rows, signaling only the rows that appear and disappear.
+   * Both lists must be in tree order; otherwise (after sorting) all rows are signaled as
+   * reordered.
+   *
+   * @param {object[]} rows
+   * @param {object | null | undefined} dirty The row from which rows need to be rendered
+   *     again, `null` for all rows, or `undefined`.
+   */
+  _applyRows(rows, dirty) {
+    const old = this._rows;
+    const oldRows = new Set(old);
+    const newRows = new Set(rows);
+    let changes = 0;
+    for (let i = 0, j = 0; i < old.length || j < rows.length; ) {
+      if (i < old.length && j < rows.length && old[i] === rows[j]) {
+        ++i;
+        ++j;
+        continue;
+      }
+      if (i < old.length && !newRows.has(old[i])) {
+        ++i;
+      } else if (j < rows.length && !oldRows.has(rows[j])) {
+        ++j;
+      } else {
+        changes = Infinity;
+      }
+      if (++changes > INCREMENTAL_LIMIT) {
+        this._resetRows(rows);
+        return;
+      }
+    }
+    let first = -1;
+    if (changes) {
+      this._rows = [...old];
+      let position = 0;
+      for (let i = 0, j = 0; i < old.length || j < rows.length; ) {
+        if (i < old.length && j < rows.length && old[i] === rows[j]) {
+          ++position;
+          ++i;
+          ++j;
+        } else if (i < old.length && !newRows.has(old[i])) {
+          const row = old[i];
+          this._rows.splice(position, 1);
+          this._invalidateIndex();
+          first = first < 0 ? position : first;
+          this.emit("row-remove", this, position, this.getRowId(row), row);
+          ++i;
+        } else {
+          const row = rows[j];
+          this._rows.splice(position, 0, row);
+          this._invalidateIndex();
+          first = first < 0 ? position : first;
+          this.emit("row-insert", this, position, this.getRowId(row));
+          ++position;
+          ++j;
+        }
+      }
+    }
+    let start = first;
+    if (dirty === null) {
+      start = 0;
+    } else if (dirty !== void 0) {
+      const index = this.getRowIndex(dirty);
+      start = index >= 0 && (start < 0 || index < start) ? index : start;
+    }
+    if (start >= 0 || changes) {
+      this.emit("rows-change", this, Math.max(0, start), this._rows.length - 1);
+    }
+  }
+  /**
+   * Returns the positions of the shown rows among their shown siblings, and their numbers of
+   * shown children.
+   *
+   * @returns {Map<object, {position: number, size: number, children: number}>}
+   */
+  _getLayout() {
+    if (!this._layout) {
+      const layout = /* @__PURE__ */ new Map();
+      const hidden = this._hidden;
+      const visit = /* @__PURE__ */ __name((rows) => {
+        const shown = hidden.size ? rows.filter((x) => !hidden.has(x)) : rows;
+        shown.forEach((row, i) => {
+          const children = this._getChildren(row);
+          layout.set(row, {
+            position: i + 1,
+            size: shown.length,
+            children: children.length ? visit(children) : 0
+          });
+        });
+        return shown.length;
+      }, "visit");
+      visit(this._rootRows);
+      this._layout = layout;
+    }
+    return this._layout;
+  }
+  /**
+   * Computes which rows the filters hide, and which rows they expand.
+   */
+  _computeFilterState() {
+    this._hidden = /* @__PURE__ */ new Set();
+    this._revealed = /* @__PURE__ */ new Set();
+    if (!this._filters.length) {
+      return;
+    }
+    const hidden = /* @__PURE__ */ new Set();
+    const revealed = /* @__PURE__ */ new Set();
+    const visit = /* @__PURE__ */ __name((rows) => {
+      let shown = false;
+      for (const row of rows) {
+        const children = this._getChildren(row);
+        const childShown = children.length ? visit(children) : false;
+        if (childShown) {
+          revealed.add(row);
+        }
+        if (childShown || this.matchesFilters(row)) {
+          shown = true;
+        } else {
+          hidden.add(row);
+        }
+      }
+      return shown;
+    }, "visit");
+    visit(this._rootRows);
+    if (hidden.size) {
+      this._hidden = hidden;
+      this._revealed = revealed;
+    }
+  }
+  _refilter() {
+    this._computeFilterState();
+    this._layout = null;
+    this._markDirty(null);
+  }
+  _onFilterChange() {
+    this._refilter();
+  }
+  _onFilterDestroy(filter) {
+    if (this._filters.includes(filter)) {
+      this.removeFilter(filter);
+    }
+  }
+  _setRows(rows) {
+    if (!Array.isArray(rows)) {
+      throw new TypeError("Rows must be an array.");
+    }
+    const nodes = this._prepareNodes(rows, null, 0, /* @__PURE__ */ new Set(), true);
+    this._nodes = nodes;
+    this._rowsById = null;
+    this._rootRows = [...rows];
+    const compare = this._createSortComparator();
+    if (compare) {
+      this._sortRows(this._rootRows, compare);
+    }
+    this._computeFilterState();
+    this._layout = null;
+    this._resetRows(this._collectRows(this._rootRows, []));
+  }
+  _onSortingChange() {
+    const compare = this._createSortComparator();
+    if (!compare) {
+      return;
+    }
+    this._sortRows(this._rootRows, compare);
+    this._layout = null;
+    this._resetRows(this._collectRows(this._rootRows, []));
+  }
+};
+defineProperties(TreeModel, {
+  /**
+   * The shown rows, in order: the top-level rows and the shown children of expanded rows. Do
+   * not modify the array. Setting it replaces the tree with the given top-level rows (the array
+   * is copied, the row objects and their children arrays are not).
+   */
+  rows: {
+    signal: false,
+    late: true,
+    get() {
+      return this._rows;
+    },
+    set(rows) {
+      this._setRows(rows);
+    }
+  },
+  /**
+   * The top-level rows, in order. Do not modify the array.
+   */
+  rootRows: {
+    readOnly: true,
+    get() {
+      return this._rootRows;
+    }
+  },
+  /**
+   * The column that holds the array of children of a row.
+   */
+  childrenColumn: {
+    value: "children",
+    changed() {
+      this._setRows(this._rootRows);
+    }
+  },
+  /**
+   * The column that tells whether a row without children has children to load lazily, or
+   * `null`.
+   */
+  hasChildrenColumn: {
+    value: "hasChildren",
+    changed() {
+      this._layout = null;
+      this._markDirty(null);
+    }
+  },
+  /**
+   * A function `(row, model)` returning the children of a lazy row, or a promise of them, or
+   * `null`. It is called when the row is expanded for the first time, after `load-children`.
+   * Without it, a `load-children` handler calls `setChildren()` once it has the children.
+   */
+  loadChildren: {
+    value: null,
+    coerce(method) {
+      if (method !== null && typeof method !== "function") {
+        throw new TypeError("The children loader must be a function or null.");
+      }
+      return method;
+    }
+  },
+  idColumn: {
+    value: null,
+    changed() {
+      this._invalidateIndex();
+      this._rowsById = null;
+      if (this._idColumn) {
+        this._getRowsById();
+      }
+    }
+  },
+  /**
+   * The filters. A row is shown when it or one of its descendants matches all of them. Setting
+   * an array replaces them.
+   */
+  filters: {
+    signal: false,
+    get() {
+      return this._filters;
+    },
+    set(filters) {
+      if (!Array.isArray(filters)) {
+        throw new TypeError("Filters must be an array.");
+      }
+      for (const filter of filters) {
+        if (!(filter instanceof Filter)) {
+          throw new TypeError("Only filters can be added to a tree model.");
+        }
+      }
+      for (const filter of this._filters) {
+        filter.disconnect("change", this._onFilterChange, this);
+        filter.disconnect("destroy", this._onFilterDestroy, this);
+      }
+      this._filters = [...new Set(filters)];
+      for (const filter of this._filters) {
+        filter.connect("change", this._onFilterChange, this);
+        filter.connect("destroy", this._onFilterDestroy, this);
+      }
+      this._refilter();
+      this.emit("filters-change", this);
+    }
+  },
+  /**
+   * The number of filters.
+   */
+  filtersCount: {
+    readOnly: true,
+    get() {
+      return this._filters.length;
+    }
+  }
+});
+TreeModel.builderProperties = {
+  filters(builder, model, filters) {
+    if (!Array.isArray(filters)) {
+      throw new Error("Tree model filters must be an array.");
+    }
+    model.filters = builder.build(filters);
+  }
+};
+registerType("tree-model", TreeModel);
+
 // src/widgets/table.js
 var ROW_BUFFER = 8;
 var TYPE_AHEAD_TIMEOUT2 = 1e3;
@@ -19972,6 +25492,7 @@ var INITIAL_MEASURE_ROWS = 200;
 var AUTO_SIZE_ROWS = 2e4;
 var SORT_ARROW_WIDTH = 14;
 var HORIZONTAL_STEP = 20;
+var EXPANDER_WIDTH = 16;
 var ARIA_SORT = Object.freeze({
   [SortIndicator.NONE]: "none",
   [SortIndicator.ASCENDING]: "ascending",
@@ -20035,6 +25556,7 @@ var Table = class extends Widget {
     this._pressedHeader = null;
     this._rowCounter = 0;
     this._lastResizerPress = null;
+    this._treeColumnInUse = null;
     super._initialize();
     this._id = uniqueId("wy-table");
     this._selection = new Selection({ modes: SelectionModes.NONE });
@@ -20049,9 +25571,11 @@ var Table = class extends Widget {
     this.el.addEventListener("pointerup", (event) => this._onPointerUp(event, false));
     this.el.addEventListener("pointercancel", (event) => this._onPointerUp(event, true));
     this.el.addEventListener("click", (event) => this._onClick(event));
-    this.el.addEventListener("dblclick", (event) => this._onDoubleClick(event));
     this.el.addEventListener("keydown", (event) => this._onKeyDown(event));
     this._viewEl.addEventListener("scroll", () => this._onScroll(), { passive: true });
+    attachDoublePress(this.el, (event) => this._onDoublePress(event), {
+      key: /* @__PURE__ */ __name((event) => this._getDoublePressRow(event), "key")
+    });
     this._viewObserver = new ResizeObserver(() => this._onViewResize());
     this._viewObserver.observe(this._viewEl);
     this._viewObserver.observe(this._probeRowEl);
@@ -20240,9 +25764,10 @@ var Table = class extends Widget {
     const measure = this._measureCellText;
     let content = 0;
     for (const index of new Set(indices)) {
+      const row = this.model.getRow(index);
       content = Math.max(
         content,
-        column._measureCell(this.model.getRow(index), index, measure)
+        column._measureCell(row, index, measure) + this._getTreeIndent(column, row)
       );
     }
     column._userResized = false;
@@ -20434,7 +25959,7 @@ var Table = class extends Widget {
       }
       const row = model.getRow(index);
       for (const column of autoColumns) {
-        const width = column._measureCell(row, index, measure);
+        const width = column._measureCell(row, index, measure) + this._getTreeIndent(column, row);
         if (width > column._contentWidth) {
           column._contentWidth = width;
           grown = true;
@@ -20445,6 +25970,37 @@ var Table = class extends Widget {
       this._widthsDirty = true;
     }
     return grown;
+  }
+  /**
+   * Returns the width of the indentation and expander of the tree column in a row, or 0 for
+   * other columns.
+   *
+   * @param {AbstractColumn} column
+   * @param {object} row
+   * @returns {number}
+   */
+  _getTreeIndent(column, row) {
+    if (column !== this._treeColumnInUse || !(this.model instanceof TreeModel)) {
+      return 0;
+    }
+    const expander = this._showExpanders ? EXPANDER_WIDTH : 0;
+    return this.model.getDepth(row) * (this._levelIndentation + expander) + expander;
+  }
+  /**
+   * Returns the column that shows the tree: the `treeColumn`, or the first text column (or else
+   * the first column). Only tree models have one.
+   *
+   * @returns {AbstractColumn | null}
+   */
+  _findTreeColumn() {
+    if (!(this._model instanceof TreeModel)) {
+      return null;
+    }
+    const columns = this._visibleColumns;
+    if (this._treeColumn && columns.includes(this._treeColumn)) {
+      return this._treeColumn;
+    }
+    return columns.find((column) => column instanceof TextColumn) || columns[0] || null;
   }
   _getHeaderWidth(column) {
     const label = measureText(column.label, this._headerFont);
@@ -20461,6 +26017,7 @@ var Table = class extends Widget {
   _buildStructure() {
     this._structureDirty = false;
     this._visibleColumns = this._columns.filter((column) => column.visible);
+    this._treeColumnInUse = this._findTreeColumn();
     this._headerEls.clear();
     this._headerEl.replaceChildren();
     this._visibleColumns.forEach((column, index) => {
@@ -20484,6 +26041,8 @@ var Table = class extends Widget {
     this._freeRowEls = [];
     this._bodyEl.replaceChildren();
     this.el.setAttribute("aria-colcount", String(this._visibleColumns.length));
+    this.el.setAttribute("role", this._treeColumnInUse ? "treegrid" : "grid");
+    this.el.classList.toggle("wy-tree", Boolean(this._treeColumnInUse));
     this._headerDirty = true;
     this._widthsDirty = true;
     this._dirtyAll = true;
@@ -20621,16 +26180,38 @@ var Table = class extends Widget {
     element.id = `${this._id}-row-${++this._rowCounter}`;
     element.setAttribute("role", "row");
     for (const column of this._visibleColumns) {
-      const cell = column._createCell();
+      const cell = column === this._treeColumnInUse ? this._createTreeCell(column) : column._createCell();
       cell.classList.add("wy-table-cell");
       element.append(cell);
     }
     this._bodyEl.append(element);
     return element;
   }
+  /**
+   * Creates the cell of the tree column: an expander and the cell of the column.
+   *
+   * @param {AbstractColumn} column
+   * @returns {HTMLElement}
+   */
+  _createTreeCell(column) {
+    const cell = createElement(`
+            <div role="gridcell">
+                <span class="wy-table-expander" aria-hidden="true"></span>
+            </div>
+        `);
+    const content = column._createCell();
+    content.removeAttribute("role");
+    content.className = "wy-table-tree-content";
+    cell.append(content);
+    cell.wyExpander = cell.firstElementChild;
+    cell.wyContent = content;
+    return cell;
+  }
   _bindRow(element, index) {
     const row = this.model.getRow(index);
     const selected = this._selection.isSelected(index);
+    const tree = this._treeColumnInUse;
+    const info = tree ? this.model._getRowInfo(row) : null;
     element.wyIndex = index;
     element.style.transform = `translateY(${index * this._rowHeight}px)`;
     element.setAttribute("aria-rowindex", String(index + 2));
@@ -20640,16 +26221,65 @@ var Table = class extends Widget {
     } else {
       element.removeAttribute("aria-selected");
     }
+    if (info) {
+      element.setAttribute("aria-level", String(info.level));
+      element.setAttribute("aria-setsize", String(info.size));
+      element.setAttribute("aria-posinset", String(info.position));
+      if (info.expandable) {
+        element.setAttribute("aria-expanded", String(info.expanded));
+      } else {
+        element.removeAttribute("aria-expanded");
+      }
+      if (info.loading) {
+        element.setAttribute("aria-busy", "true");
+      } else {
+        element.removeAttribute("aria-busy");
+      }
+    }
     const cells = element.children;
     this._visibleColumns.forEach((column, columnIndex) => {
       const cell = cells[columnIndex];
-      const className = column._getCellClassName(row, index);
+      let className = column._getCellClassName(row, index);
+      if (column === tree) {
+        className += " wy-table-tree-cell";
+      }
       if (cell.wyClassName !== className) {
         cell.wyClassName = className;
         cell.className = className;
       }
-      column._renderCell(cell, row, index);
+      if (column === tree) {
+        this._renderTreeCell(cell, info);
+        column._renderCell(cell.wyContent, row, index);
+      } else {
+        column._renderCell(cell, row, index);
+      }
     });
+  }
+  /**
+   * Shows the indentation and the expander of a row in its tree cell.
+   *
+   * @param {HTMLElement} cell
+   * @param {import('../data/tree-model.js').TreeRowInfo} info
+   */
+  _renderTreeCell(cell, info) {
+    const expander = this._showExpanders ? EXPANDER_WIDTH : 0;
+    const indent = `${(info.level - 1) * (this._levelIndentation + expander)}px`;
+    if (cell.wyIndent !== indent) {
+      cell.wyIndent = indent;
+      cell.style.setProperty("--wy-table-indent", indent);
+    }
+    let className = "wy-table-expander";
+    if (!info.expandable) {
+      className += " wy-leaf";
+    } else if (info.expanded) {
+      className += " wy-expanded";
+    }
+    if (info.loading) {
+      className += " wy-loading";
+    }
+    if (cell.wyExpander.className !== className) {
+      cell.wyExpander.className = className;
+    }
   }
   _getRowClassName(index, selected) {
     return "wy-table-row" + (index & 1 ? " wy-odd" : "") + (selected ? " wy-selected" : "") + (index === this._cursor ? " wy-cursor" : "");
@@ -20809,8 +26439,15 @@ var Table = class extends Widget {
   _onModelRowInsert(_model, index) {
     this._followRows((x) => x >= index ? x + 1 : x);
   }
-  _onModelRowRemove(_model, index) {
+  _onModelRowRemove(model, index, id) {
+    const cursorRemoved = index === this._cursor;
     this._followRows((x) => x > index ? x - 1 : x);
+    if (cursorRemoved && model instanceof TreeModel) {
+      const nearest = model.getNearestRowIndex(id);
+      if (nearest >= 0) {
+        this.cursor = nearest;
+      }
+    }
   }
   _onModelRowMove(_model, from, to) {
     this._followRows((x) => {
@@ -20840,7 +26477,8 @@ var Table = class extends Widget {
       return -1;
     }
     if (this._selection.byId && key !== void 0) {
-      return this._selection.getIndex(key);
+      const found = this._selection.getIndex(key);
+      return found < 0 && this.model instanceof TreeModel ? this.model.getNearestRowIndex(key) : found;
     }
     return Math.min(index, count - 1);
   }
@@ -20944,6 +26582,9 @@ var Table = class extends Widget {
     if (index < 0 || event.button !== 0 && event.button !== 2) {
       return;
     }
+    if (event.button === 0 && event.target.closest(".wy-table-expander")) {
+      return;
+    }
     const toggle = event.ctrlKey || event.metaKey;
     if (event.button === 2) {
       if (!this._selection.isSelected(index)) {
@@ -21022,21 +26663,42 @@ var Table = class extends Widget {
     }
   }
   _onClick(event) {
-    if (event.button !== 0 || event.shiftKey || event.ctrlKey || event.metaKey) {
+    if (event.button !== 0) {
       return;
     }
     const index = this._getRowIndex(event.target);
+    const expander = event.target.closest?.(".wy-table-expander");
+    if (expander && index >= 0 && this._treeColumnInUse) {
+      if (!expander.classList.contains("wy-leaf")) {
+        this.model.toggle(index, event.shiftKey);
+      }
+      event.preventDefault();
+      return;
+    }
+    if (event.shiftKey || event.ctrlKey || event.metaKey) {
+      return;
+    }
     const target = this._getCellColumn(event.target);
     if (index >= 0 && target && target.column._onCellClick(target.cell, index, event)) {
       event.preventDefault();
     }
   }
-  _onDoubleClick(event) {
-    if (event.target.closest?.(".wy-table-header")) {
-      return;
+  /**
+   * Returns the index of the row a press is on, or -1 for presses elsewhere (such as on the
+   * headers and on expanders), which do not activate rows.
+   *
+   * @param {PointerEvent} event
+   * @returns {number}
+   */
+  _getDoublePressRow(event) {
+    if (event.target.closest?.(".wy-table-header, .wy-table-expander")) {
+      return -1;
     }
-    const index = this._getRowIndex(event.target);
-    if (index < 0 || event.button !== 0) {
+    return this._getRowIndex(event.target);
+  }
+  _onDoublePress(event) {
+    const index = this._getDoublePressRow(event);
+    if (index < 0) {
       return;
     }
     const target = this._getCellColumn(event.target);
@@ -21084,6 +26746,9 @@ var Table = class extends Widget {
       1,
       Math.floor((this._viewEl.clientHeight - this._headerHeight) / (this._rowHeight || 1)) - 1
     );
+    if (this._treeColumnInUse && cursor >= 0 && this._handleTreeKey(event, cursor)) {
+      return true;
+    }
     switch (event.key) {
       case Key.UP:
         if (cursor <= 0 && !shift && !control && this._focusHeader()) {
@@ -21137,6 +26802,68 @@ var Table = class extends Widget {
       return this._typeAhead(event.key);
     }
     return false;
+  }
+  /**
+   * Handles the tree keys on the cursor row, like GTK.
+   *
+   * @param {KeyboardEvent} event
+   * @param {number} cursor
+   * @returns {boolean} Whether the key was used.
+   */
+  _handleTreeKey(event, cursor) {
+    const model = this.model;
+    const row = model.getRow(cursor);
+    const shift = event.shiftKey;
+    const control = event.ctrlKey || event.metaKey;
+    switch (event.key) {
+      case Key.RIGHT:
+        if (shift) {
+          model.expand(row, true);
+        } else if (!model.isExpanded(row)) {
+          model.expand(row);
+        } else if (cursor + 1 < model.rowsCount && model.getParent(model.getRow(cursor + 1)) === row) {
+          this._moveCursor(cursor + 1, false, control);
+        }
+        return true;
+      case Key.LEFT:
+        if (shift) {
+          model.collapse(row, true);
+        } else if (model.isExpanded(row) && model.hasChildren(row)) {
+          model.collapse(row);
+        } else {
+          this._moveToParent(row, control);
+        }
+        return true;
+      case Key.BACKSPACE:
+        this._moveToParent(row, control);
+        return true;
+      case "+":
+        model.expand(row);
+        return true;
+      case "-":
+        model.collapse(row);
+        return true;
+      case "*":
+        model.expand(row, true);
+        return true;
+      case "/":
+        model.collapse(row, true);
+        return true;
+    }
+    return false;
+  }
+  /**
+   * Moves the cursor to the parent of a row, if it has one.
+   *
+   * @param {object} row
+   * @param {boolean} cursorOnly Whether to move only the cursor (Control).
+   */
+  _moveToParent(row, cursorOnly) {
+    const parent = this.model.getParent(row);
+    const index = parent ? this.model.getRowIndex(parent) : -1;
+    if (index >= 0) {
+      this._moveCursor(index, false, cursorOnly);
+    }
   }
   _onHeaderKeyDown(event, header) {
     const columns = this._visibleColumns;
@@ -21248,7 +26975,8 @@ defineProperties(Table, {
   hExpand: { value: true },
   vExpand: { value: true },
   /**
-   * The model: a `ListModel`, a `FilteredListModel` or another `AbstractModel`, or `null`.
+   * The model: a `ListModel`, a `FilteredListModel`, a `TreeModel` (making the table a tree
+   * view) or another `AbstractModel`, or `null`.
    */
   model: {
     value: null,
@@ -21263,7 +26991,54 @@ defineProperties(Table, {
       this._anchorKey = void 0;
       this._viewEl.scrollTop = 0;
       this._resetContentWidths();
+      this._structureDirty = true;
       this._headerDirty = true;
+      this._widthsDirty = true;
+      this._dirtyAll = true;
+      this._queueLayout();
+    }
+  },
+  /**
+   * The column that shows the tree of a `TreeModel` (the indentation and the expanders), or
+   * `null` for the first text column (or else the first column).
+   */
+  treeColumn: {
+    value: null,
+    coerce(column) {
+      if (column !== null && !(column instanceof AbstractColumn)) {
+        throw new TypeError("The tree column must be a column or null.");
+      }
+      return column;
+    },
+    changed() {
+      this._onColumnsChange();
+    }
+  },
+  /**
+   * Whether rows of a tree have expanders. Without them, rows are only indented by
+   * `levelIndentation`, and expanded and collapsed with the keyboard.
+   */
+  showExpanders: {
+    value: true,
+    changed(show) {
+      this.el.classList.toggle("wy-no-expanders", !show);
+      this._resetContentWidths();
+      this._widthsDirty = true;
+      this._dirtyAll = true;
+      this._queueLayout();
+    }
+  },
+  /**
+   * The extra indentation of every level of a tree, in pixels, besides the width of the
+   * expanders.
+   */
+  levelIndentation: {
+    value: 0,
+    coerce(indentation) {
+      return Math.max(0, Math.round(Number(indentation) || 0));
+    },
+    changed() {
+      this._resetContentWidths();
       this._widthsDirty = true;
       this._dirtyAll = true;
       this._queueLayout();
@@ -21769,7 +27544,7 @@ var ToolBar = class extends Box {
             <div class="wy-tool-bar" role="toolbar">
                 <div class="wy-tool-bar-body"></div>
                 <div class="wy-tool-bar-overflow" role="button" tabindex="-1" aria-haspopup="menu"
-                    aria-expanded="false" aria-label="More" hidden></div>
+                    aria-expanded="false" data-wy-label="More" hidden></div>
             </div>
         `);
     this._bodyEl = element.querySelector(".wy-tool-bar-body");
@@ -22817,6 +28592,7 @@ var Sprite = class _Sprite extends Instance {
    */
   destroy() {
     super.destroy();
+    this._releaseGrab();
     if (this._parent) {
       this._parent.removeSprite(this);
     }
@@ -22976,12 +28752,64 @@ var Sprite = class _Sprite extends Instance {
     }
   }
   _onDomEvent(nativeEvent, type, capture) {
-    if (type === EventType.BUTTON_PRESS && !capture && this._events & GRAB_MASK2) {
-      try {
-        this.el.setPointerCapture?.(nativeEvent.pointerId);
-      } catch (_error) {
+    const grab = type === EventType.BUTTON_PRESS && !capture && this._events & GRAB_MASK2;
+    try {
+      this._dispatchDomEvent(nativeEvent, type, capture);
+    } finally {
+      if (grab) {
+        this._grab(nativeEvent);
       }
     }
+  }
+  /**
+   * Grabs the pointer while a button is pressed on the sprite, so motion and the release keep
+   * coming to it, also outside the canvas.
+   *
+   * @param {PointerEvent} nativeEvent The press.
+   */
+  _grab(nativeEvent) {
+    const pointerId = nativeEvent.pointerId;
+    this._releaseGrab();
+    const capture = /* @__PURE__ */ __name(() => {
+      try {
+        if (this.el.isConnected) {
+          this.el.setPointerCapture?.(pointerId);
+        }
+      } catch (_error) {
+      }
+    }, "capture");
+    const onLost = /* @__PURE__ */ __name((event) => {
+      if (event.pointerId === pointerId && this._grabState) {
+        queueMicrotask(capture);
+      }
+    }, "onLost");
+    const onUp = /* @__PURE__ */ __name((event) => {
+      if (event.pointerId !== pointerId) {
+        return;
+      }
+      const reachesSprite = this.el.contains(event.target);
+      this._releaseGrab();
+      if (!reachesSprite && event.type === "pointerup" && !this._destroyed) {
+        this._dispatchDomEvent(event, EventType.BUTTON_RELEASE, false);
+      }
+    }, "onUp");
+    this._grabState = { onLost, onUp };
+    this.el.addEventListener("lostpointercapture", onLost);
+    document.addEventListener("pointerup", onUp, true);
+    document.addEventListener("pointercancel", onUp, true);
+    capture();
+  }
+  _releaseGrab() {
+    const state = this._grabState;
+    if (!state) {
+      return;
+    }
+    this._grabState = null;
+    this.el.removeEventListener("lostpointercapture", state.onLost);
+    document.removeEventListener("pointerup", state.onUp, true);
+    document.removeEventListener("pointercancel", state.onUp, true);
+  }
+  _dispatchDomEvent(nativeEvent, type, capture) {
     const mask = EVENT_BINDINGS.find((x) => x[3] === type)[capture ? 1 : 0];
     if (!(this._events & mask) || !this._parent?.isSensitive) {
       return;
@@ -24308,32 +30136,8 @@ defineProperties(Rectangle, {
 });
 registerType("rectangle-sprite", Rectangle);
 
-// src/data/filters/filter.js
-var Filter = class extends Instance {
-  static {
-    __name(this, "Filter");
-  }
-  /**
-   * Checks whether a row passes the filter.
-   *
-   * @param {object} row
-   * @returns {boolean}
-   */
-  isVisibleRow(_row) {
-    throw new Error(`${this.constructor.name} does not implement isVisibleRow().`);
-  }
-  /**
-   * Emits `change`. Subclasses call this when a property that affects the outcome changed.
-   *
-   * @protected
-   */
-  _changed() {
-    this.emit("change", this);
-  }
-};
-
 // src/data/filtered-list-model.js
-var INCREMENTAL_LIMIT = 200;
+var INCREMENTAL_LIMIT2 = 200;
 var PROXY_SIGNALS = [
   "columns-info-change",
   "id-column-change",
@@ -24619,7 +30423,7 @@ var FilteredListModel = class extends AbstractModel {
         ++i;
         ++j;
       }
-      if (changes > INCREMENTAL_LIMIT) {
+      if (changes > INCREMENTAL_LIMIT2) {
         this._resetRows();
         return;
       }
@@ -25115,18 +30919,18 @@ defineProperties(SearchFilter, {
 registerType("search-filter", SearchFilter);
 
 // src/data/list-model.js
-function checkRow(row) {
+function checkRow2(row) {
   if (row === null || typeof row !== "object") {
     throw new TypeError("A row must be an object.");
   }
 }
-__name(checkRow, "checkRow");
+__name(checkRow2, "checkRow");
 var ListModel = class extends AbstractModel {
   static {
     __name(this, "ListModel");
   }
   insertRow(index, row) {
-    checkRow(row);
+    checkRow2(row);
     const rows = this._rows;
     if (!Number.isInteger(index) || index < 0 || index > rows.length) {
       throw new RangeError(`Invalid row insertion index ${index}.`);
@@ -25156,7 +30960,7 @@ var ListModel = class extends AbstractModel {
     if (!Number.isInteger(index) || index < 0 || index > rows.length) {
       throw new RangeError(`Invalid row insertion index ${index}.`);
     }
-    newRows.forEach(checkRow);
+    newRows.forEach(checkRow2);
     if (!newRows.length) {
       return;
     }
@@ -25187,7 +30991,7 @@ var ListModel = class extends AbstractModel {
     this.emit("rows-change", this, 0, -1);
   }
   replaceRow(index, row) {
-    checkRow(row);
+    checkRow2(row);
     const oldRow = this.getRow(index);
     const idColumn = this.idColumn;
     const oldId = idColumn ? oldRow[idColumn] : null;
@@ -25248,7 +31052,7 @@ var ListModel = class extends AbstractModel {
     if (!Array.isArray(rows)) {
       throw new TypeError("Rows must be an array.");
     }
-    rows.forEach(checkRow);
+    rows.forEach(checkRow2);
     const updated = [...rows];
     this._validateIds(updated);
     const compare = this._createSortComparator();
@@ -25326,126 +31130,6 @@ var ListModel = class extends AbstractModel {
   }
 };
 registerType("list-model", ListModel);
-
-// src/i18n/locale-aware.js
-var LocaleAware = class extends Instance {
-  static {
-    __name(this, "LocaleAware");
-  }
-  _initialize() {
-    super._initialize();
-    this._ownLocaleManager = null;
-    this._disconnectLocaleManager = null;
-  }
-  /**
-   * The locale manager this object uses: its own one when `locale` is set, otherwise
-   * `localeManager`, otherwise the singleton.
-   *
-   * @type {LocaleManagerClass}
-   */
-  get effectiveLocaleManager() {
-    return this._ownLocaleManager || this._localeManager || getLocaleManager();
-  }
-  /**
-   * The locale this object uses, e.g. `'en-US'`.
-   *
-   * @type {string}
-   */
-  get effectiveLocale() {
-    return this.effectiveLocaleManager.locale;
-  }
-  /**
-   * The time zone of the followed locale manager. A fixed `locale` does not fix the time zone.
-   *
-   * @protected
-   * @returns {string}
-   */
-  _getDefaultTimeZone() {
-    return (this._localeManager || getLocaleManager()).timeZone;
-  }
-  connect(name, method, context) {
-    const disconnect = super.connect(name, method, context);
-    if (name === "effective-locale-change") {
-      this._watchLocaleManager();
-    }
-    return disconnect;
-  }
-  destroy() {
-    this._unwatchLocaleManager();
-    super.destroy();
-  }
-  /**
-   * Starts listening to the locale changes of the followed locale manager, so
-   * `effective-locale-change` is emitted. Subclasses call this when they need the signal
-   * themselves.
-   *
-   * @protected
-   */
-  _watchLocaleManager() {
-    if (this._disconnectLocaleManager) {
-      return;
-    }
-    const manager = this._localeManager || getLocaleManager();
-    this._disconnectLocaleManager = manager.connect("locale-change", () => {
-      if (!this._ownLocaleManager) {
-        this._onEffectiveLocaleChange();
-      }
-    });
-  }
-  _unwatchLocaleManager() {
-    this._disconnectLocaleManager?.();
-    this._disconnectLocaleManager = null;
-  }
-  /**
-   * Called when the locale this object uses changed. Subclasses that override it must call the
-   * base implementation, which emits `effective-locale-change`.
-   *
-   * @protected
-   */
-  _onEffectiveLocaleChange() {
-    this.emit("effective-locale-change", this);
-  }
-};
-defineProperties(LocaleAware, {
-  /**
-   * A fixed locale as a BCP 47 tag (such as `'nl-NL'`), or `null` (the default) to follow the
-   * locale manager.
-   */
-  locale: {
-    value: null,
-    coerce(locale) {
-      if (locale === null || locale === void 0 || locale === "") {
-        return null;
-      }
-      return Intl.getCanonicalLocales(String(locale).replace(/_/g, "-"))[0];
-    },
-    changed(locale) {
-      this._ownLocaleManager = locale ? new LocaleManagerClass({ locale }) : null;
-      this._onEffectiveLocaleChange();
-    }
-  },
-  /**
-   * The locale manager to follow, or `null` (the default) for the singleton.
-   */
-  localeManager: {
-    value: null,
-    coerce(manager) {
-      if (manager && !(manager instanceof LocaleManagerClass)) {
-        throw new TypeError("The locale manager must be a LocaleManagerClass.");
-      }
-      return manager || null;
-    },
-    changed() {
-      if (this._disconnectLocaleManager) {
-        this._unwatchLocaleManager();
-        this._watchLocaleManager();
-      }
-      if (!this._ownLocaleManager) {
-        this._onEffectiveLocaleChange();
-      }
-    }
-  }
-});
 
 // src/i18n/number-parser.js
 var ZERO_CODE_POINTS = [1632, 1776, 2406, 2534, 3664, 65296];
@@ -25587,689 +31271,6 @@ function parseDouble(input) {
   return getDoubleParser().parse(input);
 }
 __name(parseDouble, "parseDouble");
-
-// src/i18n/intl-util.js
-var MINUTE = 60 * 1e3;
-var DAY = 24 * 60 * MINUTE;
-var CACHE = /* @__PURE__ */ new Map();
-function getCached(cls, locale, options) {
-  const key = `${cls.name}|${locale}|${JSON.stringify(options)}`;
-  let result = CACHE.get(key);
-  if (!result) {
-    result = new cls(locale, options);
-    CACHE.set(key, result);
-  }
-  return result;
-}
-__name(getCached, "getCached");
-function getDateTimeFormat(locale, options = {}) {
-  return (
-    /** @type {Intl.DateTimeFormat} */
-    getCached(Intl.DateTimeFormat, locale, options)
-  );
-}
-__name(getDateTimeFormat, "getDateTimeFormat");
-function getNumberFormat(locale, options = {}) {
-  return (
-    /** @type {Intl.NumberFormat} */
-    getCached(Intl.NumberFormat, locale, options)
-  );
-}
-__name(getNumberFormat, "getNumberFormat");
-function getPluralRules(locale, options = {}) {
-  return (
-    /** @type {Intl.PluralRules} */
-    getCached(Intl.PluralRules, locale, options)
-  );
-}
-__name(getPluralRules, "getPluralRules");
-function getRelativeTimeFormat(locale, options = {}) {
-  return (
-    /** @type {Intl.RelativeTimeFormat} */
-    getCached(Intl.RelativeTimeFormat, locale, options)
-  );
-}
-__name(getRelativeTimeFormat, "getRelativeTimeFormat");
-function toIntlTimeZone(timeZone) {
-  return timeZone === "local" ? void 0 : timeZone;
-}
-__name(toIntlTimeZone, "toIntlTimeZone");
-function utcTimestamp(year, month, day, hours = 0, minutes = 0, seconds = 0, milliseconds = 0) {
-  const date = /* @__PURE__ */ new Date(0);
-  date.setUTCFullYear(year, month, day);
-  date.setUTCHours(hours, minutes, seconds, milliseconds);
-  return date.getTime();
-}
-__name(utcTimestamp, "utcTimestamp");
-function getDaysInMonth2(year, month) {
-  return new Date(utcTimestamp(year, month + 1, 0)).getUTCDate();
-}
-__name(getDaysInMonth2, "getDaysInMonth");
-function getZonedFields(timestamp, timeZone) {
-  const date = new Date(timestamp);
-  if (timeZone === "local") {
-    return {
-      year: date.getFullYear(),
-      month: date.getMonth(),
-      day: date.getDate(),
-      hours: date.getHours(),
-      minutes: date.getMinutes(),
-      seconds: date.getSeconds(),
-      milliseconds: date.getMilliseconds(),
-      weekDay: date.getDay(),
-      offset: -date.getTimezoneOffset()
-    };
-  }
-  if (timeZone === "UTC") {
-    return getUtcFields(date);
-  }
-  const format = getDateTimeFormat("en-US", {
-    timeZone,
-    hourCycle: "h23",
-    era: "short",
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-    second: "numeric",
-    calendar: "gregory",
-    numberingSystem: "latn"
-  });
-  const parts = {};
-  for (const part of format.formatToParts(date)) {
-    parts[part.type] = part.value;
-  }
-  const year = parts.era === "BC" ? 1 - Number(parts.year) : Number(parts.year);
-  const milliseconds = date.getUTCMilliseconds();
-  const wallClock = utcTimestamp(
-    year,
-    Number(parts.month) - 1,
-    Number(parts.day),
-    Number(parts.hour),
-    Number(parts.minute),
-    Number(parts.second),
-    milliseconds
-  );
-  return {
-    ...getUtcFields(new Date(wallClock)),
-    offset: Math.round((wallClock - timestamp) / MINUTE)
-  };
-}
-__name(getZonedFields, "getZonedFields");
-function getUtcFields(date) {
-  return {
-    year: date.getUTCFullYear(),
-    month: date.getUTCMonth(),
-    day: date.getUTCDate(),
-    hours: date.getUTCHours(),
-    minutes: date.getUTCMinutes(),
-    seconds: date.getUTCSeconds(),
-    milliseconds: date.getUTCMilliseconds(),
-    weekDay: date.getUTCDay(),
-    offset: 0
-  };
-}
-__name(getUtcFields, "getUtcFields");
-function getTimeZoneOffset(timestamp, timeZone) {
-  return getZonedFields(timestamp, timeZone).offset;
-}
-__name(getTimeZoneOffset, "getTimeZoneOffset");
-function fromZonedFields(fields, timeZone) {
-  const wallClock = utcTimestamp(
-    fields.year,
-    fields.month,
-    fields.day,
-    fields.hours || 0,
-    fields.minutes || 0,
-    fields.seconds || 0,
-    fields.milliseconds || 0
-  );
-  if (timeZone === "UTC") {
-    return wallClock;
-  }
-  const earlyOffset = getTimeZoneOffset(wallClock - DAY, timeZone);
-  const lateOffset = getTimeZoneOffset(wallClock + DAY, timeZone);
-  for (const offset of [earlyOffset, lateOffset]) {
-    const timestamp = wallClock - offset * MINUTE;
-    if (getTimeZoneOffset(timestamp, timeZone) === offset) {
-      return timestamp;
-    }
-  }
-  return wallClock - earlyOffset * MINUTE;
-}
-__name(fromZonedFields, "fromZonedFields");
-
-// src/i18n/string-formatter.js
-var PLACEHOLDER_REGEXP = /(?:(\d+)\$)?((?:[-+ 0]|'.)*)(\d+)?(?:\.(\d+))?([%bcdeEufFgGosxX])/uy;
-var UNSIGNED_SPECIFIERS = /* @__PURE__ */ new Set(["%", "c", "s", "F"]);
-var UPPERCASE_SPECIFIERS = /* @__PURE__ */ new Set(["E", "G", "X"]);
-var MAXIMUM_FRACTION_DIGITS = 20;
-function toInteger(value) {
-  if (typeof value === "bigint") {
-    return value;
-  }
-  return Math.trunc(toFloat(value));
-}
-__name(toInteger, "toInteger");
-function toFloat(value) {
-  if (typeof value === "string") {
-    return parseFloat(value);
-  }
-  return Number(value);
-}
-__name(toFloat, "toFloat");
-function toAbsolute(value) {
-  return typeof value === "bigint" ? value < 0n ? -value : value : Math.abs(value);
-}
-__name(toAbsolute, "toAbsolute");
-var StringFormatter = class extends LocaleAware {
-  static {
-    __name(this, "StringFormatter");
-  }
-  /**
-   * Formats a string by replacing the placeholders in it.
-   *
-   * @param {string} format
-   * @param {...unknown} args The arguments of the placeholders.
-   * @returns {string}
-   * @throws {TypeError} If the format is not a string.
-   * @throws {RangeError} If an argument is missing.
-   */
-  format(format, ...args) {
-    if (typeof format !== "string") {
-      throw new TypeError("The format must be a string.");
-    }
-    const output = [];
-    let index = 0;
-    let position = 0;
-    while (position < format.length) {
-      const percent = format.indexOf("%", position);
-      if (percent < 0) {
-        output.push(format.slice(position));
-        break;
-      }
-      output.push(format.slice(position, percent));
-      PLACEHOLDER_REGEXP.lastIndex = percent + 1;
-      const matches = PLACEHOLDER_REGEXP.exec(format);
-      if (!matches) {
-        output.push("%");
-        position = percent + 1;
-        continue;
-      }
-      const [placeholder, argumentNumber, flags, width, precision, specifier] = matches;
-      let argument;
-      if (specifier !== "%") {
-        let argumentIndex;
-        if (argumentNumber === void 0) {
-          argumentIndex = index;
-          index += 1;
-        } else {
-          argumentIndex = Number(argumentNumber) - 1;
-        }
-        if (argumentIndex < 0 || argumentIndex >= args.length) {
-          throw new RangeError(
-            `Missing argument ${argumentIndex + 1} for '%${placeholder}' in format '${format}'.`
-          );
-        }
-        argument = args[argumentIndex];
-      }
-      output.push(
-        this._formatPlaceholder(
-          argument,
-          flags,
-          width === void 0 ? 0 : Number(width),
-          precision === void 0 ? -1 : Number(precision),
-          specifier
-        )
-      );
-      position = percent + 1 + placeholder.length;
-    }
-    return output.join("");
-  }
-  /**
-   * Formats a number in the locale, with its decimal and group separators (as set in the locale
-   * manager) and digit grouping.
-   *
-   * @param {number | bigint} value
-   * @param {Intl.NumberFormatOptions & {decimals?: number}} [options] `Intl.NumberFormat`
-   *     options. `decimals` is a shortcut for an exact number of fraction digits.
-   * @returns {string}
-   * @throws {TypeError} If the value is not a number.
-   */
-  formatNumber(value, options = {}) {
-    if (typeof value !== "number" && typeof value !== "bigint") {
-      throw new TypeError("The value must be a number.");
-    }
-    const { decimals, ...intlOptions } = options;
-    if (decimals !== void 0) {
-      if (!Number.isInteger(decimals) || decimals < 0 || decimals > 100) {
-        throw new RangeError("The number of decimals must be an integer from 0 to 100.");
-      }
-      intlOptions.minimumFractionDigits = decimals;
-      intlOptions.maximumFractionDigits = decimals;
-    }
-    const manager = this.effectiveLocaleManager;
-    const parts = getNumberFormat(manager.locale, intlOptions).formatToParts(value);
-    return parts.map((part) => {
-      if (part.type === "group") {
-        return manager.groupSeparator;
-      }
-      if (part.type === "decimal") {
-        return manager.decimalSeparator;
-      }
-      return part.value;
-    }).join("");
-  }
-  _formatPlaceholder(argument, flags, width, precision, specifier) {
-    let text;
-    switch (specifier) {
-      case "%":
-        text = "%";
-        break;
-      case "b":
-        text = toInteger(argument).toString(2);
-        break;
-      case "c":
-        text = String.fromCodePoint(Number(toInteger(argument)));
-        break;
-      case "d":
-        text = String(toInteger(argument));
-        break;
-      case "u":
-        text = String(toAbsolute(toInteger(argument)));
-        break;
-      case "e":
-      case "E": {
-        const value = toFloat(argument);
-        text = precision >= 0 ? value.toExponential(precision) : value.toExponential();
-        break;
-      }
-      case "f": {
-        const value = toFloat(argument);
-        text = precision >= 0 ? value.toFixed(precision) : String(value);
-        break;
-      }
-      case "F": {
-        const value = toFloat(argument);
-        text = this.formatNumber(value, {
-          minimumFractionDigits: precision >= 0 ? precision : 0,
-          maximumFractionDigits: precision >= 0 ? precision : MAXIMUM_FRACTION_DIGITS,
-          signDisplay: flags.includes("+") ? "always" : "auto"
-        });
-        break;
-      }
-      case "g":
-      case "G": {
-        const value = toFloat(argument);
-        const fixed = precision >= 0 ? value.toFixed(precision) : String(value);
-        const exponential = precision >= 0 ? value.toExponential(precision) : value.toExponential();
-        text = fixed.length <= exponential.length ? fixed : exponential;
-        break;
-      }
-      case "o":
-        text = toInteger(argument).toString(8);
-        break;
-      case "s":
-        text = String(argument);
-        if (precision >= 0) {
-          text = Array.from(text).slice(0, precision).join("");
-        }
-        break;
-      case "x":
-      case "X":
-        text = toInteger(argument).toString(16);
-        break;
-    }
-    if (flags.includes("+") && !UNSIGNED_SPECIFIERS.has(specifier) && !text.startsWith("-") && text !== "NaN") {
-      text = "+" + text;
-    }
-    if (UPPERCASE_SPECIFIERS.has(specifier)) {
-      text = text.toUpperCase();
-    }
-    return this._pad(text, flags, width, specifier);
-  }
-  _pad(text, flags, width, specifier) {
-    const length = Array.from(text).length;
-    if (width <= length) {
-      return text;
-    }
-    let paddingCharacter = " ";
-    for (const flag of flags.match(/'.|[ 0]/gu) || []) {
-      paddingCharacter = flag.length > 1 ? Array.from(flag)[1] : flag;
-    }
-    const padding = paddingCharacter.repeat(width - length);
-    if (flags.includes("-")) {
-      return text + padding;
-    }
-    const numeric = !["%", "c", "s"].includes(specifier);
-    if (paddingCharacter === "0" && numeric && /^[-+\u2212]/.test(text)) {
-      return text[0] + padding + text.slice(1);
-    }
-    return padding + text;
-  }
-};
-var getStringFormatter = lazySingleton(() => new StringFormatter());
-function formatString(format, ...args) {
-  return getStringFormatter().format(format, ...args);
-}
-__name(formatString, "formatString");
-function formatNumber(value, options) {
-  return getStringFormatter().formatNumber(value, options);
-}
-__name(formatNumber, "formatNumber");
-
-// src/i18n/translator.js
-var PLURAL_CATEGORIES = /* @__PURE__ */ new Set(["zero", "one", "two", "few", "many", "other"]);
-var SOURCE_LANGUAGE = "en";
-function isPlainObject(value) {
-  if (value === null || typeof value !== "object") {
-    return false;
-  }
-  const prototype = Object.getPrototypeOf(value);
-  return prototype === Object.prototype || prototype === null;
-}
-__name(isPlainObject, "isPlainObject");
-function checkEntry(id, entry) {
-  if (typeof entry === "string") {
-    return;
-  }
-  if (!isPlainObject(entry)) {
-    throw new TypeError(`The translation of '${id}' must be a string or an object.`);
-  }
-  for (const [key, form] of Object.entries(entry)) {
-    if (!PLURAL_CATEGORIES.has(key) && !/^=\d+$/.test(key)) {
-      throw new TypeError(`Invalid plural form '${key}' in the translation of '${id}'.`);
-    }
-    if (typeof form !== "string") {
-      throw new TypeError(`The plural forms of '${id}' must be strings.`);
-    }
-  }
-  if (entry.other === void 0) {
-    throw new TypeError(`The translation of '${id}' has no 'other' plural form.`);
-  }
-}
-__name(checkEntry, "checkEntry");
-function canonicalizeLanguage(language) {
-  if (typeof language !== "string" || !language) {
-    throw new TypeError("The language must be a non-empty string.");
-  }
-  return Intl.getCanonicalLocales(language.replace(/_/g, "-"))[0];
-}
-__name(canonicalizeLanguage, "canonicalizeLanguage");
-function getTagChain(tag) {
-  const subtags = tag.split("-");
-  return subtags.map((_x, i) => subtags.slice(0, subtags.length - i).join("-"));
-}
-__name(getTagChain, "getTagChain");
-var Translator = class extends LocaleAware {
-  static {
-    __name(this, "Translator");
-  }
-  _initialize() {
-    super._initialize();
-    this._dictionaries = /* @__PURE__ */ new Map();
-    this._requestedLanguages = /* @__PURE__ */ new Set();
-    this._pendingLoads = /* @__PURE__ */ new Map();
-    this._formatter = new StringFormatter();
-    this._watchLocaleManager();
-  }
-  /**
-   * The languages of the loaded dictionaries.
-   *
-   * @type {string[]}
-   */
-  get languages() {
-    return [...this._dictionaries.keys()];
-  }
-  /**
-   * Gets a translation with its placeholders replaced, like the original toolkit's `getEntry`.
-   *
-   * @param {string} id The identifier: a key or the source text.
-   * @param {unknown[]} [args] The arguments of the placeholders. The first one chooses the
-   *     plural form.
-   * @returns {string} The translation, or the identifier if there is none.
-   */
-  getEntry(id, args = []) {
-    if (typeof id !== "string") {
-      throw new TypeError("The identifier must be a string.");
-    }
-    if (!Array.isArray(args)) {
-      throw new TypeError("The arguments must be an array.");
-    }
-    const found = this._lookup(id);
-    if (!found) {
-      return this._format(id, args);
-    }
-    return this._format(this._choosePluralForm(found.entry, found.language, args[0]), args);
-  }
-  /**
-   * Translates a text.
-   *
-   * @param {string} id
-   * @param {...unknown} args
-   * @returns {string}
-   */
-  translate(id, ...args) {
-    return this.getEntry(id, args);
-  }
-  /**
-   * Translates a text with a singular and a plural form, like gettext's `ngettext`. The
-   * translation of `singular` (which should have plural forms) is used; without one, `singular`
-   * is used for a count of 1 and `plural` otherwise. The count is the first argument of the
-   * placeholders.
-   *
-   * @param {string} singular
-   * @param {string} plural
-   * @param {number} count
-   * @param {...unknown} args More arguments.
-   * @returns {string}
-   */
-  translatePlural(singular, plural, count, ...args) {
-    if (typeof singular !== "string" || typeof plural !== "string") {
-      throw new TypeError("The singular and plural texts must be strings.");
-    }
-    if (typeof count !== "number") {
-      throw new TypeError("The count must be a number.");
-    }
-    const found = this._lookup(singular);
-    if (found) {
-      return this.getEntry(singular, [count, ...args]);
-    }
-    const category = getPluralRules(SOURCE_LANGUAGE).select(count);
-    return this._format(category === "one" ? singular : plural, [count, ...args]);
-  }
-  /**
-   * Checks whether there is a translation for an identifier in the current language chain.
-   *
-   * @param {string} id
-   * @returns {boolean}
-   */
-  hasEntry(id) {
-    return this._lookup(id) !== null;
-  }
-  /**
-   * Adds entries to the dictionary of a language, replacing entries with the same identifier.
-   *
-   * @param {Record<string, TranslationEntry>} entries
-   * @param {string} [language] A language or locale tag. Defaults to the current language.
-   * @throws {TypeError} If the entries are malformed.
-   */
-  addEntries(entries, language = this.effectiveLocaleManager.language) {
-    if (!isPlainObject(entries)) {
-      throw new TypeError("The entries must be an object.");
-    }
-    for (const [id, entry] of Object.entries(entries)) {
-      checkEntry(id, entry);
-    }
-    const tag = canonicalizeLanguage(language);
-    this._dictionaries.set(tag, { ...this._dictionaries.get(tag), ...entries });
-    this.emit("entries-change", this, tag);
-    this.emit("change", this);
-  }
-  /**
-   * Removes the dictionary of a language.
-   *
-   * @param {string} language
-   */
-  removeEntries(language) {
-    const tag = canonicalizeLanguage(language);
-    if (this._dictionaries.delete(tag)) {
-      this.emit("entries-change", this, tag);
-      this.emit("change", this);
-    }
-  }
-  /**
-   * Returns a promise that settles when the dictionaries being loaded by the `loader` are
-   * loaded. It rejects if one failed to load.
-   *
-   * @returns {Promise<void>}
-   */
-  whenLoaded() {
-    this._requestDictionaries();
-    return Promise.all(this._pendingLoads.values()).then(() => void 0);
-  }
-  _onEffectiveLocaleChange() {
-    super._onEffectiveLocaleChange();
-    this._requestDictionaries();
-    this.emit("language-change", this);
-    this.emit("change", this);
-  }
-  /**
-   * Returns the tags that are searched for entries, most specific first.
-   *
-   * @returns {string[]}
-   */
-  _getLanguageChain() {
-    const chain = getTagChain(canonicalizeLanguage(this.effectiveLocale));
-    if (this._fallbackLanguage) {
-      for (const tag of getTagChain(this._fallbackLanguage)) {
-        if (!chain.includes(tag)) {
-          chain.push(tag);
-        }
-      }
-    }
-    return chain;
-  }
-  _lookup(id) {
-    this._requestDictionaries();
-    for (const language of this._getLanguageChain()) {
-      const dictionary = this._dictionaries.get(language);
-      if (dictionary && Object.hasOwn(dictionary, id)) {
-        return { entry: dictionary[id], language };
-      }
-    }
-    return null;
-  }
-  _choosePluralForm(entry, language, count) {
-    if (typeof entry === "string") {
-      return entry;
-    }
-    if (typeof count !== "number") {
-      return entry.other;
-    }
-    const exact = entry["=" + count];
-    if (exact !== void 0) {
-      return exact;
-    }
-    return entry[getPluralRules(language).select(count)] ?? entry.other;
-  }
-  _format(text, args) {
-    this._formatter.localeManager = this.effectiveLocaleManager;
-    return this._formatter.format(text, ...args);
-  }
-  _requestDictionaries() {
-    if (!this._loader) {
-      return;
-    }
-    for (const language of this._getLanguageChain()) {
-      if (this._requestedLanguages.has(language)) {
-        continue;
-      }
-      this._requestedLanguages.add(language);
-      this.emit("load-entries", this, language);
-      const result = this._loader(language);
-      if (result && typeof result.then === "function") {
-        const promise = Promise.resolve(result).then((entries) => {
-          if (entries) {
-            this.addEntries(entries, language);
-          }
-        }).catch((error) => {
-          this._requestedLanguages.delete(language);
-          this.emit("load-error", this, language, error);
-          throw error;
-        }).finally(() => {
-          this._pendingLoads.delete(language);
-        });
-        promise.catch(() => {
-        });
-        this._pendingLoads.set(language, promise);
-      } else if (result) {
-        this.addEntries(result, language);
-      }
-    }
-  }
-};
-defineProperties(Translator, {
-  /**
-   * The dictionary of the current language (as in `getLocaleManager().language`). Setting it
-   * replaces that dictionary. Do not modify the returned object; use `addEntries()`.
-   */
-  entries: {
-    get() {
-      return this._dictionaries.get(this.effectiveLocaleManager.language) || {};
-    },
-    set(entries) {
-      const language = this.effectiveLocaleManager.language;
-      this._dictionaries.delete(language);
-      this.addEntries(entries, language);
-    },
-    signal: false
-  },
-  /**
-   * The language to use when the current language has no translation, e.g. `'en'` when
-   * identifiers are keys and the English dictionary has the source texts. `null` (the default)
-   * falls back to the identifier.
-   */
-  fallbackLanguage: {
-    value: null,
-    coerce(language) {
-      return language ? canonicalizeLanguage(language) : null;
-    },
-    changed() {
-      this._requestDictionaries();
-      this.emit("change", this);
-    }
-  },
-  /**
-   * A function that loads the dictionary of a language on demand: `(language) => entries`, where
-   * the result may also be a promise, or `null` for no dictionary. It is called once per
-   * language (and locale tag) that is needed, such as `'nl-BE'` and `'nl'`.
-   */
-  loader: {
-    value: null,
-    coerce(loader) {
-      if (loader !== null && typeof loader !== "function") {
-        throw new TypeError("The loader must be a function.");
-      }
-      return loader;
-    },
-    changed() {
-      this._requestedLanguages.clear();
-    }
-  }
-});
-var getTranslator = lazySingleton(() => new Translator());
-function translate(id, ...args) {
-  return getTranslator().getEntry(id, args);
-}
-__name(translate, "translate");
-var tr = translate;
-function translatePlural(singular, plural, count, ...args) {
-  return getTranslator().translatePlural(singular, plural, count, ...args);
-}
-__name(translatePlural, "translatePlural");
-var trn = translatePlural;
 
 // src/data/validators/validator.js
 var Validator = class extends LocaleAware {
@@ -27467,7 +32468,7 @@ var DateTimeParser = class extends LocaleAware {
     return matches[1] === "-" ? -offset : offset;
   }
   _isValidDate({ year, month, day }) {
-    return Number.isInteger(year) && year >= 1 && year <= 9999 && month >= 0 && month <= 11 && day >= 1 && day <= getDaysInMonth2(year, month);
+    return Number.isInteger(year) && year >= 1 && year <= 9999 && month >= 0 && month <= 11 && day >= 1 && day <= getDaysInMonth(year, month);
   }
   /**
    * Parses a normalized date text to its fields.
@@ -27577,7 +32578,7 @@ var DateTimeParser = class extends LocaleAware {
     const months = date.year * 12 + date.month + (unit === "year" ? 12 * count : count);
     const year = Math.floor(months / 12);
     const month = months - year * 12;
-    return { year, month, day: Math.min(date.day, getDaysInMonth2(year, month)) };
+    return { year, month, day: Math.min(date.day, getDaysInMonth(year, month)) };
   }
   /**
    * Moves to the first day of the day, week, month or year some units from today, e.g. the
@@ -28963,6 +33964,11 @@ export {
   CheckMenuItem,
   CheckToolItem,
   Circle,
+  ColorButton,
+  ColorChooser,
+  ColorPalette,
+  ColorPlane,
+  ColorSwatch,
   ColumnChange,
   ComboBox,
   ConditionFilter,
@@ -28973,6 +33979,7 @@ export {
   CursorShape,
   DATE_FORMATS,
   DEFAULT_DATE_FORMAT,
+  DEFAULT_PALETTE,
   DataColumn,
   DateColumn,
   DateEdit,
@@ -29008,6 +34015,7 @@ export {
   Image,
   ImageSprite,
   IndexColumn,
+  InfoBar,
   Instance,
   IntegerParser,
   IntegerValidator,
@@ -29020,6 +34028,8 @@ export {
   LabelStyles,
   LineEdit,
   LinkButton,
+  ListBox,
+  ListBoxRow,
   ListModel,
   LocaleAware,
   LocaleManagerClass,
@@ -29067,6 +34077,7 @@ export {
   ScrollEvent,
   SearchFilter,
   Selection,
+  SelectionMode,
   SelectionModes,
   Separator,
   SeparatorMenuItem,
@@ -29083,6 +34094,8 @@ export {
   StatusBar,
   StringFormatter,
   StrokeStyle,
+  Switch,
+  TOOLKIT_TRANSLATIONS,
   TYPE_AHEAD_TIMEOUT,
   Table,
   TextColumn,
@@ -29097,6 +34110,7 @@ export {
   TooltipPlacement,
   TranslatedText,
   Translator,
+  TreeModel,
   Validator,
   VectorCanvas,
   Widget,
@@ -29110,7 +34124,9 @@ export {
   attachAuxiliaryWidget,
   attachButtonBehavior,
   attachContextMenu,
+  attachDoublePress,
   attachPressRepeat,
+  bindToolkitText,
   build,
   clamp,
   composeToken,
@@ -29126,7 +34142,9 @@ export {
   formatDate,
   formatDateTime,
   formatDateTimePattern,
+  formatHex,
   formatNumber,
+  formatRgb,
   formatString,
   formatTime,
   getAcceleratorGroup,
@@ -29142,6 +34160,7 @@ export {
   getIntegerParser,
   getIsoWeek2 as getIsoWeek,
   getLocaleManager,
+  getLuminance,
   getMenuManager,
   getModifiers,
   getNavigator,
@@ -29152,10 +34171,15 @@ export {
   getTypeName,
   getTypeNames,
   getWheelNotches,
+  hslToRgb,
+  hsvToRgb,
   lazySingleton,
   lerp,
   matchesAccelerator,
+  normalizeColor,
   parseAccelerator,
+  parseColor,
+  parseColorSyntax,
   parseDate,
   parseDateTime,
   parseDouble,
@@ -29173,6 +34197,8 @@ export {
   registerIcon,
   registerType,
   renderMnemonicLabel,
+  rgbToHsl,
+  rgbToHsv,
   settings,
   startAutoRepeat,
   throttleToFrame,
@@ -29181,8 +34207,10 @@ export {
   toDate,
   toKebabCase,
   toTimestamp,
+  toolkitText,
   tr,
   translate,
+  translateLabels,
   translatePlural,
   trn,
   uniqueId

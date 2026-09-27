@@ -26,7 +26,10 @@ to pursue knowledge.
 - **Look.** Keep the classic desktop Clearlooks look. New widgets must work in the light and dark
   themes; check them with screenshots.
 - **Tests.** Node tests for pure logic: `npm run test:unit`. Browser tests with Playwright:
-  `npm run test:browser` (add `PLAYWRIGHT_CHANNEL=chrome` to use an installed Chrome). Tests live
+  `npm run test:browser`, in Chromium and Firefox (add `PLAYWRIGHT_CHANNEL=chrome` and
+  `PLAYWRIGHT_FIREFOX_CHANNEL=moz-firefox` to use an installed Chrome and Firefox; a Firefox from
+  a snap also needs `TMPDIR` in a directory the snap can read, such as
+  `~/snap/firefox/common/tmp`). Tests live
   in `tests/` directories next to the code, named `<module-name>_test.js`.
 - **Build.** `npm run build` (esbuild) writes `dist/widgetry.js`, `dist/widgetry.min.js` and
   `dist/widgetry.css`, and `npm run types` the TypeScript declarations in `dist/types/`. Commit

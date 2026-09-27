@@ -255,6 +255,8 @@ export class Sprite extends Instance {
     destroy() {
         super.destroy();
 
+        this._releaseGrab();
+
         if (this._parent) {
             this._parent.removeSprite(this);
         }
@@ -442,14 +444,85 @@ export class Sprite extends Instance {
     }
 
     _onDomEvent(nativeEvent, type, capture) {
-        if (type === EventType.BUTTON_PRESS && !capture && this._events & GRAB_MASK) {
+        const grab = type === EventType.BUTTON_PRESS && !capture && this._events & GRAB_MASK;
+
+        try {
+            this._dispatchDomEvent(nativeEvent, type, capture);
+        } finally {
+            // Grab after the handlers ran: they may move the element (e.g. raise the sprite),
+            // which makes the browser drop a pointer capture.
+            if (grab) {
+                this._grab(nativeEvent);
+            }
+        }
+    }
+
+    /**
+     * Grabs the pointer while a button is pressed on the sprite, so motion and the release keep
+     * coming to it, also outside the canvas.
+     *
+     * @param {PointerEvent} nativeEvent The press.
+     */
+    _grab(nativeEvent) {
+        const pointerId = nativeEvent.pointerId;
+
+        this._releaseGrab();
+
+        const capture = () => {
             try {
-                this.el.setPointerCapture?.(nativeEvent.pointerId);
+                if (this.el.isConnected) {
+                    this.el.setPointerCapture?.(pointerId);
+                }
             } catch (_error) {
                 // The pointer may already be gone.
             }
+        };
+
+        // The capture is lost when the element is moved in the document; take it again.
+        const onLost = (event) => {
+            if (event.pointerId === pointerId && this._grabState) {
+                queueMicrotask(capture);
+            }
+        };
+
+        // If the release does not reach the sprite (the capture could not be taken again),
+        // deliver it from the document. This listener runs first, in the capture phase.
+        const onUp = (event) => {
+            if (event.pointerId !== pointerId) {
+                return;
+            }
+
+            const reachesSprite = this.el.contains(event.target);
+            this._releaseGrab();
+
+            if (!reachesSprite && event.type === 'pointerup' && !this._destroyed) {
+                this._dispatchDomEvent(event, EventType.BUTTON_RELEASE, false);
+            }
+        };
+
+        this._grabState = { onLost, onUp };
+
+        this.el.addEventListener('lostpointercapture', onLost);
+        document.addEventListener('pointerup', onUp, true);
+        document.addEventListener('pointercancel', onUp, true);
+
+        capture();
+    }
+
+    _releaseGrab() {
+        const state = this._grabState;
+        if (!state) {
+            return;
         }
 
+        this._grabState = null;
+
+        this.el.removeEventListener('lostpointercapture', state.onLost);
+        document.removeEventListener('pointerup', state.onUp, true);
+        document.removeEventListener('pointercancel', state.onUp, true);
+    }
+
+    _dispatchDomEvent(nativeEvent, type, capture) {
         const mask = EVENT_BINDINGS.find((x) => x[3] === type)[capture ? 1 : 0];
         if (!(this._events & mask) || !this._parent?.isSensitive) {
             return;

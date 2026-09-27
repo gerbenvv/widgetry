@@ -205,6 +205,17 @@ export class AbstractModel extends Instance {
     }
 
     /**
+     * Whether rows have ids (`getRowIdByIndex()`, `getRowIndexById()` and so on work), which is
+     * when the model has an id column. Selections select rows by id when they do. Tree models
+     * always do: without an id column, a row object is its own id.
+     *
+     * @type {boolean}
+     */
+    get hasRowIds() {
+        return Boolean(this.idColumn);
+    }
+
+    /**
      * Gets a row.
      *
      * @param {number} index

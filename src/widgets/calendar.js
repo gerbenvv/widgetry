@@ -7,6 +7,7 @@ import { registerType } from '../core/registry.js';
 import { createElement, uniqueId } from '../core/util.js';
 import { Key } from '../events/constants.js';
 import { getLocaleManager } from '../i18n/locale-manager.js';
+import { attachDoublePress } from './double-press.js';
 import { Widget } from './widget.js';
 
 /**
@@ -160,7 +161,9 @@ export class Calendar extends Widget {
         this._headerEl.addEventListener('pointerdown', (event) => this._onHeaderPointerDown(event));
         this._gridEl.addEventListener('pointerdown', (event) => this._onGridPointerDown(event));
         this._gridEl.addEventListener('click', (event) => this._onGridClick(event));
-        this._gridEl.addEventListener('dblclick', (event) => this._onGridDoubleClick(event));
+        attachDoublePress(this._gridEl, (event) => this._onGridDoubleClick(event), {
+            key: (event) => event.target.closest?.('.wy-calendar-day') || null,
+        });
         this._gridEl.addEventListener('keydown', (event) => {
             if (this.handleKey(event)) {
                 event.preventDefault();
@@ -180,7 +183,7 @@ export class Calendar extends Widget {
         const monthId = uniqueId('wy-calendar-month');
 
         const navigation = (action) =>
-            `<span class="wy-calendar-navigation" data-action="${action}" role="button" aria-label="${NAVIGATION_LABELS[action]}"></span>`;
+            `<span class="wy-calendar-navigation" data-action="${action}" role="button" data-wy-label="${NAVIGATION_LABELS[action]}"></span>`;
 
         const cells = Array.from({ length: WEEKS }, () => {
             const days = Array.from(

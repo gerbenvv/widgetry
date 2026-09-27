@@ -853,6 +853,44 @@
         inset 0 1px 0 var(--wy-highlight);
 }
 
+/*
+ * The active tab joins its page: it covers the page's border and also its inner highlight line,
+ * which would otherwise show as a light line under the tab.
+ */
+.wy-notebook-tab.wy-active::after {
+    content: '';
+    position: absolute;
+    left: 1px;
+    right: 0;
+    bottom: -2px;
+    height: 1px;
+    background: var(--wy-background);
+    pointer-events: none;
+}
+
+.wy-notebook.wy-tabs-bottom .wy-notebook-tab.wy-active::after {
+    top: -2px;
+    bottom: auto;
+}
+
+.wy-notebook.wy-tabs-left .wy-notebook-tab.wy-active::after,
+.wy-notebook.wy-tabs-right .wy-notebook-tab.wy-active::after {
+    top: 1px;
+    bottom: 0;
+    width: 1px;
+    height: auto;
+}
+
+.wy-notebook.wy-tabs-left .wy-notebook-tab.wy-active::after {
+    left: auto;
+    right: -2px;
+}
+
+.wy-notebook.wy-tabs-right .wy-notebook-tab.wy-active::after {
+    left: -2px;
+    right: auto;
+}
+
 .wy-notebook-tab.wy-dragging {
     cursor: grabbing;
     opacity: 0.85;

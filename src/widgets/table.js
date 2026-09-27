@@ -15,8 +15,10 @@ import { clamp, createElement, uniqueId } from '../core/util.js';
 import { AbstractModel } from '../data/abstract-model.js';
 import { Adjustment } from '../data/adjustment.js';
 import { Selection } from '../data/selection.js';
+import { TreeModel } from '../data/tree-model.js';
 import { Key } from '../events/constants.js';
 import { getLocaleManager } from '../i18n/locale-manager.js';
+import { attachDoublePress } from './double-press.js';
 import { Widget } from './widget.js';
 
 /**
@@ -61,6 +63,14 @@ const SORT_ARROW_WIDTH = 14;
  * @type {number}
  */
 const HORIZONTAL_STEP = 20;
+
+/**
+ * The width of the expander of tree rows, in pixels. Every level is indented by it (plus the
+ * `levelIndentation`), like in GTK.
+ *
+ * @type {number}
+ */
+const EXPANDER_WIDTH = 16;
 
 /**
  * The `aria-sort` values of sort indicators.
@@ -149,6 +159,14 @@ function getHorizontalFrame(style) {
  * the focus to the headers, where Left and Right move between columns, Enter sorts and Shift+Left
  * and Shift+Right resize.
  *
+ * With a `TreeModel`, the table is a tree view: the `treeColumn` (by default the first text
+ * column) indents the rows by their level and shows expanders, which toggle the rows when
+ * clicked (with Shift, recursively). The keyboard follows GTK: Right expands the cursor row or
+ * moves to its first child, Left collapses it or moves to its parent, `+` and `-` expand and
+ * collapse, `*` expands all rows below, `/` collapses them, Shift+Right and Shift+Left expand and
+ * collapse recursively and Backspace moves to the parent. The table then has the ARIA role
+ * `treegrid`.
+ *
  * Signals: `row-activate` (`table, index, row`) on double click and Enter, `column-add` and
  * `column-remove` (`table, column`), `cursor-change`.
  *
@@ -209,6 +227,13 @@ export class Table extends Widget {
         this._rowCounter = 0;
         this._lastResizerPress = null;
 
+        /**
+         * The column that shows the tree, when the model is a tree model.
+         *
+         * @type {AbstractColumn | null}
+         */
+        this._treeColumnInUse = null;
+
         super._initialize();
 
         this._id = uniqueId('wy-table');
@@ -233,9 +258,14 @@ export class Table extends Widget {
         this.el.addEventListener('pointerup', (event) => this._onPointerUp(event, false));
         this.el.addEventListener('pointercancel', (event) => this._onPointerUp(event, true));
         this.el.addEventListener('click', (event) => this._onClick(event));
-        this.el.addEventListener('dblclick', (event) => this._onDoubleClick(event));
         this.el.addEventListener('keydown', (event) => this._onKeyDown(event));
         this._viewEl.addEventListener('scroll', () => this._onScroll(), { passive: true });
+
+        // Rows are activated on the second press of a double press, counted by the toolkit: the
+        // browser's dblclick is not reliable (it may be retargeted, or not sent at all).
+        attachDoublePress(this.el, (event) => this._onDoublePress(event), {
+            key: (event) => this._getDoublePressRow(event),
+        });
 
         // Measure again when the view is resized, or when the theme changes the row height or
         // fonts (which resizes the probe).
@@ -462,9 +492,11 @@ export class Table extends Widget {
         const measure = this._measureCellText;
         let content = 0;
         for (const index of new Set(indices)) {
+            const row = this.model.getRow(index);
+
             content = Math.max(
                 content,
-                column._measureCell(this.model.getRow(index), index, measure)
+                column._measureCell(row, index, measure) + this._getTreeIndent(column, row)
             );
         }
 
@@ -719,7 +751,8 @@ export class Table extends Widget {
             const row = model.getRow(index);
 
             for (const column of autoColumns) {
-                const width = column._measureCell(row, index, measure);
+                const width =
+                    column._measureCell(row, index, measure) + this._getTreeIndent(column, row);
                 if (width > column._contentWidth) {
                     column._contentWidth = width;
                     grown = true;
@@ -732,6 +765,43 @@ export class Table extends Widget {
         }
 
         return grown;
+    }
+
+    /**
+     * Returns the width of the indentation and expander of the tree column in a row, or 0 for
+     * other columns.
+     *
+     * @param {AbstractColumn} column
+     * @param {object} row
+     * @returns {number}
+     */
+    _getTreeIndent(column, row) {
+        if (column !== this._treeColumnInUse || !(this.model instanceof TreeModel)) {
+            return 0;
+        }
+
+        const expander = this._showExpanders ? EXPANDER_WIDTH : 0;
+
+        return this.model.getDepth(row) * (this._levelIndentation + expander) + expander;
+    }
+
+    /**
+     * Returns the column that shows the tree: the `treeColumn`, or the first text column (or else
+     * the first column). Only tree models have one.
+     *
+     * @returns {AbstractColumn | null}
+     */
+    _findTreeColumn() {
+        if (!(this._model instanceof TreeModel)) {
+            return null;
+        }
+
+        const columns = this._visibleColumns;
+        if (this._treeColumn && columns.includes(this._treeColumn)) {
+            return this._treeColumn;
+        }
+
+        return columns.find((column) => column instanceof TextColumn) || columns[0] || null;
     }
 
     _getHeaderWidth(column) {
@@ -752,6 +822,7 @@ export class Table extends Widget {
     _buildStructure() {
         this._structureDirty = false;
         this._visibleColumns = this._columns.filter((column) => column.visible);
+        this._treeColumnInUse = this._findTreeColumn();
 
         this._headerEls.clear();
         this._headerEl.replaceChildren();
@@ -781,6 +852,8 @@ export class Table extends Widget {
         this._bodyEl.replaceChildren();
 
         this.el.setAttribute('aria-colcount', String(this._visibleColumns.length));
+        this.el.setAttribute('role', this._treeColumnInUse ? 'treegrid' : 'grid');
+        this.el.classList.toggle('wy-tree', Boolean(this._treeColumnInUse));
 
         this._headerDirty = true;
         this._widthsDirty = true;
@@ -970,7 +1043,11 @@ export class Table extends Widget {
         element.setAttribute('role', 'row');
 
         for (const column of this._visibleColumns) {
-            const cell = column._createCell();
+            const cell =
+                column === this._treeColumnInUse
+                    ? this._createTreeCell(column)
+                    : column._createCell();
+
             cell.classList.add('wy-table-cell');
             element.append(cell);
         }
@@ -980,9 +1057,35 @@ export class Table extends Widget {
         return element;
     }
 
+    /**
+     * Creates the cell of the tree column: an expander and the cell of the column.
+     *
+     * @param {AbstractColumn} column
+     * @returns {HTMLElement}
+     */
+    _createTreeCell(column) {
+        const cell = createElement(`
+            <div role="gridcell">
+                <span class="wy-table-expander" aria-hidden="true"></span>
+            </div>
+        `);
+
+        const content = column._createCell();
+        content.removeAttribute('role');
+        content.className = 'wy-table-tree-content';
+        cell.append(content);
+
+        cell.wyExpander = cell.firstElementChild;
+        cell.wyContent = content;
+
+        return cell;
+    }
+
     _bindRow(element, index) {
         const row = this.model.getRow(index);
         const selected = this._selection.isSelected(index);
+        const tree = this._treeColumnInUse;
+        const info = tree ? this.model._getRowInfo(row) : null;
 
         element.wyIndex = index;
         element.style.transform = `translateY(${index * this._rowHeight}px)`;
@@ -995,18 +1098,76 @@ export class Table extends Widget {
             element.removeAttribute('aria-selected');
         }
 
+        if (info) {
+            element.setAttribute('aria-level', String(info.level));
+            element.setAttribute('aria-setsize', String(info.size));
+            element.setAttribute('aria-posinset', String(info.position));
+
+            if (info.expandable) {
+                element.setAttribute('aria-expanded', String(info.expanded));
+            } else {
+                element.removeAttribute('aria-expanded');
+            }
+
+            if (info.loading) {
+                element.setAttribute('aria-busy', 'true');
+            } else {
+                element.removeAttribute('aria-busy');
+            }
+        }
+
         const cells = element.children;
         this._visibleColumns.forEach((column, columnIndex) => {
             const cell = cells[columnIndex];
-            const className = column._getCellClassName(row, index);
+            let className = column._getCellClassName(row, index);
+
+            if (column === tree) {
+                className += ' wy-table-tree-cell';
+            }
 
             if (cell.wyClassName !== className) {
                 cell.wyClassName = className;
                 cell.className = className;
             }
 
-            column._renderCell(cell, row, index);
+            if (column === tree) {
+                this._renderTreeCell(cell, info);
+                column._renderCell(cell.wyContent, row, index);
+            } else {
+                column._renderCell(cell, row, index);
+            }
         });
+    }
+
+    /**
+     * Shows the indentation and the expander of a row in its tree cell.
+     *
+     * @param {HTMLElement} cell
+     * @param {import('../data/tree-model.js').TreeRowInfo} info
+     */
+    _renderTreeCell(cell, info) {
+        const expander = this._showExpanders ? EXPANDER_WIDTH : 0;
+        const indent = `${(info.level - 1) * (this._levelIndentation + expander)}px`;
+
+        if (cell.wyIndent !== indent) {
+            cell.wyIndent = indent;
+            cell.style.setProperty('--wy-table-indent', indent);
+        }
+
+        let className = 'wy-table-expander';
+        if (!info.expandable) {
+            className += ' wy-leaf';
+        } else if (info.expanded) {
+            className += ' wy-expanded';
+        }
+
+        if (info.loading) {
+            className += ' wy-loading';
+        }
+
+        if (cell.wyExpander.className !== className) {
+            cell.wyExpander.className = className;
+        }
     }
 
     _getRowClassName(index, selected) {
@@ -1209,8 +1370,19 @@ export class Table extends Widget {
         this._followRows((x) => (x >= index ? x + 1 : x));
     }
 
-    _onModelRowRemove(_model, index) {
+    _onModelRowRemove(model, index, id) {
+        const cursorRemoved = index === this._cursor;
+
         this._followRows((x) => (x > index ? x - 1 : x));
+
+        // In a tree, the cursor moves from a row that was hidden to its collapsed ancestor, like
+        // in GTK.
+        if (cursorRemoved && model instanceof TreeModel) {
+            const nearest = model.getNearestRowIndex(id);
+            if (nearest >= 0) {
+                this.cursor = nearest;
+            }
+        }
     }
 
     _onModelRowMove(_model, from, to) {
@@ -1250,7 +1422,12 @@ export class Table extends Widget {
         }
 
         if (this._selection.byId && key !== undefined) {
-            return this._selection.getIndex(key);
+            const found = this._selection.getIndex(key);
+
+            // In a tree, a hidden row is represented by its nearest shown ancestor.
+            return found < 0 && this.model instanceof TreeModel
+                ? this.model.getNearestRowIndex(key)
+                : found;
         }
 
         return Math.min(index, count - 1);
@@ -1388,6 +1565,11 @@ export class Table extends Widget {
             return;
         }
 
+        // Pressing an expander toggles the row on click, without selecting it.
+        if (event.button === 0 && event.target.closest('.wy-table-expander')) {
+            return;
+        }
+
         const toggle = event.ctrlKey || event.metaKey;
 
         if (event.button === 2) {
@@ -1494,11 +1676,28 @@ export class Table extends Widget {
     }
 
     _onClick(event) {
-        if (event.button !== 0 || event.shiftKey || event.ctrlKey || event.metaKey) {
+        if (event.button !== 0) {
             return;
         }
 
         const index = this._getRowIndex(event.target);
+
+        // Clicking an expander toggles its row, with Shift recursively.
+        const expander = event.target.closest?.('.wy-table-expander');
+        if (expander && index >= 0 && this._treeColumnInUse) {
+            if (!expander.classList.contains('wy-leaf')) {
+                this.model.toggle(index, event.shiftKey);
+            }
+
+            event.preventDefault();
+
+            return;
+        }
+
+        if (event.shiftKey || event.ctrlKey || event.metaKey) {
+            return;
+        }
+
         const target = this._getCellColumn(event.target);
 
         if (index >= 0 && target && target.column._onCellClick(target.cell, index, event)) {
@@ -1506,14 +1705,24 @@ export class Table extends Widget {
         }
     }
 
-    _onDoubleClick(event) {
-        // Double presses on a resizer are handled on press, as pointer capture retargets clicks.
-        if (event.target.closest?.('.wy-table-header')) {
-            return;
+    /**
+     * Returns the index of the row a press is on, or -1 for presses elsewhere (such as on the
+     * headers and on expanders), which do not activate rows.
+     *
+     * @param {PointerEvent} event
+     * @returns {number}
+     */
+    _getDoublePressRow(event) {
+        if (event.target.closest?.('.wy-table-header, .wy-table-expander')) {
+            return -1;
         }
 
-        const index = this._getRowIndex(event.target);
-        if (index < 0 || event.button !== 0) {
+        return this._getRowIndex(event.target);
+    }
+
+    _onDoublePress(event) {
+        const index = this._getDoublePressRow(event);
+        if (index < 0) {
             return;
         }
 
@@ -1572,6 +1781,10 @@ export class Table extends Widget {
             Math.floor((this._viewEl.clientHeight - this._headerHeight) / (this._rowHeight || 1)) -
                 1
         );
+
+        if (this._treeColumnInUse && cursor >= 0 && this._handleTreeKey(event, cursor)) {
+            return true;
+        }
 
         switch (event.key) {
             case Key.UP:
@@ -1657,6 +1870,90 @@ export class Table extends Widget {
         }
 
         return false;
+    }
+
+    /**
+     * Handles the tree keys on the cursor row, like GTK.
+     *
+     * @param {KeyboardEvent} event
+     * @param {number} cursor
+     * @returns {boolean} Whether the key was used.
+     */
+    _handleTreeKey(event, cursor) {
+        const model = this.model;
+        const row = model.getRow(cursor);
+        const shift = event.shiftKey;
+        const control = event.ctrlKey || event.metaKey;
+
+        switch (event.key) {
+            case Key.RIGHT:
+                if (shift) {
+                    model.expand(row, true);
+                } else if (!model.isExpanded(row)) {
+                    model.expand(row);
+                } else if (
+                    cursor + 1 < model.rowsCount &&
+                    model.getParent(model.getRow(cursor + 1)) === row
+                ) {
+                    // Move to the first child.
+                    this._moveCursor(cursor + 1, false, control);
+                }
+
+                return true;
+
+            case Key.LEFT:
+                if (shift) {
+                    model.collapse(row, true);
+                } else if (model.isExpanded(row) && model.hasChildren(row)) {
+                    model.collapse(row);
+                } else {
+                    this._moveToParent(row, control);
+                }
+
+                return true;
+
+            case Key.BACKSPACE:
+                this._moveToParent(row, control);
+
+                return true;
+
+            case '+':
+                model.expand(row);
+
+                return true;
+
+            case '-':
+                model.collapse(row);
+
+                return true;
+
+            case '*':
+                model.expand(row, true);
+
+                return true;
+
+            case '/':
+                model.collapse(row, true);
+
+                return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Moves the cursor to the parent of a row, if it has one.
+     *
+     * @param {object} row
+     * @param {boolean} cursorOnly Whether to move only the cursor (Control).
+     */
+    _moveToParent(row, cursorOnly) {
+        const parent = this.model.getParent(row);
+        const index = parent ? this.model.getRowIndex(parent) : -1;
+
+        if (index >= 0) {
+            this._moveCursor(index, false, cursorOnly);
+        }
     }
 
     _onHeaderKeyDown(event, header) {
@@ -1817,7 +2114,8 @@ defineProperties(Table, {
     vExpand: { value: true },
 
     /**
-     * The model: a `ListModel`, a `FilteredListModel` or another `AbstractModel`, or `null`.
+     * The model: a `ListModel`, a `FilteredListModel`, a `TreeModel` (making the table a tree
+     * view) or another `AbstractModel`, or `null`.
      */
     model: {
         value: null,
@@ -1835,7 +2133,58 @@ defineProperties(Table, {
             this._viewEl.scrollTop = 0;
 
             this._resetContentWidths();
+            this._structureDirty = true;
             this._headerDirty = true;
+            this._widthsDirty = true;
+            this._dirtyAll = true;
+            this._queueLayout();
+        },
+    },
+
+    /**
+     * The column that shows the tree of a `TreeModel` (the indentation and the expanders), or
+     * `null` for the first text column (or else the first column).
+     */
+    treeColumn: {
+        value: null,
+        coerce(column) {
+            if (column !== null && !(column instanceof AbstractColumn)) {
+                throw new TypeError('The tree column must be a column or null.');
+            }
+
+            return column;
+        },
+        changed() {
+            this._onColumnsChange();
+        },
+    },
+
+    /**
+     * Whether rows of a tree have expanders. Without them, rows are only indented by
+     * `levelIndentation`, and expanded and collapsed with the keyboard.
+     */
+    showExpanders: {
+        value: true,
+        changed(show) {
+            this.el.classList.toggle('wy-no-expanders', !show);
+            this._resetContentWidths();
+            this._widthsDirty = true;
+            this._dirtyAll = true;
+            this._queueLayout();
+        },
+    },
+
+    /**
+     * The extra indentation of every level of a tree, in pixels, besides the width of the
+     * expanders.
+     */
+    levelIndentation: {
+        value: 0,
+        coerce(indentation) {
+            return Math.max(0, Math.round(Number(indentation) || 0));
+        },
+        changed() {
+            this._resetContentWidths();
             this._widthsDirty = true;
             this._dirtyAll = true;
             this._queueLayout();

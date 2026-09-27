@@ -139,7 +139,12 @@ test.describe('Sprite', () => {
             const { Rectangle } = await import('/src/sprites/rectangle.js');
             const { Matrix } = await import('/src/data/matrix.js');
 
-            const sprite = new Rectangle({ size: { width: 20, height: 10 }, fill: 'red' });
+            // Without a stroke, as browsers differ in whether bounding boxes include it.
+            const sprite = new Rectangle({
+                size: { width: 20, height: 10 },
+                fill: 'red',
+                strokeWidth: 0,
+            });
             globalThis.canvas.addSprite(sprite);
 
             sprite.transformation = Matrix.identity.scale(2).translate(10, 20);
@@ -294,6 +299,79 @@ test.describe('Sprite', () => {
         });
         await page.mouse.click(150, 120);
         expect(await page.evaluate(() => globalThis.counts)).toEqual([]);
+    });
+
+    test('keeps the pointer grab when raised while dragging, also when released outside the canvas', async ({
+        page,
+    }) => {
+        await openHarness(page);
+        await createCanvas(page);
+
+        await page.evaluate(async () => {
+            const { Rectangle } = await import('/src/sprites/rectangle.js');
+            const { Events, Modifiers } = await import('/src/events/constants.js');
+            const canvas = globalThis.canvas;
+            const log = [];
+
+            const other = new Rectangle({
+                position: { x: 100, y: 0 },
+                size: { width: 50, height: 50 },
+            });
+            const sprite = new Rectangle({
+                position: { x: 10, y: 10 },
+                size: { width: 50, height: 50 },
+                fill: 'red',
+                events: Events.BUTTON_PRESS | Events.MOTION | Events.BUTTON_RELEASE,
+            });
+
+            canvas.addSprite(sprite);
+            canvas.addSprite(other);
+
+            // Raising the sprite on press moves its element, like a diagram editor does.
+            sprite.connect('button-press-event', () => {
+                canvas.raiseSprite(sprite);
+                log.push('press');
+
+                return true;
+            });
+            sprite.connect('motion-event', (_sprite, event) => {
+                if (!event.hasModifier(Modifiers.PRIMARY_BUTTON)) {
+                    log.push('hover');
+
+                    return false;
+                }
+
+                log.push(event.x > 300 ? 'motion outside' : 'motion');
+
+                return true;
+            });
+            sprite.connect('button-release-event', () => {
+                log.push('release');
+
+                return true;
+            });
+
+            globalThis.log = log;
+        });
+
+        await page.mouse.move(30, 30);
+        await page.mouse.down();
+        await page.mouse.move(200, 100, { steps: 3 });
+        await page.mouse.move(600, 400, { steps: 3 });
+        await page.mouse.up();
+
+        // After the release, moving the pointer over the sprite's old place no longer drags it.
+        await page.mouse.move(640, 420, { steps: 2 });
+
+        const log = await page.evaluate(() => [
+            ...new Set(globalThis.log.filter((x) => x !== 'hover')),
+        ]);
+        expect(log).toEqual(['press', 'motion', 'motion outside', 'release']);
+
+        // Exactly one release, and no dragging motion after it.
+        const events = await page.evaluate(() => globalThis.log);
+        expect(events.filter((x) => x === 'release')).toHaveLength(1);
+        expect(events.slice(events.indexOf('release') + 1).every((x) => x === 'hover')).toBe(true);
     });
 
     test('is removed from its canvas when destroyed', async ({ page }) => {
