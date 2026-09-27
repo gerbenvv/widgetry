@@ -43,7 +43,11 @@ describe('StringFormatter', () => {
         assert.equal(formatter.format('%+.1F', 2), '+2.0');
 
         assert.equal(new StringFormatter({ locale: 'nl-NL' }).format('%.2F', 1234.5), '1.234,50');
-        assert.equal(new StringFormatter({ locale: 'de-CH' }).format('%F', 1234.5), '1\u2019234.5');
+        // The Swiss group separator depends on the version of the locale data (’ or ').
+        assert.equal(
+            new StringFormatter({ locale: 'de-CH' }).format('%F', 1234.5),
+            new Intl.NumberFormat('de-CH').format(1234.5)
+        );
         assert.equal(new StringFormatter({ locale: 'en-IN' }).format('%F', 1234567), '12,34,567');
     });
 

@@ -66,8 +66,27 @@ describe('LocaleManager additions', () => {
         manager.locale = 'nl-NL';
         assert.deepEqual([manager.amDesignator, manager.pmDesignator], ['a.m.', 'p.m.']);
 
+        // The Korean day periods depend on the version of the locale data (오전/오후 or AM/PM).
         manager.locale = 'ko-KR';
-        assert.deepEqual([manager.amDesignator, manager.pmDesignator], ['오전', '오후']);
+        assert.deepEqual(
+            [manager.amDesignator, manager.pmDesignator],
+            [
+                new Intl.DateTimeFormat('ko-KR', {
+                    hour: 'numeric',
+                    hourCycle: 'h12',
+                    timeZone: 'UTC',
+                })
+                    .formatToParts(Date.UTC(2021, 0, 1, 1))
+                    .find((x) => x.type === 'dayPeriod').value,
+                new Intl.DateTimeFormat('ko-KR', {
+                    hour: 'numeric',
+                    hourCycle: 'h12',
+                    timeZone: 'UTC',
+                })
+                    .formatToParts(Date.UTC(2021, 0, 1, 13))
+                    .find((x) => x.type === 'dayPeriod').value,
+            ]
+        );
     });
 
     test('has a validated time zone that does not change with the locale', () => {

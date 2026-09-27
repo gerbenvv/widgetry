@@ -440,6 +440,35 @@ function tokenize(text) {
 }
 
 /**
+ * The words a locale uses for the morning and the afternoon (`Intl`'s flexible day periods at 10:00
+ * and 15:00), or `null` when it has none. Cached per locale.
+ *
+ * @type {Map<string, [string | null, string | null]>}
+ */
+const FLEXIBLE_DAY_PERIODS = new Map();
+
+function getFlexibleDayPeriods(locale) {
+    let periods = FLEXIBLE_DAY_PERIODS.get(locale);
+    if (!periods) {
+        const format = new Intl.DateTimeFormat(locale, {
+            hour: 'numeric',
+            dayPeriod: 'short',
+            timeZone: 'UTC',
+        });
+
+        periods = [10, 15].map(
+            (hour) =>
+                format.formatToParts(Date.UTC(2021, 0, 1, hour)).find((x) => x.type === 'dayPeriod')
+                    ?.value || null
+        );
+
+        FLEXIBLE_DAY_PERIODS.set(locale, periods);
+    }
+
+    return periods;
+}
+
+/**
  * The date-time parser reads dates and times as typed by people, in the locale of the locale
  * manager (its month and day names, date order and AM/PM designators) and in English. It is
  * strict: the whole text must be understood and describe an existing date, or the result is
@@ -1257,9 +1286,15 @@ export class DateTimeParser extends LocaleAware {
                 .replace(/\\\./g, '\\.?')
                 .replace(/ /g, '\\s?');
 
+        // Also accept the words for morning and afternoon, which some locales use as day periods
+        // in other versions of the locale data (for example 오전 and 오후 in Korean).
+        const [morning, afternoon] = getFlexibleDayPeriods(locale);
+        const alternatives = (designator, word) =>
+            word && word !== designator ? `|${toPattern(word)}` : '';
+
         return {
-            am: `(?:${toPattern(manager.amDesignator)}|a\\.?\\s?m\\.?)`,
-            pm: `(?:${toPattern(manager.pmDesignator)}|p\\.?\\s?m\\.?)`,
+            am: `(?:${toPattern(manager.amDesignator)}${alternatives(manager.amDesignator, morning)}|a\\.?\\s?m\\.?)`,
+            pm: `(?:${toPattern(manager.pmDesignator)}${alternatives(manager.pmDesignator, afternoon)}|p\\.?\\s?m\\.?)`,
         };
     }
 

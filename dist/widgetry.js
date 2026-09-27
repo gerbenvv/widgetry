@@ -14612,8 +14612,8 @@ var NumberParser = class extends LocaleAware {
     } else if (this._lenient) {
       text = text.replace(WHITESPACE_REGEXP, "");
     }
-    if (group === "\u2019") {
-      text = text.replace(/'/g, PLACEHOLDERS.group);
+    if (group === "\u2019" || group === "'") {
+      text = text.replace(/['\u2019]/g, PLACEHOLDERS.group);
     }
     text = text.replace(new RegExp(escapeRegExp(group), "g"), PLACEHOLDERS.group).replace(new RegExp(escapeRegExp(decimal), "g"), PLACEHOLDERS.decimal);
     const canonical = this._toCanonical(text, false);
@@ -14887,6 +14887,23 @@ function tokenize(text) {
   return tokens;
 }
 __name(tokenize, "tokenize");
+var FLEXIBLE_DAY_PERIODS = /* @__PURE__ */ new Map();
+function getFlexibleDayPeriods(locale) {
+  let periods = FLEXIBLE_DAY_PERIODS.get(locale);
+  if (!periods) {
+    const format = new Intl.DateTimeFormat(locale, {
+      hour: "numeric",
+      dayPeriod: "short",
+      timeZone: "UTC"
+    });
+    periods = [10, 15].map(
+      (hour) => format.formatToParts(Date.UTC(2021, 0, 1, hour)).find((x) => x.type === "dayPeriod")?.value || null
+    );
+    FLEXIBLE_DAY_PERIODS.set(locale, periods);
+  }
+  return periods;
+}
+__name(getFlexibleDayPeriods, "getFlexibleDayPeriods");
 var DateTimeParser = class extends LocaleAware {
   static {
     __name(this, "DateTimeParser");
@@ -15483,9 +15500,11 @@ var DateTimeParser = class extends LocaleAware {
     const manager = this.effectiveLocaleManager;
     const locale = manager.locale;
     const toPattern = /* @__PURE__ */ __name((designator) => escapePattern(normalizeText(designator, locale)).replace(/\\\./g, "\\.?").replace(/ /g, "\\s?"), "toPattern");
+    const [morning, afternoon] = getFlexibleDayPeriods(locale);
+    const alternatives = /* @__PURE__ */ __name((designator, word) => word && word !== designator ? `|${toPattern(word)}` : "", "alternatives");
     return {
-      am: `(?:${toPattern(manager.amDesignator)}|a\\.?\\s?m\\.?)`,
-      pm: `(?:${toPattern(manager.pmDesignator)}|p\\.?\\s?m\\.?)`
+      am: `(?:${toPattern(manager.amDesignator)}${alternatives(manager.amDesignator, morning)}|a\\.?\\s?m\\.?)`,
+      pm: `(?:${toPattern(manager.pmDesignator)}${alternatives(manager.pmDesignator, afternoon)}|p\\.?\\s?m\\.?)`
     };
   }
   /**

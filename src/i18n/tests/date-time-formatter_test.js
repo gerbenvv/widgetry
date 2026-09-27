@@ -109,8 +109,16 @@ describe('DateTimeFormatter', () => {
         const dutch = new DateTimeFormatter({ locale: 'nl-NL', timeZone: 'UTC' });
         assert.equal(dutch.format('%A %e %B %Y, %p', TIME), 'zaterdag 10 augustus 2013, p.m.');
 
+        // The Korean day period depends on the version of the locale data (오후 or PM).
         const korean = new DateTimeFormatter({ locale: 'ko-KR', timeZone: 'UTC' });
-        assert.equal(korean.format('%p %I:%M', TIME), '오후 02:05');
+        const afternoon = new Intl.DateTimeFormat('ko-KR', {
+            hour: 'numeric',
+            hourCycle: 'h12',
+            timeZone: 'UTC',
+        })
+            .formatToParts(Date.UTC(2021, 0, 1, 13))
+            .find((x) => x.type === 'dayPeriod').value;
+        assert.equal(korean.format('%p %I:%M', TIME), `${afternoon} 02:05`);
 
         const manager = new LocaleManagerClass({ locale: 'en-US' });
         manager.shortDayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];

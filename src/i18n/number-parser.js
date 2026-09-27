@@ -143,9 +143,10 @@ export class NumberParser extends LocaleAware {
             text = text.replace(WHITESPACE_REGEXP, '');
         }
 
-        // Accept an ASCII apostrophe for the right single quotation mark used in Switzerland.
-        if (group === '\u2019') {
-            text = text.replace(/'/g, PLACEHOLDERS.group);
+        // Switzerland groups digits with an apostrophe: the right single quotation mark in older
+        // locale data and the ASCII apostrophe in newer data. Accept both.
+        if (group === '\u2019' || group === "'") {
+            text = text.replace(/['\u2019]/g, PLACEHOLDERS.group);
         }
 
         text = text

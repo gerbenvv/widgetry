@@ -25,7 +25,10 @@ describe('DoubleParser', () => {
         assert.equal(french.parse('1\u{202f}234,5'), 1234.5);
         assert.equal(french.parse('1\u{a0}234,5'), 1234.5);
 
-        assert.equal(new DoubleParser({ locale: 'de-CH' }).parse('1\u{2019}234.5'), 1234.5);
+        // Swiss numbers are grouped with ’ in older and ' in newer locale data; both are read.
+        const swiss = new DoubleParser({ locale: 'de-CH' });
+        assert.equal(swiss.parse('1\u{2019}234.5'), 1234.5);
+        assert.equal(swiss.parse("1'234.5"), 1234.5);
         assert.equal(new DoubleParser({ locale: 'ar-EG' }).parse('\u{661}\u{66b}\u{665}'), 1.5);
     });
 
