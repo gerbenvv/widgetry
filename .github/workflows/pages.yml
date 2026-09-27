@@ -36,6 +36,7 @@ jobs:
                     # Redirect the root of the site to the demo.
                     printf '%s\n' '<!doctype html>' '<meta charset="utf-8" />' \
                         '<title>Widgetry demo</title>' \
+                        '<link rel="icon" href="data:," />' \
                         '<meta http-equiv="refresh" content="0; url=demo/" />' \
                         '<a href="demo/">Widgetry demo</a>' > site/index.html
 
