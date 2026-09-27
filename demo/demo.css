@@ -1,0 +1,14 @@
+/* Styles specific to the demo. */
+
+.demo-drag-item {
+    padding: 4px 8px;
+    border: 1px solid var(--wy-border);
+    border-radius: var(--wy-radius);
+    background: linear-gradient(var(--wy-raised-top), var(--wy-raised-bottom));
+    cursor: grab;
+}
+
+.demo-node-label {
+    font-weight: 600;
+    pointer-events: none;
+}

@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Widgetry embedded in a page</title>
+        <link rel="icon" href="data:," />
+        <link rel="stylesheet" href="../dist/widgetry.css" />
+        <style>
+            body {
+                max-width: 760px;
+                margin: 40px auto;
+                padding: 0 16px;
+                font:
+                    16px/1.6 Georgia,
+                    serif;
+                color: #222;
+            }
+
+            #app {
+                height: 360px;
+                margin: 24px 0;
+                border: 1px solid #a9a08e;
+                border-radius: 4px;
+                overflow: hidden;
+                box-shadow: 0 4px 16px rgb(0 0 0 / 0.15);
+            }
+        </style>
+    </head>
+    <body>
+        <h1>An application inside a page</h1>
+        <p>
+            A <code>MainWindow</code> normally fills the whole page. Given a <code>host</code>
+            element, it fills that element instead, so a Widgetry application can live in an
+            ordinary web page like this one. Dialogs still float over the whole page.
+        </p>
+
+        <div id="app"></div>
+
+        <p>
+            The rest of the page is ordinary HTML. <a href="index.html">Back to the full demo.</a>
+        </p>
+
+        <script src="../dist/widgetry.min.js"></script>
+        <script>
+            (function () {
+                'use strict';
+
+                const w = widgetry;
+
+                const window = new w.MainWindow({ host: document.getElementById('app') });
+                const layout = new w.Box({ orientation: 'vertical' });
+
+                const toolBar = new w.ToolBar({ style: 'both-horizontal' });
+                const add = new w.ToolItem({ label: 'Add', icon: 'list-add', isImportant: true });
+                const remove = new w.ToolItem({
+                    label: 'Remove',
+                    icon: 'list-remove',
+                    isImportant: true,
+                });
+                toolBar.addChild(add);
+                toolBar.addChild(remove);
+
+                const model = new w.ListModel({
+                    rows: [
+                        { id: 1, task: 'Read the documentation', done: true },
+                        { id: 2, task: 'Try the demo', done: true },
+                        { id: 3, task: 'Build something', done: false },
+                    ],
+                    idColumn: 'id',
+                });
+
+                const table = new w.Table({
+                    model,
+                    vExpand: true,
+                    selectionModes: w.SelectionModes.SINGLE,
+                });
+                table.addColumn(new w.TextColumn({ name: 'task', label: 'Task', expand: true }));
+                table.addColumn(
+                    new w.CheckBoxColumn({ name: 'done', label: 'Done', editable: true })
+                );
+
+                let nextId = 4;
+                add.connect('activate', async () => {
+                    const task = await w.prompt('New task', {
+                        secondaryText: 'What needs to be done?',
+                    });
+                    if (task) {
+                        model.appendRow({ id: nextId++, task, done: false });
+                    }
+                });
+
+                remove.connect('activate', () => {
+                    for (const id of table.selection.selectedRowIds) {
+                        model.removeRow(model.getRowIndexById(id));
+                    }
+                });
+
+                layout.addChild(toolBar);
+                layout.addChild(table);
+
+                window.addChild(layout);
+                window.show();
+            })();
+        </script>
+    </body>
+</html>

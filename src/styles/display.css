@@ -1,0 +1,390 @@
+/*
+ * The display widgets: labels, images, separators, spacers, progress bars and throbbers.
+ */
+
+:root {
+    /* The etched line of separators: a dark line with a light line below it. */
+    --wy-separator-dark: #bebab6;
+    --wy-separator-light: #fbfbf9;
+
+    /* The trough and the filled bar of progress bars. */
+    --wy-progress-trough: #d3ccc0;
+    --wy-progress-border: #8d8577;
+    --wy-progress-stripe: color-mix(in srgb, var(--wy-accent) 86%, #ffffff);
+    --wy-progress-bar-border: var(--wy-accent-dark);
+
+    /* The spokes of throbbers. */
+    --wy-throbber-color: #6d675c;
+}
+
+:root[data-wy-theme='dark'] {
+    --wy-separator-dark: #1f1e1b;
+    --wy-separator-light: #46433d;
+
+    --wy-progress-trough: #262522;
+    --wy-progress-border: #141311;
+    --wy-progress-stripe: color-mix(in srgb, var(--wy-accent) 86%, #ffffff);
+    --wy-progress-bar-border: color-mix(in srgb, var(--wy-accent) 55%, #000000);
+
+    --wy-throbber-color: #c9c3b8;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root[data-wy-theme='auto'] {
+        --wy-separator-dark: #1f1e1b;
+        --wy-separator-light: #46433d;
+
+        --wy-progress-trough: #262522;
+        --wy-progress-border: #141311;
+        --wy-progress-stripe: color-mix(in srgb, var(--wy-accent) 86%, #ffffff);
+        --wy-progress-bar-border: color-mix(in srgb, var(--wy-accent) 55%, #000000);
+
+        --wy-throbber-color: #c9c3b8;
+    }
+}
+
+/* Labels keep spaces and newlines, and never get wider than their space. */
+.wy-label {
+    min-width: var(--wy-label-min-width, auto);
+    max-width: var(--wy-label-max-width, 100%);
+    white-space: pre;
+}
+
+.wy-label.wy-wrap {
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+}
+
+/* A wrapping label that does not fill its space has a limited natural width. */
+.wy-label.wy-wrap:not(.wy-label-fill) {
+    max-width: var(--wy-label-max-width, min(100%, 60ch));
+}
+
+.wy-label.dim-label {
+    color: var(--wy-text-secondary);
+}
+
+.wy-label.dim-label.wy-insensitive,
+.wy-insensitive .wy-label.dim-label {
+    color: var(--wy-text-insensitive);
+}
+
+/* Ellipsizing labels can shrink to nothing. */
+.wy-label[class*='wy-ellipsize-'] {
+    min-width: var(--wy-label-min-width, 0);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wy-label.wy-wrap[class*='wy-ellipsize-'] {
+    white-space: pre;
+}
+
+/* The start is cut off by laying the text out right to left, keeping its own direction inside. */
+.wy-label.wy-ellipsize-start {
+    direction: rtl;
+}
+
+.wy-label.wy-ellipsize-start > .wy-label-text {
+    direction: ltr;
+    unicode-bidi: isolate;
+}
+
+/* The middle is cut off with two halves: the first is cut at its end, the second at its start. */
+.wy-label.wy-ellipsize-middle {
+    display: flex;
+}
+
+.wy-label-start,
+.wy-label-end {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    white-space: pre;
+}
+
+.wy-label-start {
+    text-overflow: ellipsis;
+}
+
+.wy-label-end {
+    direction: rtl;
+}
+
+.wy-label-end > span {
+    direction: ltr;
+    unicode-bidi: isolate;
+}
+
+/* A wrapping label that ellipsizes after a number of lines. */
+.wy-label.wy-wrap.wy-line-clamp {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: var(--wy-label-lines);
+    white-space: pre-wrap;
+}
+
+.wy-markup-big {
+    font-size: 1.2em;
+}
+
+.wy-label code {
+    font-family: var(--wy-monospace-font-family);
+    font-size: 0.95em;
+}
+
+.wy-label mark {
+    background: var(--wy-accent-lighter);
+    color: inherit;
+}
+
+.wy-mnemonic {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+}
+
+/* Images: an icon or a picture, centered in its space. */
+.wy-image {
+    display: inline-grid;
+    place-items: center;
+    line-height: 0;
+}
+
+.wy-image.wy-image-icon > svg {
+    display: block;
+    width: var(--wy-icon-size, 16px);
+    height: var(--wy-icon-size, 16px);
+    overflow: visible;
+}
+
+.wy-image > img {
+    display: block;
+    max-width: var(--wy-icon-size, none);
+    max-height: var(--wy-icon-size, none);
+    object-fit: contain;
+}
+
+.wy-insensitive .wy-image,
+.wy-image.wy-insensitive {
+    opacity: 0.45;
+}
+
+/* The placeholder of a missing icon or a picture that failed to load: a crossed-out frame. */
+.wy-image.wy-image-missing > img {
+    display: none;
+}
+
+.wy-image.wy-image-missing::before {
+    content: '';
+    width: var(--wy-icon-size, 16px);
+    height: var(--wy-icon-size, 16px);
+    border: 1px solid var(--wy-text-insensitive);
+    border-radius: 2px;
+    background:
+        linear-gradient(
+            to top right,
+            transparent calc(50% - 0.5px),
+            var(--wy-text-insensitive) calc(50% - 0.5px) calc(50% + 0.5px),
+            transparent calc(50% + 0.5px)
+        ),
+        linear-gradient(
+            to bottom right,
+            transparent calc(50% - 0.5px),
+            var(--wy-text-insensitive) calc(50% - 0.5px) calc(50% + 0.5px),
+            transparent calc(50% + 0.5px)
+        ),
+        var(--wy-base);
+}
+
+/* Separators: an etched line across the middle of their space. */
+.wy-separator {
+    --wy-separator-thickness: 2px;
+    --wy-separator-dark-size: 1px;
+
+    flex: none;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.wy-separator.wy-horizontal {
+    min-width: 1px;
+    min-height: calc(var(--wy-separator-thickness) + 2px);
+    background-image: linear-gradient(
+        to bottom,
+        var(--wy-separator-dark) 0 var(--wy-separator-dark-size),
+        var(--wy-separator-light) var(--wy-separator-dark-size)
+    );
+    background-size: 100% var(--wy-separator-thickness);
+}
+
+.wy-separator.wy-vertical {
+    min-width: calc(var(--wy-separator-thickness) + 2px);
+    min-height: 1px;
+    background-image: linear-gradient(
+        to right,
+        var(--wy-separator-dark) 0 var(--wy-separator-dark-size),
+        var(--wy-separator-light) var(--wy-separator-dark-size)
+    );
+    background-size: var(--wy-separator-thickness) 100%;
+}
+
+/* Spacers have no size of their own. */
+.wy-spacer {
+    min-width: 0;
+    min-height: 0;
+}
+
+/* Progress bars: a sunken trough with a striped, glossy blue bar. */
+.wy-progress-bar {
+    display: grid;
+    grid-template: 1fr / 1fr;
+    place-items: center;
+    overflow: clip;
+    border: 1px solid var(--wy-progress-border);
+    border-radius: var(--wy-radius);
+    background: var(--wy-progress-trough);
+    box-shadow: inset 1px 1px 2px rgb(0 0 0 / 0.16);
+    font-size: 12px;
+}
+
+/* The minimum length of the bar, which its text can make longer unless it is ellipsized. */
+.wy-progress-bar::before {
+    content: '';
+    grid-area: 1 / 1;
+}
+
+.wy-progress-bar.wy-horizontal::before {
+    width: 148px;
+    height: 18px;
+}
+
+.wy-progress-bar.wy-vertical::before {
+    width: 18px;
+    height: 148px;
+}
+
+.wy-progress-fill {
+    position: absolute;
+    border: 1px solid var(--wy-progress-bar-border);
+    border-radius: 2px;
+    background:
+        linear-gradient(
+            rgb(255 255 255 / 0.3),
+            rgb(255 255 255 / 0.08) 45%,
+            rgb(0 0 0 / 0) 50%,
+            rgb(0 0 0 / 0.1)
+        ),
+        repeating-linear-gradient(
+            -45deg,
+            var(--wy-accent) 0 6px,
+            var(--wy-progress-stripe) 6px 12px
+        );
+    box-shadow:
+        inset 0 1px 0 rgb(255 255 255 / 0.25),
+        0 0 2px rgb(0 0 0 / 0.2);
+    transition: inset var(--wy-transition);
+}
+
+.wy-progress-bar.wy-vertical > .wy-progress-fill {
+    background:
+        linear-gradient(
+            to right,
+            rgb(255 255 255 / 0.3),
+            rgb(255 255 255 / 0.08) 45%,
+            rgb(0 0 0 / 0) 50%,
+            rgb(0 0 0 / 0.1)
+        ),
+        repeating-linear-gradient(
+            -45deg,
+            var(--wy-accent) 0 6px,
+            var(--wy-progress-stripe) 6px 12px
+        );
+}
+
+.wy-progress-bar.wy-empty > .wy-progress-fill {
+    visibility: hidden;
+}
+
+/* The text layers cover the whole bar, so the clipping of the light copy matches the bar. */
+.wy-progress-text {
+    grid-area: 1 / 1;
+    place-self: stretch;
+    align-content: center;
+    padding: 0 6px;
+    text-align: center;
+    white-space: nowrap;
+    color: var(--wy-text);
+    text-shadow: none;
+    pointer-events: none;
+}
+
+.wy-progress-text:empty {
+    display: none;
+}
+
+/* The copy of the text over the bar is light, and clipped to the bar. */
+.wy-progress-text.wy-progress-text-filled {
+    z-index: 1;
+    color: var(--wy-accent-text);
+    text-shadow: 0 1px 1px rgb(0 0 0 / 0.3);
+    transition: clip-path var(--wy-transition);
+}
+
+.wy-progress-bar.wy-ellipsize > .wy-progress-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wy-progress-bar.wy-ellipsize-start > .wy-progress-text {
+    direction: rtl;
+}
+
+.wy-progress-bar.wy-insensitive,
+.wy-insensitive .wy-progress-bar {
+    border-color: var(--wy-border-light);
+    background: var(--wy-background-light);
+}
+
+.wy-insensitive .wy-progress-fill,
+.wy-progress-bar.wy-insensitive > .wy-progress-fill {
+    opacity: 0.5;
+}
+
+.wy-insensitive .wy-progress-text,
+.wy-progress-bar.wy-insensitive > .wy-progress-text {
+    color: var(--wy-text-insensitive);
+}
+
+/* Throbbers: twelve spokes, spinning in steps while active. */
+.wy-throbber {
+    --wy-throbber-mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><g stroke="black" stroke-width="3" stroke-linecap="round"><path d="M16 3v6" opacity=".2"/><path d="M16 3v6" opacity=".27" transform="rotate(30 16 16)"/><path d="M16 3v6" opacity=".33" transform="rotate(60 16 16)"/><path d="M16 3v6" opacity=".4" transform="rotate(90 16 16)"/><path d="M16 3v6" opacity=".47" transform="rotate(120 16 16)"/><path d="M16 3v6" opacity=".53" transform="rotate(150 16 16)"/><path d="M16 3v6" opacity=".6" transform="rotate(180 16 16)"/><path d="M16 3v6" opacity=".67" transform="rotate(210 16 16)"/><path d="M16 3v6" opacity=".73" transform="rotate(240 16 16)"/><path d="M16 3v6" opacity=".8" transform="rotate(270 16 16)"/><path d="M16 3v6" opacity=".9" transform="rotate(300 16 16)"/><path d="M16 3v6" transform="rotate(330 16 16)"/></g></svg>');
+
+    --wy-throbber-idle-mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><g stroke="black" stroke-width="3" stroke-linecap="round"><path d="M16 3v6"/><path d="M16 3v6" transform="rotate(30 16 16)"/><path d="M16 3v6" transform="rotate(60 16 16)"/><path d="M16 3v6" transform="rotate(90 16 16)"/><path d="M16 3v6" transform="rotate(120 16 16)"/><path d="M16 3v6" transform="rotate(150 16 16)"/><path d="M16 3v6" transform="rotate(180 16 16)"/><path d="M16 3v6" transform="rotate(210 16 16)"/><path d="M16 3v6" transform="rotate(240 16 16)"/><path d="M16 3v6" transform="rotate(270 16 16)"/><path d="M16 3v6" transform="rotate(300 16 16)"/><path d="M16 3v6" transform="rotate(330 16 16)"/></g></svg>');
+
+    flex: none;
+    width: var(--wy-throbber-size, 32px);
+    height: var(--wy-throbber-size, 32px);
+    background: var(--wy-throbber-color);
+    mask: var(--wy-throbber-idle-mask) center / contain no-repeat;
+    opacity: 0.4;
+}
+
+.wy-throbber.wy-active {
+    mask-image: var(--wy-throbber-mask);
+    opacity: 1;
+    animation: wy-throbber-spin 1s steps(12) infinite;
+}
+
+@keyframes wy-throbber-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wy-throbber.wy-active {
+        animation-duration: 2.4s !important;
+    }
+}

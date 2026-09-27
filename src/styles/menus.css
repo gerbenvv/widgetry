@@ -1,0 +1,433 @@
+/*
+ * Menus, menu bars, menu items, menu buttons and tooltips, in the Clearlooks look: a menu bar on
+ * the window background, light menus with a thin dark border and a soft shadow, and the selected
+ * item in the accent gradient with light text.
+ */
+
+:root {
+    --wy-menu-background: #fcfbfa;
+    --wy-menu-border: #8d8577;
+    --wy-menu-shadow: rgb(0 0 0 / 0.2);
+    --wy-menu-separator: #dcd6cb;
+    --wy-menu-bar-top: #f4f2ee;
+    --wy-menu-bar-bottom: #e7e2d9;
+    --wy-menu-bar-border: #d3cbbb;
+    --wy-menu-selected-top: color-mix(in srgb, var(--wy-accent) 74%, #ffffff);
+    --wy-menu-selected-bottom: color-mix(in srgb, var(--wy-accent) 90%, #000000);
+    --wy-menu-selected-border: var(--wy-accent-dark);
+    --wy-menu-hover: color-mix(in srgb, var(--wy-accent) 20%, transparent);
+    --wy-menu-toggle-background: #ffffff;
+    --wy-tooltip-border: #4a453b;
+
+    /* Glyphs, drawn as masks in the current text color. */
+    --wy-menu-check-mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12"><path d="M2.6 6.4l2.3 2.4 4.5-5.4" fill="none" stroke="black" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+    --wy-menu-radio-mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12"><circle cx="6" cy="6" r="2.5"/></svg>');
+    --wy-menu-dash-mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12"><path d="M3 6h6" stroke="black" stroke-width="1.8" stroke-linecap="round"/></svg>');
+    --wy-menu-arrow-right-mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><path d="M2.2.6L6.2 4 2.2 7.4z"/></svg>');
+    --wy-menu-arrow-down-mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><path d="M.6 2.3L4 6.1l3.4-3.8z"/></svg>');
+    --wy-menu-arrow-up-mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><path d="M.6 5.7L4 1.9l3.4 3.8z"/></svg>');
+}
+
+:root[data-wy-theme='dark'] {
+    --wy-menu-background: #2f2d2a;
+    --wy-menu-border: #121110;
+    --wy-menu-shadow: rgb(0 0 0 / 0.55);
+    --wy-menu-separator: #45423c;
+    --wy-menu-bar-top: #3b3935;
+    --wy-menu-bar-bottom: #32302c;
+    --wy-menu-bar-border: #1d1c19;
+    --wy-menu-selected-top: color-mix(in srgb, var(--wy-accent) 88%, #ffffff);
+    --wy-menu-selected-bottom: color-mix(in srgb, var(--wy-accent) 70%, #000000);
+    --wy-menu-selected-border: color-mix(in srgb, var(--wy-accent) 55%, #000000);
+    --wy-menu-hover: color-mix(in srgb, var(--wy-accent) 25%, transparent);
+    --wy-menu-toggle-background: #232220;
+    --wy-tooltip-border: #5c574d;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root[data-wy-theme='auto'] {
+        --wy-menu-background: #2f2d2a;
+        --wy-menu-border: #121110;
+        --wy-menu-shadow: rgb(0 0 0 / 0.55);
+        --wy-menu-separator: #45423c;
+        --wy-menu-bar-top: #3b3935;
+        --wy-menu-bar-bottom: #32302c;
+        --wy-menu-bar-border: #1d1c19;
+        --wy-menu-selected-top: color-mix(in srgb, var(--wy-accent) 88%, #ffffff);
+        --wy-menu-selected-bottom: color-mix(in srgb, var(--wy-accent) 70%, #000000);
+        --wy-menu-selected-border: color-mix(in srgb, var(--wy-accent) 55%, #000000);
+        --wy-menu-hover: color-mix(in srgb, var(--wy-accent) 25%, transparent);
+        --wy-menu-toggle-background: #232220;
+        --wy-tooltip-border: #5c574d;
+    }
+}
+
+/* Menus. */
+.wy-menu {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    min-width: 150px;
+    max-width: 100vw;
+    padding: 2px;
+    background: var(--wy-menu-background);
+    border: 1px solid var(--wy-menu-border);
+    border-radius: var(--wy-radius);
+    box-shadow:
+        0 4px 14px var(--wy-menu-shadow),
+        0 1px 3px var(--wy-menu-shadow);
+    outline: none;
+    overflow: hidden;
+    animation: wy-menu-in 90ms ease-out;
+}
+
+.wy-menu:focus-visible {
+    outline: none;
+}
+
+@keyframes wy-menu-in {
+    from {
+        opacity: 0;
+    }
+}
+
+.wy-menu-body {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+
+.wy-menu-body::-webkit-scrollbar {
+    display: none;
+}
+
+/* The scroll arrows of a menu taller than the screen. */
+.wy-menu-scroll {
+    display: none;
+    flex: none;
+    height: 14px;
+    color: var(--wy-text);
+}
+
+.wy-menu.wy-scrollable > .wy-menu-scroll {
+    display: block;
+}
+
+.wy-menu-scroll::before {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: currentColor;
+    mask: var(--wy-menu-arrow-down-mask) center / 9px 9px no-repeat;
+}
+
+.wy-menu-scroll-up::before {
+    mask-image: var(--wy-menu-arrow-up-mask);
+}
+
+.wy-menu-scroll.wy-disabled {
+    color: var(--wy-text-insensitive);
+}
+
+/* Menu items: an icon or check column, the label, the accelerator and the submenu arrow. */
+.wy-menu-item {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr) auto 14px;
+    align-items: center;
+    min-height: 24px;
+    padding: 2px 3px 2px 1px;
+    border: 1px solid transparent;
+    border-radius: var(--wy-radius);
+    white-space: nowrap;
+}
+
+.wy-menu-item-toggle,
+.wy-menu-item-icon {
+    display: flex;
+    grid-row: 1;
+    grid-column: 1;
+    align-items: center;
+    justify-content: center;
+    justify-self: center;
+}
+
+.wy-menu-item-icon:empty {
+    display: none;
+}
+
+.wy-menu-item-icon > .wy-image {
+    display: block;
+    width: var(--wy-icon-size, 16px);
+    height: var(--wy-icon-size, 16px);
+}
+
+.wy-menu-item-icon > .wy-image,
+.wy-menu-button-icon {
+    color: inherit;
+}
+
+.wy-menu-item-icon svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.wy-menu-item-label {
+    grid-column: 2;
+    padding: 0 4px 0 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wy-menu-item-accelerator {
+    grid-column: 3;
+    padding-left: 28px;
+    color: var(--wy-text-secondary);
+    text-align: right;
+}
+
+.wy-menu-item-accelerator:empty {
+    padding: 0;
+}
+
+.wy-menu-item-arrow {
+    grid-column: 4;
+    justify-self: center;
+    width: 8px;
+    height: 8px;
+}
+
+.wy-menu-item.wy-has-submenu > .wy-menu-item-arrow {
+    background: currentColor;
+    mask: var(--wy-menu-arrow-right-mask) center / contain no-repeat;
+}
+
+.wy-mnemonic {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+/* The selected item. */
+.wy-menu .wy-menu-item.wy-selected,
+.wy-menu-bar > .wy-menu-item.wy-selected,
+.wy-menu-bar > .wy-menu-item.wy-accelerator-flash {
+    background: linear-gradient(var(--wy-menu-selected-top), var(--wy-menu-selected-bottom));
+    border-color: var(--wy-menu-selected-border);
+    color: var(--wy-accent-text);
+    text-shadow: 0 1px 0 rgb(0 0 0 / 0.18);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.25);
+}
+
+.wy-menu .wy-menu-item.wy-selected > .wy-menu-item-accelerator {
+    color: inherit;
+}
+
+/* Check and radio items: a small box or circle with the mark. */
+.wy-check-menu-item .wy-menu-item-icon {
+    display: none;
+}
+
+.wy-check-menu-item > .wy-menu-item-toggle {
+    position: relative;
+    width: 13px;
+    height: 13px;
+    background: var(--wy-menu-toggle-background);
+    border: 1px solid var(--wy-border-dark);
+    border-radius: 2px;
+    box-shadow: inset 0 1px 1px rgb(0 0 0 / 0.08);
+    color: var(--wy-text);
+    text-shadow: none;
+}
+
+.wy-check-menu-item.wy-draw-as-radio > .wy-menu-item-toggle {
+    border-radius: 50%;
+}
+
+.wy-check-menu-item > .wy-menu-item-toggle::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: currentColor;
+    mask: var(--wy-menu-check-mask) center / 11px 11px no-repeat;
+    opacity: 0;
+}
+
+.wy-check-menu-item.wy-active > .wy-menu-item-toggle::after,
+.wy-check-menu-item.wy-inconsistent > .wy-menu-item-toggle::after {
+    opacity: 1;
+}
+
+.wy-check-menu-item.wy-draw-as-radio > .wy-menu-item-toggle::after {
+    mask-image: var(--wy-menu-radio-mask);
+}
+
+.wy-check-menu-item.wy-inconsistent > .wy-menu-item-toggle::after {
+    mask-image: var(--wy-menu-dash-mask);
+}
+
+.wy-check-menu-item.wy-insensitive > .wy-menu-item-toggle {
+    border-color: var(--wy-border-light);
+    color: var(--wy-text-insensitive);
+    box-shadow: none;
+}
+
+/* Separators. */
+.wy-separator-menu-item {
+    padding: 3px 2px 3px 24px;
+}
+
+.wy-separator-menu-item-line {
+    height: 1px;
+    background: var(--wy-menu-separator);
+    box-shadow: 0 1px 0 var(--wy-highlight);
+}
+
+/* The menu bar. Like a status bar, it keeps its height when empty. */
+.wy-menu-bar {
+    display: flex;
+    align-items: stretch;
+    min-height: 25px;
+    padding: 1px 2px;
+    background: linear-gradient(var(--wy-menu-bar-top), var(--wy-menu-bar-bottom));
+    border-bottom: 1px solid var(--wy-menu-bar-border);
+    outline: none;
+}
+
+.wy-menu-bar:focus-visible {
+    outline: none;
+}
+
+.wy-menu-bar > .wy-menu-item {
+    display: flex;
+    gap: 4px;
+    min-height: 0;
+    padding: 1px 7px;
+}
+
+.wy-menu-bar > .wy-menu-item > .wy-menu-item-toggle,
+.wy-menu-bar > .wy-menu-item > .wy-menu-item-accelerator,
+.wy-menu-bar > .wy-menu-item > .wy-menu-item-arrow {
+    display: none;
+}
+
+.wy-menu-bar > .wy-menu-item > .wy-menu-item-label {
+    padding: 0;
+}
+
+.wy-menu-bar > .wy-menu-item:hover:not(.wy-selected, .wy-insensitive) {
+    background: var(--wy-menu-hover);
+    border-color: color-mix(in srgb, var(--wy-accent) 45%, transparent);
+}
+
+.wy-menu-bar > .wy-right-justified {
+    margin-left: auto;
+}
+
+.wy-menu-bar > .wy-separator-menu-item {
+    display: flex;
+    padding: 4px 3px;
+}
+
+.wy-menu-bar > .wy-separator-menu-item > .wy-separator-menu-item-line {
+    width: 1px;
+    height: auto;
+    box-shadow: 1px 0 0 var(--wy-highlight);
+}
+
+/* Menu buttons; the button look itself comes from .wy-button. While open, it looks pressed. */
+.wy-menu-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.wy-menu-button.wy-active {
+    border-color: var(--wy-border-dark);
+    background: var(--wy-pressed);
+    box-shadow:
+        inset 0 1px 2px rgb(0 0 0 / 0.18),
+        0 1px 0 var(--wy-highlight);
+}
+
+.wy-menu-button.wy-active > * {
+    translate: 0 1px;
+}
+
+.wy-menu-button-content {
+    display: inline-flex;
+    flex: 1 1 auto;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+}
+
+.wy-menu-button-icon {
+    display: flex;
+}
+
+.wy-menu-button-icon svg {
+    display: block;
+    width: 16px;
+    height: 16px;
+}
+
+.wy-menu-button-child:empty {
+    display: none;
+}
+
+.wy-menu-button-arrow {
+    flex: none;
+    width: 8px;
+    height: 8px;
+    background: currentColor;
+    mask: var(--wy-menu-arrow-down-mask) center / contain no-repeat;
+}
+
+.wy-menu-button[data-direction='top'] > .wy-menu-button-arrow {
+    mask-image: var(--wy-menu-arrow-up-mask);
+}
+
+.wy-menu-button[data-direction='right'] > .wy-menu-button-arrow {
+    mask-image: var(--wy-menu-arrow-right-mask);
+}
+
+.wy-menu-button[data-direction='left'] > .wy-menu-button-arrow {
+    mask-image: var(--wy-menu-arrow-right-mask);
+    transform: scaleX(-1);
+}
+
+/* Tooltips: pale yellow with a thin dark border, never in the way of the pointer. */
+.wy-screen > .wy-tooltip {
+    pointer-events: none;
+}
+
+.wy-tooltip {
+    position: absolute;
+    max-width: min(360px, 100vw);
+    padding: 3px 7px;
+    background: var(--wy-tooltip-background);
+    color: var(--wy-tooltip-text);
+    border: 1px solid var(--wy-tooltip-border);
+    border-radius: var(--wy-radius);
+    box-shadow: 0 2px 6px var(--wy-menu-shadow);
+    font-size: 12px;
+    white-space: normal;
+    overflow-wrap: break-word;
+    animation: wy-menu-in 90ms ease-out;
+}
+
+.wy-tooltip-label[hidden] {
+    display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wy-menu,
+    .wy-tooltip {
+        animation: none;
+    }
+}

@@ -1,0 +1,275 @@
+/*
+ * Tool bars and tool items, in the Clearlooks look: a bar with a subtle gradient, and flat items
+ * that show a raised border when hovered and look pressed while pressed or active.
+ */
+
+:root {
+    --wy-tool-bar-top: #f6f4f0;
+    --wy-tool-bar-bottom: #e8e4dc;
+    --wy-tool-bar-border: #d3cbbb;
+    --wy-tool-bar-overflow-mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 12"><path d="M2.5 3l3 3-3 3M6.5 3l3 3-3 3" fill="none" stroke="black" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+    --wy-tool-item-arrow-mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 8 8"><path d="M.6 2.3L4 6.1l3.4-3.8z"/></svg>');
+}
+
+:root[data-wy-theme='dark'] {
+    --wy-tool-bar-top: #3c3a35;
+    --wy-tool-bar-bottom: #33312d;
+    --wy-tool-bar-border: #1d1c19;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root[data-wy-theme='auto'] {
+        --wy-tool-bar-top: #3c3a35;
+        --wy-tool-bar-bottom: #33312d;
+        --wy-tool-bar-border: #1d1c19;
+    }
+}
+
+/* The bar. Like a status bar, it keeps its height when empty. */
+.wy-tool-bar {
+    display: flex;
+    align-items: stretch;
+    min-width: 0;
+    min-height: 34px;
+    padding: 2px 3px;
+    background: linear-gradient(var(--wy-tool-bar-top), var(--wy-tool-bar-bottom));
+    border-top: 1px solid var(--wy-highlight);
+    border-bottom: 1px solid var(--wy-tool-bar-border);
+}
+
+/*
+ * With the overflow menu, a horizontal tool bar can shrink to just the overflow button: its content
+ * does not count for its width, which comes from the container (fill or expand).
+ */
+.wy-tool-bar.wy-show-arrow.wy-horizontal {
+    contain: inline-size;
+}
+
+.wy-tool-bar.wy-vertical {
+    flex-direction: column;
+    min-width: 34px;
+    min-height: 0;
+    padding: 3px 2px;
+    background: linear-gradient(90deg, var(--wy-tool-bar-top), var(--wy-tool-bar-bottom));
+    border: none;
+    border-left: 1px solid var(--wy-highlight);
+    border-right: 1px solid var(--wy-tool-bar-border);
+}
+
+.wy-tool-bar-body {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+    align-items: stretch;
+    gap: 1px;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.wy-tool-bar.wy-vertical > .wy-tool-bar-body {
+    flex-direction: column;
+}
+
+.wy-tool-bar-body > .wy-tool-bar-overflowed {
+    display: none !important;
+}
+
+/* Tool items. */
+.wy-tool-item {
+    display: flex;
+    align-items: stretch;
+    border: 1px solid transparent;
+    border-radius: var(--wy-radius);
+    color: var(--wy-text);
+    white-space: nowrap;
+}
+
+.wy-tool-item-button {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-height: 26px;
+    padding: 2px 6px;
+}
+
+.wy-tool-bar:not([data-style='both']) > .wy-tool-bar-body > .wy-tool-item > .wy-tool-item-button {
+    flex-direction: row;
+    gap: 5px;
+}
+
+.wy-tool-item-icon {
+    display: flex;
+}
+
+.wy-tool-item-icon > .wy-image {
+    --wy-icon-size: var(--wy-tool-bar-icon-size, 24px);
+
+    display: block;
+    width: var(--wy-icon-size);
+    height: var(--wy-icon-size);
+}
+
+.wy-tool-item-icon > .wy-image {
+    color: inherit;
+}
+
+.wy-tool-item-icon svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.wy-tool-item:not(.wy-has-icon) .wy-tool-item-icon,
+.wy-tool-item:not(.wy-has-label) .wy-tool-item-label {
+    display: none;
+}
+
+/* What the style shows: items without an icon always show their label, and the other way around. */
+.wy-tool-bar[data-style='icons']
+    > .wy-tool-bar-body
+    > .wy-tool-item.wy-has-icon
+    .wy-tool-item-label,
+.wy-tool-bar[data-style='both-horizontal']
+    > .wy-tool-bar-body
+    > .wy-tool-item.wy-has-icon:not(.wy-important)
+    .wy-tool-item-label {
+    display: none;
+}
+
+.wy-tool-bar[data-style='text']
+    > .wy-tool-bar-body
+    > .wy-tool-item.wy-has-label
+    .wy-tool-item-icon {
+    display: none;
+}
+
+/* Hovered: raised. Pressed or active (a checked toggle or the chosen radio item): sunken. */
+.wy-tool-item:hover:not(.wy-insensitive, .wy-pressed, .wy-active),
+.wy-tool-item.wy-submenu-open:not(.wy-active),
+.wy-tool-bar-overflow:hover:not(.wy-active) {
+    background: linear-gradient(
+        var(--wy-raised-top),
+        var(--wy-raised-middle) 60%,
+        var(--wy-raised-bottom)
+    );
+    border-color: var(--wy-border);
+    box-shadow:
+        inset 0 1px 0 var(--wy-highlight),
+        0 1px 1px rgb(0 0 0 / 0.06);
+}
+
+.wy-tool-item.wy-pressed,
+.wy-tool-item.wy-active,
+.wy-tool-bar-overflow.wy-active {
+    background: var(--wy-pressed);
+    border-color: var(--wy-border-dark);
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.18);
+}
+
+.wy-tool-item.wy-active:hover:not(.wy-insensitive, .wy-pressed) {
+    background: color-mix(in srgb, var(--wy-pressed) 80%, var(--wy-raised-top));
+}
+
+/* The submenu arrow of an item, pressed separately. */
+.wy-tool-item-arrow {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    border-left: 1px solid transparent;
+}
+
+.wy-tool-item-arrow[hidden] {
+    display: none;
+}
+
+.wy-tool-item-arrow::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: currentColor;
+    mask: var(--wy-tool-item-arrow-mask) center / contain no-repeat;
+}
+
+.wy-tool-item:hover:not(.wy-insensitive) > .wy-tool-item-arrow,
+.wy-tool-item.wy-submenu-open > .wy-tool-item-arrow {
+    border-left-color: var(--wy-border);
+}
+
+.wy-tool-item.wy-submenu-open > .wy-tool-item-arrow {
+    background: var(--wy-pressed);
+}
+
+/* Separators: an etched line, or a (flexible) space. */
+.wy-separator-tool-item {
+    display: flex;
+    justify-content: center;
+    padding: 4px 3px;
+}
+
+.wy-separator-tool-item-line {
+    width: 1px;
+    background: var(--wy-tool-bar-border);
+    box-shadow: 1px 0 0 var(--wy-highlight);
+}
+
+.wy-tool-bar.wy-vertical .wy-separator-tool-item {
+    flex-direction: column;
+    padding: 3px 4px;
+}
+
+.wy-tool-bar.wy-vertical .wy-separator-tool-item-line {
+    width: auto;
+    height: 1px;
+    box-shadow: 0 1px 0 var(--wy-highlight);
+}
+
+.wy-separator-tool-item.wy-invisible > .wy-separator-tool-item-line {
+    visibility: hidden;
+}
+
+/* The overflow button, which opens the menu of the items that do not fit. */
+.wy-tool-bar-overflow {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    margin-left: 1px;
+    border: 1px solid transparent;
+    border-radius: var(--wy-radius);
+    color: var(--wy-text);
+    outline: none;
+}
+
+.wy-tool-bar-overflow[hidden] {
+    display: none;
+}
+
+.wy-tool-bar-overflow::before {
+    content: '';
+    width: 12px;
+    height: 12px;
+    background: currentColor;
+    mask: var(--wy-tool-bar-overflow-mask) center / contain no-repeat;
+}
+
+.wy-tool-bar.wy-vertical > .wy-tool-bar-overflow {
+    width: auto;
+    height: 18px;
+    margin: 1px 0 0;
+}
+
+.wy-tool-bar.wy-vertical > .wy-tool-bar-overflow::before {
+    transform: rotate(90deg);
+}
+
+.wy-tool-bar-overflow:focus-visible {
+    outline: 1px dotted var(--wy-text);
+    outline-offset: -3px;
+}

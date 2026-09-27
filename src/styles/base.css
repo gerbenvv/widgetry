@@ -1,0 +1,586 @@
+/*
+ * Widgetry: the design tokens of the Clearlooks theme and the styles of the core widgets.
+ *
+ * All colors derive from a few tokens, so a theme is a handful of custom properties. The accent
+ * color (selections, highlights, the active title bar) can be changed with `--wy-accent`, or with
+ * `Application.accentColor`.
+ */
+
+:root {
+    color-scheme: light;
+
+    /* The accent color, and colors on top of it. */
+    --wy-accent: #5699d8;
+    --wy-accent-text: #ffffff;
+    --wy-accent-light: color-mix(in srgb, var(--wy-accent) 55%, #ffffff);
+    --wy-accent-lighter: color-mix(in srgb, var(--wy-accent) 22%, #ffffff);
+    --wy-accent-dark: color-mix(in srgb, var(--wy-accent) 75%, #000000);
+
+    /* Surfaces. */
+    --wy-background: #efece6;
+    --wy-background-light: #f7f5f1;
+    --wy-background-dark: #e3e0d8;
+    --wy-base: #ffffff;
+    --wy-base-alternate: #f7f5f2;
+    --wy-pressed: #d3ccc0;
+    --wy-hover: #f9f8f5;
+    --wy-tooltip-background: #fbf7d7;
+    --wy-tooltip-text: #1c1a14;
+    --wy-overlay: rgb(40 36 28 / 0.35);
+
+    /* Text. */
+    --wy-text: #15130f;
+    --wy-text-secondary: #5f5a50;
+    --wy-text-insensitive: #a69f91;
+    --wy-text-embossed: #ffffff;
+    --wy-link: #1f63b5;
+
+    /* Borders and shadows. */
+    --wy-border: #a9a08e;
+    --wy-border-dark: #8d8577;
+    --wy-border-light: #cdc6b8;
+    --wy-highlight: #ffffff;
+    --wy-shadow: rgb(0 0 0 / 0.22);
+    --wy-focus: var(--wy-accent-light);
+
+    /* Gradients of raised elements such as buttons. */
+    --wy-raised-top: #ffffff;
+    --wy-raised-middle: #f0eeea;
+    --wy-raised-bottom: #e3e0d8;
+    --wy-raised-hover-top: #ffffff;
+    --wy-raised-hover-bottom: #ebe8e1;
+
+    /* Typography and metrics. */
+    --wy-font-family: system-ui, 'Segoe UI', Cantarell, 'DejaVu Sans', 'Trebuchet MS', sans-serif;
+    --wy-font-size: 13px;
+    --wy-line-height: 1.35;
+    --wy-monospace-font-family: ui-monospace, 'DejaVu Sans Mono', Menlo, Consolas, monospace;
+    --wy-radius: 3px;
+    --wy-radius-large: 5px;
+    --wy-spacing: 6px;
+    --wy-control-height: 26px;
+    --wy-row-height: 24px;
+    --wy-transition: 120ms ease;
+}
+
+/* The dark variant keeps the structure of the theme and only changes the tokens. */
+:root[data-wy-theme='dark'] {
+    color-scheme: dark;
+
+    --wy-accent-text: #ffffff;
+    --wy-accent-light: color-mix(in srgb, var(--wy-accent) 70%, #ffffff);
+    --wy-accent-lighter: color-mix(in srgb, var(--wy-accent) 35%, #2b2926);
+
+    --wy-background: #34322e;
+    --wy-background-light: #3c3a35;
+    --wy-background-dark: #2b2926;
+    --wy-base: #262522;
+    --wy-base-alternate: #2d2b28;
+    --wy-pressed: #24231f;
+    --wy-hover: #45423c;
+    --wy-tooltip-background: #1f1e1b;
+    --wy-tooltip-text: #ece9e2;
+    --wy-overlay: rgb(0 0 0 / 0.45);
+
+    --wy-text: #ece9e2;
+    --wy-text-secondary: #b3ada1;
+    --wy-text-insensitive: #7b766c;
+    --wy-text-embossed: transparent;
+    --wy-link: #8ab8ec;
+
+    --wy-border: #1d1c19;
+    --wy-border-dark: #141311;
+    --wy-border-light: #4a4740;
+    --wy-highlight: rgb(255 255 255 / 0.07);
+    --wy-shadow: rgb(0 0 0 / 0.5);
+
+    --wy-raised-top: #4a4741;
+    --wy-raised-middle: #423f3a;
+    --wy-raised-bottom: #3a3833;
+    --wy-raised-hover-top: #524f48;
+    --wy-raised-hover-bottom: #423f39;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root[data-wy-theme='auto'] {
+        color-scheme: dark;
+
+        --wy-accent-text: #ffffff;
+        --wy-accent-light: color-mix(in srgb, var(--wy-accent) 70%, #ffffff);
+        --wy-accent-lighter: color-mix(in srgb, var(--wy-accent) 35%, #2b2926);
+
+        --wy-background: #34322e;
+        --wy-background-light: #3c3a35;
+        --wy-background-dark: #2b2926;
+        --wy-base: #262522;
+        --wy-base-alternate: #2d2b28;
+        --wy-pressed: #24231f;
+        --wy-hover: #45423c;
+        --wy-tooltip-background: #1f1e1b;
+        --wy-tooltip-text: #ece9e2;
+        --wy-overlay: rgb(0 0 0 / 0.45);
+
+        --wy-text: #ece9e2;
+        --wy-text-secondary: #b3ada1;
+        --wy-text-insensitive: #7b766c;
+        --wy-text-embossed: transparent;
+        --wy-link: #8ab8ec;
+
+        --wy-border: #1d1c19;
+        --wy-border-dark: #141311;
+        --wy-border-light: #4a4740;
+        --wy-highlight: rgb(255 255 255 / 0.07);
+        --wy-shadow: rgb(0 0 0 / 0.5);
+
+        --wy-raised-top: #4a4741;
+        --wy-raised-middle: #423f3a;
+        --wy-raised-bottom: #3a3833;
+        --wy-raised-hover-top: #524f48;
+        --wy-raised-hover-bottom: #423f39;
+    }
+}
+
+/* A full-page application: no page scrolling, desktop-like default cursor. */
+html.wy-page,
+html.wy-page body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+
+/* Every widget and everything in the floating layer. */
+.wy-widget,
+.wy-screen {
+    box-sizing: border-box;
+    cursor: default;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * Top-level widgets and the floating layer set the font and text color; everything inside
+ * inherits them, so nested widgets (like icons in a selected menu item) follow their context.
+ */
+.wy-main-window,
+.wy-window,
+.wy-screen {
+    font-family: var(--wy-font-family);
+    font-size: var(--wy-font-size);
+    line-height: var(--wy-line-height);
+    color: var(--wy-text);
+}
+
+.wy-widget *,
+.wy-widget *::before,
+.wy-widget *::after {
+    box-sizing: border-box;
+}
+
+.wy-widget {
+    position: relative;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.wy-widget[hidden] {
+    display: none !important;
+}
+
+.wy-widget:focus {
+    outline: none;
+}
+
+.wy-selectable,
+.wy-selectable * {
+    user-select: text;
+    -webkit-user-select: text;
+    cursor: text;
+}
+
+::selection {
+    background: var(--wy-accent);
+    color: var(--wy-accent-text);
+}
+
+/* The keyboard focus indicator, shown only when the keyboard is used. */
+.wy-widget:focus-visible,
+.wy-focus-ring:focus-visible {
+    outline: 1px dotted var(--wy-text);
+    outline-offset: -3px;
+}
+
+/* An overridden page cursor, e.g. while dragging or resizing. */
+html.wy-cursor-override,
+html.wy-cursor-override * {
+    cursor: var(--wy-cursor-override) !important;
+}
+
+/* The layer windows, menus and tooltips float in. */
+.wy-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.wy-screen > * {
+    pointer-events: auto;
+}
+
+/* Bins lay out their single child in a one-cell grid, so alignment applies. */
+.wy-bin-body {
+    display: grid;
+    grid-template: 1fr / 1fr;
+}
+
+/* Boxes: a flex row or column, or a grid of equal cells when homogeneous. */
+.wy-box {
+    display: flex;
+}
+
+.wy-box.wy-vertical {
+    flex-direction: column;
+}
+
+.wy-box.wy-homogeneous {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(max-content, 1fr);
+    grid-template-rows: 1fr;
+}
+
+.wy-box.wy-homogeneous.wy-vertical {
+    grid-auto-flow: row;
+    grid-auto-rows: minmax(max-content, 1fr);
+    grid-template-rows: none;
+    grid-template-columns: 1fr;
+}
+
+/* Insensitive widgets. */
+.wy-insensitive {
+    color: var(--wy-text-insensitive);
+    text-shadow: 1px 1px 0 var(--wy-text-embossed);
+}
+
+/* The main window fills the page or its host element. */
+.wy-main-window {
+    display: grid;
+    grid-template: 1fr / 1fr;
+    background: var(--wy-background);
+    overflow: auto;
+}
+
+.wy-main-window:not(.wy-embedded) {
+    position: fixed;
+    inset: 0;
+}
+
+.wy-main-window.wy-embedded {
+    width: 100%;
+    height: 100%;
+}
+
+.wy-main-window-body {
+    display: grid;
+    grid-template: 1fr / 1fr;
+}
+
+/* Floating windows. */
+.wy-window {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    min-width: max(min-content, 120px);
+    min-height: min-content;
+    max-width: 100vw;
+    max-height: 100vh;
+    background: var(--wy-background);
+    border: 1px solid var(--wy-border-dark);
+    border-radius: var(--wy-radius-large) var(--wy-radius-large) var(--wy-radius) var(--wy-radius);
+    box-shadow:
+        0 3px 12px var(--wy-shadow),
+        inset 0 0 0 1px var(--wy-highlight);
+}
+
+.wy-window.wy-active {
+    border-color: var(--wy-accent-dark);
+    box-shadow:
+        0 5px 20px var(--wy-shadow),
+        0 0 0 1px color-mix(in srgb, var(--wy-accent) 35%, transparent);
+}
+
+.wy-window-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: none;
+    height: 26px;
+    padding: 0 4px 0 8px;
+    border-bottom: 1px solid var(--wy-border);
+    border-radius: 4px 4px 0 0;
+    background: linear-gradient(var(--wy-raised-top), var(--wy-raised-bottom));
+    color: var(--wy-text-secondary);
+    font-weight: 600;
+    touch-action: none;
+}
+
+.wy-window.wy-active > .wy-window-header {
+    background: linear-gradient(
+        color-mix(in srgb, var(--wy-accent) 70%, #ffffff),
+        var(--wy-accent) 55%,
+        color-mix(in srgb, var(--wy-accent) 88%, #000000)
+    );
+    border-bottom-color: var(--wy-accent-dark);
+    color: var(--wy-accent-text);
+    text-shadow: 0 1px 1px rgb(0 0 0 / 0.25);
+}
+
+.wy-window-title {
+    flex: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    text-align: center;
+}
+
+.wy-window-buttons {
+    display: flex;
+    gap: 3px;
+}
+
+.wy-window-button {
+    display: grid;
+    place-items: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 1px solid var(--wy-border-dark);
+    border-radius: var(--wy-radius);
+    background: linear-gradient(var(--wy-raised-top), var(--wy-raised-bottom));
+    color: var(--wy-text);
+    font: inherit;
+    cursor: default;
+}
+
+.wy-window.wy-active .wy-window-button {
+    border-color: var(--wy-accent-dark);
+}
+
+.wy-window-button::before {
+    content: '';
+    width: 10px;
+    height: 10px;
+    background: currentColor;
+    mask: var(--wy-icon) center / contain no-repeat;
+}
+
+.wy-window-button:hover {
+    background: linear-gradient(var(--wy-raised-hover-top), var(--wy-raised-hover-bottom));
+}
+
+.wy-window-button:active {
+    background: var(--wy-pressed);
+}
+
+.wy-window-close {
+    --wy-icon: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path d="M1.5 1.5l7 7m0-7l-7 7" stroke="black" stroke-width="1.8" stroke-linecap="round"/></svg>');
+}
+
+.wy-window-maximize {
+    --wy-icon: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect x="1" y="1" width="8" height="8" fill="none" stroke="black" stroke-width="1.4"/><rect x="1" y="1" width="8" height="2.2"/></svg>');
+}
+
+.wy-window-restore {
+    --wy-icon: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect x="1" y="3.5" width="5.5" height="5.5" fill="none" stroke="black" stroke-width="1.3"/><path d="M3.5 3.5V1h5.5v5.5H6.5" fill="none" stroke="black" stroke-width="1.3"/></svg>');
+}
+
+.wy-window:not(.wy-closable) .wy-window-close,
+.wy-window:not(.wy-maximizable) .wy-window-maximize,
+.wy-window:not(.wy-maximizable) .wy-window-restore,
+.wy-window.wy-maximized .wy-window-maximize,
+.wy-window:not(.wy-maximized) .wy-window-restore {
+    display: none;
+}
+
+.wy-window-body {
+    display: grid;
+    grid-template: 1fr / 1fr;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.wy-window.wy-maximized {
+    inset: 0 !important;
+    width: auto !important;
+    height: auto !important;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+}
+
+.wy-window.wy-maximized > .wy-window-header {
+    border-radius: 0;
+}
+
+.wy-window.wy-undecorated {
+    border-radius: var(--wy-radius);
+}
+
+.wy-window.wy-undecorated > .wy-window-header {
+    display: none;
+}
+
+/* Resize handles around the border, and the grip in the corner. */
+.wy-window-resizer,
+.wy-window-grip {
+    position: absolute;
+    display: none;
+    touch-action: none;
+}
+
+.wy-window.wy-resizable > .wy-window-resizer {
+    display: block;
+}
+
+.wy-window-resizer[data-resize='n'],
+.wy-window-resizer[data-resize='s'] {
+    left: 6px;
+    right: 6px;
+    height: 6px;
+}
+
+.wy-window-resizer[data-resize='e'],
+.wy-window-resizer[data-resize='w'] {
+    top: 6px;
+    bottom: 6px;
+    width: 6px;
+}
+
+.wy-window-resizer[data-resize='n'] {
+    top: -4px;
+    cursor: n-resize;
+}
+
+.wy-window-resizer[data-resize='s'] {
+    bottom: -4px;
+    cursor: s-resize;
+}
+
+.wy-window-resizer[data-resize='e'] {
+    right: -4px;
+    cursor: e-resize;
+}
+
+.wy-window-resizer[data-resize='w'] {
+    left: -4px;
+    cursor: w-resize;
+}
+
+.wy-window-resizer[data-resize='ne'],
+.wy-window-resizer[data-resize='se'],
+.wy-window-resizer[data-resize='sw'],
+.wy-window-resizer[data-resize='nw'] {
+    width: 10px;
+    height: 10px;
+}
+
+.wy-window-resizer[data-resize='ne'] {
+    top: -4px;
+    right: -4px;
+    cursor: ne-resize;
+}
+
+.wy-window-resizer[data-resize='se'] {
+    bottom: -4px;
+    right: -4px;
+    cursor: se-resize;
+}
+
+.wy-window-resizer[data-resize='sw'] {
+    bottom: -4px;
+    left: -4px;
+    cursor: sw-resize;
+}
+
+.wy-window-resizer[data-resize='nw'] {
+    top: -4px;
+    left: -4px;
+    cursor: nw-resize;
+}
+
+.wy-window.wy-has-grip > .wy-window-grip {
+    display: block;
+    right: 1px;
+    bottom: 1px;
+    width: 12px;
+    height: 12px;
+    cursor: se-resize;
+    background: linear-gradient(
+        135deg,
+        transparent 0 50%,
+        var(--wy-border) 50% 58%,
+        transparent 58% 66%,
+        var(--wy-border) 66% 74%,
+        transparent 74% 82%,
+        var(--wy-border) 82% 90%,
+        transparent 90%
+    );
+}
+
+/* Drag and drop feedback. */
+.wy-drag-source {
+    opacity: 0.6;
+}
+
+.wy-drop-target {
+    outline: 2px solid var(--wy-accent);
+    outline-offset: -2px;
+}
+
+.wy-drag-icon {
+    position: absolute;
+    padding: 2px 6px;
+    border: 1px solid var(--wy-border-dark);
+    border-radius: var(--wy-radius);
+    background: var(--wy-base);
+    box-shadow: 0 2px 6px var(--wy-shadow);
+    pointer-events: none !important;
+    white-space: nowrap;
+}
+
+/* The dimming layer below a modal window. */
+.wy-overlay {
+    position: absolute;
+    inset: 0;
+    background: var(--wy-overlay);
+    animation: wy-fade-in var(--wy-transition);
+}
+
+/* Draws attention to a modal window when something behind it was clicked. */
+.wy-window.wy-blink {
+    animation: wy-blink 0.3s ease 2;
+}
+
+@keyframes wy-blink {
+    50% {
+        box-shadow:
+            0 5px 20px var(--wy-shadow),
+            0 0 0 3px var(--wy-accent-light);
+    }
+}
+
+@keyframes wy-fade-in {
+    from {
+        opacity: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wy-widget,
+    .wy-widget *,
+    .wy-overlay {
+        animation-duration: 0s !important;
+        transition-duration: 0s !important;
+    }
+}

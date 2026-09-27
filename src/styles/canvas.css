@@ -1,0 +1,40 @@
+/*
+ * The vector canvas and its sprites. Sprites are SVG shapes; the canvas sets the default text
+ * color (used by `currentColor` strokes and label fills) and the label font.
+ */
+
+.wy-vector-canvas {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    color: var(--wy-text);
+}
+
+.wy-vector-canvas-surface {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.wy-vector-canvas.wy-insensitive {
+    opacity: 0.6;
+}
+
+.wy-sprite {
+    -webkit-tap-highlight-color: transparent;
+}
+
+.wy-sprite-label {
+    font-family: var(--wy-font-family);
+    font-size: 11px;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.wy-sprite-image {
+    image-rendering: auto;
+}

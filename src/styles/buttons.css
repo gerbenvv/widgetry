@@ -1,0 +1,320 @@
+/*
+ * Buttons: push buttons, toggle buttons, check boxes, radio buttons and link buttons.
+ */
+
+:root {
+    /* The frame of buttons: darker at the bottom, and pale when insensitive. */
+    --wy-button-border: #a9a08e;
+    --wy-button-border-bottom: #8d8577;
+    --wy-button-border-insensitive: #cdc6b8;
+    --wy-button-hover-border: #9a917f;
+
+    /* Pressed and active buttons, and their inner shadow. */
+    --wy-button-pressed: #d3ccc0;
+    --wy-button-pressed-hover: #dad4c9;
+    --wy-button-pressed-shadow: rgb(60 50 30 / 0.2);
+
+    /* The frame of the default button of a window. */
+    --wy-button-default-border: #6f685c;
+
+    /* Check and radio indicators: a white field in a dark frame. */
+    --wy-check-border: #958d7d;
+    --wy-check-hover-border: var(--wy-accent-dark);
+    --wy-check-field: #ffffff;
+    --wy-check-field-bottom: #f4f2ee;
+    --wy-check-field-pressed: #e6e2da;
+    --wy-check-mark: #26241f;
+
+    /* Links. */
+    --wy-link-visited: #7c4aa4;
+}
+
+:root[data-wy-theme='dark'] {
+    --wy-button-border: #1d1c19;
+    --wy-button-border-bottom: #141311;
+    --wy-button-border-insensitive: #2b2926;
+    --wy-button-hover-border: #0f0e0c;
+
+    --wy-button-pressed: #2a2825;
+    --wy-button-pressed-hover: #302e2a;
+    --wy-button-pressed-shadow: rgb(0 0 0 / 0.4);
+
+    --wy-button-default-border: #070706;
+
+    --wy-check-border: #141311;
+    --wy-check-hover-border: var(--wy-accent);
+    --wy-check-field: #2c2a27;
+    --wy-check-field-bottom: #262522;
+    --wy-check-field-pressed: #1f1e1b;
+    --wy-check-mark: #ece9e2;
+
+    --wy-link-visited: #c39be4;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root[data-wy-theme='auto'] {
+        --wy-button-border: #1d1c19;
+        --wy-button-border-bottom: #141311;
+        --wy-button-border-insensitive: #2b2926;
+        --wy-button-hover-border: #0f0e0c;
+
+        --wy-button-pressed: #2a2825;
+        --wy-button-pressed-hover: #302e2a;
+        --wy-button-pressed-shadow: rgb(0 0 0 / 0.4);
+
+        --wy-button-default-border: #070706;
+
+        --wy-check-border: #141311;
+        --wy-check-hover-border: var(--wy-accent);
+        --wy-check-field: #2c2a27;
+        --wy-check-field-bottom: #262522;
+        --wy-check-field-pressed: #1f1e1b;
+        --wy-check-mark: #ece9e2;
+
+        --wy-link-visited: #c39be4;
+    }
+}
+
+/* Push and toggle buttons: a raised gradient in a crisp frame, with a white emboss below. */
+.wy-button {
+    min-height: var(--wy-control-height);
+    padding: 3px 10px;
+    border: 1px solid var(--wy-button-border);
+    border-bottom-color: var(--wy-button-border-bottom);
+    border-radius: var(--wy-radius);
+    background: linear-gradient(
+        var(--wy-raised-top),
+        var(--wy-raised-middle) 60%,
+        var(--wy-raised-bottom)
+    );
+    box-shadow:
+        inset 0 1px 0 var(--wy-highlight),
+        0 1px 0 var(--wy-highlight);
+    background-clip: padding-box;
+}
+
+.wy-button.wy-bin-body {
+    place-items: center;
+}
+
+/* Hovering lights the button up. */
+.wy-button:hover {
+    border-color: var(--wy-button-hover-border);
+    border-bottom-color: var(--wy-button-border-bottom);
+    background: linear-gradient(
+        var(--wy-raised-hover-top),
+        var(--wy-raised-hover-top) 30%,
+        var(--wy-raised-hover-bottom)
+    );
+}
+
+/* Pressed buttons and active toggle buttons are sunken in. */
+.wy-button.wy-pressed,
+.wy-toggle-button.wy-active {
+    border-color: var(--wy-button-border-bottom);
+    background: var(--wy-button-pressed);
+    box-shadow:
+        inset 0 1px 2px var(--wy-button-pressed-shadow),
+        0 1px 0 var(--wy-highlight);
+}
+
+.wy-toggle-button.wy-active:hover:not(.wy-pressed) {
+    background: var(--wy-button-pressed-hover);
+}
+
+.wy-button.wy-pressed > *,
+.wy-toggle-button.wy-active > * {
+    translate: 0 1px;
+}
+
+/* An inconsistent toggle button is drawn half pressed. */
+.wy-toggle-button.wy-inconsistent {
+    background: linear-gradient(var(--wy-raised-middle), var(--wy-button-pressed));
+    box-shadow:
+        inset 0 1px 1px var(--wy-button-pressed-shadow),
+        0 1px 0 var(--wy-highlight);
+}
+
+/* The default button of a window has a stronger frame. */
+.wy-button.wy-default {
+    border-color: var(--wy-button-default-border);
+    box-shadow:
+        inset 0 1px 0 var(--wy-highlight),
+        inset 0 0 0 1px color-mix(in srgb, var(--wy-accent) 35%, transparent),
+        0 1px 0 var(--wy-highlight);
+}
+
+/* Flat buttons show their frame only while hovered, pressed or active. */
+.wy-button.wy-relief-none:not(:hover, .wy-pressed, .wy-active, .wy-inconsistent) {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+}
+
+/* Insensitive buttons are flat and pale. */
+.wy-button.wy-insensitive,
+.wy-insensitive .wy-button {
+    border-color: var(--wy-button-border-insensitive);
+    background: var(--wy-background-light);
+    box-shadow: none;
+}
+
+.wy-toggle-button.wy-active.wy-insensitive,
+.wy-insensitive .wy-toggle-button.wy-active {
+    background: var(--wy-background-dark);
+}
+
+.wy-button.wy-relief-none.wy-insensitive:not(.wy-active),
+.wy-insensitive .wy-button.wy-relief-none:not(.wy-active) {
+    border-color: transparent;
+    background: transparent;
+}
+
+/* Check boxes and radio buttons: an indicator followed by the label. */
+.wy-check-box {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 20px;
+    padding: 1px 0;
+}
+
+.wy-check-box:focus-visible {
+    outline: none;
+}
+
+.wy-check-box-body {
+    flex: 0 1 auto;
+    min-width: 0;
+    padding: 0 2px;
+}
+
+.wy-check-box-body:empty {
+    display: none;
+}
+
+/* The focus is a dotted frame around the label, or around the indicator without a label. */
+.wy-check-box:focus-visible > .wy-check-box-body {
+    outline: 1px dotted var(--wy-text);
+    outline-offset: 0;
+}
+
+.wy-check-box:focus-visible:has(> .wy-check-box-body:empty) > .wy-check-indicator {
+    outline: 1px dotted var(--wy-text);
+    outline-offset: 2px;
+}
+
+.wy-check-indicator {
+    position: relative;
+    flex: none;
+    width: 13px;
+    height: 13px;
+    border: 1px solid var(--wy-check-border);
+    border-radius: 2px;
+    background: linear-gradient(var(--wy-check-field-bottom), var(--wy-check-field) 40%);
+    box-shadow: inset 1px 1px 1px rgb(0 0 0 / 0.1);
+    color: var(--wy-check-mark);
+}
+
+.wy-radio-button > .wy-check-indicator {
+    border-radius: 50%;
+}
+
+/* The mark: a check, a dot or a dash, drawn in the text color through a mask. */
+.wy-check-indicator::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: currentColor;
+    mask: var(--wy-check-mask) center / contain no-repeat;
+    visibility: hidden;
+}
+
+.wy-check-box.wy-active > .wy-check-indicator::after,
+.wy-check-box.wy-inconsistent > .wy-check-indicator::after {
+    visibility: visible;
+}
+
+.wy-check-box > .wy-check-indicator {
+    --wy-check-mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 11 11"><path d="M2.2 5.7l2.2 2.3L8.9 2.9" fill="none" stroke="black" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+}
+
+.wy-radio-button > .wy-check-indicator {
+    --wy-check-mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 11 11"><circle cx="5.5" cy="5.5" r="2.6"/></svg>');
+}
+
+.wy-check-box.wy-inconsistent > .wy-check-indicator {
+    --wy-check-mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 11 11"><path d="M2.5 5.5h6" stroke="black" stroke-width="1.8" stroke-linecap="round"/></svg>');
+}
+
+.wy-check-box:hover > .wy-check-indicator {
+    border-color: var(--wy-check-hover-border);
+}
+
+.wy-check-box.wy-pressed > .wy-check-indicator {
+    background: var(--wy-check-field-pressed);
+    box-shadow: inset 1px 1px 2px rgb(0 0 0 / 0.18);
+}
+
+.wy-check-box.wy-insensitive > .wy-check-indicator,
+.wy-insensitive .wy-check-box > .wy-check-indicator {
+    border-color: var(--wy-button-border-insensitive);
+    background: var(--wy-background-light);
+    box-shadow: none;
+    color: var(--wy-text-insensitive);
+}
+
+/* Link buttons look like hyperlinks. */
+.wy-button.wy-link-button {
+    min-height: 0;
+    padding: 1px 2px;
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+    color: var(--wy-link);
+    cursor: pointer;
+}
+
+.wy-link-button * {
+    cursor: pointer;
+}
+
+.wy-link-button .wy-label {
+    color: inherit;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+}
+
+.wy-button.wy-link-button:hover {
+    color: color-mix(in srgb, var(--wy-link) 80%, var(--wy-text));
+}
+
+.wy-link-button:hover .wy-label {
+    text-decoration-thickness: 2px;
+}
+
+.wy-button.wy-link-button.wy-pressed {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+}
+
+.wy-button.wy-link-button.wy-pressed > * {
+    translate: none;
+}
+
+.wy-button.wy-link-button.wy-visited {
+    color: var(--wy-link-visited);
+}
+
+.wy-button.wy-link-button:focus-visible {
+    outline-offset: 0;
+}
+
+.wy-button.wy-link-button.wy-insensitive,
+.wy-insensitive .wy-button.wy-link-button {
+    border-color: transparent;
+    background: transparent;
+    color: var(--wy-text-insensitive);
+}

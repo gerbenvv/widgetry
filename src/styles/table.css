@@ -1,0 +1,403 @@
+/*
+ * The table: a Clearlooks tree view with gradient column headers, alternating rows and the
+ * accent color for selected rows.
+ */
+
+:root {
+    --wy-table-header-top: #efece6;
+    --wy-table-header-middle: #e8e3d8;
+    --wy-table-header-bottom: #ddd5c5;
+    --wy-table-header-hover-top: #f7f5f1;
+    --wy-table-header-hover-bottom: #e6e1d6;
+    --wy-table-header-sorted-top: #cabda5;
+    --wy-table-header-sorted-middle: #d5cbb8;
+    --wy-table-header-sorted-bottom: #dcd4c6;
+    --wy-table-separator-dark: #bebab6;
+    --wy-table-separator-light: #fbfbf9;
+    --wy-table-selected: var(--wy-accent);
+    --wy-table-selected-text: var(--wy-accent-text);
+    --wy-table-selected-unfocused: color-mix(in srgb, var(--wy-accent) 66%, var(--wy-base));
+    --wy-table-selected-unfocused-text: var(--wy-text);
+    --wy-table-check-border: var(--wy-border);
+    --wy-table-check-background: var(--wy-base);
+}
+
+:root[data-wy-theme='dark'] {
+    --wy-table-header-top: #47443e;
+    --wy-table-header-middle: #3f3c37;
+    --wy-table-header-bottom: #383530;
+    --wy-table-header-hover-top: #4f4c45;
+    --wy-table-header-hover-bottom: #423f39;
+    --wy-table-header-sorted-top: #2c2a26;
+    --wy-table-header-sorted-middle: #33312c;
+    --wy-table-header-sorted-bottom: #393631;
+    --wy-table-separator-dark: #262521;
+    --wy-table-separator-light: #58544c;
+    --wy-table-selected-unfocused: color-mix(in srgb, var(--wy-accent) 45%, var(--wy-base));
+    --wy-table-check-border: #6e695f;
+    --wy-table-check-background: #302e2a;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root[data-wy-theme='auto'] {
+        --wy-table-header-top: #47443e;
+        --wy-table-header-middle: #3f3c37;
+        --wy-table-header-bottom: #383530;
+        --wy-table-header-hover-top: #4f4c45;
+        --wy-table-header-hover-bottom: #423f39;
+        --wy-table-header-sorted-top: #2c2a26;
+        --wy-table-header-sorted-middle: #33312c;
+        --wy-table-header-sorted-bottom: #393631;
+        --wy-table-separator-dark: #262521;
+        --wy-table-separator-light: #58544c;
+        --wy-table-selected-unfocused: color-mix(in srgb, var(--wy-accent) 45%, var(--wy-base));
+        --wy-table-check-border: #6e695f;
+        --wy-table-check-background: #302e2a;
+    }
+}
+
+/*
+ * The natural size of a table is small: it scrolls its rows, so it should get its size from its
+ * container (tables expand by default).
+ */
+.wy-table {
+    display: grid;
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+    contain: size layout;
+    min-width: 64px;
+    min-height: calc(var(--wy-table-header-height, 25px) + 2 * var(--wy-row-height) + 2px);
+    background: var(--wy-base);
+    overflow: hidden;
+}
+
+.wy-table.wy-has-frame {
+    border: 1px solid var(--wy-border);
+    border-radius: var(--wy-radius);
+}
+
+.wy-table:focus-visible {
+    outline: none;
+}
+
+/* Without a cursor row, the keyboard focus is shown around the rows. */
+.wy-table:focus-visible:not([aria-activedescendant])::after {
+    content: '';
+    position: absolute;
+    inset: calc(var(--wy-table-header-height, 0px) + 2px) 2px 2px;
+    outline: 1px dotted var(--wy-text);
+    pointer-events: none;
+}
+
+.wy-table-view {
+    overflow: auto;
+    min-width: 0;
+    min-height: 0;
+    overscroll-behavior: contain;
+    scrollbar-color: var(--wy-border-light) var(--wy-background-light);
+}
+
+.wy-table-header,
+.wy-table-row {
+    display: grid;
+    grid-template-columns: var(--wy-table-columns, 1fr);
+}
+
+/* The column headers stay at the top while the rows scroll, and scroll along horizontally. */
+.wy-table-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    border-bottom: 1px solid var(--wy-border);
+    background: linear-gradient(
+        var(--wy-table-header-top),
+        var(--wy-table-header-middle) 90%,
+        var(--wy-table-header-bottom)
+    );
+}
+
+.wy-table.wy-headers-hidden .wy-table-view > .wy-table-header {
+    display: none;
+}
+
+.wy-table-column-header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    padding: 3px 6px;
+    line-height: var(--wy-line-height);
+    white-space: nowrap;
+}
+
+.wy-table-column-header.wy-align-end {
+    flex-direction: row-reverse;
+}
+
+.wy-table-column-header.wy-align-center {
+    justify-content: center;
+}
+
+.wy-table-column-label {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* The separator between column headers, a dark and a light line. */
+.wy-table-column-header::after {
+    content: '';
+    position: absolute;
+    top: 4px;
+    right: 0;
+    bottom: 4px;
+    width: 2px;
+    background: linear-gradient(
+        90deg,
+        var(--wy-table-separator-dark) 50%,
+        var(--wy-table-separator-light) 50%
+    );
+}
+
+.wy-table-column-header.wy-filler::after {
+    display: none;
+}
+
+.wy-table-column-header.wy-filler[hidden] {
+    display: none;
+}
+
+.wy-table-column-header.wy-sortable:hover {
+    background: linear-gradient(
+        var(--wy-table-header-hover-top),
+        var(--wy-table-header-hover-bottom)
+    );
+}
+
+/* The sorted column's header is slightly darker, like a pressed header. */
+.wy-table-column-header.wy-sorted,
+.wy-table-column-header.wy-pressed,
+.wy-table-column-header.wy-sortable.wy-pressed:hover {
+    background: linear-gradient(
+        var(--wy-table-header-sorted-top),
+        var(--wy-table-header-sorted-middle) 10%,
+        var(--wy-table-header-sorted-bottom)
+    );
+}
+
+.wy-table-column-header:focus-visible {
+    outline: 1px dotted var(--wy-text);
+    outline-offset: -3px;
+}
+
+.wy-table-sort-arrow {
+    display: none;
+    flex: none;
+    width: 9px;
+    height: 9px;
+    margin-left: auto;
+    background: var(--wy-text-secondary);
+    mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 9 9"><path d="M0.5 6.5L4.5 2.5L8.5 6.5Z"/></svg>')
+        center / contain no-repeat;
+}
+
+.wy-table-column-header.wy-align-end > .wy-table-sort-arrow {
+    margin-right: auto;
+    margin-left: 0;
+}
+
+.wy-table-column-header.wy-align-center > .wy-table-sort-arrow {
+    margin-left: 0;
+}
+
+.wy-table-column-header.wy-sorted > .wy-table-sort-arrow {
+    display: block;
+}
+
+.wy-table-column-header.wy-sort-desc > .wy-table-sort-arrow {
+    transform: rotate(180deg);
+}
+
+/* The handle for resizing a column, over the separator. */
+.wy-table-resizer {
+    position: absolute;
+    top: 0;
+    right: -4px;
+    bottom: 0;
+    z-index: 1;
+    width: 8px;
+    display: none;
+    cursor: ew-resize;
+    touch-action: none;
+}
+
+.wy-table-column-header.wy-resizable > .wy-table-resizer {
+    display: block;
+}
+
+.wy-table-body {
+    position: relative;
+}
+
+.wy-table-row {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--wy-row-height);
+    contain: layout style;
+}
+
+.wy-table-row[hidden] {
+    display: none;
+}
+
+.wy-table.wy-alternating .wy-table-row.wy-odd {
+    background: var(--wy-base-alternate);
+}
+
+.wy-table-row.wy-selected {
+    background: var(--wy-table-selected-unfocused);
+    color: var(--wy-table-selected-unfocused-text);
+}
+
+.wy-table.wy-alternating .wy-table-row.wy-selected.wy-odd {
+    background: color-mix(in srgb, var(--wy-table-selected-unfocused) 92%, var(--wy-accent-dark));
+}
+
+.wy-table.wy-focus .wy-table-row.wy-selected {
+    background: var(--wy-table-selected);
+    color: var(--wy-table-selected-text);
+}
+
+.wy-table.wy-focus.wy-alternating .wy-table-row.wy-selected.wy-odd {
+    background: color-mix(in srgb, var(--wy-table-selected) 92%, var(--wy-accent-dark));
+}
+
+/* The cursor row gets a dotted focus rectangle while the table has the focus, like GTK. */
+.wy-table.wy-focus .wy-table-row.wy-cursor::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    outline: 1px dotted currentColor;
+    outline-offset: -1px;
+    pointer-events: none;
+}
+
+.wy-table-cell {
+    min-width: 0;
+    padding: 0 6px;
+    overflow: hidden;
+    line-height: var(--wy-row-height);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.wy-table-cell.wy-align-end {
+    text-align: end;
+}
+
+.wy-table-cell.wy-align-center {
+    text-align: center;
+}
+
+.wy-table-cell.wy-ellipsize-none {
+    text-overflow: clip;
+}
+
+/* The ellipsis is at the start in a right-to-left box; the text itself is isolated. */
+.wy-table-cell.wy-ellipsize-start {
+    direction: rtl;
+    text-align: left;
+}
+
+.wy-table-cell.wy-ellipsize-start.wy-align-end {
+    text-align: right;
+}
+
+.wy-table-cell.wy-ellipsize-start.wy-align-center {
+    text-align: center;
+}
+
+.wy-table-number-cell,
+.wy-table-index-cell,
+.wy-table-date-cell {
+    font-variant-numeric: tabular-nums;
+}
+
+/* The drawn Clearlooks check box of check box columns. */
+.wy-table-check {
+    position: relative;
+    top: -1px;
+    display: inline-block;
+    width: 13px;
+    height: 13px;
+    vertical-align: middle;
+    border: 1px solid var(--wy-table-check-border);
+    border-radius: 2px;
+    background: var(--wy-table-check-background);
+    box-shadow: inset 1px 1px 0 var(--wy-background);
+    color: var(--wy-text);
+}
+
+.wy-table-check.wy-active::after {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    background: currentColor;
+    mask: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 9 9"><path d="M1.2 4.6L3.4 6.9L7.9 1.4" fill="none" stroke="black" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>')
+        center / contain no-repeat;
+}
+
+.wy-table-check-cell.wy-editable .wy-table-check:hover {
+    border-color: var(--wy-border-dark);
+}
+
+.wy-table.wy-insensitive .wy-table-check {
+    background: var(--wy-background);
+    color: var(--wy-text-insensitive);
+}
+
+.wy-table.wy-insensitive .wy-table-row.wy-selected {
+    background: var(--wy-background-dark);
+    color: var(--wy-text-insensitive);
+}
+
+.wy-table-placeholder {
+    position: absolute;
+    top: var(--wy-table-header-height, 0px);
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: grid;
+    place-items: center;
+    padding: 12px;
+    color: var(--wy-text-secondary);
+    text-align: center;
+    pointer-events: none;
+}
+
+.wy-table-placeholder[hidden] {
+    display: none;
+}
+
+/* Elements that are measured for the row height, the header height and the fonts. */
+.wy-table-probe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200px;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.wy-table-probe > .wy-table-header {
+    position: static;
+    display: block;
+}
+
+.wy-table-probe > .wy-table-row {
+    position: static;
+    display: block;
+}

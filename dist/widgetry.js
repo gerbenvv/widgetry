@@ -1,0 +1,29190 @@
+var __defProp = Object.defineProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+
+// src/events/constants.js
+var EventType = Object.freeze({
+  MOTION: "motion",
+  SCROLL: "scroll",
+  ENTER: "enter",
+  LEAVE: "leave",
+  KEY_PRESS: "key-press",
+  KEY_RELEASE: "key-release",
+  BUTTON_PRESS: "button-press",
+  BUTTON_RELEASE: "button-release",
+  FOCUS: "focus",
+  BLUR: "blur",
+  DRAG_START: "drag-start",
+  DRAG_END: "drag-end",
+  DRAG_ENTER: "drag-enter",
+  DRAG_LEAVE: "drag-leave",
+  DRAG_MOTION: "drag-motion",
+  DRAG_DATA_REQUEST: "drag-data-request",
+  DRAG_DROP: "drag-drop"
+});
+var Events = Object.freeze({
+  NONE: 0,
+  MOTION: 1 << 0,
+  SCROLL: 1 << 2,
+  KEY_PRESS: 1 << 4,
+  KEY_RELEASE: 1 << 6,
+  BUTTON_PRESS: 1 << 8,
+  BUTTON_RELEASE: 1 << 10,
+  DRAG_START: 1 << 12,
+  DRAG_MOTION: 1 << 14,
+  DRAG_DROP: 1 << 16,
+  DRAG_END: 1 << 18,
+  // Only on the drag source; does not propagate.
+  DRAG_DATA_REQUEST: 1 << 19,
+  // Only on the drag source; does not propagate.
+  DRAG_ENTER: 1 << 20,
+  // Does not propagate.
+  DRAG_LEAVE: 1 << 21,
+  // Does not propagate.
+  ENTER: 1 << 22,
+  // Does not propagate.
+  LEAVE: 1 << 23,
+  // Does not propagate.
+  FOCUS: 1 << 24,
+  // Does not propagate.
+  BLUR: 1 << 25,
+  // Does not propagate.
+  CAPTURE_MOTION: 1 << 1,
+  CAPTURE_SCROLL: 1 << 3,
+  CAPTURE_KEY_PRESS: 1 << 5,
+  CAPTURE_KEY_RELEASE: 1 << 7,
+  CAPTURE_BUTTON_PRESS: 1 << 9,
+  CAPTURE_BUTTON_RELEASE: 1 << 11,
+  CAPTURE_DRAG_START: 1 << 13,
+  CAPTURE_DRAG_MOTION: 1 << 15,
+  CAPTURE_DRAG_DROP: 1 << 17,
+  CAPTURE_ALL: 174762,
+  ALL: 67108863
+});
+var EVENT_MASKS = Object.freeze({
+  [EventType.MOTION]: Events.MOTION,
+  [EventType.SCROLL]: Events.SCROLL,
+  [EventType.ENTER]: Events.ENTER,
+  [EventType.LEAVE]: Events.LEAVE,
+  [EventType.KEY_PRESS]: Events.KEY_PRESS,
+  [EventType.KEY_RELEASE]: Events.KEY_RELEASE,
+  [EventType.BUTTON_PRESS]: Events.BUTTON_PRESS,
+  [EventType.BUTTON_RELEASE]: Events.BUTTON_RELEASE,
+  [EventType.FOCUS]: Events.FOCUS,
+  [EventType.BLUR]: Events.BLUR,
+  [EventType.DRAG_START]: Events.DRAG_START,
+  [EventType.DRAG_END]: Events.DRAG_END,
+  [EventType.DRAG_ENTER]: Events.DRAG_ENTER,
+  [EventType.DRAG_LEAVE]: Events.DRAG_LEAVE,
+  [EventType.DRAG_MOTION]: Events.DRAG_MOTION,
+  [EventType.DRAG_DATA_REQUEST]: Events.DRAG_DATA_REQUEST,
+  [EventType.DRAG_DROP]: Events.DRAG_DROP
+});
+var Modifiers = Object.freeze({
+  NONE: 0,
+  PRIMARY_BUTTON: 1 << 1,
+  MIDDLE_BUTTON: 1 << 2,
+  SECONDARY_BUTTON: 1 << 3,
+  SHIFT: 1 << 6,
+  CONTROL: 1 << 7,
+  ALT: 1 << 8,
+  SUPER: 1 << 9,
+  BUTTONS: 1 << 1 | 1 << 2 | 1 << 3,
+  ALL: ~0
+});
+var MouseButton = Object.freeze({
+  PRIMARY: 1,
+  // Typically the left button.
+  MIDDLE: 2,
+  SECONDARY: 3
+  // Typically the right button.
+});
+var Key = Object.freeze({
+  BACKSPACE: "Backspace",
+  TAB: "Tab",
+  ENTER: "Enter",
+  RETURN: "Enter",
+  SHIFT: "Shift",
+  CONTROL: "Control",
+  ALT: "Alt",
+  SUPER: "Meta",
+  PAUSE: "Pause",
+  CAPS_LOCK: "CapsLock",
+  ESCAPE: "Escape",
+  SPACE: " ",
+  PAGE_UP: "PageUp",
+  PAGE_DOWN: "PageDown",
+  END: "End",
+  HOME: "Home",
+  LEFT: "ArrowLeft",
+  UP: "ArrowUp",
+  RIGHT: "ArrowRight",
+  DOWN: "ArrowDown",
+  INSERT: "Insert",
+  DELETE: "Delete",
+  CONTEXT_MENU: "ContextMenu",
+  F1: "F1",
+  F2: "F2",
+  F3: "F3",
+  F4: "F4",
+  F5: "F5",
+  F6: "F6",
+  F7: "F7",
+  F8: "F8",
+  F9: "F9",
+  F10: "F10",
+  F11: "F11",
+  F12: "F12",
+  NUM_LOCK: "NumLock",
+  SCROLL_LOCK: "ScrollLock",
+  A: "a",
+  B: "b",
+  C: "c",
+  D: "d",
+  E: "e",
+  F: "f",
+  G: "g",
+  H: "h",
+  I: "i",
+  J: "j",
+  K: "k",
+  L: "l",
+  M: "m",
+  N: "n",
+  O: "o",
+  P: "p",
+  Q: "q",
+  R: "r",
+  S: "s",
+  T: "t",
+  U: "u",
+  V: "v",
+  W: "w",
+  X: "x",
+  Y: "y",
+  Z: "z"
+});
+
+// src/core/enums.js
+var Orientation = Object.freeze({
+  HORIZONTAL: "horizontal",
+  VERTICAL: "vertical"
+});
+var Align = Object.freeze({
+  FILL: "fill",
+  // Stretch to use all space.
+  START: "start",
+  // Natural size, at the start (left or top).
+  CENTER: "center",
+  // Natural size, centered.
+  END: "end"
+  // Natural size, at the end (right or bottom).
+});
+var Justification = Object.freeze({
+  START: "start",
+  END: "end",
+  CENTER: "center",
+  FILL: "fill"
+});
+var EllipsizeMode = Object.freeze({
+  NONE: "none",
+  START: "start",
+  MIDDLE: "middle",
+  END: "end"
+});
+var LabelStyles = Object.freeze({
+  NORMAL: 0,
+  BOLD: 1 << 1,
+  ITALIC: 1 << 2,
+  UNDERLINE: 1 << 3,
+  STRIKETHROUGH: 1 << 4
+});
+var SortOrder = Object.freeze({
+  NONE: 0,
+  ASCENDING: 1,
+  DESCENDING: 2
+});
+var SelectionModes = Object.freeze({
+  NONE: 0,
+  SINGLE: 1 << 1,
+  // At most one selected row.
+  MULTI: 1 << 2,
+  // Any number of rows, extended with shift and control.
+  TOGGLE: 1 << 3,
+  // Clicking a selected row deselects it.
+  SINGLE_TOGGLE: 1 << 1 | 1 << 3,
+  MULTI_TOGGLE: 1 << 2 | 1 << 3
+});
+var CursorShape = Object.freeze({
+  ARROW: "arrow",
+  MOVE: "move",
+  CROSSHAIR: "crosshair",
+  WAIT: "wait",
+  BUSY: "busy",
+  TEXT: "text",
+  HELP: "help",
+  POINTING_HAND: "pointing-hand",
+  OPEN_HAND: "open-hand",
+  CLOSED_HAND: "closed-hand",
+  NO_DROP: "no-drop",
+  COPY: "copy",
+  ALIAS: "alias",
+  RESIZE_N: "resize-n",
+  RESIZE_NE: "resize-ne",
+  RESIZE_E: "resize-e",
+  RESIZE_SE: "resize-se",
+  RESIZE_S: "resize-s",
+  RESIZE_SW: "resize-sw",
+  RESIZE_W: "resize-w",
+  RESIZE_NW: "resize-nw",
+  RESIZE_H: "resize-h",
+  RESIZE_V: "resize-v"
+});
+var ShadowType = Object.freeze({
+  NONE: "none",
+  IN: "in",
+  OUT: "out",
+  ETCHED_IN: "etched-in",
+  ETCHED_OUT: "etched-out"
+});
+var Policy = Object.freeze({
+  ALWAYS: "always",
+  AUTOMATIC: "automatic",
+  NEVER: "never"
+});
+var ButtonBoxStyle = Object.freeze({
+  SPREAD: "spread",
+  EDGE: "edge",
+  START: "start",
+  END: "end",
+  CENTER: "center"
+});
+var FocusDirection = Object.freeze({
+  START: 1,
+  END: 2,
+  FORWARD: 3,
+  BACKWARD: 4
+});
+var ResizeDirections = Object.freeze({
+  NONE: 0,
+  HORIZONTAL: 1 << 1,
+  VERTICAL: 1 << 2,
+  ALL: 1 << 1 | 1 << 2
+});
+var Position = Object.freeze({
+  TOP: "top",
+  RIGHT: "right",
+  BOTTOM: "bottom",
+  LEFT: "left"
+});
+var Response = Object.freeze({
+  NONE: "none",
+  OK: "ok",
+  CANCEL: "cancel",
+  CLOSE: "close",
+  YES: "yes",
+  NO: "no",
+  APPLY: "apply",
+  HELP: "help"
+});
+var ToolBarStyle = Object.freeze({
+  ICONS: "icons",
+  TEXT: "text",
+  BOTH: "both",
+  // Icon above the text.
+  BOTH_HORIZONTAL: "both-horizontal"
+  // Icon next to the text.
+});
+
+// src/core/signal-dispatcher.js
+var SignalDispatcher = class {
+  static {
+    __name(this, "SignalDispatcher");
+  }
+  constructor() {
+    this._slots = /* @__PURE__ */ new Map();
+    this._lastSlots = /* @__PURE__ */ new Map();
+    this._blocked = /* @__PURE__ */ new Map();
+  }
+  /**
+   * Connects a handler to a signal.
+   *
+   * @param {string} name
+   * @param {Function} method
+   * @param {object} [context] The `this` of the handler.
+   * @returns {() => void} A function that disconnects the handler again.
+   */
+  connect(name, method, context) {
+    this._getHandlers(this._slots, name).push({ method, context });
+    return () => this.disconnect(name, method, context);
+  }
+  /**
+   * Connects a handler that runs before all handlers connected so far.
+   *
+   * @param {string} name
+   * @param {Function} method
+   * @param {object} [context]
+   * @returns {() => void}
+   */
+  connectFirst(name, method, context) {
+    this._getHandlers(this._slots, name).unshift({ method, context });
+    return () => this.disconnect(name, method, context);
+  }
+  /**
+   * Connects a handler that runs after all other handlers, including ones connected later.
+   *
+   * @param {string} name
+   * @param {Function} method
+   * @param {object} [context]
+   * @returns {() => void}
+   */
+  connectLast(name, method, context) {
+    this._getHandlers(this._lastSlots, name).push({ method, context });
+    return () => this.disconnect(name, method, context);
+  }
+  /**
+   * Disconnects a handler. Does nothing if it was not connected.
+   *
+   * @param {string} name
+   * @param {Function} method
+   * @param {object} [context]
+   */
+  disconnect(name, method, context) {
+    for (const slots of [this._slots, this._lastSlots]) {
+      const handlers = slots.get(name);
+      if (!handlers) {
+        continue;
+      }
+      for (let i = handlers.length - 1; i >= 0; --i) {
+        if (handlers[i].method === method && handlers[i].context === context) {
+          handlers.splice(i, 1);
+          return;
+        }
+      }
+    }
+  }
+  /**
+   * Whether any handler is connected to a signal.
+   *
+   * @param {string} name
+   * @returns {boolean}
+   */
+  hasHandlers(name) {
+    return Boolean(this._slots.get(name)?.length || this._lastSlots.get(name)?.length);
+  }
+  /**
+   * Emits a signal.
+   *
+   * @param {string} name
+   * @param {...unknown} args Arguments passed to every handler.
+   * @returns {boolean} Whether any handler returned `true`.
+   */
+  emit(name, ...args) {
+    if (this._blocked.get(name)) {
+      return false;
+    }
+    const handlers = [...this._slots.get(name) || [], ...this._lastSlots.get(name) || []];
+    let handled = false;
+    for (const handler of handlers) {
+      if (handler.method.apply(handler.context, args) === true) {
+        handled = true;
+      }
+    }
+    return handled;
+  }
+  /**
+   * Blocks a signal. Blocks nest: every block must be matched by an unblock.
+   *
+   * @param {string} name
+   */
+  block(name) {
+    this._blocked.set(name, (this._blocked.get(name) || 0) + 1);
+  }
+  /**
+   * Unblocks a signal blocked with {@link SignalDispatcher#block}.
+   *
+   * @param {string} name
+   */
+  unblock(name) {
+    const count = this._blocked.get(name) || 0;
+    if (count <= 1) {
+      this._blocked.delete(name);
+    } else {
+      this._blocked.set(name, count - 1);
+    }
+  }
+  /**
+   * Removes all handlers.
+   */
+  clear() {
+    this._slots.clear();
+    this._lastSlots.clear();
+  }
+  _getHandlers(slots, name) {
+    let handlers = slots.get(name);
+    if (!handlers) {
+      handlers = [];
+      slots.set(name, handlers);
+    }
+    return handlers;
+  }
+};
+
+// src/core/util.js
+function clamp(value, minimum, maximum) {
+  return value > maximum ? maximum : value < minimum ? minimum : value;
+}
+__name(clamp, "clamp");
+function lerp(alpha, first, second) {
+  return first * (1 - alpha) + second * alpha;
+}
+__name(lerp, "lerp");
+function toCamelCase(name) {
+  return name.replace(/-([a-z0-9])/g, (_match, letter) => letter.toUpperCase());
+}
+__name(toCamelCase, "toCamelCase");
+function toKebabCase(name) {
+  return name.replace(/[A-Z]/g, (letter) => "-" + letter.toLowerCase());
+}
+__name(toKebabCase, "toKebabCase");
+function escapeHtml(text) {
+  if (text === null || text === void 0) {
+    return "";
+  }
+  return String(text).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/ {2}/g, "&nbsp; ").replace(/\n/g, "<br>");
+}
+__name(escapeHtml, "escapeHtml");
+function escapeRegExp(text) {
+  return text.replace(/[[\]/{}()*+?.\\^$|]/g, "\\$&");
+}
+__name(escapeRegExp, "escapeRegExp");
+function areEqual(first, second) {
+  if (first === second) {
+    return true;
+  }
+  if (first === null || second === null || typeof first !== "object" || typeof second !== "object") {
+    return Number.isNaN(first) && Number.isNaN(second);
+  }
+  if (Object.getPrototypeOf(first) !== Object.getPrototypeOf(second)) {
+    return false;
+  }
+  if (first instanceof Date) {
+    return first.getTime() === second.getTime();
+  }
+  if (Array.isArray(first)) {
+    return first.length === second.length && first.every((x, i) => areEqual(x, second[i]));
+  }
+  const firstKeys = Object.keys(first);
+  const secondKeys = Object.keys(second);
+  if (firstKeys.length !== secondKeys.length) {
+    return false;
+  }
+  return firstKeys.every(
+    (key) => Object.hasOwn(second, key) && areEqual(first[key], second[key])
+  );
+}
+__name(areEqual, "areEqual");
+function parsePixels(value) {
+  const result = parseFloat(value);
+  return Number.isFinite(result) ? result : 0;
+}
+__name(parsePixels, "parsePixels");
+function createElement(html) {
+  const template = document.createElement("template");
+  template.innerHTML = html.trim();
+  const element = template.content.firstElementChild;
+  if (!element || template.content.childElementCount !== 1) {
+    throw new Error("HTML must contain exactly one root element.");
+  }
+  return (
+    /** @type {HTMLElement} */
+    element
+  );
+}
+__name(createElement, "createElement");
+function throttleToFrame(method) {
+  let frame = 0;
+  let latestArguments = [];
+  return (
+    /** @type {T} */
+    (function(...args) {
+      latestArguments = args;
+      if (!frame) {
+        frame = requestAnimationFrame(() => {
+          frame = 0;
+          method.apply(this, latestArguments);
+        });
+      }
+    })
+  );
+}
+__name(throttleToFrame, "throttleToFrame");
+function uniqueId(prefix = "wy") {
+  uniqueId.counter = (uniqueId.counter || 0) + 1;
+  return `${prefix}-${uniqueId.counter}`;
+}
+__name(uniqueId, "uniqueId");
+
+// src/core/instance.js
+function defineProperties(cls, specs) {
+  const baseProperties = Object.getPrototypeOf(cls).properties || {};
+  const ownSpecs = Object.hasOwn(cls, "propertySpecs") ? cls.propertySpecs : {};
+  const properties = Object.hasOwn(cls, "properties") ? cls.properties : Object.create(baseProperties);
+  for (const [name, override] of Object.entries(specs)) {
+    const baseSpec = findSpec(Object.getPrototypeOf(cls), name) || {};
+    const spec = { ...baseSpec, ...override };
+    ownSpecs[name] = spec;
+    properties[name] = createPropertyInfo(cls, name, spec);
+    if (Object.hasOwn(spec, "value")) {
+      cls.prototype["_" + name] = spec.value;
+    }
+  }
+  cls.propertySpecs = ownSpecs;
+  cls.properties = properties;
+}
+__name(defineProperties, "defineProperties");
+function findSpec(cls, name) {
+  while (cls && cls !== Function.prototype) {
+    if (Object.hasOwn(cls, "propertySpecs") && cls.propertySpecs[name]) {
+      return cls.propertySpecs[name];
+    }
+    cls = Object.getPrototypeOf(cls);
+  }
+  return null;
+}
+__name(findSpec, "findSpec");
+function createPropertyInfo(cls, name, spec) {
+  const field = "_" + name;
+  const signal = toKebabCase(name) + "-change";
+  const hasDefault = Object.hasOwn(spec, "value");
+  const read = spec.get ? spec.get : function() {
+    return this[field];
+  };
+  let write = null;
+  if (!spec.readOnly) {
+    write = /* @__PURE__ */ __name(function(value) {
+      if (spec.coerce) {
+        value = spec.coerce.call(this, value);
+      }
+      if (hasDefault && Object.is(value, this[field])) {
+        return false;
+      }
+      if (spec.set) {
+        if (spec.set.call(this, value) === false) {
+          return false;
+        }
+      } else {
+        const oldValue = this[field];
+        this[field] = value;
+        spec.changed?.call(this, value, oldValue);
+      }
+      if (spec.signal !== false) {
+        this.emit(signal, this);
+      }
+      return true;
+    }, "write");
+  }
+  Object.defineProperty(cls.prototype, name, {
+    configurable: true,
+    enumerable: false,
+    get() {
+      return read.call(this);
+    },
+    set(value) {
+      if (!write) {
+        throw new TypeError(`Property '${name}' of ${cls.name} is read-only.`);
+      }
+      write.call(this, value);
+    }
+  });
+  return {
+    name,
+    signal,
+    readOnly: Boolean(spec.readOnly),
+    late: Boolean(spec.late),
+    read,
+    write
+  };
+}
+__name(createPropertyInfo, "createPropertyInfo");
+var Instance = class {
+  static {
+    __name(this, "Instance");
+  }
+  /**
+   * @param {Record<string, unknown>} [properties] Property values to set, keyed by camelCase or
+   *     kebab-case name.
+   */
+  constructor(properties) {
+    this._initialize();
+    if (properties) {
+      this.set(properties);
+    }
+  }
+  /**
+   * Initializes the instance. Override this instead of the constructor.
+   *
+   * @protected
+   */
+  _initialize() {
+    this._signalDispatcher = null;
+    this._destroyed = false;
+  }
+  /**
+   * Whether this instance has been destroyed.
+   *
+   * @type {boolean}
+   */
+  get destroyed() {
+    return this._destroyed;
+  }
+  /**
+   * Connects to a signal.
+   *
+   * @param {string} name
+   * @param {Function} method
+   * @param {object} [context] The `this` of the handler.
+   * @returns {() => void} A function that disconnects the handler again.
+   */
+  connect(name, method, context) {
+    return this._getSignalDispatcher().connect(name, method, context);
+  }
+  /**
+   * Connects to a signal, running before handlers connected earlier.
+   *
+   * @param {string} name
+   * @param {Function} method
+   * @param {object} [context]
+   * @returns {() => void}
+   */
+  connectFirst(name, method, context) {
+    return this._getSignalDispatcher().connectFirst(name, method, context);
+  }
+  /**
+   * Connects to a signal, running after all other handlers.
+   *
+   * @param {string} name
+   * @param {Function} method
+   * @param {object} [context]
+   * @returns {() => void}
+   */
+  connectLast(name, method, context) {
+    return this._getSignalDispatcher().connectLast(name, method, context);
+  }
+  /**
+   * Disconnects a handler from a signal.
+   *
+   * @param {string} name
+   * @param {Function} method
+   * @param {object} [context]
+   */
+  disconnect(name, method, context) {
+    this._signalDispatcher?.disconnect(name, method, context);
+  }
+  /**
+   * Emits a signal.
+   *
+   * @param {string} name
+   * @param {...unknown} args
+   * @returns {boolean} Whether a handler handled the signal by returning `true`.
+   */
+  emit(name, ...args) {
+    return this._signalDispatcher ? this._signalDispatcher.emit(name, ...args) : false;
+  }
+  /**
+   * Blocks a signal until {@link Instance#unblock} is called.
+   *
+   * @param {string} name
+   */
+  block(name) {
+    this._getSignalDispatcher().block(name);
+  }
+  /**
+   * Unblocks a signal.
+   *
+   * @param {string} name
+   */
+  unblock(name) {
+    this._signalDispatcher?.unblock(name);
+  }
+  /**
+   * Sets a single property by name.
+   *
+   * @param {string} name A camelCase or kebab-case property name.
+   * @param {unknown} value
+   * @returns {boolean} Whether the value changed.
+   * @throws {Error} If there is no such writable property.
+   */
+  setProperty(name, value) {
+    const property = this._getPropertyInfo(name);
+    if (!property.write) {
+      throw new Error(`${this.constructor.name} has no writable property named '${name}'.`);
+    }
+    return property.write.call(this, value);
+  }
+  /**
+   * Gets a single property by name.
+   *
+   * @param {string} name A camelCase or kebab-case property name.
+   * @returns {unknown}
+   * @throws {Error} If there is no such property.
+   */
+  getProperty(name) {
+    return this._getPropertyInfo(name).read.call(this);
+  }
+  /**
+   * Sets multiple properties. Properties declared as `late` (like `visible`) are set last.
+   *
+   * @param {Record<string, unknown>} properties
+   * @returns {boolean} Whether any value changed.
+   */
+  set(properties) {
+    let changed = false;
+    const late = [];
+    for (const [name, value] of Object.entries(properties)) {
+      const property = this._getPropertyInfo(name);
+      if (property.late) {
+        late.push([name, value]);
+      } else if (this.setProperty(name, value)) {
+        changed = true;
+      }
+    }
+    for (const [name, value] of late) {
+      if (this.setProperty(name, value)) {
+        changed = true;
+      }
+    }
+    return changed;
+  }
+  /**
+   * Gets multiple properties.
+   *
+   * @param {string[]} [names] The properties to get. Defaults to all readable properties.
+   * @returns {Record<string, unknown>} Keyed by camelCase name.
+   */
+  getProperties(names) {
+    const result = {};
+    for (const name of names || this.constructor.getPropertyNames()) {
+      result[toCamelCase(name)] = this.getProperty(name);
+    }
+    return result;
+  }
+  /**
+   * Checks whether a property exists.
+   *
+   * @param {string} name
+   * @param {boolean} [readOnly] Whether read-only properties count as well.
+   * @returns {boolean}
+   */
+  hasProperty(name, readOnly = false) {
+    const property = this.constructor.properties?.[toCamelCase(name)];
+    return Boolean(property && (readOnly || property.write));
+  }
+  /**
+   * Runs a public method by name. This is how declarative code (such as the builder) triggers
+   * actions.
+   *
+   * @param {string} name A camelCase or kebab-case method name.
+   * @param {unknown[]} [args]
+   * @returns {unknown}
+   * @throws {Error} If there is no such action.
+   */
+  doAction(name, args = []) {
+    const method = toCamelCase(name);
+    if (!this.hasAction(method)) {
+      throw new Error(`${this.constructor.name} has no action named '${name}'.`);
+    }
+    return this[method](...args);
+  }
+  /**
+   * Checks whether a public method exists.
+   *
+   * @param {string} name
+   * @returns {boolean}
+   */
+  hasAction(name) {
+    const method = toCamelCase(name);
+    return !method.startsWith("_") && method !== "constructor" && typeof this[method] === "function" && !(method in (this.constructor.properties || {}));
+  }
+  /**
+   * Destroys the instance and emits `destroy`.
+   *
+   * @throws {Error} If the instance has already been destroyed.
+   */
+  destroy() {
+    if (this._destroyed) {
+      throw new Error("Instance has already been destroyed.");
+    }
+    this._destroyed = true;
+    this.emit("destroy", this);
+    this._signalDispatcher?.clear();
+  }
+  /**
+   * Returns the names of all readable properties of this class.
+   *
+   * @returns {string[]}
+   */
+  static getPropertyNames() {
+    const names = [];
+    for (const name in this.properties || {}) {
+      names.push(name);
+    }
+    return names;
+  }
+  /**
+   * Returns the property info of a property, or `null`.
+   *
+   * @param {string} name
+   * @returns {PropertyInfo | null}
+   */
+  static getPropertyInfo(name) {
+    return this.properties?.[toCamelCase(name)] || null;
+  }
+  _getPropertyInfo(name) {
+    const property = this.constructor.properties?.[toCamelCase(name)];
+    if (!property) {
+      throw new Error(`${this.constructor.name} has no property named '${name}'.`);
+    }
+    return property;
+  }
+  _getSignalDispatcher() {
+    if (!this._signalDispatcher) {
+      this._signalDispatcher = new SignalDispatcher();
+    }
+    return this._signalDispatcher;
+  }
+};
+function lazySingleton(factory) {
+  let instance = null;
+  return () => {
+    if (!instance) {
+      instance = factory();
+    }
+    return instance;
+  };
+}
+__name(lazySingleton, "lazySingleton");
+
+// src/core/registry.js
+var TYPES = /* @__PURE__ */ new Map();
+function registerType(type, cls, factory = null) {
+  TYPES.set(type, { cls, factory });
+}
+__name(registerType, "registerType");
+function getType(type) {
+  return TYPES.get(type) || null;
+}
+__name(getType, "getType");
+function getTypeName(cls) {
+  for (const [type, entry] of TYPES) {
+    if (entry.cls === cls) {
+      return type;
+    }
+  }
+  return null;
+}
+__name(getTypeName, "getTypeName");
+function getTypeNames() {
+  return [...TYPES.keys()];
+}
+__name(getTypeNames, "getTypeNames");
+
+// src/core/settings.js
+var settings = {
+  // Delay in milliseconds before a tooltip appears.
+  tooltipAppearDelay: 500,
+  // Delay in milliseconds before a tooltip disappears after the pointer left.
+  tooltipDisappearDelay: 100,
+  // Maximum time in milliseconds between presses that count as a double (or triple) press.
+  multiplePressInterval: 400,
+  // Delay in milliseconds before a submenu opens when hovering its item.
+  submenuDelay: 250,
+  // Distance in pixels the pointer must move with a button pressed before a drag starts.
+  dragThreshold: 4,
+  // How long in milliseconds a button looks pressed when activated with the keyboard.
+  keyActivateDelay: 100,
+  // Delay in milliseconds before a held stepper or scroll arrow starts repeating.
+  repeatInitialDelay: 300,
+  // Interval in milliseconds between repeats of a held stepper or scroll arrow.
+  repeatInterval: 50
+};
+
+// src/events/events.js
+function getModifiers(event) {
+  let modifiers = Modifiers.NONE;
+  if (event.shiftKey) {
+    modifiers |= Modifiers.SHIFT;
+  }
+  if (event.ctrlKey) {
+    modifiers |= Modifiers.CONTROL;
+  }
+  if (event.altKey) {
+    modifiers |= Modifiers.ALT;
+  }
+  if (event.metaKey) {
+    modifiers |= Modifiers.SUPER;
+  }
+  const buttons = event.buttons || 0;
+  if (buttons & 1) {
+    modifiers |= Modifiers.PRIMARY_BUTTON;
+  }
+  if (buttons & 2) {
+    modifiers |= Modifiers.SECONDARY_BUTTON;
+  }
+  if (buttons & 4) {
+    modifiers |= Modifiers.MIDDLE_BUTTON;
+  }
+  return modifiers;
+}
+__name(getModifiers, "getModifiers");
+var ToolkitEvent = class {
+  static {
+    __name(this, "ToolkitEvent");
+  }
+  /**
+   * @param {string} type One of {@link EventType}.
+   * @param {object | null} source The widget the event is about.
+   * @param {number} modifiers
+   * @param {Event | null} [nativeEvent]
+   */
+  constructor(type, source, modifiers, nativeEvent = null) {
+    this.type = type;
+    this.source = source;
+    this.modifiers = modifiers;
+    this.nativeEvent = nativeEvent;
+    this.timestamp = Date.now();
+  }
+  /**
+   * Whether all given modifiers are active.
+   *
+   * @param {number} modifier One or more {@link Modifiers}.
+   * @returns {boolean}
+   */
+  hasModifier(modifier) {
+    return (this.modifiers & modifier) === modifier;
+  }
+  /**
+   * Prevents the browser's default action of the underlying DOM event.
+   */
+  preventDefault() {
+    this.nativeEvent?.preventDefault();
+  }
+};
+var PointerEvent = class extends ToolkitEvent {
+  static {
+    __name(this, "PointerEvent");
+  }
+  /**
+   * @param {string} type
+   * @param {object | null} source
+   * @param {number} modifiers
+   * @param {number} x
+   * @param {number} y
+   * @param {Event | null} [nativeEvent]
+   */
+  constructor(type, source, modifiers, x, y, nativeEvent = null) {
+    super(type, source, modifiers, nativeEvent);
+    this.x = x;
+    this.y = y;
+    this.pointerType = nativeEvent?.pointerType || "mouse";
+  }
+  /**
+   * The position as `{x, y}`.
+   *
+   * @type {{x: number, y: number}}
+   */
+  get position() {
+    return { x: this.x, y: this.y };
+  }
+  /**
+   * The x position relative to the source widget's element.
+   *
+   * @type {number}
+   */
+  get localX() {
+    const rect = this.source?.el?.getBoundingClientRect();
+    return rect ? this.x - window.scrollX - rect.left : this.x;
+  }
+  /**
+   * The y position relative to the source widget's element.
+   *
+   * @type {number}
+   */
+  get localY() {
+    const rect = this.source?.el?.getBoundingClientRect();
+    return rect ? this.y - window.scrollY - rect.top : this.y;
+  }
+};
+var MotionEvent = class extends PointerEvent {
+  static {
+    __name(this, "MotionEvent");
+  }
+  constructor(source, modifiers, x, y, nativeEvent = null) {
+    super(EventType.MOTION, source, modifiers, x, y, nativeEvent);
+  }
+};
+var ScrollEvent = class extends PointerEvent {
+  static {
+    __name(this, "ScrollEvent");
+  }
+  constructor(source, modifiers, x, y, delta, nativeEvent = null) {
+    super(EventType.SCROLL, source, modifiers, x, y, nativeEvent);
+    this.delta = delta;
+    this.deltaX = nativeEvent?.deltaX || 0;
+    this.deltaY = nativeEvent?.deltaY || 0;
+  }
+};
+var CrossingEvent = class extends PointerEvent {
+  static {
+    __name(this, "CrossingEvent");
+  }
+  constructor(source, modifiers, x, y, enter, related, nativeEvent = null) {
+    super(enter ? EventType.ENTER : EventType.LEAVE, source, modifiers, x, y, nativeEvent);
+    this.related = related;
+  }
+};
+var ButtonEvent = class extends PointerEvent {
+  static {
+    __name(this, "ButtonEvent");
+  }
+  constructor(source, modifiers, x, y, press, button, count = 1, nativeEvent = null) {
+    super(
+      press ? EventType.BUTTON_PRESS : EventType.BUTTON_RELEASE,
+      source,
+      modifiers,
+      x,
+      y,
+      nativeEvent
+    );
+    this.button = button;
+    this.count = count;
+  }
+};
+var KeyEvent = class extends ToolkitEvent {
+  static {
+    __name(this, "KeyEvent");
+  }
+  constructor(source, modifiers, press, key, nativeEvent = null) {
+    super(press ? EventType.KEY_PRESS : EventType.KEY_RELEASE, source, modifiers, nativeEvent);
+    this.key = key;
+    this.code = nativeEvent?.code || "";
+    this.repeat = Boolean(nativeEvent?.repeat);
+  }
+  /**
+   * Whether this is the given key. Single characters compare case-insensitively.
+   *
+   * @param {string} key One of `Key`.
+   * @returns {boolean}
+   */
+  is(key) {
+    if (key.length === 1 && this.key.length === 1) {
+      return key.toLowerCase() === this.key.toLowerCase();
+    }
+    return key === this.key;
+  }
+  /**
+   * Whether the key produces a character.
+   *
+   * @type {boolean}
+   */
+  get isPrintable() {
+    return this.key.length === 1;
+  }
+};
+var FocusChangeEvent = class extends ToolkitEvent {
+  static {
+    __name(this, "FocusChangeEvent");
+  }
+  constructor(source, modifiers, focus, related, nativeEvent = null) {
+    super(focus ? EventType.FOCUS : EventType.BLUR, source, modifiers, nativeEvent);
+    this.related = related;
+  }
+};
+var DragEvent = class extends PointerEvent {
+  static {
+    __name(this, "DragEvent");
+  }
+  constructor(type, source, modifiers, x, y, context, nativeEvent = null) {
+    super(type, source, modifiers, x, y, nativeEvent);
+    this.context = context;
+  }
+};
+var DragStartEvent = class extends DragEvent {
+  static {
+    __name(this, "DragStartEvent");
+  }
+  constructor(source, modifiers, x, y, context, nativeEvent = null) {
+    super(EventType.DRAG_START, source, modifiers, x, y, context, nativeEvent);
+  }
+};
+var DragEndEvent = class extends DragEvent {
+  static {
+    __name(this, "DragEndEvent");
+  }
+  constructor(source, modifiers, x, y, context, nativeEvent = null) {
+    super(EventType.DRAG_END, source, modifiers, x, y, context, nativeEvent);
+  }
+};
+var DragCrossingEvent = class extends DragEvent {
+  static {
+    __name(this, "DragCrossingEvent");
+  }
+  constructor(source, modifiers, x, y, enter, context, related = null, nativeEvent = null) {
+    super(
+      enter ? EventType.DRAG_ENTER : EventType.DRAG_LEAVE,
+      source,
+      modifiers,
+      x,
+      y,
+      context,
+      nativeEvent
+    );
+    this.related = related;
+  }
+};
+var DragMotionEvent = class extends DragEvent {
+  static {
+    __name(this, "DragMotionEvent");
+  }
+  constructor(source, modifiers, x, y, context, nativeEvent = null) {
+    super(EventType.DRAG_MOTION, source, modifiers, x, y, context, nativeEvent);
+  }
+};
+var DragDataRequestEvent = class extends DragEvent {
+  static {
+    __name(this, "DragDataRequestEvent");
+  }
+  constructor(source, modifiers, x, y, context, dataType, nativeEvent = null) {
+    super(EventType.DRAG_DATA_REQUEST, source, modifiers, x, y, context, nativeEvent);
+    this.dataType = dataType;
+  }
+};
+var DragDropEvent = class extends DragEvent {
+  static {
+    __name(this, "DragDropEvent");
+  }
+  constructor(source, modifiers, x, y, context, nativeEvent = null) {
+    super(EventType.DRAG_DROP, source, modifiers, x, y, context, nativeEvent);
+  }
+};
+
+// src/widgets/widget.js
+var WIDGET_BY_ELEMENT = /* @__PURE__ */ new WeakMap();
+var LAYOUT_QUEUE = /* @__PURE__ */ new Set();
+var EVENT_BINDINGS = [
+  [Events.MOTION, Events.CAPTURE_MOTION, "pointermove", EventType.MOTION],
+  [Events.SCROLL, Events.CAPTURE_SCROLL, "wheel", EventType.SCROLL],
+  [Events.KEY_PRESS, Events.CAPTURE_KEY_PRESS, "keydown", EventType.KEY_PRESS],
+  [Events.KEY_RELEASE, Events.CAPTURE_KEY_RELEASE, "keyup", EventType.KEY_RELEASE],
+  [Events.BUTTON_PRESS, Events.CAPTURE_BUTTON_PRESS, "pointerdown", EventType.BUTTON_PRESS],
+  [Events.BUTTON_RELEASE, Events.CAPTURE_BUTTON_RELEASE, "pointerup", EventType.BUTTON_RELEASE],
+  [Events.ENTER, 0, "pointerenter", EventType.ENTER],
+  [Events.LEAVE, 0, "pointerleave", EventType.LEAVE]
+];
+var GRAB_MASK = Events.MOTION | Events.CAPTURE_MOTION | Events.BUTTON_RELEASE | Events.CAPTURE_BUTTON_RELEASE;
+var SELF_ALIGNMENT = {
+  [Align.FILL]: "stretch",
+  [Align.START]: "start",
+  [Align.CENTER]: "center",
+  [Align.END]: "end"
+};
+var DOM_TO_TOOLKIT_BUTTON = {
+  0: MouseButton.PRIMARY,
+  1: MouseButton.MIDDLE,
+  2: MouseButton.SECONDARY
+};
+var pressState = { time: 0, button: 0, x: 0, y: 0, count: 0 };
+var LONGHANDS = Object.freeze({
+  margin: ["marginTop", "marginRight", "marginBottom", "marginLeft"],
+  flex: ["flexGrow", "flexShrink", "flexBasis"]
+});
+var MAX_LAYOUT_PASSES = 100;
+var layoutScheduled = false;
+function flushLayoutQueue() {
+  layoutScheduled = false;
+  for (let pass = 0; LAYOUT_QUEUE.size; ++pass) {
+    if (pass >= MAX_LAYOUT_PASSES) {
+      console.warn("Widgetry: layouts keep queueing each other; giving up.", [
+        ...LAYOUT_QUEUE
+      ]);
+      LAYOUT_QUEUE.clear();
+      break;
+    }
+    const widgets = [...LAYOUT_QUEUE];
+    LAYOUT_QUEUE.clear();
+    for (const widget of widgets) {
+      if (!widget.destroyed) {
+        widget._updateLayout();
+      }
+    }
+  }
+}
+__name(flushLayoutQueue, "flushLayoutQueue");
+function flushLayout() {
+  flushLayoutQueue();
+}
+__name(flushLayout, "flushLayout");
+function countPress(event) {
+  const now = event.timeStamp || performance.now();
+  const distance = Math.hypot(event.pageX - pressState.x, event.pageY - pressState.y);
+  if (event.button === pressState.button && now - pressState.time <= settings.multiplePressInterval && distance < 5) {
+    pressState.count += 1;
+  } else {
+    pressState.count = 1;
+  }
+  Object.assign(pressState, { time: now, button: event.button, x: event.pageX, y: event.pageY });
+  return pressState.count;
+}
+__name(countPress, "countPress");
+function getPressCount() {
+  return pressState.count;
+}
+__name(getPressCount, "getPressCount");
+function getScrollDelta(event) {
+  let lines = event.deltaY || event.deltaX;
+  if (event.deltaMode === 0) {
+    lines /= 33.3;
+  } else if (event.deltaMode === 2) {
+    lines *= 20;
+  }
+  return -lines;
+}
+__name(getScrollDelta, "getScrollDelta");
+function createToolkitEvent(nativeEvent, type, owner) {
+  const cacheKey = `wyEvent_${type}`;
+  if (nativeEvent[cacheKey] && type !== EventType.ENTER && type !== EventType.LEAVE) {
+    return nativeEvent[cacheKey];
+  }
+  const source = Widget.fromElement(nativeEvent.target) || owner;
+  const modifiers = getModifiers(nativeEvent);
+  const x = nativeEvent.pageX ?? 0;
+  const y = nativeEvent.pageY ?? 0;
+  let event = null;
+  switch (type) {
+    case EventType.MOTION:
+      event = new MotionEvent(source, modifiers, x, y, nativeEvent);
+      break;
+    case EventType.SCROLL:
+      event = new ScrollEvent(
+        source,
+        modifiers,
+        x,
+        y,
+        getScrollDelta(nativeEvent),
+        nativeEvent
+      );
+      break;
+    case EventType.BUTTON_PRESS:
+    case EventType.BUTTON_RELEASE: {
+      const press = type === EventType.BUTTON_PRESS;
+      if (press && nativeEvent.wyPressCount === void 0) {
+        nativeEvent.wyPressCount = countPress(nativeEvent);
+      }
+      const button = DOM_TO_TOOLKIT_BUTTON[nativeEvent.button] || MouseButton.PRIMARY;
+      const count = press ? nativeEvent.wyPressCount : pressState.count;
+      event = new ButtonEvent(source, modifiers, x, y, press, button, count, nativeEvent);
+      break;
+    }
+    case EventType.KEY_PRESS:
+    case EventType.KEY_RELEASE:
+      event = new KeyEvent(
+        source,
+        modifiers,
+        type === EventType.KEY_PRESS,
+        nativeEvent.key,
+        nativeEvent
+      );
+      break;
+    case EventType.ENTER:
+    case EventType.LEAVE: {
+      const related = Widget.fromElement(nativeEvent.relatedTarget);
+      return new CrossingEvent(
+        owner,
+        modifiers,
+        x,
+        y,
+        type === EventType.ENTER,
+        related,
+        nativeEvent
+      );
+    }
+  }
+  nativeEvent[cacheKey] = event;
+  return event;
+}
+__name(createToolkitEvent, "createToolkitEvent");
+var Widget = class _Widget extends Instance {
+  static {
+    __name(this, "Widget");
+  }
+  _initialize() {
+    super._initialize();
+    this.el = this._render();
+    this.el.classList.add("wy-widget");
+    this.el.hidden = !this._visible;
+    WIDGET_BY_ELEMENT.set(this.el, this);
+    this._domListeners = /* @__PURE__ */ new Map();
+    this._isHExpandCache = false;
+    this._isVExpandCache = false;
+    this._isSensitiveCache = this.isTopLevel;
+    this._isVisibleCache = this.isTopLevel && this._visible;
+    this._sizeAllocateObserver = null;
+    this._tooltipHandlers = null;
+    this.el.classList.toggle("wy-insensitive", !this._isSensitiveCache);
+    this.el.addEventListener("focus", (event) => this._onFocusElementFocus(event, true), true);
+    this.el.addEventListener("blur", (event) => this._onFocusElementFocus(event, false), true);
+    this._updateTabIndex();
+    this._refreshExpand();
+  }
+  /**
+   * Creates the root element. Subclasses must implement this. It runs first during
+   * initialization, so it should also store references to sub-elements that getters like
+   * `focusElement` need.
+   *
+   * @protected
+   * @returns {HTMLElement}
+   */
+  _render() {
+    throw new Error(`${this.constructor.name} must implement _render().`);
+  }
+  /**
+   * The element that receives the keyboard focus. Defaults to the root element.
+   *
+   * @type {HTMLElement}
+   */
+  get focusElement() {
+    return this.el;
+  }
+  /**
+   * The rendered position and size relative to the viewport, or zero if not rendered.
+   *
+   * @type {{x: number, y: number, width: number, height: number}}
+   */
+  get allocation() {
+    const rect = this.el.getBoundingClientRect();
+    return { x: rect.left, y: rect.top, width: rect.width, height: rect.height };
+  }
+  /**
+   * Finds the widget an element belongs to: the nearest ancestor that is a widget's root.
+   *
+   * @param {Node | null} node
+   * @returns {Widget | null}
+   */
+  static fromElement(node) {
+    while (node) {
+      const widget = WIDGET_BY_ELEMENT.get(
+        /** @type {Element} */
+        node
+      );
+      if (widget) {
+        return widget;
+      }
+      node = node.parentNode || node.host || null;
+    }
+    return null;
+  }
+  /**
+   * Whether `widget` is this widget or one of its descendants.
+   *
+   * @param {Widget | null} widget
+   * @returns {boolean}
+   */
+  isAncestorOf(widget) {
+    while (widget) {
+      if (widget === this) {
+        return true;
+      }
+      widget = widget.parent;
+    }
+    return false;
+  }
+  /**
+   * Shows the widget. The same as setting `visible` to `true`.
+   */
+  show() {
+    this.visible = true;
+  }
+  /**
+   * Hides the widget. The same as setting `visible` to `false`.
+   */
+  hide() {
+    this.visible = false;
+  }
+  /**
+   * Adds a CSS class to the root element.
+   *
+   * @param {string} className
+   */
+  addStyleClass(className) {
+    this.el.classList.add(className);
+  }
+  /**
+   * Removes a CSS class from the root element.
+   *
+   * @param {string} className
+   */
+  removeStyleClass(className) {
+    this.el.classList.remove(className);
+  }
+  /**
+   * Whether the root element has a CSS class.
+   *
+   * @param {string} className
+   * @returns {boolean}
+   */
+  hasStyleClass(className) {
+    return this.el.classList.contains(className);
+  }
+  /**
+   * Enables event signals. The same as `widget.events |= events`.
+   *
+   * @param {number} events One or more `Events`.
+   */
+  enableEvents(events) {
+    this.events = this._events | events;
+  }
+  /**
+   * Disables event signals. The same as `widget.events &= ~events`.
+   *
+   * @param {number} events One or more `Events`.
+   */
+  disableEvents(events) {
+    this.events = this._events & ~events;
+  }
+  /**
+   * Gives this widget the keyboard focus. If its window is not active, the widget gets the focus
+   * when the window becomes active.
+   *
+   * @returns {boolean} Whether the widget is now the focus widget of its window.
+   */
+  focus() {
+    if (!this.canFocus || !this.isSensitive || !this.isVisible) {
+      return false;
+    }
+    const window2 = this.window;
+    if (!window2) {
+      return false;
+    }
+    if (window2.active) {
+      this.focusElement.focus({ preventScroll: false });
+      if (document.activeElement === this.focusElement && window2.focusWidget !== this) {
+        window2._setFocusWidget(this);
+      }
+      return document.activeElement === this.focusElement || this.isFocus;
+    }
+    window2._setFocusWidget(this);
+    return true;
+  }
+  /**
+   * Removes the keyboard focus from this widget. Its window keeps no focus widget.
+   */
+  blur() {
+    if (!this.isFocus) {
+      return;
+    }
+    if (this.hasFocus) {
+      this.focusElement.blur();
+    }
+    this.window?._setFocusWidget(null);
+  }
+  /**
+   * Connects to a signal. Connecting to `size-allocate` starts observing the rendered size.
+   *
+   * @param {string} name
+   * @param {Function} method
+   * @param {object} [context]
+   * @returns {() => void}
+   */
+  connect(name, method, context) {
+    if (name === "size-allocate") {
+      this._observeSize();
+    }
+    return super.connect(name, method, context);
+  }
+  /**
+   * Destroys the widget: removes it from its parent, destroys its tooltip and removes its
+   * element.
+   */
+  destroy() {
+    if (this.isFocus) {
+      this.window?._onFocusWidgetGone(this);
+    }
+    super.destroy();
+    if (this._parent?.removeChild && this._parent.children?.includes(this)) {
+      this._parent.removeChild(this);
+    } else if (this._parent) {
+      this._setParent(null);
+    }
+    this._tooltip?.destroy();
+    this._tooltip = null;
+    this._sizeAllocateObserver?.disconnect();
+    LAYOUT_QUEUE.delete(this);
+    this.el.remove();
+  }
+  /**
+   * Sets the parent. Called by containers.
+   *
+   * @protected
+   * @param {Widget | null} parent
+   */
+  _setParent(parent) {
+    if (parent) {
+      if (parent === this) {
+        throw new Error("A widget cannot be added to itself.");
+      }
+      if (this._parent) {
+        throw new Error("The widget has already been added to a container.");
+      }
+      if (this.isTopLevel) {
+        throw new Error("A top-level widget cannot be added to a container.");
+      }
+      if (this.isAncestorOf(parent)) {
+        throw new Error("A widget cannot be added to one of its descendants.");
+      }
+    }
+    if (!parent && this.window && this._containsFocusWidget()) {
+      this.window._onFocusWidgetGone(this);
+    }
+    this._parent = parent;
+    this._recalculateVisibility();
+    this._recalculateSensitivity();
+    this.emit("parent-change", this);
+  }
+  _containsFocusWidget() {
+    const focusWidget = this.window?.focusWidget;
+    return Boolean(focusWidget && this.isAncestorOf(focusWidget));
+  }
+  /**
+   * Queues a layout update, which runs `_updateLayout()` at the end of the current task.
+   *
+   * @protected
+   */
+  _queueLayout() {
+    LAYOUT_QUEUE.add(this);
+    if (!layoutScheduled) {
+      layoutScheduled = true;
+      queueMicrotask(flushLayoutQueue);
+    }
+  }
+  /**
+   * Updates the layout of this widget's children. Containers override this.
+   *
+   * @protected
+   */
+  _updateLayout() {
+  }
+  /**
+   * Applies the layout properties (alignment, margins and size request) to the root element.
+   *
+   * @protected
+   */
+  _applyLayoutStyle() {
+    const margin = this._margin;
+    const hasMargin = margin.top || margin.right || margin.bottom || margin.left;
+    this._setLayoutStyle("margin", hasMargin ? marginToCss(margin) : "");
+    this._setLayoutStyle(
+      "justifySelf",
+      this._hAlign === Align.FILL ? "" : SELF_ALIGNMENT[this._hAlign]
+    );
+    this._setLayoutStyle(
+      "alignSelf",
+      this._vAlign === Align.FILL ? "" : SELF_ALIGNMENT[this._vAlign]
+    );
+    const fillWidth = this._hAlign === Align.FILL;
+    const fillHeight = this._vAlign === Align.FILL;
+    const width = this._width >= 0 ? `${this._width}px` : "";
+    const height = this._height >= 0 ? `${this._height}px` : "";
+    this._setLayoutStyle("width", fillWidth ? "" : width);
+    this._setLayoutStyle("minWidth", fillWidth ? width : "");
+    this._setLayoutStyle("height", fillHeight ? "" : height);
+    this._setLayoutStyle("minHeight", fillHeight ? height : "");
+    this._parent?._onChildLayoutChange(this);
+  }
+  /**
+   * Sets an inline style for layout. Only styles set this way are ever cleared again, so styles
+   * that a widget or its stylesheet sets itself are kept when a layout property has its default.
+   *
+   * @protected
+   * @param {string} name A camelCase CSS property name.
+   * @param {string} value The value, or `''` for the default.
+   */
+  _setLayoutStyle(name, value) {
+    if (!this._layoutStyles) {
+      this._layoutStyles = /* @__PURE__ */ new Set();
+    }
+    for (const longhand of LONGHANDS[name] || []) {
+      this._layoutStyles.delete(longhand);
+    }
+    if (value) {
+      this.el.style[name] = value;
+      this._layoutStyles.add(name);
+    } else if (this._layoutStyles.has(name) || LONGHANDS[name]?.some((x) => this.el.style[x])) {
+      this.el.style[name] = "";
+      this._layoutStyles.delete(name);
+    }
+  }
+  /**
+   * Computes whether the widget expands in one direction. Containers also consider their
+   * children.
+   *
+   * @protected
+   * @param {'h' | 'v'} _direction
+   * @returns {boolean}
+   */
+  _computeExpand(_direction) {
+    return false;
+  }
+  /**
+   * Recomputes the effective expand flags and propagates changes to the parent.
+   *
+   * @protected
+   */
+  _refreshExpand() {
+    const hExpand = this._hExpand ?? this._computeExpand("h");
+    const vExpand = this._vExpand ?? this._computeExpand("v");
+    if (hExpand === this._isHExpandCache && vExpand === this._isVExpandCache) {
+      return;
+    }
+    this._isHExpandCache = hExpand;
+    this._isVExpandCache = vExpand;
+    this.el.classList.toggle("wy-h-expand", hExpand);
+    this.el.classList.toggle("wy-v-expand", vExpand);
+    this._parent?._onChildExpandChange(this);
+  }
+  _recalculateVisibility() {
+    const isVisible = this._visible && (this.isTopLevel ? this._isShown() : Boolean(this._parent?.isVisible));
+    if (isVisible === this._isVisibleCache) {
+      return;
+    }
+    this._isVisibleCache = isVisible;
+    this._onIsVisibleChange(isVisible);
+    this.emit("is-visible-change", this);
+  }
+  /**
+   * Whether a top-level widget is actually on screen. Overridden by windows.
+   *
+   * @protected
+   * @returns {boolean}
+   */
+  _isShown() {
+    return this._visible;
+  }
+  /**
+   * Called when the effective visibility changed. Containers propagate it to their children.
+   *
+   * @protected
+   * @param {boolean} isVisible
+   */
+  _onIsVisibleChange(isVisible) {
+    if (!isVisible) {
+      this._tooltip?.disappear?.();
+      if (this.isFocus) {
+        this.window?._onFocusWidgetGone(this);
+      }
+    }
+  }
+  _recalculateSensitivity() {
+    const isSensitive = this._sensitive && (this.isTopLevel || Boolean(this._parent?.isSensitive));
+    if (isSensitive === this._isSensitiveCache) {
+      return;
+    }
+    this._isSensitiveCache = isSensitive;
+    this.el.classList.toggle("wy-insensitive", !isSensitive);
+    this._onIsSensitiveChange(isSensitive);
+    this.emit("is-sensitive-change", this);
+  }
+  /**
+   * Called when the effective sensitivity changed. Containers propagate it to their children.
+   *
+   * @protected
+   * @param {boolean} isSensitive
+   */
+  _onIsSensitiveChange(isSensitive) {
+    this._updateTabIndex();
+    if (!isSensitive) {
+      this._tooltip?.disappear?.();
+      if (this.isFocus) {
+        this.window?._onFocusWidgetGone(this);
+      }
+    }
+  }
+  /**
+   * Updates the tab index of the focus element from `canFocus` and the sensitivity.
+   *
+   * @protected
+   */
+  _updateTabIndex() {
+    const focusable = this._canFocus && this._isSensitiveCache;
+    const element = this.focusElement;
+    if (focusable) {
+      element.tabIndex = 0;
+    } else if (element.tabIndex >= 0 || element.hasAttribute("tabindex") || element.matches("input, textarea, select, button, a[href]")) {
+      element.tabIndex = -1;
+    }
+  }
+  /**
+   * Updates the focus state flags. Called by the window.
+   *
+   * @protected
+   * @param {boolean} isFocus
+   * @param {boolean} hasFocus
+   */
+  _setFocusState(isFocus, hasFocus) {
+    if (isFocus !== this._isFocus) {
+      this._isFocus = isFocus;
+      this.emit("is-focus-change", this);
+    }
+    if (hasFocus !== this._hasFocus) {
+      this._hasFocus = hasFocus;
+      this.el.classList.toggle("wy-focus", hasFocus);
+      this.emit("has-focus-change", this);
+    }
+  }
+  _onFocusElementFocus(nativeEvent, focus) {
+    if (nativeEvent.target !== this.focusElement) {
+      return;
+    }
+    if (this._events & (focus ? Events.FOCUS : Events.BLUR)) {
+      const related = _Widget.fromElement(nativeEvent.relatedTarget);
+      const event = new FocusChangeEvent(
+        this,
+        getModifiers(nativeEvent),
+        focus,
+        related,
+        nativeEvent
+      );
+      this._dispatchEvent(event, false);
+    }
+  }
+  /**
+   * Emits the signals for a toolkit event.
+   *
+   * @protected
+   * @param {import('../events/events.js').ToolkitEvent} event
+   * @param {boolean} capture Whether this is the capture phase.
+   * @returns {boolean} Whether a handler handled the event.
+   */
+  _dispatchEvent(event, capture) {
+    if (!this.isSensitive) {
+      return false;
+    }
+    const prefix = capture ? "capture-" : "";
+    return this.emit(`${prefix}${event.type}-event`, this, event) || this.emit(`${prefix}event`, this, event);
+  }
+  _syncEventListeners() {
+    for (const [bubbleMask, captureMask, domName, type] of EVENT_BINDINGS) {
+      for (const capture of [false, true]) {
+        const mask = capture ? captureMask : bubbleMask;
+        const wanted = Boolean(mask && this._events & mask) || !capture && domName === "pointerdown" && Boolean(this._events & GRAB_MASK);
+        const key = `${domName}:${capture}`;
+        const existing = this._domListeners.get(key);
+        if (wanted && !existing) {
+          const listener = /* @__PURE__ */ __name((nativeEvent) => this._onDomEvent(nativeEvent, type, capture), "listener");
+          this.el.addEventListener(domName, listener, { capture, passive: false });
+          this._domListeners.set(key, listener);
+        } else if (!wanted && existing) {
+          this.el.removeEventListener(domName, existing, { capture });
+          this._domListeners.delete(key);
+        }
+      }
+    }
+  }
+  _onDomEvent(nativeEvent, type, capture) {
+    if (type === EventType.BUTTON_PRESS && !capture && this._events & GRAB_MASK && !nativeEvent.wyGrabbed) {
+      nativeEvent.wyGrabbed = true;
+      try {
+        nativeEvent.target.setPointerCapture?.(nativeEvent.pointerId);
+      } catch (_error) {
+      }
+    }
+    const mask = EVENT_BINDINGS.find((x) => x[3] === type)[capture ? 1 : 0];
+    if (!(this._events & mask)) {
+      return;
+    }
+    const event = this._createEvent(nativeEvent, type);
+    if (!event) {
+      return;
+    }
+    if (this._dispatchEvent(event, capture)) {
+      nativeEvent.stopPropagation();
+      if (type !== EventType.BUTTON_PRESS && type !== EventType.BUTTON_RELEASE) {
+        nativeEvent.preventDefault();
+      }
+    }
+  }
+  _createEvent(nativeEvent, type) {
+    return createToolkitEvent(nativeEvent, type, this);
+  }
+  _observeSize() {
+    if (this._sizeAllocateObserver || typeof ResizeObserver === "undefined") {
+      return;
+    }
+    this._sizeAllocateObserver = new ResizeObserver(() => {
+      if (!this.destroyed) {
+        this.emit("size-allocate", this, this.allocation);
+      }
+    });
+    this._sizeAllocateObserver.observe(this.el);
+  }
+  _createTooltip(properties) {
+    const entry = getType("tooltip");
+    if (!entry) {
+      throw new Error("Tooltips need the Tooltip widget; import it first.");
+    }
+    return new entry.cls(properties);
+  }
+  _onTooltipDestroy() {
+    this._tooltip = null;
+    this._showTooltip = false;
+    this._syncTooltipHandlers();
+  }
+  _syncTooltipHandlers() {
+    const wanted = Boolean(this._showTooltip && this._tooltip);
+    if (wanted && !this._tooltipHandlers) {
+      this._tooltipHandlers = {
+        enter: /* @__PURE__ */ __name((event) => this._tooltip?.appearAt(this, event), "enter"),
+        move: /* @__PURE__ */ __name((event) => this._tooltip?.follow?.(this, event), "move"),
+        leave: /* @__PURE__ */ __name(() => this._tooltip?.disappear(), "leave"),
+        down: /* @__PURE__ */ __name(() => this._tooltip?.disappear(), "down")
+      };
+      this.el.addEventListener("pointerenter", this._tooltipHandlers.enter);
+      this.el.addEventListener("pointermove", this._tooltipHandlers.move);
+      this.el.addEventListener("pointerleave", this._tooltipHandlers.leave);
+      this.el.addEventListener("pointerdown", this._tooltipHandlers.down);
+    } else if (!wanted && this._tooltipHandlers) {
+      this.el.removeEventListener("pointerenter", this._tooltipHandlers.enter);
+      this.el.removeEventListener("pointermove", this._tooltipHandlers.move);
+      this.el.removeEventListener("pointerleave", this._tooltipHandlers.leave);
+      this.el.removeEventListener("pointerdown", this._tooltipHandlers.down);
+      this._tooltipHandlers = null;
+    }
+  }
+  /**
+   * Called by the container when the widget was placed in it. Applies the layout style.
+   *
+   * @protected
+   */
+  _onParented() {
+    this._applyLayoutStyle();
+  }
+};
+function marginToCss(margin) {
+  return `${margin.top}px ${margin.right}px ${margin.bottom}px ${margin.left}px`;
+}
+__name(marginToCss, "marginToCss");
+function toMargin(margin) {
+  if (typeof margin === "number") {
+    return { top: margin, right: margin, bottom: margin, left: margin };
+  }
+  return { top: 0, right: 0, bottom: 0, left: 0, ...margin };
+}
+__name(toMargin, "toMargin");
+function marginSide(side) {
+  return {
+    get() {
+      return this._margin[side];
+    },
+    set(value) {
+      if (this._margin[side] === value) {
+        return false;
+      }
+      this._margin = { ...this._margin, [side]: value };
+      this._applyLayoutStyle();
+    }
+  };
+}
+__name(marginSide, "marginSide");
+defineProperties(Widget, {
+  /**
+   * Whether the widget is shown. Set last when passing several properties.
+   */
+  visible: {
+    value: true,
+    late: true,
+    changed(visible) {
+      this.el.hidden = !visible;
+      this._recalculateVisibility();
+      this._recalculateSensitivity();
+      this._parent?._onChildVisibleChange(this);
+    }
+  },
+  /**
+   * Whether the widget is effectively visible: it is `visible` and so are its ancestors.
+   */
+  isVisible: {
+    readOnly: true,
+    get() {
+      return this._isVisibleCache;
+    }
+  },
+  /**
+   * Whether this is a top-level widget (a window), which cannot be put in a container.
+   */
+  isTopLevel: { value: false, readOnly: true },
+  /**
+   * The window the widget is in (the widget itself for windows), or `null`.
+   */
+  window: {
+    readOnly: true,
+    get() {
+      let widget = this;
+      while (widget && !widget.isWindow) {
+        widget = widget._parent;
+      }
+      return widget || null;
+    }
+  },
+  /**
+   * Whether this widget is a window.
+   */
+  isWindow: { value: false, readOnly: true },
+  /**
+   * The parent container, or `null`.
+   */
+  parent: { value: null, readOnly: true },
+  /**
+   * A name for finding the widget, also set as the `data-name` attribute.
+   */
+  name: {
+    value: "",
+    changed(name) {
+      if (name) {
+        this.el.dataset.name = name;
+      } else {
+        delete this.el.dataset.name;
+      }
+    }
+  },
+  /**
+   * The requested width in pixels, or -1 for the natural width. When the widget fills its space
+   * horizontally, this is its minimum width.
+   */
+  width: {
+    value: -1,
+    changed() {
+      this._applyLayoutStyle();
+    }
+  },
+  /**
+   * The requested height in pixels, or -1 for the natural height. When the widget fills its space
+   * vertically, this is its minimum height.
+   */
+  height: {
+    value: -1,
+    changed() {
+      this._applyLayoutStyle();
+    }
+  },
+  /**
+   * The margin around the widget. Set a number for all sides, or an object with `top`, `right`,
+   * `bottom` and `left`. Reading returns the object.
+   */
+  margin: {
+    value: Object.freeze({ top: 0, right: 0, bottom: 0, left: 0 }),
+    coerce: toMargin,
+    set(margin) {
+      const old = this._margin;
+      if (old.top === margin.top && old.right === margin.right && old.bottom === margin.bottom && old.left === margin.left) {
+        return false;
+      }
+      this._margin = margin;
+      this._applyLayoutStyle();
+    }
+  },
+  marginTop: marginSide("top"),
+  marginRight: marginSide("right"),
+  marginBottom: marginSide("bottom"),
+  marginLeft: marginSide("left"),
+  /**
+   * How the widget uses horizontal space: one of `Align`.
+   */
+  hAlign: {
+    value: Align.FILL,
+    changed() {
+      this._applyLayoutStyle();
+    }
+  },
+  /**
+   * How the widget uses vertical space: one of `Align`.
+   */
+  vAlign: {
+    value: Align.FILL,
+    changed() {
+      this._applyLayoutStyle();
+    }
+  },
+  /**
+   * Whether the widget takes extra horizontal space. `null` (the default) inherits it from the
+   * children: a container expands when one of its children does.
+   */
+  hExpand: {
+    value: null,
+    changed() {
+      this._refreshExpand();
+    }
+  },
+  /**
+   * Whether the widget takes extra vertical space. `null` inherits it from the children.
+   */
+  vExpand: {
+    value: null,
+    changed() {
+      this._refreshExpand();
+    }
+  },
+  /**
+   * Whether the widget effectively expands horizontally.
+   */
+  isHExpand: {
+    readOnly: true,
+    get() {
+      return this._isHExpandCache;
+    }
+  },
+  /**
+   * Whether the widget effectively expands vertically.
+   */
+  isVExpand: {
+    readOnly: true,
+    get() {
+      return this._isVExpandCache;
+    }
+  },
+  /**
+   * Whether the user can interact with the widget. Insensitive widgets are grayed out.
+   */
+  sensitive: {
+    value: true,
+    changed(sensitive) {
+      this.el.inert = !sensitive;
+      this.el.setAttribute("aria-disabled", String(!sensitive));
+      if (sensitive) {
+        this.el.removeAttribute("aria-disabled");
+      }
+      this._recalculateSensitivity();
+    }
+  },
+  /**
+   * Whether the widget is effectively sensitive: it is `sensitive` and so are its ancestors.
+   */
+  isSensitive: {
+    readOnly: true,
+    get() {
+      return this._isSensitiveCache;
+    }
+  },
+  /**
+   * Whether the widget can take the keyboard focus.
+   */
+  canFocus: {
+    value: false,
+    changed(canFocus) {
+      this._updateTabIndex();
+      if (!canFocus && this.isFocus) {
+        this.window?._onFocusWidgetGone(this);
+      }
+    }
+  },
+  /**
+   * Whether the widget is the focus widget of its window. Setting it focuses or blurs it.
+   */
+  isFocus: {
+    value: false,
+    signal: false,
+    set(isFocus) {
+      isFocus ? this.focus() : this.blur();
+      return false;
+    }
+  },
+  /**
+   * Whether the widget has the keyboard focus: it `isFocus` and its window is active.
+   */
+  hasFocus: {
+    value: false,
+    signal: false,
+    set(hasFocus) {
+      if (hasFocus) {
+        this.window?.present?.();
+        this.focus();
+      } else if (this._hasFocus) {
+        this.focusElement.blur();
+      }
+      return false;
+    }
+  },
+  /**
+   * Whether the tooltip is shown when hovering. Setting `tooltipLabel` turns this on.
+   */
+  showTooltip: {
+    value: false,
+    changed(showTooltip) {
+      if (showTooltip && !this._tooltip) {
+        this.tooltip = this._createTooltip({});
+      }
+      this._syncTooltipHandlers();
+    }
+  },
+  /**
+   * The text of the tooltip, or `null` for none.
+   */
+  tooltipLabel: {
+    signal: false,
+    get() {
+      return this._tooltip ? this._tooltip.label : null;
+    },
+    set(label) {
+      if (label === null || label === void 0 || label === "") {
+        this.showTooltip = false;
+        if (this._tooltip) {
+          this._tooltip.label = "";
+        }
+        return;
+      }
+      if (this._tooltip) {
+        this._tooltip.label = label;
+      } else {
+        this.tooltip = this._createTooltip({ label });
+      }
+      this.showTooltip = true;
+    }
+  },
+  /**
+   * The `Tooltip` of the widget, or `null`.
+   */
+  tooltip: {
+    value: null,
+    set(tooltip) {
+      if (this._tooltip) {
+        this._tooltip.disconnect("destroy", this._onTooltipDestroy, this);
+        if (this._tooltip !== tooltip) {
+          this._tooltip.destroy();
+        }
+      }
+      this._tooltip = tooltip;
+      tooltip?.connect("destroy", this._onTooltipDestroy, this);
+      tooltip?._setWidget?.(this);
+      this._syncTooltipHandlers();
+    }
+  },
+  /**
+   * The mask of `Events` whose signals the widget emits.
+   */
+  events: {
+    value: Events.NONE,
+    changed() {
+      this._syncEventListeners();
+    }
+  },
+  /**
+   * Whether drags can start on this widget (see the drag events).
+   */
+  draggable: {
+    value: false,
+    changed(draggable) {
+      this.el.classList.toggle("wy-draggable", draggable);
+    }
+  },
+  /**
+   * Whether things can be dropped on this widget (see the drag events).
+   */
+  droppable: {
+    value: false,
+    changed(droppable) {
+      this.el.classList.toggle("wy-droppable", droppable);
+    }
+  }
+});
+
+// src/core/screen.js
+var Screen = class extends Instance {
+  static {
+    __name(this, "Screen");
+  }
+  _initialize() {
+    super._initialize();
+    this._layer = null;
+    this._zIndex = 10;
+    this._size = { width: 0, height: 0 };
+    if (typeof window !== "undefined") {
+      this._size = this._measure();
+      window.addEventListener("resize", () => {
+        const size = this._measure();
+        if (size.width === this._size.width && size.height === this._size.height) {
+          return;
+        }
+        this._size = size;
+        this.emit("size-change", this);
+      });
+    }
+  }
+  /**
+   * The element that top-level widgets float in. It covers the viewport and is created on first
+   * use.
+   *
+   * @type {HTMLElement}
+   */
+  get layer() {
+    if (!this._layer || !this._layer.isConnected) {
+      this._layer = document.createElement("div");
+      this._layer.className = "wy-screen";
+      document.body.append(this._layer);
+    }
+    return this._layer;
+  }
+  /**
+   * Returns a z-index above everything returned before.
+   *
+   * @returns {number}
+   */
+  nextZIndex() {
+    this._zIndex += 1;
+    return this._zIndex;
+  }
+  _measure() {
+    const root = document.documentElement;
+    return {
+      width: root.clientWidth || window.innerWidth,
+      height: root.clientHeight || window.innerHeight
+    };
+  }
+};
+defineProperties(Screen, {
+  /**
+   * The size of the viewport, as `{width, height}`.
+   */
+  size: {
+    readOnly: true,
+    get() {
+      return { ...this._size };
+    }
+  },
+  /**
+   * The width of the viewport.
+   */
+  width: {
+    readOnly: true,
+    get() {
+      return this._size.width;
+    }
+  },
+  /**
+   * The height of the viewport.
+   */
+  height: {
+    readOnly: true,
+    get() {
+      return this._size.height;
+    }
+  }
+});
+var getScreen = lazySingleton(() => new Screen());
+
+// src/core/application.js
+var FOCUSABLE_SELECTOR = 'input, textarea, select, button, a[href], [contenteditable]:not([contenteditable="false"]), [tabindex]:not([tabindex="-1"])';
+var THEMES = ["light", "dark", "auto"];
+var ApplicationClass = class extends Instance {
+  static {
+    __name(this, "ApplicationClass");
+  }
+  _initialize() {
+    super._initialize();
+    this._windows = /* @__PURE__ */ new Set();
+    this._loaded = false;
+    this._domListeners = /* @__PURE__ */ new Map();
+    if (typeof document === "undefined") {
+      return;
+    }
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", () => this._onLoad(), { once: true });
+    } else {
+      queueMicrotask(() => this._onLoad());
+    }
+    document.addEventListener("focusin", (event) => this._onDocumentFocusIn(event), true);
+    document.addEventListener(
+      "pointerdown",
+      (event) => this._onDocumentPointerDown(event),
+      true
+    );
+    document.addEventListener("mousedown", (event) => this._onDocumentMouseDown(event), true);
+  }
+  /**
+   * Runs a function once the document is ready (immediately if it already is).
+   *
+   * @param {() => void} method
+   */
+  ready(method) {
+    if (this._loaded) {
+      method();
+    } else {
+      this.connect("load", method);
+    }
+  }
+  /**
+   * The screen singleton.
+   *
+   * @type {import('./screen.js').Screen}
+   */
+  get screen() {
+    return getScreen();
+  }
+  /**
+   * All windows that exist (shown or not).
+   *
+   * @type {import('../widgets/abstract-window.js').AbstractWindow[]}
+   */
+  get windows() {
+    return [...this._windows];
+  }
+  /**
+   * Enables application event signals.
+   *
+   * @param {number} events One or more `Events`.
+   */
+  enableEvents(events) {
+    this.events = this._events | events;
+  }
+  /**
+   * Disables application event signals.
+   *
+   * @param {number} events One or more `Events`.
+   */
+  disableEvents(events) {
+    this.events = this._events & ~events;
+  }
+  /**
+   * Registers a window. Called by windows.
+   *
+   * @protected
+   * @param {import('../widgets/abstract-window.js').AbstractWindow} window
+   */
+  _addWindow(window2) {
+    this._windows.add(window2);
+  }
+  /**
+   * Unregisters a window. Called by windows.
+   *
+   * @protected
+   * @param {import('../widgets/abstract-window.js').AbstractWindow} window
+   */
+  _removeWindow(window2) {
+    this._windows.delete(window2);
+    if (this._activeWindow === window2) {
+      this.activeWindow = null;
+    }
+    if (this._mainWindow === window2) {
+      this._setMainWindow(null);
+    }
+  }
+  /**
+   * @protected
+   * @param {import('../widgets/main-window.js').MainWindow | null} mainWindow
+   */
+  _setMainWindow(mainWindow) {
+    if (this._mainWindow !== mainWindow) {
+      this._mainWindow = mainWindow;
+      this.emit("main-window-change", this);
+    }
+  }
+  /**
+   * Updates the global focus widget. Called by windows.
+   *
+   * @protected
+   * @param {import('../widgets/widget.js').Widget | null} widget
+   */
+  _setFocusWidget(widget) {
+    if (this._focusWidget !== widget) {
+      this._focusWidget = widget;
+      this.emit("focus-widget-change", this);
+    }
+  }
+  /**
+   * The topmost visible modal window, or `null`.
+   *
+   * @type {import('../widgets/abstract-window.js').AbstractWindow | null}
+   */
+  get modalWindow() {
+    let result = null;
+    for (const window2 of this._windows) {
+      if (window2.modal && window2.visible && (!result || window2.zIndex > result.zIndex)) {
+        result = window2;
+      }
+    }
+    return result;
+  }
+  _onLoad() {
+    if (this._loaded) {
+      return;
+    }
+    this._loaded = true;
+    this._applyTheme();
+    this.emit("load", this);
+  }
+  _findWindow(node) {
+    for (const window2 of this._windows) {
+      if (window2.visible && window2.el.contains(node)) {
+        return window2;
+      }
+    }
+    return null;
+  }
+  _onDocumentFocusIn(event) {
+    const window2 = this._findWindow(event.target);
+    if (window2) {
+      window2._activateFromFocus();
+    } else if (this._isInPopup(event.target)) {
+    } else if (this._activeWindow && !this._activeWindow.el.contains(event.target)) {
+      this.activeWindow = null;
+    }
+  }
+  /**
+   * Whether a node is in a popup in the screen layer (a menu, popover or tooltip), rather than
+   * in a window.
+   *
+   * @param {Node} node
+   * @returns {boolean}
+   */
+  _isInPopup(node) {
+    const element = node instanceof Element ? node : node?.parentElement;
+    const layer = element?.closest(".wy-screen, [data-wy-popup]");
+    return Boolean(layer && !this._findWindow(element));
+  }
+  _onDocumentPointerDown(event) {
+    const window2 = this._findWindow(event.target);
+    if (window2 && !window2.active) {
+      window2.active = true;
+    }
+  }
+  _syncEventListeners() {
+    for (const [bubbleMask, captureMask, domName, type] of EVENT_BINDINGS) {
+      for (const capture of [false, true]) {
+        const mask = capture ? captureMask : bubbleMask;
+        const wanted = Boolean(mask && this._events & mask);
+        const key = `${domName}:${capture}`;
+        const existing = this._domListeners.get(key);
+        if (wanted && !existing) {
+          const listener = /* @__PURE__ */ __name((nativeEvent) => {
+            const event = createToolkitEvent(nativeEvent, type, this);
+            const prefix = capture ? "capture-" : "";
+            if (this.emit(`${prefix}${type}-event`, this, event) || this.emit(`${prefix}event`, this, event)) {
+              nativeEvent.stopPropagation();
+              nativeEvent.preventDefault();
+            }
+          }, "listener");
+          document.addEventListener(domName, listener, { capture, passive: false });
+          this._domListeners.set(key, listener);
+        } else if (!wanted && existing) {
+          document.removeEventListener(domName, existing, { capture });
+          this._domListeners.delete(key);
+        }
+      }
+    }
+  }
+  _onDocumentMouseDown(event) {
+    const target = event.target;
+    if (!(target instanceof Element) || !(this._findWindow(target) || this._isInPopup(target))) {
+      return;
+    }
+    if (target.closest(FOCUSABLE_SELECTOR) || target.closest(".wy-selectable")) {
+      return;
+    }
+    event.preventDefault();
+  }
+  _applyTheme() {
+    if (typeof document === "undefined") {
+      return;
+    }
+    const root = document.documentElement;
+    root.dataset.wyTheme = this._theme;
+    if (this._accentColor) {
+      root.style.setProperty("--wy-accent", this._accentColor);
+    } else {
+      root.style.removeProperty("--wy-accent");
+    }
+  }
+};
+defineProperties(ApplicationClass, {
+  /**
+   * The active window, which has the keyboard focus. Set `null` to deactivate it.
+   */
+  activeWindow: {
+    value: null,
+    set(window2) {
+      const old = this._activeWindow;
+      if (old === window2) {
+        return false;
+      }
+      const modal = this.modalWindow;
+      if (window2 && modal && modal !== window2 && !window2._isAbove(modal)) {
+        modal._blink();
+        return false;
+      }
+      this._activeWindow = window2;
+      old?._setActive(false);
+      window2?._setActive(true);
+      if (!window2) {
+        this._setFocusWidget(null);
+      }
+    }
+  },
+  /**
+   * The main window, or `null`.
+   */
+  mainWindow: { value: null, readOnly: true },
+  /**
+   * The widget with the keyboard focus, or `null`. Setting it focuses the widget and activates
+   * its window.
+   */
+  focusWidget: {
+    value: null,
+    set(widget) {
+      if (widget) {
+        widget.hasFocus = true;
+      } else {
+        this._focusWidget?.blur();
+      }
+      return false;
+    }
+  },
+  /**
+   * The mask of `Events` whose signals the application emits for events on the page.
+   */
+  events: {
+    value: Events.NONE,
+    changed() {
+      this._syncEventListeners();
+    }
+  },
+  /**
+   * The color theme: `'light'` (the classic look), `'dark'` or `'auto'` (follows the system).
+   */
+  theme: {
+    value: "light",
+    coerce(theme) {
+      if (!THEMES.includes(theme)) {
+        throw new RangeError(`Unknown theme '${theme}'; use one of ${THEMES.join(", ")}.`);
+      }
+      return theme;
+    },
+    changed() {
+      this._applyTheme();
+    }
+  },
+  /**
+   * The accent (selection and highlight) color as a CSS color, or `null` for the theme's blue.
+   */
+  accentColor: {
+    value: null,
+    changed() {
+      this._applyTheme();
+    }
+  },
+  /**
+   * Delay in milliseconds before a tooltip appears.
+   */
+  tooltipAppearDelay: {
+    get() {
+      return settings.tooltipAppearDelay;
+    },
+    set(delay) {
+      settings.tooltipAppearDelay = delay;
+    }
+  },
+  /**
+   * Maximum time in milliseconds between presses of a double (or triple) press.
+   */
+  multiplePressInterval: {
+    get() {
+      return settings.multiplePressInterval;
+    },
+    set(interval) {
+      settings.multiplePressInterval = interval;
+    }
+  },
+  /**
+   * Delay in milliseconds before a submenu opens on hover.
+   */
+  submenuDelay: {
+    get() {
+      return settings.submenuDelay;
+    },
+    set(delay) {
+      settings.submenuDelay = delay;
+    }
+  },
+  /**
+   * Distance in pixels the pointer must move before a drag starts.
+   */
+  dragThreshold: {
+    get() {
+      return settings.dragThreshold;
+    },
+    set(distance) {
+      settings.dragThreshold = distance;
+    }
+  }
+});
+var Application = new ApplicationClass();
+
+// src/core/cursor.js
+var CSS_CURSORS = Object.freeze({
+  [CursorShape.ARROW]: "default",
+  [CursorShape.MOVE]: "move",
+  [CursorShape.CROSSHAIR]: "crosshair",
+  [CursorShape.WAIT]: "wait",
+  [CursorShape.BUSY]: "progress",
+  [CursorShape.TEXT]: "text",
+  [CursorShape.HELP]: "help",
+  [CursorShape.POINTING_HAND]: "pointer",
+  [CursorShape.OPEN_HAND]: "grab",
+  [CursorShape.CLOSED_HAND]: "grabbing",
+  [CursorShape.NO_DROP]: "no-drop",
+  [CursorShape.COPY]: "copy",
+  [CursorShape.ALIAS]: "alias",
+  [CursorShape.RESIZE_N]: "n-resize",
+  [CursorShape.RESIZE_NE]: "ne-resize",
+  [CursorShape.RESIZE_E]: "e-resize",
+  [CursorShape.RESIZE_SE]: "se-resize",
+  [CursorShape.RESIZE_S]: "s-resize",
+  [CursorShape.RESIZE_SW]: "sw-resize",
+  [CursorShape.RESIZE_W]: "w-resize",
+  [CursorShape.RESIZE_NW]: "nw-resize",
+  [CursorShape.RESIZE_H]: "ew-resize",
+  [CursorShape.RESIZE_V]: "ns-resize"
+});
+var Cursor = class extends Instance {
+  static {
+    __name(this, "Cursor");
+  }
+  _initialize() {
+    super._initialize();
+    this._stack = [];
+  }
+  /**
+   * Pushes a cursor shape.
+   *
+   * @param {string} shape One of `CursorShape`.
+   * @param {string} [context] Identifies the pusher, so it can pop its own shapes.
+   */
+  pushShape(shape, context = "default") {
+    this._stack.push({ shape, context });
+    this._apply();
+  }
+  /**
+   * Pops the most recent shape pushed with the given context.
+   *
+   * @param {string} [context]
+   */
+  popShape(context = "default") {
+    for (let i = this._stack.length - 1; i >= 0; --i) {
+      if (this._stack[i].context === context) {
+        this._stack.splice(i, 1);
+        break;
+      }
+    }
+    this._apply();
+  }
+  /**
+   * The shape currently shown, or `null` when the page's own cursors apply.
+   *
+   * @type {string | null}
+   */
+  get shape() {
+    return this._stack.length ? this._stack[this._stack.length - 1].shape : null;
+  }
+  _apply() {
+    const root = document.documentElement;
+    const shape = this.shape;
+    if (shape) {
+      root.style.setProperty("--wy-cursor-override", CSS_CURSORS[shape] || "default");
+      root.classList.add("wy-cursor-override");
+    } else {
+      root.style.removeProperty("--wy-cursor-override");
+      root.classList.remove("wy-cursor-override");
+    }
+  }
+};
+var getCursor = lazySingleton(() => new Cursor());
+
+// src/core/popup.js
+function computePopupPosition(anchor, size, options = {}) {
+  const side = options.side || "bottom";
+  const align = options.align || "start";
+  const offset = options.offset || 0;
+  const bounds = options.bounds || getScreen().size;
+  const vertical = side === "bottom" || side === "top";
+  const before = vertical ? anchor.y - offset : anchor.x - offset;
+  const after = vertical ? bounds.height - (anchor.y + anchor.height + offset) : bounds.width - (anchor.x + anchor.width + offset);
+  const extent = vertical ? size.height : size.width;
+  let placeAfter = side === "bottom" || side === "right";
+  if (placeAfter && extent > after && (extent <= before || before > after)) {
+    placeAfter = false;
+  } else if (!placeAfter && extent > before && (extent <= after || after > before)) {
+    placeAfter = true;
+  }
+  let main;
+  if (vertical) {
+    main = placeAfter ? anchor.y + anchor.height + offset : anchor.y - offset - size.height;
+  } else {
+    main = placeAfter ? anchor.x + anchor.width + offset : anchor.x - offset - size.width;
+  }
+  const crossStart = vertical ? anchor.x : anchor.y;
+  const crossLength = vertical ? anchor.width : anchor.height;
+  const crossSize = vertical ? size.width : size.height;
+  const crossBound = vertical ? bounds.width : bounds.height;
+  let cross;
+  if (align === "end") {
+    cross = crossStart + crossLength - crossSize;
+  } else if (align === "center") {
+    cross = crossStart + (crossLength - crossSize) / 2;
+  } else {
+    cross = crossStart;
+  }
+  cross = Math.max(0, Math.min(cross, crossBound - crossSize));
+  const mainBound = vertical ? bounds.height : bounds.width;
+  main = Math.max(0, Math.min(main, mainBound - extent));
+  const resultSide = placeAfter ? vertical ? "bottom" : "right" : vertical ? "top" : "left";
+  return vertical ? { x: Math.round(cross), y: Math.round(main), side: resultSide } : { x: Math.round(main), y: Math.round(cross), side: resultSide };
+}
+__name(computePopupPosition, "computePopupPosition");
+function placePopup(element, anchor, options = {}) {
+  const rect = anchor instanceof Element ? anchor.getBoundingClientRect() : anchor;
+  const anchorRect = {
+    x: rect.x ?? rect.left,
+    y: rect.y ?? rect.top,
+    width: rect.width,
+    height: rect.height
+  };
+  const size = { width: element.offsetWidth, height: element.offsetHeight };
+  const position = computePopupPosition(anchorRect, size, options);
+  element.style.left = `${position.x}px`;
+  element.style.top = `${position.y}px`;
+  element.dataset.side = position.side;
+  return position;
+}
+__name(placePopup, "placePopup");
+function pointRectangle(x, y) {
+  return { x, y, width: 0, height: 0 };
+}
+__name(pointRectangle, "pointRectangle");
+
+// src/events/drag-context.js
+var DragAction = Object.freeze({
+  MOVE: "move",
+  COPY: "copy",
+  LINK: "link"
+});
+var DragContext = class extends Instance {
+  static {
+    __name(this, "DragContext");
+  }
+  _initialize() {
+    super._initialize();
+    this._types = /* @__PURE__ */ new Set();
+    this._data = /* @__PURE__ */ new Map();
+  }
+  /**
+   * Sets the data of a type, and announces the type.
+   *
+   * @param {string} type
+   * @param {unknown} data
+   */
+  setData(type, data) {
+    this._types.add(type);
+    this._data.set(type, data);
+  }
+  /**
+   * Gets the data of a type, requesting it from the source if it was announced but not set.
+   *
+   * @param {string} type
+   * @returns {unknown} The data, or `null`.
+   */
+  getData(type) {
+    if (!this._data.has(type) && this._types.has(type)) {
+      this.emit("data-request", this, type);
+    }
+    return this._data.has(type) ? this._data.get(type) : null;
+  }
+  /**
+   * Announces a type the source can provide.
+   *
+   * @param {string} type
+   */
+  addType(type) {
+    this._types.add(type);
+  }
+  /**
+   * Whether the session offers a type.
+   *
+   * @param {string} type
+   * @returns {boolean}
+   */
+  supportsType(type) {
+    return this._types.has(type);
+  }
+  /**
+   * The offered types.
+   *
+   * @type {string[]}
+   */
+  get types() {
+    return [...this._types];
+  }
+};
+defineProperties(DragContext, {
+  /**
+   * The widget the drag started on.
+   */
+  source: { value: null },
+  /**
+   * The widget that accepted the drop, or `null` (set when the drop was accepted).
+   */
+  target: { value: null },
+  /**
+   * The actions the source allows, a subset of `DragAction` values.
+   */
+  actions: { value: Object.freeze([DragAction.MOVE]) },
+  /**
+   * The action of the drop: one of `actions`. Targets may change it during `drag-motion`, e.g.
+   * to copy when Control is held.
+   */
+  action: {
+    value: DragAction.MOVE,
+    coerce(action) {
+      if (!Object.values(DragAction).includes(action)) {
+        throw new RangeError(`Unknown drag action '${action}'.`);
+      }
+      return action;
+    }
+  },
+  /**
+   * Text or an element shown next to the pointer while dragging, or `null` for none.
+   */
+  icon: { value: null },
+  /**
+   * Whether the drop was accepted by a target.
+   */
+  accepted: { value: false },
+  /**
+   * Whether the session was canceled (with Escape).
+   */
+  canceled: { value: false }
+});
+
+// src/events/drag-manager.js
+function getChain(widget) {
+  const chain = [];
+  while (widget) {
+    chain.push(widget);
+    widget = widget.parent;
+  }
+  return chain;
+}
+__name(getChain, "getChain");
+function dispatchThroughChain(event, chain, propagate = true) {
+  const mask = EVENT_MASKS[event.type];
+  const captureMask = propagate ? mask << 1 : 0;
+  if (!propagate) {
+    const widget = chain[0];
+    return widget && widget.events & mask && widget._dispatchEvent(event, false) ? widget : null;
+  }
+  for (let i = chain.length - 1; i >= 0; --i) {
+    const widget = chain[i];
+    if (widget.events & captureMask && widget._dispatchEvent(event, true)) {
+      return widget;
+    }
+  }
+  for (const widget of chain) {
+    if (widget.events & mask && widget._dispatchEvent(event, false)) {
+      return widget;
+    }
+  }
+  return null;
+}
+__name(dispatchThroughChain, "dispatchThroughChain");
+var DragManager = class {
+  static {
+    __name(this, "DragManager");
+  }
+  constructor() {
+    this._pending = null;
+    this._context = null;
+    this._sourceWidget = null;
+    this._targetWidget = null;
+    this._iconEl = null;
+    this._suppressClick = false;
+    this._onPointerMove = this._onPointerMove.bind(this);
+    this._onPointerUp = this._onPointerUp.bind(this);
+    this._onKeyDown = this._onKeyDown.bind(this);
+    document.addEventListener("pointerdown", (event) => this._onPointerDown(event), true);
+    document.addEventListener(
+      "click",
+      (event) => {
+        if (this._suppressClick) {
+          this._suppressClick = false;
+          event.stopPropagation();
+          event.preventDefault();
+        }
+      },
+      true
+    );
+  }
+  /**
+   * The context of the current drag session, or `null`.
+   *
+   * @type {DragContext | null}
+   */
+  get context() {
+    return this._context;
+  }
+  /**
+   * Whether a drag is in progress.
+   *
+   * @type {boolean}
+   */
+  get dragging() {
+    return this._context !== null;
+  }
+  /**
+   * Cancels the current drag, if any.
+   */
+  cancel() {
+    if (this._context) {
+      this._context.canceled = true;
+      this._finish(null);
+    }
+    this._pending = null;
+    this._removeListeners();
+  }
+  _onPointerDown(event) {
+    if (event.button !== 0 || this._context) {
+      return;
+    }
+    let widget = Widget.fromElement(event.target);
+    while (widget && !widget.draggable) {
+      widget = widget.parent;
+    }
+    if (!widget || !widget.isSensitive) {
+      return;
+    }
+    this._pending = {
+      pointerId: event.pointerId,
+      x: event.pageX,
+      y: event.pageY,
+      target: event.target,
+      nativeEvent: event
+    };
+    this._addListeners();
+  }
+  _addListeners() {
+    document.addEventListener("pointermove", this._onPointerMove, true);
+    document.addEventListener("pointerup", this._onPointerUp, true);
+    document.addEventListener("pointercancel", this._onPointerUp, true);
+    document.addEventListener("keydown", this._onKeyDown, true);
+  }
+  _removeListeners() {
+    document.removeEventListener("pointermove", this._onPointerMove, true);
+    document.removeEventListener("pointerup", this._onPointerUp, true);
+    document.removeEventListener("pointercancel", this._onPointerUp, true);
+    document.removeEventListener("keydown", this._onKeyDown, true);
+  }
+  _onPointerMove(event) {
+    const pending = this._pending;
+    if (pending && event.pointerId === pending.pointerId && !this._context) {
+      const distance = Math.hypot(event.pageX - pending.x, event.pageY - pending.y);
+      if (distance >= settings.dragThreshold) {
+        this._start(event);
+      }
+      return;
+    }
+    if (this._context) {
+      this._move(event);
+    }
+  }
+  _start(event) {
+    const pending = this._pending;
+    this._pending = null;
+    const context = new DragContext();
+    const chain = getChain(Widget.fromElement(pending.target));
+    const startEvent = new DragStartEvent(
+      chain[0],
+      getModifiers(event),
+      pending.x,
+      pending.y,
+      context,
+      event
+    );
+    const source = dispatchThroughChain(startEvent, chain);
+    if (!source) {
+      context.destroy();
+      this._removeListeners();
+      return;
+    }
+    context.source = source;
+    context.connect("data-request", (_context, type) => {
+      const request = new DragDataRequestEvent(
+        source,
+        getModifiers(event),
+        event.pageX,
+        event.pageY,
+        context,
+        type
+      );
+      dispatchThroughChain(request, [source], false);
+    });
+    this._context = context;
+    this._sourceWidget = source;
+    try {
+      pending.target.releasePointerCapture?.(pending.pointerId);
+    } catch (_error) {
+    }
+    source.el.classList.add("wy-drag-source");
+    getCursor().pushShape(CursorShape.CLOSED_HAND, "drag");
+    this._showIcon(event);
+    this._move(event);
+  }
+  _move(event) {
+    const context = this._context;
+    this._placeIcon(event);
+    const target = this._findDroppable(event);
+    if (target !== this._targetWidget) {
+      const modifiers = getModifiers(event);
+      if (this._targetWidget) {
+        const leave = new DragCrossingEvent(
+          this._targetWidget,
+          modifiers,
+          event.pageX,
+          event.pageY,
+          false,
+          context,
+          target,
+          event
+        );
+        dispatchThroughChain(leave, [this._targetWidget], false);
+        this._targetWidget.el.classList.remove("wy-drop-target");
+      }
+      const previous = this._targetWidget;
+      this._targetWidget = target;
+      if (target) {
+        const enter = new DragCrossingEvent(
+          target,
+          modifiers,
+          event.pageX,
+          event.pageY,
+          true,
+          context,
+          previous,
+          event
+        );
+        dispatchThroughChain(enter, [target], false);
+        target.el.classList.add("wy-drop-target");
+      }
+    }
+    if (target) {
+      const motion = new DragMotionEvent(
+        Widget.fromElement(this._hitTest(event)) || target,
+        getModifiers(event),
+        event.pageX,
+        event.pageY,
+        context,
+        event
+      );
+      dispatchThroughChain(motion, getChain(motion.source));
+    }
+    getCursor().popShape("drag");
+    getCursor().pushShape(target ? CursorShape.CLOSED_HAND : CursorShape.NO_DROP, "drag");
+  }
+  _onPointerUp(event) {
+    if (this._pending && event.pointerId === this._pending.pointerId) {
+      this._pending = null;
+      this._removeListeners();
+      return;
+    }
+    if (!this._context) {
+      return;
+    }
+    this._suppressClick = true;
+    setTimeout(() => this._suppressClick = false, 0);
+    let dropWidget = null;
+    const target = this._findDroppable(event);
+    if (target) {
+      const drop = new DragDropEvent(
+        Widget.fromElement(this._hitTest(event)) || target,
+        getModifiers(event),
+        event.pageX,
+        event.pageY,
+        this._context,
+        event
+      );
+      dropWidget = dispatchThroughChain(drop, getChain(drop.source));
+    }
+    this._finish(dropWidget, event);
+  }
+  _onKeyDown(event) {
+    if (event.key === Key.ESCAPE && (this._context || this._pending)) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.cancel();
+    }
+  }
+  _finish(dropWidget, event = null) {
+    const context = this._context;
+    const source = this._sourceWidget;
+    if (this._targetWidget) {
+      if (!dropWidget && !context.canceled && event) {
+        const leave = new DragCrossingEvent(
+          this._targetWidget,
+          getModifiers(event),
+          event.pageX,
+          event.pageY,
+          false,
+          context,
+          null,
+          event
+        );
+        dispatchThroughChain(leave, [this._targetWidget], false);
+      }
+      this._targetWidget.el.classList.remove("wy-drop-target");
+    }
+    if (dropWidget) {
+      context.target = dropWidget;
+      context.accepted = true;
+    }
+    this._context = null;
+    this._sourceWidget = null;
+    this._targetWidget = null;
+    this._removeListeners();
+    this._hideIcon();
+    getCursor().popShape("drag");
+    if (source && !source.destroyed) {
+      source.el.classList.remove("wy-drag-source");
+      const end = new DragEndEvent(
+        source,
+        event ? getModifiers(event) : 0,
+        event?.pageX ?? 0,
+        event?.pageY ?? 0,
+        context,
+        event
+      );
+      dispatchThroughChain(end, [source], false);
+    }
+    context.destroy();
+  }
+  _hitTest(event) {
+    return document.elementFromPoint(event.clientX, event.clientY);
+  }
+  _findDroppable(event) {
+    let widget = Widget.fromElement(this._hitTest(event));
+    while (widget && !(widget.droppable && widget.isSensitive)) {
+      widget = widget.parent;
+    }
+    return widget;
+  }
+  _showIcon(event) {
+    const icon = this._context.icon;
+    if (!icon) {
+      return;
+    }
+    const element = document.createElement("div");
+    element.className = "wy-drag-icon";
+    if (typeof icon === "string") {
+      element.textContent = icon;
+    } else {
+      element.append(icon);
+    }
+    element.style.zIndex = String(getScreen().nextZIndex());
+    getScreen().layer.append(element);
+    this._iconEl = element;
+    this._placeIcon(event);
+  }
+  _placeIcon(event) {
+    if (this._iconEl) {
+      this._iconEl.style.left = `${event.clientX + 12}px`;
+      this._iconEl.style.top = `${event.clientY + 12}px`;
+    }
+  }
+  _hideIcon() {
+    this._iconEl?.remove();
+    this._iconEl = null;
+  }
+};
+var getDragManager = lazySingleton(() => new DragManager());
+if (typeof document !== "undefined") {
+  getDragManager();
+}
+
+// src/widgets/container.js
+var Container = class _Container extends Widget {
+  static {
+    __name(this, "Container");
+  }
+  _initialize() {
+    this._children = [];
+    super._initialize();
+    this.el.classList.add("wy-container");
+  }
+  /**
+   * The element the children's elements are placed in.
+   *
+   * @type {HTMLElement}
+   */
+  get bodyElement() {
+    return this._bodyEl || this.el;
+  }
+  /**
+   * Adds a widget at the end. A widget can only be in one container at a time.
+   *
+   * @param {Widget} widget
+   * @returns {Widget} The widget.
+   */
+  addChild(widget) {
+    return this.insertChild(widget, this._children.length);
+  }
+  /**
+   * Adds a widget at the start.
+   *
+   * @param {Widget} widget
+   * @returns {Widget} The widget.
+   */
+  prependChild(widget) {
+    return this.insertChild(widget, 0);
+  }
+  /**
+   * Inserts a widget at an index.
+   *
+   * @param {Widget} widget
+   * @param {number} index Between 0 and `childrenCount`.
+   * @returns {Widget} The widget.
+   */
+  insertChild(widget, index) {
+    if (!(widget instanceof Widget)) {
+      throw new TypeError("Only widgets can be added to a container.");
+    }
+    if (index < 0 || index > this._children.length) {
+      throw new RangeError(`Invalid child index ${index}.`);
+    }
+    widget._setParent(this);
+    this._children.splice(index, 0, widget);
+    this._attachChildElement(widget, index);
+    widget._onParented();
+    this._onChildrenChange();
+    this.emit("child-add", this, widget);
+    return widget;
+  }
+  /**
+   * Removes a widget. To also destroy it, call its `destroy()` instead, which removes it from its
+   * container.
+   *
+   * @param {Widget} widget A child of this container.
+   * @returns {number} The index the widget had.
+   * @throws {Error} If the widget is not a child.
+   */
+  removeChild(widget) {
+    const index = this._children.indexOf(widget);
+    if (index < 0) {
+      throw new Error("The widget is not a child of this container.");
+    }
+    this._children.splice(index, 1);
+    this._detachChildElement(widget);
+    widget._setParent(null);
+    if (this._focusChild === widget) {
+      this._setFocusChild(null);
+    }
+    this._onChildrenChange();
+    this.emit("child-remove", this, widget);
+    return index;
+  }
+  /**
+   * Removes the child at an index.
+   *
+   * @param {number} index
+   * @returns {Widget} The removed widget.
+   */
+  removeChildAt(index) {
+    const widget = this.getChild(index);
+    this.removeChild(widget);
+    return widget;
+  }
+  /**
+   * Destroys all children, like the original toolkit's `removeAllChildren()`.
+   */
+  removeAllChildren() {
+    for (const widget of [...this._children].reverse()) {
+      widget.destroy();
+    }
+  }
+  /**
+   * Moves a child to another index.
+   *
+   * @param {Widget} widget
+   * @param {number} index
+   */
+  reorderChild(widget, index) {
+    const oldIndex = this._children.indexOf(widget);
+    if (oldIndex < 0) {
+      throw new Error("The widget is not a child of this container.");
+    }
+    this._children.splice(oldIndex, 1);
+    index = Math.max(0, Math.min(index, this._children.length));
+    this._children.splice(index, 0, widget);
+    this._detachChildElement(widget);
+    this._attachChildElement(widget, index);
+    this._onChildrenChange();
+  }
+  /**
+   * Returns the child at an index.
+   *
+   * @param {number} index
+   * @returns {Widget}
+   * @throws {RangeError} If there is no such child.
+   */
+  getChild(index) {
+    const widget = this._children[index];
+    if (!widget) {
+      throw new RangeError(`There is no child at index ${index}.`);
+    }
+    return widget;
+  }
+  /**
+   * Returns the index of a child, or -1.
+   *
+   * @param {Widget} widget
+   * @returns {number}
+   */
+  indexOf(widget) {
+    return this._children.indexOf(widget);
+  }
+  /**
+   * Calls a function for every child, optionally for all descendants (in post-order).
+   *
+   * @param {(widget: Widget, index: number) => void} method
+   * @param {object} [context]
+   * @param {boolean} [recursive]
+   */
+  forEach(method, context, recursive = false) {
+    this._children.forEach((child, index) => {
+      if (recursive && child instanceof _Container) {
+        child.forEach(method, context, true);
+      }
+      method.call(context, child, index);
+    });
+  }
+  /**
+   * Finds a descendant by `name`.
+   *
+   * @param {string} name
+   * @returns {Widget | null}
+   */
+  findByName(name) {
+    for (const child of this._children) {
+      if (child.name === name) {
+        return child;
+      }
+      if (child instanceof _Container) {
+        const result = child.findByName(name);
+        if (result) {
+          return result;
+        }
+      }
+    }
+    return null;
+  }
+  /**
+   * Returns the widgets that take part in keyboard focus navigation, in order. Containers that
+   * show only some children (like a notebook) override this.
+   *
+   * @protected
+   * @returns {Widget[]}
+   */
+  _getFocusChain() {
+    const chain = [];
+    for (const child of this._children) {
+      if (!child.isVisible || !child.isSensitive) {
+        continue;
+      }
+      if (child.canFocus) {
+        chain.push(child);
+      }
+      if (child instanceof _Container) {
+        chain.push(...child._getFocusChain());
+      }
+    }
+    return chain;
+  }
+  /**
+   * Places a child's element in the body. Containers with a custom structure override this.
+   *
+   * @protected
+   * @param {Widget} widget
+   * @param {number} index
+   */
+  _attachChildElement(widget, index) {
+    const next = this._children[index + 1];
+    this.bodyElement.insertBefore(widget.el, next ? next.el : null);
+  }
+  /**
+   * Removes a child's element from the body.
+   *
+   * @protected
+   * @param {Widget} widget
+   */
+  _detachChildElement(widget) {
+    widget.el.remove();
+  }
+  /**
+   * Called after children were added, removed or reordered.
+   *
+   * @protected
+   */
+  _onChildrenChange() {
+    this._refreshExpand();
+    this._queueLayout();
+  }
+  /**
+   * Called when a child's `visible` changed.
+   *
+   * @protected
+   * @param {Widget} _widget
+   */
+  _onChildVisibleChange(_widget) {
+    this._refreshExpand();
+    this._queueLayout();
+  }
+  /**
+   * Called when a child's effective expand flags changed.
+   *
+   * @protected
+   * @param {Widget} _widget
+   */
+  _onChildExpandChange(_widget) {
+    this._refreshExpand();
+    this._queueLayout();
+  }
+  /**
+   * Called when a child's layout properties (alignment, margins, size request) changed.
+   *
+   * @protected
+   * @param {Widget} _widget
+   */
+  _onChildLayoutChange(_widget) {
+    this._queueLayout();
+  }
+  _computeExpand(direction) {
+    const property = direction === "h" ? "isHExpand" : "isVExpand";
+    return this._children.some((child) => child.visible && child[property]);
+  }
+  _onIsVisibleChange(isVisible) {
+    super._onIsVisibleChange(isVisible);
+    for (const child of this._children) {
+      child._recalculateVisibility();
+    }
+  }
+  _onIsSensitiveChange(isSensitive) {
+    super._onIsSensitiveChange(isSensitive);
+    for (const child of this._children) {
+      child._recalculateSensitivity();
+    }
+  }
+  /**
+   * Sets the child that is or contains the focus widget, and so on up the tree.
+   *
+   * @protected
+   * @param {Widget | null} widget
+   */
+  _setFocusChild(widget) {
+    if (this._focusChild === widget) {
+      return;
+    }
+    const old = this._focusChild;
+    this._focusChild = widget;
+    if (old instanceof _Container && old._focusChild) {
+      old._focusChild = null;
+      old._clearFocusChain();
+    }
+    this.emit("focus-child-change", this);
+  }
+  _clearFocusChain() {
+    const old = this._focusChild;
+    this._focusChild = null;
+    if (old instanceof _Container) {
+      old._clearFocusChain();
+    }
+    this.emit("focus-child-change", this);
+  }
+  destroy() {
+    for (const widget of [...this._children].reverse()) {
+      widget.destroy();
+    }
+    super.destroy();
+  }
+};
+defineProperties(Container, {
+  /**
+   * The children, in order. Do not modify the array.
+   */
+  children: {
+    readOnly: true,
+    get() {
+      return this._children;
+    }
+  },
+  /**
+   * The number of children.
+   */
+  childrenCount: {
+    readOnly: true,
+    get() {
+      return this._children.length;
+    }
+  },
+  /**
+   * The child that is or contains the focus widget of the window, or `null`.
+   */
+  focusChild: { value: null, readOnly: true }
+});
+
+// src/widgets/abstract-menu-item.js
+var AbstractMenuItem = class _AbstractMenuItem extends Container {
+  static {
+    __name(this, "AbstractMenuItem");
+  }
+  _initialize() {
+    super._initialize();
+    this.el.id = uniqueId("wy-menu-item");
+  }
+  /**
+   * Whether the item can be selected (highlighted) by its shell. Separators cannot.
+   *
+   * @protected
+   * @returns {boolean}
+   */
+  _isSelectable() {
+    return this.isVisible && this.isSensitive;
+  }
+  /**
+   * Whether the item and the items its menu hangs from are all sensitive, so that it can be
+   * activated, e.g. by its accelerator.
+   *
+   * @protected
+   * @returns {boolean}
+   */
+  _isChainSensitive() {
+    let item = this;
+    while (item) {
+      if (!item.isSensitive) {
+        return false;
+      }
+      const shell = item.parent;
+      if (shell?.isMenu) {
+        if (!shell.sensitive) {
+          return false;
+        }
+        const attached = shell.attachWidget;
+        item = attached instanceof _AbstractMenuItem ? attached : null;
+        if (attached && !(attached instanceof _AbstractMenuItem) && !attached.isSensitive) {
+          return false;
+        }
+      } else {
+        item = null;
+      }
+    }
+    return true;
+  }
+  /**
+   * Returns this item if its accelerator matches a key event, or an item of its submenu that
+   * matches. Overridden by menu items.
+   *
+   * @protected
+   * @param {KeyboardEvent} _event
+   * @returns {AbstractMenuItem | null}
+   */
+  _findAccelerator(_event) {
+    return null;
+  }
+  /**
+   * Sets whether the item is selected. Called by the menu shell.
+   *
+   * @protected
+   * @param {boolean} selected
+   */
+  _setSelected(selected) {
+    if (selected === this._selected) {
+      return;
+    }
+    this._selected = selected;
+    this.el.classList.toggle("wy-selected", selected);
+    this.emit("selected-change", this);
+  }
+  _setParent(parent) {
+    if (parent && !parent.isMenuShell) {
+      throw new Error("A menu item can only be added to a menu or a menu bar.");
+    }
+    super._setParent(parent);
+  }
+  _onIsVisibleChange(isVisible) {
+    super._onIsVisibleChange(isVisible);
+    if (!isVisible && this._selected) {
+      this.parent?._onItemGone?.(this);
+    }
+  }
+  _onIsSensitiveChange(isSensitive) {
+    super._onIsSensitiveChange(isSensitive);
+    if (!isSensitive && this._selected) {
+      this.parent?._onItemGone?.(this);
+    }
+  }
+};
+defineProperties(AbstractMenuItem, {
+  /**
+   * Whether the item is currently selected (highlighted) in its menu or menu bar.
+   */
+  selected: { value: false, readOnly: true }
+});
+
+// src/data/adjustment.js
+var Adjustment = class extends Instance {
+  static {
+    __name(this, "Adjustment");
+  }
+  _initialize() {
+    super._initialize();
+    this._batch = 0;
+    this._batchChanged = false;
+  }
+  /**
+   * Sets several values at once, emitting `change` once.
+   *
+   * @param {Record<string, unknown>} properties
+   * @returns {boolean}
+   */
+  set(properties) {
+    this._batch += 1;
+    let changed;
+    try {
+      const { value, ...rest } = properties;
+      changed = super.set(rest);
+      if (value !== void 0 && this.setProperty("value", value)) {
+        changed = true;
+      }
+    } finally {
+      this._batch -= 1;
+    }
+    if (!this._batch && this._batchChanged) {
+      this._batchChanged = false;
+      this.emit("change", this);
+    }
+    return changed;
+  }
+  /**
+   * The largest value the adjustment can have: `upper - pageSize`, but at least `lower`.
+   *
+   * @type {number}
+   */
+  get maximum() {
+    return Math.max(this._lower, this._upper - this._pageSize);
+  }
+  /**
+   * Increases the value by `stepIncrement`.
+   */
+  increment() {
+    this.value = this._value + this._stepIncrement;
+  }
+  /**
+   * Decreases the value by `stepIncrement`.
+   */
+  decrement() {
+    this.value = this._value - this._stepIncrement;
+  }
+  /**
+   * Increases the value by `pageIncrement`.
+   */
+  incrementPage() {
+    this.value = this._value + this._pageIncrement;
+  }
+  /**
+   * Decreases the value by `pageIncrement`.
+   */
+  decrementPage() {
+    this.value = this._value - this._pageIncrement;
+  }
+  /**
+   * Changes the value as little as possible so that the range [`lower`, `upper`] is visible,
+   * as far as it fits in the page. Used to scroll something into view.
+   *
+   * @param {number} lower
+   * @param {number} upper
+   */
+  clampPage(lower, upper) {
+    let value = this._value;
+    if (upper > value + this._pageSize) {
+      value = upper - this._pageSize;
+    }
+    if (lower < value) {
+      value = lower;
+    }
+    this.value = value;
+  }
+  _changed() {
+    if (this._batch) {
+      this._batchChanged = true;
+    } else {
+      this.emit("change", this);
+    }
+  }
+  _clampValue() {
+    const value = clamp(this._value, this._lower, this.maximum);
+    if (value !== this._value) {
+      this._value = value;
+      this.emit("value-change", this);
+    }
+  }
+};
+function nonNegative(value) {
+  return Math.max(0, Number(value) || 0);
+}
+__name(nonNegative, "nonNegative");
+defineProperties(Adjustment, {
+  /**
+   * The value, clamped to [`lower`, `upper - pageSize`].
+   */
+  value: {
+    value: 0,
+    coerce(value) {
+      return clamp(Number(value) || 0, this._lower, this.maximum);
+    },
+    changed() {
+      this._changed();
+    }
+  },
+  /**
+   * The value as a fraction from 0 (at `lower`) to 1 (at `upper - pageSize`).
+   */
+  fraction: {
+    signal: false,
+    get() {
+      const range = this.maximum - this._lower;
+      return range === 0 ? 0 : (this._value - this._lower) / range;
+    },
+    set(fraction) {
+      this.value = this._lower + clamp(fraction, 0, 1) * (this.maximum - this._lower);
+      return false;
+    }
+  },
+  /**
+   * The minimum value.
+   */
+  lower: {
+    value: 0,
+    coerce: Number,
+    changed(lower) {
+      if (lower > this._upper) {
+        this._upper = lower;
+        this.emit("upper-change", this);
+      }
+      this._clampValue();
+      this._changed();
+    }
+  },
+  /**
+   * The maximum value. The value itself is at most `upper - pageSize`.
+   */
+  upper: {
+    value: 0,
+    coerce: Number,
+    changed(upper) {
+      if (upper < this._lower) {
+        this._lower = upper;
+        this.emit("lower-change", this);
+      }
+      this._clampValue();
+      this._changed();
+    }
+  },
+  /**
+   * The small step, e.g. for arrow keys and scroll bar steppers.
+   */
+  stepIncrement: {
+    value: 1,
+    coerce: nonNegative,
+    changed() {
+      this._changed();
+    }
+  },
+  /**
+   * The large step, e.g. for Page Up and Page Down.
+   */
+  pageIncrement: {
+    value: 10,
+    coerce: nonNegative,
+    changed() {
+      this._changed();
+    }
+  },
+  /**
+   * The size of the visible page, for scrolling. Use 0 for plain values, such as in a slider.
+   */
+  pageSize: {
+    value: 0,
+    coerce: nonNegative,
+    changed() {
+      this._clampValue();
+      this._changed();
+    }
+  }
+});
+registerType("adjustment", Adjustment);
+
+// src/widgets/auto-repeat.js
+function startAutoRepeat(step, options = {}) {
+  const initialDelay = options.initialDelay ?? settings.repeatInitialDelay;
+  const interval = options.interval ?? settings.repeatInterval;
+  let timer = 0;
+  let count = 0;
+  let stopped = false;
+  function run() {
+    if (stopped) {
+      return;
+    }
+    if (step(count) === false) {
+      stopped = true;
+      return;
+    }
+    count += 1;
+    timer = setTimeout(run, count === 1 ? initialDelay : interval);
+  }
+  __name(run, "run");
+  run();
+  return () => {
+    stopped = true;
+    clearTimeout(timer);
+  };
+}
+__name(startAutoRepeat, "startAutoRepeat");
+function attachPressRepeat(element, options) {
+  let pointerId = null;
+  let inside = false;
+  let lastEvent = null;
+  let stop = null;
+  function onPointerDown(event) {
+    if (event.button !== 0 || pointerId !== null) {
+      return;
+    }
+    if (options.canStart && !options.canStart(event)) {
+      return;
+    }
+    event.preventDefault();
+    pointerId = event.pointerId;
+    inside = true;
+    lastEvent = event;
+    try {
+      element.setPointerCapture(pointerId);
+    } catch (_error) {
+    }
+    element.classList.add("wy-pressed");
+    stop = startAutoRepeat((count) => {
+      if (!inside && count > 0) {
+        return true;
+      }
+      return options.onStep(count, lastEvent);
+    });
+  }
+  __name(onPointerDown, "onPointerDown");
+  function onPointerMove(event) {
+    if (event.pointerId !== pointerId) {
+      return;
+    }
+    lastEvent = event;
+    const rect = element.getBoundingClientRect();
+    inside = event.clientX >= rect.left && event.clientX < rect.right && event.clientY >= rect.top && event.clientY < rect.bottom;
+    element.classList.toggle("wy-pressed", inside);
+  }
+  __name(onPointerMove, "onPointerMove");
+  function onPointerUp(event) {
+    if (event.pointerId !== pointerId) {
+      return;
+    }
+    pointerId = null;
+    stop?.();
+    stop = null;
+    element.classList.remove("wy-pressed");
+    options.onStop?.();
+  }
+  __name(onPointerUp, "onPointerUp");
+  element.addEventListener("pointerdown", onPointerDown);
+  element.addEventListener("pointermove", onPointerMove);
+  element.addEventListener("pointerup", onPointerUp);
+  element.addEventListener("pointercancel", onPointerUp);
+  element.addEventListener("lostpointercapture", onPointerUp);
+  return () => {
+    stop?.();
+    element.removeEventListener("pointerdown", onPointerDown);
+    element.removeEventListener("pointermove", onPointerMove);
+    element.removeEventListener("pointerup", onPointerUp);
+    element.removeEventListener("pointercancel", onPointerUp);
+    element.removeEventListener("lostpointercapture", onPointerUp);
+  };
+}
+__name(attachPressRepeat, "attachPressRepeat");
+
+// src/widgets/abstract-slider.js
+function getWheelNotches(event) {
+  const delta = event.deltaY || event.deltaX;
+  if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) {
+    return delta / 3;
+  }
+  if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+    return delta * 10;
+  }
+  return delta / 100;
+}
+__name(getWheelNotches, "getWheelNotches");
+var AbstractSlider = class extends Widget {
+  static {
+    __name(this, "AbstractSlider");
+  }
+  _initialize() {
+    super._initialize();
+    this._adjustmentDisconnects = [];
+    this._drag = null;
+    this._paging = null;
+    this._stopPaging = null;
+    this._troughEl.addEventListener("pointerdown", (event) => this._onTroughPointerDown(event));
+    this._troughEl.addEventListener("pointermove", (event) => this._onPointerMove(event));
+    this._troughEl.addEventListener("pointerup", (event) => this._onPointerUp(event));
+    this._troughEl.addEventListener("pointercancel", (event) => this._onPointerUp(event));
+    this._troughEl.addEventListener("lostpointercapture", (event) => this._onPointerUp(event));
+    this.el.addEventListener("keydown", (event) => this._onKeyDown(event));
+    this.el.addEventListener("wheel", (event) => this._onWheel(event), { passive: false });
+    this.adjustment = this._createAdjustment();
+    this._updateOrientation();
+  }
+  /**
+   * Creates the default adjustment. Subclasses override this for other defaults.
+   *
+   * @protected
+   * @returns {Adjustment}
+   */
+  _createAdjustment() {
+    return new Adjustment({ lower: 0, upper: 100, stepIncrement: 1, pageIncrement: 10 });
+  }
+  /**
+   * Sets several properties, applying the bounds before the value so that it is not clamped to
+   * the old bounds.
+   *
+   * @param {Record<string, unknown>} properties
+   * @returns {boolean}
+   */
+  set(properties) {
+    const { value, ...rest } = properties;
+    let changed = super.set(rest);
+    if (value !== void 0 && this.setProperty("value", value)) {
+      changed = true;
+    }
+    return changed;
+  }
+  destroy() {
+    this._stopPaging?.();
+    this._connectAdjustment(null);
+    super.destroy();
+  }
+  /**
+   * The fraction of the thumb position along the trough, from 0 at the start (the left or top)
+   * to 1 at the end, taking `inverted` into account.
+   *
+   * @protected
+   * @returns {number}
+   */
+  _getDisplayFraction() {
+    const fraction = this._adjustment.fraction;
+    return this._isReversed() ? 1 - fraction : fraction;
+  }
+  /**
+   * Sets the value from a thumb position fraction along the trough.
+   *
+   * @protected
+   * @param {number} fraction
+   */
+  _setDisplayFraction(fraction) {
+    fraction = clamp(fraction, 0, 1);
+    const adjustment = this._adjustment;
+    const value = this._isReversed() ? 1 - fraction : fraction;
+    this._setValueFromUser(adjustment.lower + value * (adjustment.maximum - adjustment.lower));
+  }
+  /**
+   * Whether the value increases towards the start of the trough: when `inverted`, or (in
+   * right-to-left text) for horizontal widgets that are not inverted.
+   *
+   * @protected
+   * @returns {boolean}
+   */
+  _isReversed() {
+    const horizontal = this._orientation === Orientation.HORIZONTAL;
+    const rtl = horizontal && this.el.isConnected && getComputedStyle(this.el).direction === "rtl";
+    return this._inverted !== rtl;
+  }
+  /**
+   * Sets the value because the user changed it. Subclasses may round it.
+   *
+   * @protected
+   * @param {number} value
+   */
+  _setValueFromUser(value) {
+    this._adjustment.value = value;
+  }
+  /**
+   * Updates the element after the adjustment or the orientation changed. Subclasses extend this.
+   *
+   * @protected
+   */
+  _update() {
+    const adjustment = this._adjustment;
+    const range = adjustment.upper - adjustment.lower;
+    const pageFraction = range > 0 ? clamp(adjustment.pageSize / range, 0, 1) : 1;
+    this.el.classList.toggle("wy-reversed", this._isReversed());
+    this.el.style.setProperty("--wy-fraction", String(this._getDisplayFraction()));
+    this.el.style.setProperty("--wy-value-fraction", String(adjustment.fraction));
+    this.el.style.setProperty("--wy-page-fraction", String(pageFraction));
+    this.el.setAttribute("aria-valuenow", String(adjustment.value));
+    this.el.setAttribute("aria-valuemin", String(adjustment.lower));
+    this.el.setAttribute("aria-valuemax", String(adjustment.maximum));
+  }
+  _updateOrientation() {
+    const horizontal = this._orientation === Orientation.HORIZONTAL;
+    this.el.classList.toggle("wy-horizontal", horizontal);
+    this.el.classList.toggle("wy-vertical", !horizontal);
+    this.el.setAttribute("aria-orientation", this._orientation);
+    this._update();
+  }
+  _connectAdjustment(adjustment) {
+    for (const disconnect of this._adjustmentDisconnects) {
+      disconnect();
+    }
+    this._adjustmentDisconnects = [];
+    if (!adjustment) {
+      return;
+    }
+    this._adjustmentDisconnects = [
+      adjustment.connect("value-change", () => this.emit("value-change", this)),
+      adjustment.connect("lower-change", () => this.emit("lower-change", this)),
+      adjustment.connect("upper-change", () => this.emit("upper-change", this)),
+      adjustment.connect("change", () => this._update())
+    ];
+  }
+  /**
+   * Returns the pointer position along the trough, and the trough and thumb geometry.
+   *
+   * @protected
+   * @param {PointerEvent} event
+   * @returns {{position: number, start: number, length: number, thumbStart: number,
+   *     thumbLength: number}}
+   */
+  _measure(event) {
+    const horizontal = this._orientation === Orientation.HORIZONTAL;
+    const trough = this._troughEl.getBoundingClientRect();
+    const thumb = this._thumbEl.getBoundingClientRect();
+    return horizontal ? {
+      position: event.clientX,
+      start: trough.left + this._troughEl.clientLeft,
+      length: this._troughEl.clientWidth,
+      thumbStart: thumb.left,
+      thumbLength: thumb.width
+    } : {
+      position: event.clientY,
+      start: trough.top + this._troughEl.clientTop,
+      length: this._troughEl.clientHeight,
+      thumbStart: thumb.top,
+      thumbLength: thumb.height
+    };
+  }
+  _startDrag(event, geometry, grabOffset) {
+    this._drag = {
+      pointerId: event.pointerId,
+      grabOffset,
+      start: geometry.start,
+      range: Math.max(1, geometry.length - geometry.thumbLength)
+    };
+    try {
+      this._troughEl.setPointerCapture(event.pointerId);
+    } catch (_error) {
+    }
+    this._thumbEl.classList.add("wy-pressed");
+    this.el.classList.add("wy-dragging");
+  }
+  _startPaging(event, geometry) {
+    const pointerId = event.pointerId;
+    let position = geometry.position;
+    this._paging = { pointerId, update: /* @__PURE__ */ __name((x) => position = x, "update") };
+    try {
+      this._troughEl.setPointerCapture(pointerId);
+    } catch (_error) {
+    }
+    this._stopPaging = startAutoRepeat(() => {
+      const current = this._measure({ clientX: position, clientY: position });
+      const before = position < current.thumbStart;
+      const after = position >= current.thumbStart + current.thumbLength;
+      if (!before && !after) {
+        return false;
+      }
+      const adjustment = this._adjustment;
+      const forward = after !== this._isReversed();
+      const oldValue = adjustment.value;
+      if (forward) {
+        adjustment.incrementPage();
+      } else {
+        adjustment.decrementPage();
+      }
+      return adjustment.value !== oldValue;
+    });
+  }
+  _onTroughPointerDown(event) {
+    if (!this.isSensitive || this._drag || this._paging) {
+      return;
+    }
+    const primary = event.button === 0;
+    const middle = event.button === 1;
+    if (!primary && !middle) {
+      return;
+    }
+    if (this._canFocus) {
+      this.focus();
+    }
+    event.preventDefault();
+    const geometry = this._measure(event);
+    const onThumb = this._thumbEl.contains(event.target);
+    if (onThumb && primary) {
+      this._startDrag(event, geometry, geometry.position - geometry.thumbStart);
+      return;
+    }
+    const warp = middle || this._primaryButtonWarps !== event.shiftKey;
+    if (warp) {
+      const grabOffset = geometry.thumbLength / 2;
+      const range = Math.max(1, geometry.length - geometry.thumbLength);
+      this._setDisplayFraction((geometry.position - geometry.start - grabOffset) / range);
+      this._startDrag(event, geometry, grabOffset);
+    } else {
+      this._startPaging(event, geometry);
+    }
+  }
+  _onPointerMove(event) {
+    if (this._paging && event.pointerId === this._paging.pointerId) {
+      this._paging.update(
+        this._orientation === Orientation.HORIZONTAL ? event.clientX : event.clientY
+      );
+      return;
+    }
+    const drag = this._drag;
+    if (!drag || event.pointerId !== drag.pointerId) {
+      return;
+    }
+    const position = this._orientation === Orientation.HORIZONTAL ? event.clientX : event.clientY;
+    this._setDisplayFraction((position - drag.start - drag.grabOffset) / drag.range);
+  }
+  _onPointerUp(event) {
+    if (this._paging && event.pointerId === this._paging.pointerId) {
+      this._stopPaging?.();
+      this._stopPaging = null;
+      this._paging = null;
+    }
+    if (this._drag && event.pointerId === this._drag.pointerId) {
+      this._drag = null;
+      this._thumbEl.classList.remove("wy-pressed");
+      this.el.classList.remove("wy-dragging");
+    }
+  }
+  /**
+   * Returns the value change of one wheel notch.
+   *
+   * @protected
+   * @returns {number}
+   */
+  _getWheelStep() {
+    return this._adjustment.stepIncrement;
+  }
+  _onWheel(event) {
+    if (!this.isSensitive || !event.deltaY && !event.deltaX) {
+      return;
+    }
+    event.preventDefault();
+    let notches = getWheelNotches(event);
+    if (this._inverted) {
+      notches = -notches;
+    }
+    this._applyWheel(notches);
+  }
+  /**
+   * Changes the value by a number of wheel notches.
+   *
+   * @protected
+   * @param {number} notches
+   */
+  _applyWheel(notches) {
+    const adjustment = this._adjustment;
+    this._setValueFromUser(adjustment.value + notches * this._getWheelStep());
+  }
+  _onKeyDown(event) {
+    if (!this.isSensitive || event.altKey || event.metaKey || event.defaultPrevented) {
+      return;
+    }
+    const adjustment = this._adjustment;
+    const horizontal = this._orientation === Orientation.HORIZONTAL;
+    const page = event.ctrlKey;
+    const step = page ? adjustment.pageIncrement : adjustment.stepIncrement;
+    const towardsEnd = /* @__PURE__ */ __name((amount) => this._isReversed() ? -amount : amount, "towardsEnd");
+    let delta = null;
+    switch (event.key) {
+      case Key.LEFT:
+        delta = horizontal ? towardsEnd(-step) : -step;
+        break;
+      case Key.RIGHT:
+        delta = horizontal ? towardsEnd(step) : step;
+        break;
+      case Key.UP:
+        delta = horizontal ? step : towardsEnd(-step);
+        break;
+      case Key.DOWN:
+        delta = horizontal ? -step : towardsEnd(step);
+        break;
+      case Key.PAGE_UP:
+        delta = horizontal ? adjustment.pageIncrement : towardsEnd(-adjustment.pageIncrement);
+        break;
+      case Key.PAGE_DOWN:
+        delta = horizontal ? -adjustment.pageIncrement : towardsEnd(adjustment.pageIncrement);
+        break;
+      case "+":
+      case "=":
+        delta = step;
+        break;
+      case "-":
+        delta = -step;
+        break;
+      case Key.HOME:
+        this._setValueFromUser(adjustment.lower);
+        break;
+      case Key.END:
+        this._setValueFromUser(adjustment.maximum);
+        break;
+      default:
+        return;
+    }
+    if (delta !== null) {
+      this._setValueFromUser(adjustment.value + delta);
+    }
+    event.preventDefault();
+  }
+};
+function adjustmentProperty(name) {
+  return {
+    signal: false,
+    get() {
+      return this._adjustment[name];
+    },
+    set(value) {
+      this._adjustment[name] = value;
+      return false;
+    }
+  };
+}
+__name(adjustmentProperty, "adjustmentProperty");
+defineProperties(AbstractSlider, {
+  /**
+   * The `Adjustment` holding the value, its bounds and increments. A default one is created.
+   */
+  adjustment: {
+    value: null,
+    coerce(adjustment) {
+      if (!(adjustment instanceof Adjustment)) {
+        throw new TypeError("The adjustment must be an Adjustment.");
+      }
+      return adjustment;
+    },
+    changed(adjustment, old) {
+      this._connectAdjustment(adjustment);
+      this._update();
+      if (old && old.value !== adjustment.value) {
+        this.emit("value-change", this);
+      }
+    }
+  },
+  /**
+   * The value, forwarded to the adjustment.
+   */
+  value: adjustmentProperty("value"),
+  /**
+   * The minimum value, forwarded to the adjustment.
+   */
+  lower: adjustmentProperty("lower"),
+  /**
+   * The maximum value, forwarded to the adjustment.
+   */
+  upper: adjustmentProperty("upper"),
+  /**
+   * The step of the arrow keys and the wheel, forwarded to the adjustment.
+   */
+  stepIncrement: adjustmentProperty("stepIncrement"),
+  /**
+   * The step of Page Up and Page Down and of paging, forwarded to the adjustment.
+   */
+  pageIncrement: adjustmentProperty("pageIncrement"),
+  /**
+   * The direction of the trough: one of `Orientation`.
+   */
+  orientation: {
+    value: Orientation.HORIZONTAL,
+    coerce(orientation) {
+      if (!Object.values(Orientation).includes(orientation)) {
+        throw new RangeError(`Invalid orientation '${orientation}'.`);
+      }
+      return orientation;
+    },
+    changed() {
+      this._updateOrientation();
+    }
+  },
+  /**
+   * Whether the value increases towards the start (the left or top) instead of the end.
+   */
+  inverted: {
+    value: false,
+    coerce: Boolean,
+    changed(inverted) {
+      this.el.classList.toggle("wy-inverted", inverted);
+      this._update();
+    }
+  },
+  /**
+   * Whether pressing the trough with the primary button moves the thumb there (otherwise it
+   * pages towards the pointer). Shift inverts this.
+   */
+  primaryButtonWarps: { value: true, coerce: Boolean }
+});
+
+// src/widgets/abstract-tool-item.js
+var AbstractToolItem = class extends Container {
+  static {
+    __name(this, "AbstractToolItem");
+  }
+  /**
+   * The tool bar the item is in, or `null`.
+   *
+   * @type {import('./tool-bar.js').ToolBar | null}
+   */
+  get toolBar() {
+    return this._parent?.isToolBar ? this._parent : null;
+  }
+  /**
+   * Creates the menu item that stands in for this item in the tool bar's overflow menu, or
+   * returns `null` for none.
+   *
+   * @protected
+   * @returns {import('./abstract-menu-item.js').AbstractMenuItem | null}
+   */
+  _createMenuProxy() {
+    return null;
+  }
+  /**
+   * Called when the tool bar's style, icon size or orientation changed, and when the item was
+   * added to a tool bar.
+   *
+   * @protected
+   */
+  _onToolBarChange() {
+  }
+  _setParent(parent) {
+    if (parent && !parent.isToolBar) {
+      throw new Error("A tool item can only be added to a tool bar.");
+    }
+    super._setParent(parent);
+    if (parent) {
+      this._onToolBarChange();
+    }
+  }
+};
+
+// src/widgets/bin.js
+var Bin = class extends Container {
+  static {
+    __name(this, "Bin");
+  }
+  _initialize() {
+    super._initialize();
+    this.bodyElement.classList.add("wy-bin-body");
+  }
+  /**
+   * Adds the child.
+   *
+   * @param {import('./widget.js').Widget} widget
+   * @returns {import('./widget.js').Widget}
+   * @throws {Error} If the bin already has a child.
+   */
+  insertChild(widget, index) {
+    if (this._children.length) {
+      throw new Error(`${this.constructor.name} already has a child.`);
+    }
+    return super.insertChild(widget, index);
+  }
+};
+defineProperties(Bin, {
+  /**
+   * The child, or `null`. Setting it replaces (and destroys) the current child.
+   */
+  child: {
+    get() {
+      return this._children[0] || null;
+    },
+    set(widget) {
+      const current = this._children[0] || null;
+      if (current === widget) {
+        return false;
+      }
+      if (current) {
+        current.destroy();
+      }
+      if (widget) {
+        this.addChild(widget);
+      }
+    }
+  }
+});
+
+// src/widgets/abstract-window.js
+var AbstractWindow = class extends Bin {
+  static {
+    __name(this, "AbstractWindow");
+  }
+  _initialize() {
+    super._initialize();
+    this.el.classList.add("wy-window-base", "wy-inactive");
+    this.el.addEventListener("focusin", (event) => this._onFocusIn(event));
+    this.el.addEventListener("focusout", (event) => this._onFocusOut(event));
+    this.el.addEventListener("keydown", (event) => this._onWindowKeyDown(event));
+    Application._addWindow(this);
+  }
+  /**
+   * Shows the window and makes it active.
+   */
+  present() {
+    this.visible = true;
+    this.active = true;
+  }
+  /**
+   * Moves the focus within the window.
+   *
+   * @param {number} direction One of `FocusDirection`.
+   * @returns {boolean} Whether a widget got the focus.
+   */
+  moveFocus(direction) {
+    const chain = this._getFocusChain();
+    if (!chain.length) {
+      return false;
+    }
+    const current = chain.indexOf(this._focusWidget);
+    let order;
+    switch (direction) {
+      case FocusDirection.START:
+        order = chain;
+        break;
+      case FocusDirection.END:
+        order = [...chain].reverse();
+        break;
+      case FocusDirection.BACKWARD: {
+        const start = current < 0 ? chain.length - 1 : current - 1;
+        order = [
+          ...chain.slice(0, start + 1).reverse(),
+          ...chain.slice(start + 1).reverse()
+        ];
+        break;
+      }
+      default: {
+        const start = current < 0 ? 0 : current + 1;
+        order = [...chain.slice(start), ...chain.slice(0, start)];
+        break;
+      }
+    }
+    for (const widget of order) {
+      if (widget !== this._focusWidget && widget.focus()) {
+        return true;
+      }
+    }
+    return false;
+  }
+  destroy() {
+    if (this._active) {
+      Application.activeWindow = null;
+    }
+    super.destroy();
+    Application._removeWindow(this);
+  }
+  /**
+   * The stacking order of the window; higher is on top.
+   *
+   * @type {number}
+   */
+  get zIndex() {
+    return Number(this.el.style.zIndex) || 0;
+  }
+  /**
+   * Whether this window is stacked above another window.
+   *
+   * @protected
+   * @param {AbstractWindow} window
+   * @returns {boolean}
+   */
+  _isAbove(window2) {
+    return this.zIndex > window2.zIndex;
+  }
+  /**
+   * Draws attention to the window, e.g. when a click on another window was blocked because this
+   * window is modal.
+   *
+   * @protected
+   */
+  _blink() {
+    this.el.classList.remove("wy-blink");
+    void this.el.offsetWidth;
+    this.el.classList.add("wy-blink");
+  }
+  /**
+   * Handles showing and hiding. Subclasses extend this to attach and detach their element.
+   *
+   * @protected
+   * @param {boolean} visible
+   */
+  _onVisibleChange(visible) {
+    this.el.hidden = !visible;
+    this._recalculateVisibility();
+    this._recalculateSensitivity();
+    if (visible) {
+      if (this._activateOnShow) {
+        this.active = true;
+      }
+    } else if (this._active) {
+      Application.activeWindow = null;
+    }
+  }
+  _isShown() {
+    return this._visible;
+  }
+  /**
+   * Sets the active flag. Called by the application, which ensures a single active window.
+   *
+   * @protected
+   * @param {boolean} active
+   */
+  _setActive(active) {
+    if (active === this._active) {
+      return;
+    }
+    this._active = active;
+    this.el.classList.toggle("wy-inactive", !active);
+    this.el.classList.toggle("wy-active", active);
+    if (active) {
+      this._raise();
+      if (!this.el.contains(document.activeElement) || document.activeElement === this.el) {
+        if (!this._focusWidget || !this._focusWidget.focus()) {
+          this.moveFocus(FocusDirection.START);
+        }
+      }
+      if (!this.el.contains(document.activeElement)) {
+        this.el.tabIndex = -1;
+        this.el.focus({ preventScroll: true });
+      }
+    } else if (this.el.contains(document.activeElement)) {
+      document.activeElement.blur();
+    }
+    this._syncFocusStates();
+    this.emit("active-change", this);
+  }
+  /**
+   * Brings the window to the front. Overridden by floating windows.
+   *
+   * @protected
+   */
+  _raise() {
+  }
+  /**
+   * Activates the window because the keyboard focus moved into it.
+   *
+   * @protected
+   */
+  _activateFromFocus() {
+    if (!this._active) {
+      Application.activeWindow = this;
+    }
+  }
+  /**
+   * Sets the focus widget of the window without moving the DOM focus.
+   *
+   * @protected
+   * @param {Widget | null} widget
+   */
+  _setFocusWidget(widget) {
+    if (widget === this._focusWidget) {
+      this._syncFocusStates();
+      return;
+    }
+    const old = this._focusWidget;
+    this._focusWidget = widget;
+    old?._setFocusState(false, false);
+    if (widget) {
+      let child = widget;
+      let parent = widget.parent;
+      while (parent) {
+        parent._setFocusChild(child);
+        child = parent;
+        parent = parent.parent;
+      }
+    } else {
+      this._clearFocusChain();
+    }
+    this._syncFocusStates();
+    this.emit("focus-widget-change", this);
+  }
+  _syncFocusStates() {
+    const widget = this._focusWidget;
+    if (!widget) {
+      if (this._active) {
+        Application._setFocusWidget(null);
+      }
+      return;
+    }
+    const activeElement = document.activeElement;
+    const inPopup = Boolean(
+      activeElement?.closest?.("[data-wy-popup], .wy-screen > .wy-popover")
+    );
+    const hasFocus = this._active && (widget.focusElement.contains(activeElement) || inPopup);
+    widget._setFocusState(true, hasFocus);
+    if (this._active) {
+      Application._setFocusWidget(hasFocus ? widget : null);
+    }
+  }
+  /**
+   * Moves the focus away from a widget that is being hidden, made insensitive, unparented or
+   * destroyed.
+   *
+   * @protected
+   * @param {Widget} widget
+   */
+  _onFocusWidgetGone(widget) {
+    const focusWidget = this._focusWidget;
+    if (!focusWidget || !widget.isAncestorOf(focusWidget)) {
+      return;
+    }
+    const hadFocus = focusWidget.hasFocus;
+    focusWidget._setFocusState(false, false);
+    this._focusWidget = null;
+    if (hadFocus) {
+      const chain = this._getFocusChain().filter((x) => !widget.isAncestorOf(x));
+      if (!chain.some((x) => x.focus())) {
+        this.el.tabIndex = -1;
+        this.el.focus({ preventScroll: true });
+      }
+    }
+    if (this._focusWidget === null) {
+      this._clearFocusChain();
+      this.emit("focus-widget-change", this);
+    }
+  }
+  _onFocusIn(event) {
+    this._activateFromFocus();
+    let widget = Widget.fromElement(event.target);
+    while (widget && widget !== this && !widget.focusElement.contains(event.target)) {
+      widget = widget.parent;
+    }
+    while (widget && widget !== this && !widget.canFocus) {
+      widget = widget.parent;
+    }
+    if (widget && widget !== this && widget.window === this) {
+      this._setFocusWidget(widget);
+    } else {
+      this._syncFocusStates();
+    }
+  }
+  _onFocusOut(_event) {
+    queueMicrotask(() => {
+      if (!this.destroyed) {
+        this._syncFocusStates();
+      }
+    });
+  }
+  _onWindowKeyDown(event) {
+    if (event.defaultPrevented || event.key !== Key.TAB || event.ctrlKey || event.altKey || event.metaKey) {
+      return;
+    }
+    if (Widget.fromElement(event.target)?.window !== this && event.target !== this.el) {
+      return;
+    }
+    if (this.moveFocus(event.shiftKey ? FocusDirection.BACKWARD : FocusDirection.FORWARD)) {
+      event.preventDefault();
+    } else if (this._getFocusChain().length) {
+      event.preventDefault();
+    }
+  }
+};
+defineProperties(AbstractWindow, {
+  isTopLevel: { value: true, readOnly: true },
+  isWindow: { value: true, readOnly: true },
+  visible: {
+    value: false,
+    changed(visible) {
+      this._onVisibleChange(visible);
+    }
+  },
+  /**
+   * The title of the window.
+   */
+  title: { value: "" },
+  /**
+   * Whether the window is active: it has the keyboard focus. Only one window is active at a
+   * time.
+   */
+  active: {
+    value: false,
+    signal: false,
+    set(active) {
+      if (active) {
+        if (!this._visible) {
+          return false;
+        }
+        Application.activeWindow = this;
+      } else if (Application.activeWindow === this) {
+        Application.activeWindow = null;
+      }
+      return false;
+    }
+  },
+  /**
+   * Whether the window becomes active when shown.
+   */
+  activateOnShow: { value: true },
+  /**
+   * Whether the window blocks interaction with the windows below it while shown.
+   */
+  modal: { value: false },
+  /**
+   * The widget with the focus within this window, or `null`. Setting it focuses the widget.
+   */
+  focusWidget: {
+    value: null,
+    signal: false,
+    set(widget) {
+      if (widget) {
+        if (widget.window !== this) {
+          throw new Error("The widget is not in this window.");
+        }
+        widget.focus();
+      } else {
+        this._focusWidget?.blur();
+      }
+      return false;
+    }
+  }
+});
+
+// src/widgets/menu-manager.js
+var POPUP_ATTRIBUTE = "data-wy-popup";
+var MenuManager = class extends Instance {
+  static {
+    __name(this, "MenuManager");
+  }
+  _initialize() {
+    super._initialize();
+    this._shells = [];
+    this._previousFocus = null;
+    this._pointer = { x: 0, y: 0 };
+    this._listening = false;
+    this._onPointerDown = this._onPointerDown.bind(this);
+    this._onWheel = this._onWheel.bind(this);
+    this._onKeyDown = this._onKeyDown.bind(this);
+    this._onBlur = this._onBlur.bind(this);
+    this._onScreenSizeChange = this._onScreenSizeChange.bind(this);
+    if (typeof window === "undefined") {
+      return;
+    }
+    window.addEventListener(
+      "focusin",
+      (event) => {
+        if (event.target instanceof Element && event.target.closest(`[${POPUP_ATTRIBUTE}]`)) {
+          event.stopPropagation();
+        }
+      },
+      true
+    );
+    const track = /* @__PURE__ */ __name((event) => {
+      this._pointer = { x: event.clientX, y: event.clientY };
+    }, "track");
+    document.addEventListener("pointermove", track, { capture: true, passive: true });
+    document.addEventListener("pointerdown", track, { capture: true, passive: true });
+  }
+  /**
+   * Whether any menu is open.
+   *
+   * @type {boolean}
+   */
+  get isOpen() {
+    return this._shells.length > 0;
+  }
+  /**
+   * The open menu shells, outermost first.
+   *
+   * @type {MenuShell[]}
+   */
+  get openShells() {
+    return [...this._shells];
+  }
+  /**
+   * The last known pointer position, in viewport coordinates.
+   *
+   * @type {{x: number, y: number}}
+   */
+  get pointer() {
+    return { ...this._pointer };
+  }
+  /**
+   * Closes all open menus, innermost first. This is what activating a menu item does.
+   */
+  hideAllOpenMenus() {
+    for (const shell of [...this._shells].reverse()) {
+      if (this._shells.includes(shell)) {
+        shell._deactivateShell();
+      }
+    }
+  }
+  /**
+   * Registers an opened shell. Called by menus and menu bars.
+   *
+   * @protected
+   * @param {MenuShell} shell
+   */
+  _addShell(shell) {
+    if (this._shells.includes(shell)) {
+      return;
+    }
+    const first = !this._shells.length;
+    if (first) {
+      const active = document.activeElement;
+      this._previousFocus = active && active !== document.body && !active.closest(`[${POPUP_ATTRIBUTE}]`) ? (
+        /** @type {HTMLElement} */
+        active
+      ) : null;
+      this._listen(true);
+    }
+    this._shells.push(shell);
+    if (first) {
+      this.emit("open-change", this);
+    }
+  }
+  /**
+   * Unregisters a closed shell. Called by menus and menu bars. When the last one closes, the
+   * focus goes back to where it was.
+   *
+   * @protected
+   * @param {MenuShell} shell
+   */
+  _removeShell(shell) {
+    const index = this._shells.indexOf(shell);
+    if (index < 0) {
+      return;
+    }
+    this._shells.splice(index, 1);
+    if (!this._shells.length) {
+      this._listen(false);
+      this._restoreFocus();
+      this.emit("open-change", this);
+    }
+  }
+  _restoreFocus() {
+    const element = this._previousFocus;
+    this._previousFocus = null;
+    const active = document.activeElement;
+    const lost = !active || active === document.body || !active.isConnected || Boolean(active.closest(`[${POPUP_ATTRIBUTE}]`));
+    if (lost && element?.isConnected) {
+      element.focus({ preventScroll: true });
+    }
+  }
+  _listen(listen) {
+    if (listen === this._listening) {
+      return;
+    }
+    this._listening = listen;
+    const method = listen ? "addEventListener" : "removeEventListener";
+    document[method]("pointerdown", this._onPointerDown, true);
+    document[method]("wheel", this._onWheel, { capture: true, passive: true });
+    document[method]("keydown", this._onKeyDown, true);
+    window[method]("blur", this._onBlur);
+    if (listen) {
+      this._disconnectScreen = getScreen().connect("size-change", this._onScreenSizeChange);
+    } else {
+      this._disconnectScreen?.();
+      this._disconnectScreen = null;
+    }
+  }
+  _containsTarget(target) {
+    return this._shells.some((shell) => shell._containsTarget(target));
+  }
+  _onPointerDown(event) {
+    if (!this._containsTarget(event.target)) {
+      this.hideAllOpenMenus();
+    }
+  }
+  _onWheel(event) {
+    if (!this._containsTarget(event.target)) {
+      this.hideAllOpenMenus();
+    }
+  }
+  _onKeyDown(event) {
+    const target = (
+      /** @type {Element} */
+      event.target
+    );
+    if (target instanceof Element && target.closest(`[${POPUP_ATTRIBUTE}]`)) {
+      return;
+    }
+    const innermost = this._shells[this._shells.length - 1];
+    if (innermost?._onKeyDown && !innermost.el.contains(target)) {
+      innermost._onKeyDown(event);
+    } else if (!innermost?._onKeyDown && event.key === Key.ESCAPE) {
+      this.hideAllOpenMenus();
+      event.preventDefault();
+    }
+  }
+  _onBlur() {
+    this.hideAllOpenMenus();
+  }
+  _onScreenSizeChange() {
+    this.hideAllOpenMenus();
+  }
+};
+var getMenuManager = lazySingleton(() => new MenuManager());
+
+// src/widgets/accelerators.js
+var IS_MAC = typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.userAgentData?.platform || navigator.platform || "");
+var MODIFIER_NAMES = Object.freeze({
+  ctrl: "ctrl",
+  control: "ctrl",
+  shift: "shift",
+  alt: "alt",
+  option: "alt",
+  meta: "meta",
+  cmd: "meta",
+  command: "meta",
+  super: "meta",
+  primary: "primary",
+  mod: "primary",
+  cmdorctrl: "primary"
+});
+var KEY_ALIASES = Object.freeze({
+  esc: Key.ESCAPE,
+  escape: Key.ESCAPE,
+  return: Key.ENTER,
+  enter: Key.ENTER,
+  space: Key.SPACE,
+  spacebar: Key.SPACE,
+  del: Key.DELETE,
+  delete: Key.DELETE,
+  ins: Key.INSERT,
+  insert: Key.INSERT,
+  backspace: Key.BACKSPACE,
+  tab: Key.TAB,
+  up: Key.UP,
+  down: Key.DOWN,
+  left: Key.LEFT,
+  right: Key.RIGHT,
+  arrowup: Key.UP,
+  arrowdown: Key.DOWN,
+  arrowleft: Key.LEFT,
+  arrowright: Key.RIGHT,
+  pageup: Key.PAGE_UP,
+  pagedown: Key.PAGE_DOWN,
+  home: Key.HOME,
+  end: Key.END,
+  plus: "+",
+  minus: "-",
+  comma: ",",
+  period: ".",
+  contextmenu: Key.CONTEXT_MENU
+});
+var KEY_LABELS = Object.freeze({
+  [Key.ESCAPE]: "Esc",
+  [Key.ENTER]: "Enter",
+  [Key.SPACE]: "Space",
+  [Key.DELETE]: "Delete",
+  [Key.INSERT]: "Insert",
+  [Key.BACKSPACE]: "Backspace",
+  [Key.TAB]: "Tab",
+  [Key.UP]: "Up",
+  [Key.DOWN]: "Down",
+  [Key.LEFT]: "Left",
+  [Key.RIGHT]: "Right",
+  [Key.PAGE_UP]: "Page Up",
+  [Key.PAGE_DOWN]: "Page Down",
+  [Key.HOME]: "Home",
+  [Key.END]: "End"
+});
+var MAC_KEY_LABELS = Object.freeze({
+  [Key.ESCAPE]: "\u238B",
+  [Key.ENTER]: "\u21A9",
+  [Key.SPACE]: "Space",
+  [Key.DELETE]: "\u2326",
+  [Key.BACKSPACE]: "\u232B",
+  [Key.TAB]: "\u21E5",
+  [Key.UP]: "\u2191",
+  [Key.DOWN]: "\u2193",
+  [Key.LEFT]: "\u2190",
+  [Key.RIGHT]: "\u2192",
+  [Key.PAGE_UP]: "\u21DE",
+  [Key.PAGE_DOWN]: "\u21DF",
+  [Key.HOME]: "\u2196",
+  [Key.END]: "\u2198"
+});
+var EDITING_KEYS = /* @__PURE__ */ new Set([
+  "a",
+  "c",
+  "v",
+  "x",
+  "z",
+  "y",
+  Key.LEFT,
+  Key.RIGHT,
+  Key.HOME,
+  Key.END
+]);
+var GROUPS = /* @__PURE__ */ new WeakMap();
+function parseAccelerator(text) {
+  if (typeof text !== "string" || !text.trim()) {
+    throw new Error(`Invalid accelerator '${text}'.`);
+  }
+  let source = text.trim();
+  let plus = false;
+  if (source.endsWith("++") || source === "+") {
+    plus = true;
+    source = source.slice(0, source === "+" ? 0 : -2);
+  }
+  const parts = source ? source.split("+").map((x) => x.trim()) : [];
+  const accelerator = { key: "", ctrl: false, shift: false, alt: false, meta: false };
+  const keyName = plus ? "+" : parts.pop();
+  for (const part of parts) {
+    const modifier = MODIFIER_NAMES[part.toLowerCase()];
+    if (!modifier) {
+      throw new Error(`Invalid modifier '${part}' in accelerator '${text}'.`);
+    }
+    if (modifier === "primary") {
+      accelerator[IS_MAC ? "meta" : "ctrl"] = true;
+    } else {
+      accelerator[modifier] = true;
+    }
+  }
+  if (!keyName) {
+    throw new Error(`Accelerator '${text}' has no key.`);
+  }
+  accelerator.key = normalizeKey(keyName);
+  return accelerator;
+}
+__name(parseAccelerator, "parseAccelerator");
+function normalizeKey(name) {
+  const alias = KEY_ALIASES[name.toLowerCase()];
+  if (alias) {
+    return alias;
+  }
+  if (name.length === 1) {
+    return name.toLowerCase();
+  }
+  if (/^f\d{1,2}$/i.test(name)) {
+    return name.toUpperCase();
+  }
+  return name;
+}
+__name(normalizeKey, "normalizeKey");
+function formatAccelerator(accelerator, options = {}) {
+  const value = typeof accelerator === "string" ? parseAccelerator(accelerator) : accelerator;
+  const mac = options.mac ?? IS_MAC;
+  const key = formatKey(value.key, mac);
+  if (mac) {
+    return [
+      value.ctrl ? "\u2303" : "",
+      value.alt ? "\u2325" : "",
+      value.shift ? "\u21E7" : "",
+      value.meta ? "\u2318" : "",
+      key
+    ].join("");
+  }
+  const parts = [];
+  if (value.ctrl) {
+    parts.push("Ctrl");
+  }
+  if (value.alt) {
+    parts.push("Alt");
+  }
+  if (value.shift) {
+    parts.push("Shift");
+  }
+  if (value.meta) {
+    parts.push("Super");
+  }
+  parts.push(key);
+  return parts.join("+");
+}
+__name(formatAccelerator, "formatAccelerator");
+function formatKey(key, mac) {
+  const labels = mac ? { ...KEY_LABELS, ...MAC_KEY_LABELS } : KEY_LABELS;
+  if (labels[key]) {
+    return labels[key];
+  }
+  return key.length === 1 ? key.toUpperCase() : key;
+}
+__name(formatKey, "formatKey");
+function toAriaKeyShortcuts(accelerator) {
+  const value = typeof accelerator === "string" ? parseAccelerator(accelerator) : accelerator;
+  const parts = [];
+  if (value.ctrl) {
+    parts.push("Control");
+  }
+  if (value.alt) {
+    parts.push("Alt");
+  }
+  if (value.shift) {
+    parts.push("Shift");
+  }
+  if (value.meta) {
+    parts.push("Meta");
+  }
+  const key = value.key === Key.SPACE ? "Space" : value.key === "+" ? "Plus" : value.key;
+  parts.push(key.length === 1 ? key.toUpperCase() : key);
+  return parts.join("+");
+}
+__name(toAriaKeyShortcuts, "toAriaKeyShortcuts");
+function matchesAccelerator(accelerator, event) {
+  const key = accelerator.key;
+  const printable = key.length === 1;
+  const letterOrDigit = /^[a-z0-9]$/.test(key);
+  const shiftMatters = !printable || letterOrDigit || accelerator.shift;
+  if (event.ctrlKey !== accelerator.ctrl || event.altKey !== accelerator.alt || event.metaKey !== accelerator.meta || shiftMatters && event.shiftKey !== accelerator.shift) {
+    return false;
+  }
+  const eventKey = event.key && event.key.length === 1 ? event.key.toLowerCase() : event.key;
+  if (eventKey === key) {
+    return true;
+  }
+  if (letterOrDigit && event.code) {
+    const code = /^[a-z]$/.test(key) ? `Key${key.toUpperCase()}` : `Digit${key}`;
+    return event.code === code;
+  }
+  return false;
+}
+__name(matchesAccelerator, "matchesAccelerator");
+function parseMnemonic(label, useUnderline = true) {
+  const source = label === null || label === void 0 ? "" : String(label);
+  if (!useUnderline) {
+    return { text: source, mnemonic: "", index: -1 };
+  }
+  let text = "";
+  let mnemonic = "";
+  let index = -1;
+  for (let i = 0; i < source.length; i++) {
+    const character = source[i];
+    if (character === "_" && i + 1 < source.length) {
+      const next = source[i + 1];
+      i += 1;
+      if (next !== "_" && index < 0) {
+        index = text.length;
+        mnemonic = next.toLowerCase();
+      }
+      text += next;
+    } else {
+      text += character;
+    }
+  }
+  return { text, mnemonic, index };
+}
+__name(parseMnemonic, "parseMnemonic");
+function renderMnemonicLabel(element, label, useUnderline = true) {
+  const { text, mnemonic, index } = parseMnemonic(label, useUnderline);
+  if (index < 0) {
+    element.textContent = text;
+  } else {
+    element.innerHTML = escapeHtml(text.slice(0, index)) + `<u class="wy-mnemonic">${escapeHtml(text[index])}</u>` + escapeHtml(text.slice(index + 1));
+  }
+  return { text, mnemonic };
+}
+__name(renderMnemonicLabel, "renderMnemonicLabel");
+function isEditingKey(event) {
+  const target = (
+    /** @type {HTMLElement} */
+    event.target
+  );
+  const editable = target instanceof HTMLElement && (target.isContentEditable || target.matches("input, textarea, select"));
+  if (!editable) {
+    return false;
+  }
+  if (!event.ctrlKey && !event.metaKey && !event.altKey) {
+    return true;
+  }
+  const primary = IS_MAC ? event.metaKey : event.ctrlKey;
+  const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+  return primary && !event.altKey && EDITING_KEYS.has(key);
+}
+__name(isEditingKey, "isEditingKey");
+var AcceleratorGroup = class extends Instance {
+  static {
+    __name(this, "AcceleratorGroup");
+  }
+  _initialize() {
+    super._initialize();
+    this._shells = /* @__PURE__ */ new Set();
+    this._entries = [];
+    this._onKeyDown = this._onKeyDown.bind(this);
+  }
+  /**
+   * Adds a handler for an accelerator. A handler that returns `false` does not handle the key.
+   *
+   * @param {string | Accelerator} accelerator
+   * @param {(event: KeyboardEvent) => unknown} handler
+   * @returns {() => void} A function that removes the handler again.
+   */
+  add(accelerator, handler) {
+    if (typeof handler !== "function") {
+      throw new TypeError("An accelerator handler must be a function.");
+    }
+    const entry = {
+      accelerator: typeof accelerator === "string" ? parseAccelerator(accelerator) : accelerator,
+      handler
+    };
+    this._entries.push(entry);
+    return () => {
+      const index = this._entries.indexOf(entry);
+      if (index >= 0) {
+        this._entries.splice(index, 1);
+      }
+    };
+  }
+  /**
+   * Adds a menu shell (a menu bar or a menu) whose items' accelerators work in the window.
+   *
+   * @param {AcceleratorShell} shell
+   */
+  addShell(shell) {
+    this._shells.add(shell);
+  }
+  /**
+   * Removes a menu shell.
+   *
+   * @param {AcceleratorShell} shell
+   */
+  removeShell(shell) {
+    this._shells.delete(shell);
+  }
+  /**
+   * Handles a key press as the window would: runs the matching handler or activates the
+   * matching menu item.
+   *
+   * @param {KeyboardEvent} event
+   * @returns {boolean} Whether the key was handled.
+   */
+  handleKey(event) {
+    if (event.defaultPrevented || event.isComposing) {
+      return false;
+    }
+    if (getMenuManager().isOpen) {
+      return false;
+    }
+    const shells = [...this._shells].filter((x) => !x.destroyed);
+    for (const shell of shells) {
+      if (shell._handleWindowKey?.(event)) {
+        return true;
+      }
+    }
+    if (isEditingKey(event)) {
+      return false;
+    }
+    for (const entry of this._entries) {
+      if (matchesAccelerator(entry.accelerator, event) && entry.handler(event) !== false) {
+        return true;
+      }
+    }
+    for (const shell of shells) {
+      const item = shell._findAccelerator(event);
+      if (item) {
+        item._activateByAccelerator();
+        return true;
+      }
+    }
+    return false;
+  }
+  _onKeyDown(event) {
+    if (this.handleKey(event)) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }
+};
+defineProperties(AcceleratorGroup, {
+  /**
+   * The window of the group.
+   */
+  window: { value: null, readOnly: true }
+});
+function getAcceleratorGroup(window2) {
+  if (!window2 || !window2.isWindow) {
+    throw new TypeError("Accelerator groups belong to windows.");
+  }
+  let group = GROUPS.get(window2);
+  if (!group) {
+    group = new AcceleratorGroup();
+    group._window = window2;
+    GROUPS.set(window2, group);
+    window2.el.addEventListener("keydown", group._onKeyDown);
+    window2.connect("destroy", () => {
+      window2.el.removeEventListener("keydown", group._onKeyDown);
+      GROUPS.delete(window2);
+      group.destroy();
+    });
+  }
+  return group;
+}
+__name(getAcceleratorGroup, "getAcceleratorGroup");
+function trackAccelerators(widget, shell) {
+  let group = null;
+  const update = /* @__PURE__ */ __name(() => {
+    const window2 = !widget.destroyed && widget.isVisible ? widget.window : null;
+    const next = window2 ? getAcceleratorGroup(window2) : null;
+    if (next === group) {
+      return;
+    }
+    group?.removeShell(shell);
+    group = next;
+    group?.addShell(shell);
+  }, "update");
+  const disconnects = [
+    widget.connect("is-visible-change", update),
+    widget.connect("parent-change", update),
+    widget.connect("destroy", () => stop())
+  ];
+  function stop() {
+    disconnects.forEach((disconnect) => disconnect());
+    disconnects.length = 0;
+    group?.removeShell(shell);
+    group = null;
+  }
+  __name(stop, "stop");
+  update();
+  return stop;
+}
+__name(trackAccelerators, "trackAccelerators");
+
+// src/widgets/auxiliary.js
+function attachAuxiliaryWidget(container, widget, slot, onDestroy) {
+  if (!(widget instanceof Widget)) {
+    throw new TypeError("Only widgets can be used as auxiliary widgets.");
+  }
+  widget._setParent(container);
+  slot.append(widget.el);
+  widget._onParented();
+  const disconnect = widget.connect("destroy", () => {
+    release();
+    onDestroy(widget);
+  });
+  let released = false;
+  function release() {
+    if (released) {
+      return;
+    }
+    released = true;
+    disconnect();
+    widget.el.remove();
+    if (widget.parent === container) {
+      widget._setParent(null);
+    }
+  }
+  __name(release, "release");
+  return release;
+}
+__name(attachAuxiliaryWidget, "attachAuxiliaryWidget");
+function refreshAuxiliaryWidgets(widgets) {
+  for (const widget of widgets) {
+    if (widget && !widget.destroyed) {
+      widget._recalculateVisibility();
+      widget._recalculateSensitivity();
+    }
+  }
+}
+__name(refreshAuxiliaryWidgets, "refreshAuxiliaryWidgets");
+function getAuxiliaryFocusChain(widget) {
+  if (!widget || !widget.isVisible || !widget.isSensitive) {
+    return [];
+  }
+  const chain = widget.canFocus ? [widget] : [];
+  if (typeof widget._getFocusChain === "function") {
+    chain.push(...widget._getFocusChain());
+  }
+  return chain;
+}
+__name(getAuxiliaryFocusChain, "getAuxiliaryFocusChain");
+
+// src/widgets/box.js
+var Box = class extends Container {
+  static {
+    __name(this, "Box");
+  }
+  _initialize() {
+    super._initialize();
+    this._queueLayout();
+  }
+  _render() {
+    return createElement('<div class="wy-box"></div>');
+  }
+  _updateLayout() {
+    const horizontal = this._orientation === Orientation.HORIZONTAL;
+    const style = this.bodyElement.style;
+    this.el.classList.toggle("wy-horizontal", horizontal);
+    this.el.classList.toggle("wy-vertical", !horizontal);
+    this.el.classList.toggle("wy-homogeneous", this._homogeneous);
+    style.gap = `${this._spacing}px`;
+    for (const child of this._children) {
+      this._layoutChild(child, horizontal);
+    }
+  }
+  _layoutChild(child, horizontal) {
+    const expands = horizontal ? child.isHExpand : child.isVExpand;
+    const align = horizontal ? child.hAlign : child.vAlign;
+    const margin = child.margin;
+    if (this._homogeneous) {
+      child._setLayoutStyle("flex", "");
+      child._setLayoutStyle("alignSelf", crossAlignment(child.vAlign));
+      child._setLayoutStyle("margin", marginToCss(margin));
+      return;
+    }
+    child._setLayoutStyle(
+      "alignSelf",
+      crossAlignment(horizontal ? child.vAlign : child.hAlign)
+    );
+    if (expands && align !== Align.FILL) {
+      child._setLayoutStyle("flex", "0 0 auto");
+    } else {
+      child._setLayoutStyle("flex", expands ? "1 1 auto" : "0 1 auto");
+    }
+    const sides = [margin.top, margin.right, margin.bottom, margin.left].map((x) => `${x}px`);
+    const start = horizontal ? 3 : 0;
+    const end = horizontal ? 1 : 2;
+    if (expands && (align === Align.CENTER || align === Align.END)) {
+      sides[start] = "auto";
+    }
+    if (expands && (align === Align.CENTER || align === Align.START)) {
+      sides[end] = "auto";
+    }
+    const value = sides.join(" ");
+    child._setLayoutStyle("margin", value === "0px 0px 0px 0px" ? "" : value);
+  }
+};
+function crossAlignment(align) {
+  return align === Align.FILL ? "" : SELF_ALIGNMENT[align];
+}
+__name(crossAlignment, "crossAlignment");
+defineProperties(Box, {
+  /**
+   * The direction children are laid out in: one of `Orientation`.
+   */
+  orientation: {
+    value: Orientation.HORIZONTAL,
+    changed() {
+      this._queueLayout();
+    }
+  },
+  /**
+   * Whether all children get the same size.
+   */
+  homogeneous: {
+    value: false,
+    changed() {
+      this._queueLayout();
+    }
+  },
+  /**
+   * The space between children, in pixels.
+   */
+  spacing: {
+    value: 0,
+    changed() {
+      this._queueLayout();
+    }
+  }
+});
+registerType("box", Box);
+
+// src/widgets/button-behavior.js
+function attachButtonBehavior(widget, options) {
+  const element = options.element || widget.el;
+  const focusOnPress = options.focusOnPress !== false;
+  const keyboard = options.keyboard !== false;
+  let pointerId = null;
+  let pointerInside = false;
+  let spacePressed = false;
+  let enterTimer = 0;
+  function setPressed(pressed) {
+    element.classList.toggle("wy-pressed", pressed);
+  }
+  __name(setPressed, "setPressed");
+  function clearEnterTimer() {
+    if (enterTimer) {
+      clearTimeout(enterTimer);
+      enterTimer = 0;
+    }
+  }
+  __name(clearEnterTimer, "clearEnterTimer");
+  function activate() {
+    if (!widget.destroyed && widget.isSensitive) {
+      options.onActivate();
+    }
+  }
+  __name(activate, "activate");
+  function activateWithFlash() {
+    clearEnterTimer();
+    setPressed(true);
+    enterTimer = setTimeout(() => {
+      enterTimer = 0;
+      if (widget.destroyed) {
+        return;
+      }
+      setPressed(false);
+      activate();
+    }, settings.keyActivateDelay);
+  }
+  __name(activateWithFlash, "activateWithFlash");
+  function onPointerDown(event) {
+    if (event.button !== 0 || !widget.isSensitive || pointerId !== null) {
+      return;
+    }
+    clearEnterTimer();
+    pointerId = event.pointerId;
+    pointerInside = true;
+    try {
+      element.setPointerCapture(pointerId);
+    } catch (_error) {
+    }
+    setPressed(true);
+    if (focusOnPress) {
+      widget.focus();
+    }
+  }
+  __name(onPointerDown, "onPointerDown");
+  function onPointerMove(event) {
+    if (event.pointerId !== pointerId) {
+      return;
+    }
+    const rect = element.getBoundingClientRect();
+    const inside = event.clientX >= rect.left && event.clientX < rect.right && event.clientY >= rect.top && event.clientY < rect.bottom;
+    if (inside !== pointerInside) {
+      pointerInside = inside;
+      setPressed(inside);
+    }
+  }
+  __name(onPointerMove, "onPointerMove");
+  function onPointerUp(event) {
+    if (event.pointerId !== pointerId) {
+      return;
+    }
+    pointerId = null;
+    setPressed(false);
+    if (pointerInside && event.type === "pointerup") {
+      activate();
+    }
+  }
+  __name(onPointerUp, "onPointerUp");
+  function onKeyDown(event) {
+    if (!keyboard || !widget.isSensitive || event.target !== widget.focusElement) {
+      return;
+    }
+    if (event.key === Key.ENTER && !event.repeat) {
+      event.preventDefault();
+      activateWithFlash();
+    } else if (event.key === Key.SPACE) {
+      event.preventDefault();
+      spacePressed = true;
+      setPressed(true);
+    }
+  }
+  __name(onKeyDown, "onKeyDown");
+  function onKeyUp(event) {
+    if (!keyboard || event.key !== Key.SPACE || !spacePressed) {
+      return;
+    }
+    event.preventDefault();
+    spacePressed = false;
+    setPressed(false);
+    activate();
+  }
+  __name(onKeyUp, "onKeyUp");
+  function onBlur() {
+    if (spacePressed) {
+      spacePressed = false;
+      setPressed(false);
+    }
+  }
+  __name(onBlur, "onBlur");
+  element.addEventListener("pointerdown", onPointerDown);
+  element.addEventListener("pointermove", onPointerMove);
+  element.addEventListener("pointerup", onPointerUp);
+  element.addEventListener("pointercancel", onPointerUp);
+  element.addEventListener("keydown", onKeyDown);
+  element.addEventListener("keyup", onKeyUp);
+  element.addEventListener("focusout", onBlur);
+  return {
+    isPressed: /* @__PURE__ */ __name(() => element.classList.contains("wy-pressed"), "isPressed"),
+    activate: activateWithFlash,
+    destroy() {
+      clearEnterTimer();
+      element.removeEventListener("pointerdown", onPointerDown);
+      element.removeEventListener("pointermove", onPointerMove);
+      element.removeEventListener("pointerup", onPointerUp);
+      element.removeEventListener("pointercancel", onPointerUp);
+      element.removeEventListener("keydown", onKeyDown);
+      element.removeEventListener("keyup", onKeyUp);
+      element.removeEventListener("focusout", onBlur);
+    }
+  };
+}
+__name(attachButtonBehavior, "attachButtonBehavior");
+
+// src/widgets/button-box.js
+var LAYOUT_STYLES = new Set(Object.values(ButtonBoxStyle));
+var JUSTIFY_CONTENT = Object.freeze({
+  [ButtonBoxStyle.SPREAD]: "space-evenly",
+  [ButtonBoxStyle.EDGE]: "space-between",
+  [ButtonBoxStyle.START]: "flex-start",
+  [ButtonBoxStyle.END]: "flex-end",
+  [ButtonBoxStyle.CENTER]: "center"
+});
+var ButtonBox = class extends Box {
+  static {
+    __name(this, "ButtonBox");
+  }
+  _initialize() {
+    super._initialize();
+    this._secondary = /* @__PURE__ */ new Set();
+    this._childObserver = null;
+    if (typeof ResizeObserver !== "undefined") {
+      this._childObserver = new ResizeObserver(() => {
+        if (!this.destroyed && !this._measuring) {
+          this._queueLayout();
+        }
+      });
+    }
+    this._measuring = false;
+  }
+  _render() {
+    return createElement('<div class="wy-box wy-button-box"></div>');
+  }
+  /**
+   * Sets whether a child is secondary: placed apart from the other children, at the start for
+   * the `end`, `edge`, `spread` and `center` styles, and at the end for the `start` style.
+   *
+   * @param {import('./widget.js').Widget} widget
+   * @param {boolean} secondary
+   * @throws {Error} If the widget is not a child.
+   */
+  setChildSecondary(widget, secondary) {
+    if (!this._children.includes(widget)) {
+      throw new Error("The widget is not a child of this button box.");
+    }
+    if (secondary) {
+      this._secondary.add(widget);
+    } else {
+      this._secondary.delete(widget);
+    }
+    this._queueLayout();
+  }
+  /**
+   * Returns whether a child is secondary.
+   *
+   * @param {import('./widget.js').Widget} widget
+   * @returns {boolean}
+   */
+  getChildSecondary(widget) {
+    return this._secondary.has(widget);
+  }
+  insertChild(widget, index) {
+    const result = super.insertChild(widget, index);
+    this._childObserver?.observe(widget.el);
+    return result;
+  }
+  removeChild(widget) {
+    const index = super.removeChild(widget);
+    this._secondary.delete(widget);
+    this._childObserver?.unobserve(widget.el);
+    for (const name of [
+      "flex",
+      "order",
+      "minWidth",
+      "minHeight",
+      "marginLeft",
+      "marginRight",
+      "marginTop",
+      "marginBottom",
+      "margin",
+      "alignSelf"
+    ]) {
+      widget._setLayoutStyle(name, "");
+    }
+    widget._applyLayoutStyle();
+    return index;
+  }
+  destroy() {
+    this._childObserver?.disconnect();
+    super.destroy();
+  }
+  _updateLayout() {
+    const horizontal = this._orientation === Orientation.HORIZONTAL;
+    const style = this.bodyElement.style;
+    this.el.classList.toggle("wy-horizontal", horizontal);
+    this.el.classList.toggle("wy-vertical", !horizontal);
+    const layoutStyle = this._layoutStyle;
+    const spacing = `${this._spacing}px`;
+    style.gap = spacing;
+    style.justifyContent = JUSTIFY_CONTENT[layoutStyle];
+    const padding = layoutStyle === ButtonBoxStyle.SPREAD ? spacing : "";
+    style.paddingLeft = style.paddingRight = horizontal ? padding : "";
+    style.paddingTop = style.paddingBottom = horizontal ? "" : padding;
+    const visible = this._children.filter((x) => x.visible);
+    const size = this._homogeneous ? this._measureLargestChild(visible, horizontal) : 0;
+    const secondaryAtEnd = layoutStyle === ButtonBoxStyle.START;
+    const secondary = visible.filter((x) => this._secondary.has(x));
+    const primary = visible.filter((x) => !this._secondary.has(x));
+    for (const child of this._children) {
+      this._layoutButton(child, horizontal, size);
+    }
+    const separated = secondary.length && primary.length;
+    const edge = layoutStyle === ButtonBoxStyle.EDGE || layoutStyle === ButtonBoxStyle.SPREAD;
+    if (separated && !edge) {
+      const [start, end] = horizontal ? ["Left", "Right"] : ["Top", "Bottom"];
+      if (secondaryAtEnd) {
+        secondary[0]._setLayoutStyle(`margin${start}`, "auto");
+      } else {
+        secondary[secondary.length - 1]._setLayoutStyle(`margin${end}`, "auto");
+        if (layoutStyle === ButtonBoxStyle.CENTER) {
+          primary[primary.length - 1]._setLayoutStyle(`margin${end}`, "auto");
+        }
+      }
+    }
+  }
+  _layoutButton(child, horizontal, size) {
+    const secondary = this._secondary.has(child);
+    const secondaryAtEnd = this._layoutStyle === ButtonBoxStyle.START;
+    child._setLayoutStyle("flex", "0 0 auto");
+    child._setLayoutStyle("order", secondary ? secondaryAtEnd ? "1" : "-1" : "");
+    const align = horizontal ? child.vAlign : child.hAlign;
+    child._setLayoutStyle("alignSelf", align === Align.FILL ? "" : SELF_ALIGNMENT[align]);
+    for (const name of ["marginLeft", "marginRight", "marginTop", "marginBottom", "margin"]) {
+      child._setLayoutStyle(name, "");
+    }
+    const margin = child.margin;
+    if (margin.top || margin.right || margin.bottom || margin.left) {
+      child._setLayoutStyle(
+        "margin",
+        `${margin.top}px ${margin.right}px ${margin.bottom}px ${margin.left}px`
+      );
+    }
+    const minimum = this._getMinimumChildSize(child, horizontal);
+    const main = Math.max(minimum, size);
+    const cross = horizontal ? this._minChildHeight : this._minChildWidth;
+    child._setLayoutStyle(horizontal ? "minWidth" : "minHeight", main > 0 ? `${main}px` : "");
+    child._setLayoutStyle(horizontal ? "minHeight" : "minWidth", cross > 0 ? `${cross}px` : "");
+  }
+  _getMinimumChildSize(child, horizontal) {
+    const request = horizontal ? child.width : child.height;
+    const minimum = horizontal ? this._minChildWidth : this._minChildHeight;
+    return Math.max(request, minimum, 0);
+  }
+  /**
+   * Measures the largest natural size of the children along the box, without the sizes this
+   * box imposes on them.
+   *
+   * @param {import('./widget.js').Widget[]} children
+   * @param {boolean} horizontal
+   * @returns {number}
+   */
+  _measureLargestChild(children, horizontal) {
+    if (!this.el.isConnected || !children.length) {
+      return 0;
+    }
+    const property = horizontal ? "minWidth" : "minHeight";
+    this._measuring = true;
+    try {
+      const saved = children.map((x) => x.el.style[property]);
+      children.forEach((x) => x.el.style[property] = "");
+      let largest = 0;
+      for (const child of children) {
+        const rect = child.el.getBoundingClientRect();
+        largest = Math.max(largest, Math.ceil(horizontal ? rect.width : rect.height));
+      }
+      children.forEach((x, i) => x.el.style[property] = saved[i]);
+      return largest;
+    } finally {
+      this._measuring = false;
+    }
+  }
+};
+defineProperties(ButtonBox, {
+  /**
+   * How the children are arranged: one of `ButtonBoxStyle`. `edge` (the default, as in the
+   * original toolkit) puts the first and last child at the ends with equal space between the
+   * children, `spread` also puts space before the first and after the last, and `start`, `end`
+   * and `center` pack the children together.
+   */
+  layoutStyle: {
+    value: ButtonBoxStyle.EDGE,
+    coerce(layoutStyle) {
+      if (!LAYOUT_STYLES.has(layoutStyle)) {
+        throw new TypeError(`Invalid button box style: ${layoutStyle}.`);
+      }
+      return layoutStyle;
+    },
+    changed() {
+      this._queueLayout();
+    }
+  },
+  /**
+   * Whether all children get the same size along the box, as in GTK.
+   */
+  homogeneous: { value: true },
+  /**
+   * The space between the children, in pixels.
+   */
+  spacing: { value: 5 },
+  /**
+   * The minimum width of the children in pixels, as in GTK.
+   */
+  minChildWidth: {
+    value: 85,
+    changed() {
+      this._queueLayout();
+    }
+  },
+  /**
+   * The minimum height of the children in pixels.
+   */
+  minChildHeight: {
+    value: 0,
+    changed() {
+      this._queueLayout();
+    }
+  }
+});
+registerType("button-box", ButtonBox);
+
+// src/widgets/button-group.js
+var ButtonGroup = class extends Instance {
+  static {
+    __name(this, "ButtonGroup");
+  }
+  _initialize() {
+    super._initialize();
+    this._buttons = [];
+  }
+  /**
+   * Adds a button. If it is active, it becomes the active button of the group.
+   *
+   * @param {import('./widget.js').Widget & {active: boolean, group: ButtonGroup | null}} button
+   */
+  addButton(button) {
+    if (this._buttons.includes(button)) {
+      return;
+    }
+    if (button.group && button.group !== this) {
+      button.group.removeButton(button);
+    }
+    this._buttons.push(button);
+    button.connect("active-change", this._onButtonActiveChange, this);
+    button.connect("destroy", this._onButtonDestroy, this);
+    if (button.group !== this) {
+      button.group = this;
+    }
+    if (button.active) {
+      this.active = button;
+    }
+    this.emit("add", this, button);
+  }
+  /**
+   * Removes a button.
+   *
+   * @param {import('./widget.js').Widget} button
+   * @throws {Error} If the button is not in the group.
+   */
+  removeButton(button) {
+    const index = this._buttons.indexOf(button);
+    if (index < 0) {
+      throw new Error("The button is not in this group.");
+    }
+    this._buttons.splice(index, 1);
+    button.disconnect("active-change", this._onButtonActiveChange, this);
+    button.disconnect("destroy", this._onButtonDestroy, this);
+    if (button.group === this) {
+      button.group = null;
+    }
+    if (this._active === button) {
+      this._active = null;
+      this.emit("active-change", this);
+    }
+    this.emit("remove", this, button);
+  }
+  destroy() {
+    for (const button of [...this._buttons]) {
+      this.removeButton(button);
+    }
+    super.destroy();
+  }
+  _onButtonActiveChange(button) {
+    if (button.active) {
+      this.active = button;
+    } else if (this._active === button) {
+      this._active = null;
+      this.emit("active-change", this);
+    }
+  }
+  _onButtonDestroy(button) {
+    if (this._buttons.includes(button)) {
+      this.removeButton(button);
+    }
+  }
+};
+defineProperties(ButtonGroup, {
+  /**
+   * The active button, or `null`. Setting it activates that button and deactivates the others.
+   */
+  active: {
+    value: null,
+    set(button) {
+      if (button && !this._buttons.includes(button)) {
+        throw new Error("The button is not in this group.");
+      }
+      if (button === this._active) {
+        return false;
+      }
+      const old = this._active;
+      this._active = button;
+      if (old && old.active) {
+        old.active = false;
+      }
+      if (button && !button.active) {
+        button.active = true;
+      }
+    }
+  },
+  /**
+   * The buttons in the group. Do not modify the array.
+   */
+  buttons: {
+    readOnly: true,
+    get() {
+      return this._buttons;
+    }
+  },
+  /**
+   * The number of buttons.
+   */
+  buttonsCount: {
+    readOnly: true,
+    get() {
+      return this._buttons.length;
+    }
+  }
+});
+ButtonGroup.builderProperties = {
+  buttons(builder, group, buttons) {
+    if (!Array.isArray(buttons)) {
+      throw new Error("Button group buttons must be an array.");
+    }
+    for (const button of builder.build(buttons)) {
+      group.addButton(button);
+    }
+  }
+};
+registerType("button-group", ButtonGroup);
+
+// src/icons/icons.js
+var ICON_PATHS = {
+  "document-new": ["M4 1.5h5.5L13 5v9.5H4z", "M9.5 1.5V5H13", "M6.5 9.5h4M8.5 7.5v4"],
+  "document-open": ["M1.5 13.5v-10h4l1.5 1.5h6v2", "M1.5 13.5l2.5-6h11l-2.5 6z"],
+  "document-save": ["M2.5 2.5h9l2 2v9h-11z", "M5 2.5v3.5h5V2.5", "M5 13.5v-4h6v4"],
+  "document-save-as": [
+    "M2.5 2.5h9l2 2v4",
+    "M5 2.5v3.5h5V2.5",
+    "M2.5 2.5v11h5",
+    "M9 14l1-3 4-4 2 2-4 4z"
+  ],
+  "document-print": ["M4.5 5.5v-4h7v4", "M4.5 11.5h-3v-6h13v6h-3", "M4.5 9.5h7v5h-7z"],
+  "document-properties": ["M4 1.5h8.5v13h-9v-13", "M6 5h5M6 8h5M6 11h3"],
+  "edit-cut": [
+    "M5 11a2 2 0 1 1-2.8 2.8A2 2 0 0 1 5 11zm6 0a2 2 0 1 0 2.8 2.8A2 2 0 0 0 11 11z",
+    "M5 11l6-9.5M11 11L5 1.5"
+  ],
+  "edit-copy": ["M5.5 5.5h8v9h-8z", "M3.5 10.5h-1v-9h8v1"],
+  "edit-paste": ["M4.5 3h-2v11.5h11V3h-2", "M5.5 1.5h5v3h-5z", "M5.5 8h5M5.5 11h3"],
+  "edit-undo": ["M5.5 3.5L2 7l3.5 3.5", "M2.5 7H10a3.5 3.5 0 0 1 0 7H7"],
+  "edit-redo": ["M10.5 3.5L14 7l-3.5 3.5", "M13.5 7H6a3.5 3.5 0 0 0 0 7h3"],
+  "edit-delete": ["M2.5 4h11", "M6 4V2h4v2", "M4 4l.8 10.5h6.4L12 4", "M6.8 6.5v5.5M9.2 6.5v5.5"],
+  "edit-find": ["M10.5 6.5a4 4 0 1 1-8 0 4 4 0 0 1 8 0z", "M9.5 9.5l5 5"],
+  "edit-clear": ["M5 3.5h9v9H5L1.5 8z", "M7.5 6l4 4m0-4l-4 4"],
+  "edit-select-all": ["M2.5 2.5h11v11h-11z", "F5 5h6v6H5z"],
+  "list-add": ["M8 2.5v11M2.5 8h11"],
+  "list-remove": ["M2.5 8h11"],
+  "go-previous": ["M9.5 3L4.5 8l5 5", "M4.5 8h9"],
+  "go-next": ["M6.5 3l5 5-5 5", "M11.5 8h-9"],
+  "go-up": ["M3 7.5l5-5 5 5", "M8 2.5v11"],
+  "go-down": ["M3 8.5l5 5 5-5", "M8 13.5v-11"],
+  "go-first": ["M3.5 3v10", "M11.5 3l-5 5 5 5"],
+  "go-last": ["M12.5 3v10", "M4.5 3l5 5-5 5"],
+  "go-home": ["M1.5 8L8 2l6.5 6", "M3.5 6.5v8h9v-8", "M6.5 14.5v-4h3v4"],
+  "go-jump": ["M2.5 12.5c0-5 3-8 9-8", "M9 1.5l3 3-3 3"],
+  "view-refresh": ["M13 3.5v3h-3", "M12.8 6.5A5.5 5.5 0 1 0 13.5 9"],
+  "view-list": ["M5.5 4h8M5.5 8h8M5.5 12h8", "F2 3h2v2H2zM2 7h2v2H2zM2 11h2v2H2z"],
+  "view-grid": ["M2.5 2.5h4v4h-4zM9.5 2.5h4v4h-4zM2.5 9.5h4v4h-4zM9.5 9.5h4v4h-4z"],
+  "view-fullscreen": ["M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4"],
+  "view-sort-ascending": ["M4.5 2v12M2 11.5l2.5 2.5 2.5-2.5", "M9 4h5M9 8h3.5M9 12h2"],
+  "view-sort-descending": ["M4.5 2v12M2 11.5l2.5 2.5 2.5-2.5", "M9 4h2M9 8h3.5M9 12h5"],
+  "zoom-in": ["M10.5 6.5a4 4 0 1 1-8 0 4 4 0 0 1 8 0z", "M9.5 9.5l5 5", "M4.5 6.5h4M6.5 4.5v4"],
+  "zoom-out": ["M10.5 6.5a4 4 0 1 1-8 0 4 4 0 0 1 8 0z", "M9.5 9.5l5 5", "M4.5 6.5h4"],
+  "zoom-fit-best": ["M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4", "M5.5 5.5h5v5h-5z"],
+  "zoom-original": ["M10.5 6.5a4 4 0 1 1-8 0 4 4 0 0 1 8 0z", "M9.5 9.5l5 5", "M5.5 5l1-.5v4"],
+  "help-about": [
+    "M14.5 8a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z",
+    "M8 7v4.5",
+    "F7.1 4.2h1.8v1.8H7.1z"
+  ],
+  "help-contents": [
+    "M14.5 8a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z",
+    "M6 6.2a2 2 0 1 1 2.8 1.8c-.6.3-.8.7-.8 1.3v.5",
+    "F7.1 11h1.8v1.8H7.1z"
+  ],
+  "dialog-information": [
+    "M14.5 8a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z",
+    "M8 7v4.5",
+    "F7.1 4.2h1.8v1.8H7.1z"
+  ],
+  "dialog-warning": ["M8 1.8L14.8 13.8H1.2z", "M8 6v3.8", "F7.1 10.8h1.8v1.8H7.1z"],
+  "dialog-error": ["M14.5 8a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z", "M5.5 5.5l5 5m0-5l-5 5"],
+  "dialog-question": [
+    "M14.5 8a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z",
+    "M6 6.2a2 2 0 1 1 2.8 1.8c-.6.3-.8.7-.8 1.3v.5",
+    "F7.1 11h1.8v1.8H7.1z"
+  ],
+  "preferences-system": [
+    "M10 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0z",
+    "M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"
+  ],
+  "window-close": ["M3.5 3.5l9 9m0-9l-9 9"],
+  "window-new": ["M1.5 2.5h13v11h-13z", "M1.5 5.5h13"],
+  "application-exit": ["M9.5 4.5v-3h-7v13h7v-3", "M6.5 8h8M12 5.5L14.5 8 12 10.5"],
+  folder: ["M1.5 13.5v-11h4.5l1.5 2h7v9z"],
+  "folder-new": ["M1.5 13.5v-11h4.5l1.5 2h7v9z", "M8 7.5v4M6 9.5h4"],
+  "text-x-generic": ["M4 1.5h5.5L13 5v9.5H4z", "M9.5 1.5V5H13", "M6 8h5M6 10.5h5M6 13h3"],
+  "x-office-spreadsheet": ["M2.5 2.5h11v11h-11z", "M2.5 6h11M2.5 9.5h11M6.5 2.5v11"],
+  "x-office-presentation": ["M1.5 2.5h13v8h-13z", "M8 10.5v3M5 14.5l3-1 3 1"],
+  "office-chart-line": ["M1.5 1.5v13h13", "M3.5 11l3-4 3 2 4-6"],
+  "office-chart-bar": ["M1.5 1.5v13h13", "M4.5 12.5v-4M7.5 12.5v-7M10.5 12.5v-5M13.5 12.5v-9"],
+  user: [
+    "M10.8 5a2.8 2.8 0 1 1-5.6 0 2.8 2.8 0 0 1 5.6 0z",
+    "M2.5 14.5c.5-3 2.7-4.5 5.5-4.5s5 1.5 5.5 4.5"
+  ],
+  mail: ["M1.5 3.5h13v9h-13z", "M1.5 3.5L8 9l6.5-5.5"],
+  calendar: ["M2.5 3.5h11v10h-11z", "M2.5 6.5h11", "M5 2v3M11 2v3", "F5 8.5h2v2H5zM9 8.5h2v2H9z"],
+  starred: ["M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"],
+  bookmark: ["M4 1.5h8v13l-4-3-4 3z"],
+  "media-playback-start": ["F4.5 2.5L13 8l-8.5 5.5z"],
+  "media-playback-pause": ["F4 2.5h2.8v11H4zM9.2 2.5H12v11H9.2z"],
+  "media-playback-stop": ["F3.5 3.5h9v9h-9z"],
+  "format-text-bold": [
+    "M4.5 2.5h4a2.8 2.8 0 0 1 0 5.5h-4z",
+    "M4.5 8h4.8a2.8 2.8 0 0 1 0 5.5H4.5z"
+  ],
+  "format-text-italic": ["M7 2.5h5M4 13.5h5M9.5 2.5l-3 11"],
+  "format-text-underline": ["M4.5 2v5.5a3.5 3.5 0 0 0 7 0V2", "M3 14.5h10"],
+  "format-justify-left": ["M2 3h12M2 6.3h8M2 9.7h12M2 13h8"],
+  "format-justify-center": ["M2 3h12M4 6.3h8M2 9.7h12M4 13h8"],
+  "format-justify-right": ["M2 3h12M6 6.3h8M2 9.7h12M6 13h8"],
+  "object-select": ["M2.5 8.5l3.5 3.5 7.5-8"],
+  "process-stop": [
+    "M5.3 1.5h5.4l3.8 3.8v5.4l-3.8 3.8H5.3l-3.8-3.8V5.3z",
+    "M5.5 5.5l5 5m0-5l-5 5"
+  ],
+  "system-search": ["M10.5 6.5a4 4 0 1 1-8 0 4 4 0 0 1 8 0z", "M9.5 9.5l5 5"],
+  "emblem-favorite": ["M8 14s-6-3.8-6-8a3.2 3.2 0 0 1 6-1.6A3.2 3.2 0 0 1 14 6c0 4.2-6 8-6 8z"],
+  "open-menu": ["M2.5 4h11M2.5 8h11M2.5 12h11"],
+  "weather-clear": [
+    "M11 8a3 3 0 1 1-6 0 3 3 0 0 1 6 0z",
+    "M8 1v1.5M8 13.5V15M1 8h1.5M13.5 8H15M3 3l1 1M12 12l1 1M3 13l1-1M12 4l1-1"
+  ],
+  "weather-clear-night": ["M13.5 10.5A6 6 0 0 1 5.5 2.5a6 6 0 1 0 8 8z"],
+  "pan-down": ["F4 6h8l-4 4.5z"],
+  "pan-up": ["F4 10h8L8 5.5z"],
+  "pan-start": ["F10 4v8L5.5 8z"],
+  "pan-end": ["F6 4v8l4.5-4z"]
+};
+var ICON_COLORS = {
+  "dialog-information": "#3b7fcf",
+  "dialog-warning": "#d9a400",
+  "dialog-error": "#d23b32",
+  "dialog-question": "#3b7fcf",
+  starred: "#e6a800"
+};
+var ICONS = /* @__PURE__ */ new Map();
+function toSvg(paths, color) {
+  const stroke = color || "currentColor";
+  const elements = paths.map((path) => {
+    if (path.startsWith("F")) {
+      return `<path d="${path.slice(1)}" fill="${stroke}"/>`;
+    }
+    return `<path d="${path}" fill="none" stroke="${stroke}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  });
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" aria-hidden="true">${elements.join("")}</svg>`;
+}
+__name(toSvg, "toSvg");
+for (const [name, paths] of Object.entries(ICON_PATHS)) {
+  ICONS.set(name, toSvg(paths, ICON_COLORS[name]));
+}
+function registerIcon(name, svg) {
+  ICONS.set(name, svg);
+}
+__name(registerIcon, "registerIcon");
+function getIcon(name) {
+  return ICONS.get(name) || null;
+}
+__name(getIcon, "getIcon");
+function getIconNames() {
+  return [...ICONS.keys()].sort();
+}
+__name(getIconNames, "getIconNames");
+
+// src/widgets/image.js
+var Image = class extends Widget {
+  static {
+    __name(this, "Image");
+  }
+  _render() {
+    const element = createElement('<span class="wy-image" role="img"></span>');
+    this._pictureEl = null;
+    return element;
+  }
+  _showIcon(name) {
+    const svg = getIcon(name);
+    this._pictureEl = null;
+    this.el.innerHTML = svg || "";
+    this.el.classList.toggle("wy-image-missing", !svg && Boolean(name));
+    this.el.classList.add("wy-image-icon");
+    this._applyPixelSize();
+  }
+  _showPicture(source) {
+    this.el.classList.remove("wy-image-icon", "wy-image-missing");
+    this.el.textContent = "";
+    if (!source) {
+      this._pictureEl = null;
+      return;
+    }
+    const picture = document.createElement("img");
+    picture.alt = this._alternativeText;
+    picture.draggable = false;
+    picture.addEventListener("load", () => this.emit("load", this));
+    picture.addEventListener("error", () => {
+      this.el.classList.add("wy-image-missing");
+      this.emit("error", this);
+    });
+    picture.src = source;
+    this._pictureEl = picture;
+    this.el.append(picture);
+    this._applyPixelSize();
+  }
+  _applyPixelSize() {
+    const size = this._pixelSize > 0 ? `${this._pixelSize}px` : "";
+    this.el.style.setProperty("--wy-icon-size", size || null);
+  }
+};
+defineProperties(Image, {
+  hAlign: { value: Align.CENTER },
+  vAlign: { value: Align.CENTER },
+  /**
+   * The name of an icon, e.g. `'document-open'`. Setting it clears `source`.
+   */
+  icon: {
+    value: "",
+    changed(icon) {
+      if (icon) {
+        this._source = "";
+      }
+      this._showIcon(icon);
+    }
+  },
+  /**
+   * The URL of a picture. Setting it clears `icon`.
+   */
+  source: {
+    value: "",
+    changed(source) {
+      if (source) {
+        this._icon = "";
+      }
+      this._showPicture(source);
+    }
+  },
+  /**
+   * The size of an icon in pixels, or 0 for the default (16 pixels, or the font's size in
+   * buttons). Pictures are scaled to fit it too.
+   */
+  pixelSize: {
+    value: 0,
+    changed() {
+      this._applyPixelSize();
+    }
+  },
+  /**
+   * A text alternative for assistive technology.
+   */
+  alternativeText: {
+    value: "",
+    changed(text) {
+      if (text) {
+        this.el.setAttribute("aria-label", text);
+      } else {
+        this.el.removeAttribute("aria-label");
+      }
+      if (this._pictureEl) {
+        this._pictureEl.alt = text;
+      }
+    }
+  }
+});
+registerType("image", Image);
+
+// src/widgets/label.js
+var MARKUP_TAGS = Object.freeze({
+  b: { tag: "b" },
+  strong: { tag: "strong" },
+  i: { tag: "i" },
+  em: { tag: "em" },
+  u: { tag: "u" },
+  s: { tag: "s" },
+  strike: { tag: "s" },
+  del: { tag: "del" },
+  ins: { tag: "ins" },
+  small: { tag: "small" },
+  big: { tag: "span", className: "wy-markup-big" },
+  sub: { tag: "sub" },
+  sup: { tag: "sup" },
+  tt: { tag: "code" },
+  code: { tag: "code" },
+  mark: { tag: "mark" },
+  span: { tag: "span" },
+  br: { tag: "br" }
+});
+var TAG_PATTERN = /<(\/?)([a-zA-Z][a-zA-Z0-9]*)((?:\s+[a-zA-Z_:][-a-zA-Z0-9_:.]*(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'=<>`]+))?)*)\s*(\/?)>/g;
+var CLASS_PATTERN = /\sclass\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/i;
+var ENTITY_PATTERN = /^&(?:#[0-9]+|#x[0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*);/;
+var MNEMONIC_LABELS = /* @__PURE__ */ new Set();
+var TEXT_ALIGN = Object.freeze({
+  [Justification.START]: "start",
+  [Justification.END]: "end",
+  [Justification.CENTER]: "center",
+  [Justification.FILL]: "justify"
+});
+var mnemonicListenerInstalled = false;
+function escapeMarkupText(text) {
+  let result = "";
+  for (let index = 0; index < text.length; index++) {
+    const character = text[index];
+    if (character === "&") {
+      const entity = ENTITY_PATTERN.exec(text.slice(index));
+      if (entity) {
+        result += entity[0];
+        index += entity[0].length - 1;
+      } else {
+        result += "&amp;";
+      }
+    } else if (character === "<") {
+      result += "&lt;";
+    } else if (character === ">") {
+      result += "&gt;";
+    } else if (character === '"') {
+      result += "&quot;";
+    } else {
+      result += character;
+    }
+  }
+  return result;
+}
+__name(escapeMarkupText, "escapeMarkupText");
+function parseUnderlines(text, markup, state) {
+  const parts = [];
+  let key = "";
+  let plain = "";
+  for (let index = 0; index < text.length; index++) {
+    const character = text[index];
+    if (character !== "_" || index === text.length - 1) {
+      plain += character;
+      continue;
+    }
+    const next = text[index + 1];
+    if (next === "_") {
+      plain += "_";
+      index += 1;
+      continue;
+    }
+    let marked = next;
+    const entity = markup && next === "&" ? ENTITY_PATTERN.exec(text.slice(index + 1)) : null;
+    if (entity) {
+      marked = entity[0];
+    } else if (next.codePointAt(0) > 65535) {
+      marked = String.fromCodePoint(next.codePointAt(0));
+    }
+    index += marked.length;
+    if (state.found || /\s/.test(marked)) {
+      plain += marked;
+      continue;
+    }
+    state.found = true;
+    parts.push(plain);
+    parts.push({ mnemonic: marked });
+    plain = "";
+    key = entity ? decodeEntity(marked) : marked;
+  }
+  parts.push(plain);
+  return { parts, key: key.toLowerCase() };
+}
+__name(parseUnderlines, "parseUnderlines");
+function decodeEntity(entity) {
+  const template = document.createElement("template");
+  template.innerHTML = entity;
+  return template.content.textContent || "";
+}
+__name(decodeEntity, "decodeEntity");
+function markupToHtml(markup, useUnderline) {
+  const stack = [];
+  const state = { found: false };
+  let html = "";
+  let key = "";
+  let position = 0;
+  function addText(text) {
+    if (!useUnderline) {
+      html += escapeMarkupText(text);
+      return;
+    }
+    const parsed = parseUnderlines(text, true, state);
+    key = key || parsed.key;
+    for (const part of parsed.parts) {
+      if (typeof part === "string") {
+        html += escapeMarkupText(part);
+      } else {
+        html += `<u class="wy-mnemonic">${escapeMarkupText(part.mnemonic)}</u>`;
+      }
+    }
+  }
+  __name(addText, "addText");
+  for (const match of markup.matchAll(TAG_PATTERN)) {
+    addText(markup.slice(position, match.index));
+    position = match.index + match[0].length;
+    const closing = Boolean(match[1]);
+    const name = match[2].toLowerCase();
+    const entry = MARKUP_TAGS[name];
+    if (!entry) {
+      addText(match[0]);
+      continue;
+    }
+    if (entry.tag === "br") {
+      if (!closing) {
+        html += "<br>";
+      }
+      continue;
+    }
+    if (closing) {
+      const index = stack.lastIndexOf(name);
+      if (index < 0) {
+        addText(match[0]);
+        continue;
+      }
+      while (stack.length > index) {
+        html += `</${MARKUP_TAGS[stack.pop()].tag}>`;
+      }
+      continue;
+    }
+    const classes = [];
+    if (entry.className) {
+      classes.push(entry.className);
+    }
+    if (name === "span") {
+      const classMatch = CLASS_PATTERN.exec(match[3]);
+      const value = classMatch ? classMatch[1] ?? classMatch[2] ?? classMatch[3] : "";
+      classes.push(...value.split(/\s+/).filter((x) => /^[\w-]+$/.test(x)));
+    }
+    const classAttribute = classes.length ? ` class="${classes.join(" ")}"` : "";
+    if (match[4]) {
+      html += `<${entry.tag}${classAttribute}></${entry.tag}>`;
+    } else {
+      html += `<${entry.tag}${classAttribute}>`;
+      stack.push(name);
+    }
+  }
+  addText(markup.slice(position));
+  while (stack.length) {
+    html += `</${MARKUP_TAGS[stack.pop()].tag}>`;
+  }
+  return { html, key };
+}
+__name(markupToHtml, "markupToHtml");
+function partsToNodes(parts) {
+  return parts.filter((part) => part !== "").map((part) => {
+    if (typeof part === "string") {
+      return document.createTextNode(part);
+    }
+    const underline = document.createElement("u");
+    underline.className = "wy-mnemonic";
+    underline.textContent = part.mnemonic;
+    return underline;
+  });
+}
+__name(partsToNodes, "partsToNodes");
+function splitParts(parts, offset) {
+  const first = [];
+  const second = [];
+  let remaining = offset;
+  for (const part of parts) {
+    if (typeof part !== "string") {
+      (remaining > 0 ? first : second).push(part);
+      remaining -= 1;
+      continue;
+    }
+    const characters = Array.from(part);
+    if (remaining >= characters.length) {
+      first.push(part);
+    } else if (remaining <= 0) {
+      second.push(part);
+    } else {
+      first.push(characters.slice(0, remaining).join(""));
+      second.push(characters.slice(remaining).join(""));
+    }
+    remaining -= characters.length;
+  }
+  return [first, second];
+}
+__name(splitParts, "splitParts");
+function countCharacters(parts) {
+  return parts.reduce(
+    (total, part) => total + (typeof part === "string" ? Array.from(part).length : 1),
+    0
+  );
+}
+__name(countCharacters, "countCharacters");
+function getMnemonicKey(event) {
+  const key = event.key.length === 1 ? event.key.toLowerCase() : "";
+  if (/^[a-z0-9]$/.test(key)) {
+    return key;
+  }
+  const code = /^(?:Key([A-Z])|Digit([0-9]))$/.exec(event.code || "");
+  if (code) {
+    return (code[1] || code[2]).toLowerCase();
+  }
+  return key;
+}
+__name(getMnemonicKey, "getMnemonicKey");
+function onDocumentKeyDown(event) {
+  if (event.defaultPrevented || !event.altKey || event.ctrlKey || event.metaKey || event.repeat || !Application.activeWindow) {
+    return;
+  }
+  const key = getMnemonicKey(event);
+  if (key && activateMnemonic(Application.activeWindow, key)) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+}
+__name(onDocumentKeyDown, "onDocumentKeyDown");
+function installMnemonicListener() {
+  if (mnemonicListenerInstalled || typeof document === "undefined") {
+    return;
+  }
+  mnemonicListenerInstalled = true;
+  document.addEventListener("keydown", onDocumentKeyDown);
+}
+__name(installMnemonicListener, "installMnemonicListener");
+function activateMnemonic(window2, key) {
+  if (typeof key !== "string" || !key) {
+    throw new TypeError("A mnemonic key must be a non-empty string.");
+  }
+  key = key.toLowerCase();
+  const targets = [];
+  for (const label of MNEMONIC_LABELS) {
+    if (label._mnemonicKey !== key || !label.isVisible || label.window !== window2) {
+      continue;
+    }
+    const target = label._getMnemonicTarget();
+    if (target && target.isVisible && target.isSensitive && !targets.includes(target)) {
+      targets.push(target);
+    }
+  }
+  if (!targets.length) {
+    return false;
+  }
+  targets.sort(
+    (first, second) => first.el.compareDocumentPosition(second.el) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1
+  );
+  if (targets.length === 1) {
+    const target = targets[0];
+    if (target._mnemonicActivate) {
+      target._mnemonicActivate(false);
+    } else {
+      target.focus();
+    }
+    return true;
+  }
+  const current = targets.findIndex((x) => x.isAncestorOf(window2.focusWidget));
+  const next = targets[(current + 1) % targets.length];
+  if (next._mnemonicActivate) {
+    next._mnemonicActivate(true);
+  } else {
+    next.focus();
+  }
+  return true;
+}
+__name(activateMnemonic, "activateMnemonic");
+var Label = class extends Widget {
+  static {
+    __name(this, "Label");
+  }
+  _initialize() {
+    super._initialize();
+    this._id = "";
+    this._mnemonicKey = "";
+    this._renderContent();
+    this._applyStyles();
+  }
+  _render() {
+    return createElement('<div class="wy-label"></div>');
+  }
+  destroy() {
+    MNEMONIC_LABELS.delete(this);
+    this._unlinkMnemonicWidget(this._mnemonicWidget);
+    super.destroy();
+  }
+  _applyLayoutStyle() {
+    super._applyLayoutStyle();
+    this.el.classList.toggle("wy-label-fill", this._hAlign === Align.FILL);
+  }
+  /**
+   * Returns the widget the mnemonic activates: the mnemonic widget, or the nearest ancestor
+   * that handles mnemonics.
+   *
+   * @protected
+   * @returns {Widget | null}
+   */
+  _getMnemonicTarget() {
+    if (this._mnemonicWidget) {
+      return this._mnemonicWidget;
+    }
+    let widget = this.parent;
+    while (widget && !widget.isWindow) {
+      if (typeof widget._mnemonicActivate === "function") {
+        return widget;
+      }
+      widget = widget.parent;
+    }
+    return null;
+  }
+  _renderContent() {
+    const text = this._text;
+    const element = this.el;
+    element.textContent = "";
+    let key;
+    if (this._useMarkup) {
+      const result = markupToHtml(text, this._useUnderline);
+      key = result.key;
+      const content = document.createElement("span");
+      content.className = "wy-label-text";
+      content.innerHTML = result.html;
+      element.append(content);
+    } else {
+      const parts = this._useUnderline ? parseUnderlines(text, false, { found: false }) : { parts: [text], key: "" };
+      key = parts.key;
+      if (this._ellipsize === EllipsizeMode.MIDDLE && !this._wrap) {
+        const [first, second] = splitParts(
+          parts.parts,
+          Math.ceil(countCharacters(parts.parts) / 2)
+        );
+        const start = document.createElement("span");
+        start.className = "wy-label-start";
+        start.append(...partsToNodes(first));
+        const end = document.createElement("span");
+        end.className = "wy-label-end";
+        const inner = document.createElement("span");
+        inner.append(...partsToNodes(second));
+        end.append(inner);
+        element.append(start, end);
+      } else {
+        const content = document.createElement("span");
+        content.className = "wy-label-text";
+        content.append(...partsToNodes(parts.parts));
+        element.append(content);
+      }
+    }
+    this._mnemonicKey = key;
+    if (key) {
+      MNEMONIC_LABELS.add(this);
+      installMnemonicListener();
+    } else {
+      MNEMONIC_LABELS.delete(this);
+    }
+  }
+  _applyStyles() {
+    const style = this.el.style;
+    const styles = this._styles;
+    style.fontWeight = styles & LabelStyles.BOLD ? "bold" : "";
+    style.fontStyle = styles & LabelStyles.ITALIC ? "italic" : "";
+    const lines = [];
+    if (styles & LabelStyles.UNDERLINE) {
+      lines.push("underline");
+    }
+    if (styles & LabelStyles.STRIKETHROUGH) {
+      lines.push("line-through");
+    }
+    style.textDecorationLine = lines.join(" ");
+  }
+  _applyEllipsize() {
+    const mode = this._ellipsize;
+    const classList = this.el.classList;
+    for (const value of Object.values(EllipsizeMode)) {
+      classList.toggle(`wy-ellipsize-${value}`, value === mode && value !== "none");
+    }
+    this._applyLines();
+    this._renderContent();
+  }
+  _applyLines() {
+    const clamp2 = this._wrap && this._lines > 0 && this._ellipsize !== EllipsizeMode.NONE;
+    this.el.classList.toggle("wy-line-clamp", clamp2);
+    this.el.style.setProperty("--wy-label-lines", clamp2 ? String(this._lines) : null);
+  }
+  _applyWidthChars() {
+    const style = this.el.style;
+    style.setProperty(
+      "--wy-label-min-width",
+      this._widthChars >= 0 ? `${this._widthChars}ch` : null
+    );
+    style.setProperty(
+      "--wy-label-max-width",
+      this._maxWidthChars >= 0 ? `min(100%, ${this._maxWidthChars}ch)` : null
+    );
+  }
+  _linkMnemonicWidget(widget) {
+    if (!widget) {
+      return;
+    }
+    if (!this._id) {
+      this._id = uniqueId("wy-label");
+      this.el.id = this._id;
+    }
+    const element = widget.focusElement;
+    if (!element.hasAttribute("aria-labelledby")) {
+      element.setAttribute("aria-labelledby", this._id);
+    }
+  }
+  _unlinkMnemonicWidget(widget) {
+    const element = widget?.focusElement;
+    if (element && this._id && element.getAttribute("aria-labelledby") === this._id) {
+      element.removeAttribute("aria-labelledby");
+    }
+  }
+};
+function enumValue(enumeration, name) {
+  const values = Object.values(enumeration);
+  return (value) => {
+    if (!values.includes(value)) {
+      throw new Error(`Invalid ${name} '${value}'; expected one of ${values.join(", ")}.`);
+    }
+    return value;
+  };
+}
+__name(enumValue, "enumValue");
+defineProperties(Label, {
+  hAlign: { value: Align.START },
+  vAlign: { value: Align.CENTER },
+  /**
+   * The text of the label. With `useMarkup` it is markup, with `useUnderline` underscores mark
+   * the mnemonic.
+   */
+  text: {
+    value: "",
+    coerce(text) {
+      return text === null || text === void 0 ? "" : String(text);
+    },
+    changed() {
+      this._renderContent();
+    }
+  },
+  /**
+   * The same as `text`, following GTK's name.
+   */
+  label: {
+    signal: false,
+    get() {
+      return this._text;
+    },
+    set(text) {
+      this.text = text;
+      return false;
+    }
+  },
+  /**
+   * Whether the text is markup with a small set of formatting tags (see the class
+   * description).
+   */
+  useMarkup: {
+    value: false,
+    changed() {
+      this._renderContent();
+    }
+  },
+  /**
+   * The same as `useMarkup`, following the original toolkit's name.
+   */
+  enableMarkup: {
+    signal: false,
+    get() {
+      return this._useMarkup;
+    },
+    set(useMarkup) {
+      this.useMarkup = useMarkup;
+      return false;
+    }
+  },
+  /**
+   * Whether an underscore in the text marks the next character as the mnemonic.
+   */
+  useUnderline: {
+    value: false,
+    changed() {
+      this._renderContent();
+    }
+  },
+  /**
+   * The mnemonic key (lowercase), or `''` if the label has no mnemonic.
+   */
+  mnemonicKey: {
+    readOnly: true,
+    get() {
+      return this._mnemonicKey;
+    }
+  },
+  /**
+   * The widget the mnemonic activates, or `null` for the nearest ancestor that handles
+   * mnemonics (such as a button). The label also becomes the accessible label of the widget.
+   */
+  mnemonicWidget: {
+    value: null,
+    set(widget) {
+      if (widget !== null && !(widget instanceof Widget)) {
+        throw new TypeError("The mnemonic widget must be a widget or null.");
+      }
+      this._unlinkMnemonicWidget(this._mnemonicWidget);
+      this._mnemonicWidget = widget;
+      this._linkMnemonicWidget(widget);
+    }
+  },
+  /**
+   * The text styles: a mask of `LabelStyles`.
+   */
+  styles: {
+    value: LabelStyles.NORMAL,
+    coerce(styles) {
+      if (!Number.isInteger(styles) || styles < 0) {
+        throw new Error(`Invalid label styles ${styles}.`);
+      }
+      return styles;
+    },
+    changed() {
+      this._applyStyles();
+    }
+  },
+  /**
+   * How the lines of the text are aligned relative to each other: one of `Justification`.
+   */
+  justify: {
+    value: Justification.START,
+    coerce: enumValue(Justification, "justification"),
+    changed(justify) {
+      this.el.style.textAlign = justify === Justification.START ? "" : TEXT_ALIGN[justify];
+    }
+  },
+  /**
+   * Whether the text wraps at word boundaries when it does not fit. A wrapping label's natural
+   * width is limited (see `maxWidthChars`), unless it fills its space.
+   */
+  wrap: {
+    value: false,
+    changed(wrap) {
+      this.el.classList.toggle("wy-wrap", wrap);
+      this._applyLines();
+      this._renderContent();
+    }
+  },
+  /**
+   * How the text is shortened with an ellipsis when it does not fit: one of `EllipsizeMode`.
+   * An ellipsizing label can shrink below its natural width. Middle ellipsizing needs plain
+   * text; markup is ellipsized at the end instead.
+   */
+  ellipsize: {
+    value: EllipsizeMode.NONE,
+    coerce: enumValue(EllipsizeMode, "ellipsize mode"),
+    changed() {
+      this._applyEllipsize();
+    }
+  },
+  /**
+   * The maximum number of lines of a wrapping, ellipsizing label, or -1 for no limit.
+   */
+  lines: {
+    value: -1,
+    changed() {
+      this._applyLines();
+    }
+  },
+  /**
+   * Whether the user can select the text, e.g. to copy it.
+   */
+  selectable: {
+    value: false,
+    changed(selectable) {
+      this.el.classList.toggle("wy-selectable", selectable);
+      if (!selectable) {
+        const selection = document.getSelection();
+        if (selection?.anchorNode && this.el.contains(selection.anchorNode)) {
+          selection.removeAllRanges();
+        }
+      }
+    }
+  },
+  /**
+   * The minimum width in characters, or -1 for the natural width.
+   */
+  widthChars: {
+    value: -1,
+    changed() {
+      this._applyWidthChars();
+    }
+  },
+  /**
+   * The maximum natural width in characters, or -1 for no limit (a wrapping label is limited
+   * to about 60 characters then).
+   */
+  maxWidthChars: {
+    value: -1,
+    changed() {
+      this._applyWidthChars();
+    }
+  }
+});
+registerType("label", Label);
+
+// src/widgets/button.js
+var Relief = Object.freeze({
+  NORMAL: "normal",
+  // Always draw the frame.
+  NONE: "none"
+  // Flat: draw the frame only while hovered, pressed or active.
+});
+var DEFAULT_BUTTONS = /* @__PURE__ */ new Set();
+var ENTER_ELEMENTS = 'textarea, select, button, a[href], [contenteditable]:not([contenteditable="false"])';
+var IMAGE_SPACING = 4;
+var defaultListenerInstalled = false;
+function onDocumentKeyDown2(event) {
+  if (event.key !== Key.ENTER || event.defaultPrevented || event.repeat || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || !(event.target instanceof Element) || event.target.closest(ENTER_ELEMENTS)) {
+    return;
+  }
+  const window2 = Widget.fromElement(event.target)?.window;
+  if (!window2) {
+    return;
+  }
+  for (const button of DEFAULT_BUTTONS) {
+    if (button.window === window2 && button.isVisible && button.isSensitive) {
+      event.preventDefault();
+      button._behavior.activate();
+      return;
+    }
+  }
+}
+__name(onDocumentKeyDown2, "onDocumentKeyDown");
+function installDefaultListener() {
+  if (!defaultListenerInstalled) {
+    defaultListenerInstalled = true;
+    document.addEventListener("keydown", onDocumentKeyDown2);
+  }
+}
+__name(installDefaultListener, "installDefaultListener");
+var Button = class extends Bin {
+  static {
+    __name(this, "Button");
+  }
+  _initialize() {
+    super._initialize();
+    this._content = null;
+    this._contentKey = "";
+    this._labelWidget = null;
+    this._imageWidget = null;
+    this._ownImage = null;
+    this._givenImage = null;
+    this._behavior = attachButtonBehavior(this, { onActivate: /* @__PURE__ */ __name(() => this._click(), "onActivate") });
+    this.el.classList.toggle("wy-relief-none", this._relief === Relief.NONE);
+  }
+  _render() {
+    return createElement('<div class="wy-button" role="button"></div>');
+  }
+  /**
+   * Activates the button, as if it was clicked: emits `activate`.
+   */
+  activate() {
+    this.emit("activate", this);
+  }
+  /**
+   * Clicks the button: activates it and emits `clicked`. Called by the pointer, keyboard,
+   * mnemonic and default-button handling.
+   *
+   * @protected
+   */
+  _click() {
+    this._onClicked();
+    if (!this.destroyed) {
+      this.emit("clicked", this);
+    }
+  }
+  /**
+   * What a click does. Toggle buttons override this to toggle.
+   *
+   * @protected
+   */
+  _onClicked() {
+    this.activate();
+  }
+  /**
+   * Activates the button for its mnemonic: clicks it, or only focuses it when other widgets
+   * share the mnemonic.
+   *
+   * @protected
+   * @param {boolean} groupCycling Whether several widgets share the mnemonic.
+   */
+  _mnemonicActivate(groupCycling) {
+    this.focus();
+    if (!groupCycling) {
+      this._behavior.activate();
+    }
+  }
+  destroy() {
+    DEFAULT_BUTTONS.delete(this);
+    this._behavior.destroy();
+    super.destroy();
+  }
+  /**
+   * Returns the text for the label of the created child, or `''` for none.
+   *
+   * @protected
+   * @returns {string}
+   */
+  _getContentLabel() {
+    return this._label ?? "";
+  }
+  /**
+   * Creates the label of the created child. Subclasses change its alignment.
+   *
+   * @protected
+   * @returns {Label}
+   */
+  _createLabel() {
+    return new Label({ hAlign: Align.CENTER });
+  }
+  /**
+   * Creates, updates or removes the child made from `label` and `icon`.
+   *
+   * @protected
+   */
+  _syncContent() {
+    const child = this.child;
+    const label = this._getContentLabel();
+    if (child && child !== this._content) {
+      if (child instanceof Label && this._label !== null) {
+        child.text = label;
+        child.useUnderline = this._useUnderline;
+      }
+      return;
+    }
+    const icon = this._icon;
+    const key = `${label ? "label" : ""}:${icon ? "image" : ""}:${this._imagePosition}`;
+    if (this._content && this._contentKey === key) {
+      this._updateContentParts(label, icon);
+      return;
+    }
+    this._removeContent();
+    if (!label && !icon) {
+      return;
+    }
+    this._updateContentParts(label, icon);
+    let content = this._labelWidget || this._imageWidget;
+    if (label && icon) {
+      const position = this._imagePosition;
+      const vertical = position === Position.TOP || position === Position.BOTTOM;
+      content = new Box({
+        orientation: vertical ? Orientation.VERTICAL : Orientation.HORIZONTAL,
+        spacing: IMAGE_SPACING,
+        hAlign: this._labelWidget.hAlign,
+        vAlign: Align.CENTER
+      });
+      content.addStyleClass("wy-button-content");
+      const imageFirst = position === Position.LEFT || position === Position.TOP;
+      content.addChild(imageFirst ? this._imageWidget : this._labelWidget);
+      content.addChild(imageFirst ? this._labelWidget : this._imageWidget);
+    }
+    this._content = content;
+    this._contentKey = key;
+    this.addChild(content);
+  }
+  _updateContentParts(label, icon) {
+    if (label) {
+      if (!this._labelWidget) {
+        this._labelWidget = this._createLabel();
+      }
+      this._labelWidget.set({ text: label, useUnderline: this._useUnderline });
+    }
+    if (icon instanceof Image) {
+      this._imageWidget = icon;
+    } else if (icon) {
+      if (!this._ownImage) {
+        this._ownImage = new Image();
+      }
+      this._ownImage.icon = icon;
+      this._imageWidget = this._ownImage;
+    }
+  }
+  _removeContent() {
+    const content = this._content;
+    const image = this._imageWidget;
+    this._content = null;
+    this._contentKey = "";
+    this._labelWidget = null;
+    this._imageWidget = null;
+    this._ownImage = null;
+    const given = image && image === this._givenImage ? image : null;
+    if (given?.parent) {
+      given.parent.removeChild(given);
+    }
+    if (content && !content.destroyed && content !== given) {
+      content.destroy();
+    }
+  }
+  _onChildrenChange() {
+    super._onChildrenChange();
+    if (this._content && this.child !== this._content) {
+      this._content = null;
+      this._contentKey = "";
+      this._labelWidget = null;
+      this._imageWidget = null;
+      this._ownImage = null;
+    }
+  }
+  _setDefault(isDefault) {
+    this.el.classList.toggle("wy-default", isDefault);
+    if (isDefault) {
+      DEFAULT_BUTTONS.add(this);
+      installDefaultListener();
+    } else {
+      DEFAULT_BUTTONS.delete(this);
+    }
+  }
+};
+defineProperties(Button, {
+  canFocus: { value: true },
+  /**
+   * The text of the button's label, or `null`. Setting it creates a label child (next to the
+   * image of `icon`) when the button has no child of its own. Reading it returns the text of a
+   * label child, or `null` if there is none.
+   */
+  label: {
+    value: null,
+    get() {
+      const child = this.child;
+      if (child && child !== this._content) {
+        return child instanceof Label ? child.text : null;
+      }
+      return this._label;
+    },
+    coerce(label) {
+      return label === null || label === void 0 ? null : String(label);
+    },
+    changed() {
+      this._syncContent();
+    }
+  },
+  /**
+   * The icon of the button: an icon name (see `Image#icon`), an `Image` widget, or `''` for
+   * none. It is shown next to the label, see `imagePosition`.
+   */
+  icon: {
+    value: "",
+    coerce(icon) {
+      if (icon === null || icon === void 0) {
+        return "";
+      }
+      if (typeof icon !== "string" && !(icon instanceof Image)) {
+        throw new TypeError("A button icon must be an icon name or an Image.");
+      }
+      return icon;
+    },
+    set(icon) {
+      this._removeContent();
+      this._icon = icon;
+      this._givenImage = icon instanceof Image ? icon : null;
+      this._syncContent();
+    }
+  },
+  /**
+   * Where the image is shown relative to the label: one of `Position`.
+   */
+  imagePosition: {
+    value: Position.LEFT,
+    coerce(position) {
+      if (!Object.values(Position).includes(position)) {
+        throw new Error(`Invalid image position '${position}'.`);
+      }
+      return position;
+    },
+    changed() {
+      this._syncContent();
+    }
+  },
+  /**
+   * Whether an underscore in `label` marks the mnemonic (`'_Open'`), which is underlined and
+   * clicks the button with Alt.
+   */
+  useUnderline: {
+    value: false,
+    changed() {
+      this._syncContent();
+    }
+  },
+  /**
+   * The relief style: one of `Relief`. Buttons with `Relief.NONE` are flat and show their frame
+   * only while hovered or pressed, as in tool bars.
+   */
+  relief: {
+    value: Relief.NORMAL,
+    coerce(relief) {
+      if (!Object.values(Relief).includes(relief)) {
+        throw new Error(`Invalid relief '${relief}'.`);
+      }
+      return relief;
+    },
+    changed(relief) {
+      this.el.classList.toggle("wy-relief-none", relief === Relief.NONE);
+    }
+  },
+  /**
+   * Whether this is the default button of its window, which Enter activates.
+   */
+  isDefault: {
+    value: false,
+    changed(isDefault) {
+      this._setDefault(isDefault);
+    }
+  }
+});
+registerType("button", Button);
+
+// src/i18n/locale-manager.js
+function getDefaultLocale() {
+  if (typeof navigator !== "undefined" && navigator.language) {
+    return navigator.language;
+  }
+  return Intl.DateTimeFormat().resolvedOptions().locale || "en-US";
+}
+__name(getDefaultLocale, "getDefaultLocale");
+function getNames(locale, kind, width) {
+  if (kind === "month") {
+    const format2 = new Intl.DateTimeFormat(locale, { month: width, timeZone: "UTC" });
+    return Array.from({ length: 12 }, (_x, i) => format2.format(Date.UTC(2021, i, 1)));
+  }
+  const format = new Intl.DateTimeFormat(locale, { weekday: width, timeZone: "UTC" });
+  return Array.from({ length: 7 }, (_x, i) => format.format(Date.UTC(2021, 0, 3 + i)));
+}
+__name(getNames, "getNames");
+function getFirstDayOfWeek(locale) {
+  try {
+    const info = new Intl.Locale(locale);
+    const weekInfo = info.getWeekInfo?.() || info.weekInfo;
+    if (weekInfo?.firstDay) {
+      return weekInfo.firstDay % 7;
+    }
+  } catch (_error) {
+  }
+  return /-(US|CA|JP|BR|IL|MX|PH|KR|TW|HK|IN|ZA|SA)\b/i.test(locale) ? 0 : 1;
+}
+__name(getFirstDayOfWeek, "getFirstDayOfWeek");
+function getDayPeriods(locale) {
+  const format = new Intl.DateTimeFormat(locale, {
+    hour: "numeric",
+    hourCycle: "h12",
+    timeZone: "UTC"
+  });
+  return [1, 13].map((hour, i) => {
+    const parts = format.formatToParts(Date.UTC(2021, 0, 1, hour));
+    return parts.find((x) => x.type === "dayPeriod")?.value || (i ? "PM" : "AM");
+  });
+}
+__name(getDayPeriods, "getDayPeriods");
+var LocaleManagerClass = class extends Instance {
+  static {
+    __name(this, "LocaleManagerClass");
+  }
+  _initialize() {
+    super._initialize();
+    this._locale = getDefaultLocale();
+    this._applyLocale();
+  }
+  _applyLocale() {
+    const locale = this._locale;
+    const [language, country] = locale.split(/[-_]/);
+    this._language = (language || "en").toLowerCase();
+    this._country = (country || "").toUpperCase();
+    this._shortMonthNames = getNames(locale, "month", "short");
+    this._longMonthNames = getNames(locale, "month", "long");
+    this._shortDayNames = getNames(locale, "day", "short");
+    this._longDayNames = getNames(locale, "day", "long");
+    this._firstDayOfWeek = getFirstDayOfWeek(locale);
+    [this._amDesignator, this._pmDesignator] = getDayPeriods(locale);
+    const parts = new Intl.NumberFormat(locale).formatToParts(12345.6);
+    this._decimalSeparator = parts.find((x) => x.type === "decimal")?.value || ".";
+    this._groupSeparator = parts.find((x) => x.type === "group")?.value || ",";
+  }
+};
+defineProperties(LocaleManagerClass, {
+  /**
+   * The current locale as a BCP 47 tag, e.g. `'en-US'` or `'nl-NL'`. Defaults to the browser's.
+   */
+  locale: {
+    value: "en-US",
+    coerce(locale) {
+      const tag = String(locale).replace(/_/g, "-");
+      return Intl.getCanonicalLocales(tag)[0];
+    },
+    changed() {
+      const oldLanguage = this._language;
+      this._applyLocale();
+      if (this._language !== oldLanguage) {
+        this.emit("language-change", this);
+      }
+    }
+  },
+  /**
+   * The language of the locale, e.g. `'en'`.
+   */
+  language: { readOnly: true },
+  /**
+   * The country (region) of the locale, e.g. `'US'`, or `''` if the locale has none.
+   */
+  country: { readOnly: true },
+  /**
+   * The short month names, January first.
+   */
+  shortMonthNames: { value: null },
+  /**
+   * The long month names, January first.
+   */
+  longMonthNames: { value: null },
+  /**
+   * The short day names, Sunday first.
+   */
+  shortDayNames: { value: null },
+  /**
+   * The long day names, Sunday first.
+   */
+  longDayNames: { value: null },
+  /**
+   * The first day of the week: 0 for Sunday, 1 for Monday and so on.
+   */
+  firstDayOfWeek: { value: 1 },
+  /**
+   * The designator of times before noon on a 12-hour clock, e.g. `'AM'`.
+   */
+  amDesignator: { value: "AM" },
+  /**
+   * The designator of times after noon on a 12-hour clock, e.g. `'PM'`.
+   */
+  pmDesignator: { value: "PM" },
+  /**
+   * The time zone dates are formatted and parsed in: an IANA time zone name such as
+   * `'Europe/Amsterdam'`, `'UTC'` (the default, like the original toolkit) or `'local'` for the
+   * time zone of the system. It does not change with the locale.
+   */
+  timeZone: {
+    value: "UTC",
+    coerce(timeZone) {
+      if (typeof timeZone !== "string") {
+        throw new TypeError("The time zone must be a string.");
+      }
+      if (timeZone === "local") {
+        return timeZone;
+      }
+      return new Intl.DateTimeFormat("en-US", { timeZone }).resolvedOptions().timeZone;
+    }
+  },
+  /**
+   * The decimal separator of numbers, e.g. `'.'`.
+   */
+  decimalSeparator: { value: "." },
+  /**
+   * The digit group (thousands) separator of numbers, e.g. `','`.
+   */
+  groupSeparator: { value: "," }
+});
+var getLocaleManager = lazySingleton(() => new LocaleManagerClass());
+
+// src/widgets/calendar.js
+var WEEKS = 6;
+var NAVIGATION_LABELS = Object.freeze({
+  "previous-month": "Previous month",
+  "next-month": "Next month",
+  "previous-year": "Previous year",
+  "next-year": "Next year"
+});
+function startOfDay(date) {
+  if (!date) {
+    return null;
+  }
+  return makeDate(date.getFullYear(), date.getMonth(), date.getDate());
+}
+__name(startOfDay, "startOfDay");
+function makeDate(year, month, day) {
+  const date = new Date(2e3, 0, 1);
+  date.setFullYear(year, month, 1);
+  const last = getDaysInMonth(date.getFullYear(), date.getMonth());
+  date.setDate(Math.min(day, last));
+  return date;
+}
+__name(makeDate, "makeDate");
+function getDaysInMonth(year, month) {
+  const date = new Date(2e3, 0, 1);
+  date.setFullYear(year, month + 1, 0);
+  return date.getDate();
+}
+__name(getDaysInMonth, "getDaysInMonth");
+function compareDays(first, second) {
+  return first.getFullYear() - second.getFullYear() || first.getMonth() - second.getMonth() || first.getDate() - second.getDate();
+}
+__name(compareDays, "compareDays");
+function getIsoWeek(date) {
+  const day = new Date(Date.UTC(2e3, 0, 1));
+  day.setUTCFullYear(date.getFullYear(), date.getMonth(), date.getDate());
+  day.setUTCDate(day.getUTCDate() + 4 - (day.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(2e3, 0, 1));
+  yearStart.setUTCFullYear(day.getUTCFullYear(), 0, 1);
+  return Math.ceil(((day - yearStart) / 864e5 + 1) / 7);
+}
+__name(getIsoWeek, "getIsoWeek");
+function addDays(date, days) {
+  const result = new Date(date);
+  result.setDate(result.getDate() + days);
+  return result;
+}
+__name(addDays, "addDays");
+function addMonths(date, months) {
+  const target = new Date(2e3, 0, 1);
+  target.setFullYear(date.getFullYear(), date.getMonth() + months, 1);
+  return makeDate(target.getFullYear(), target.getMonth(), date.getDate());
+}
+__name(addMonths, "addMonths");
+function checkDate(date) {
+  if (date === null || date === void 0) {
+    return null;
+  }
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    throw new TypeError("Expected a valid Date or null.");
+  }
+  return startOfDay(date);
+}
+__name(checkDate, "checkDate");
+var Calendar = class extends Widget {
+  static {
+    __name(this, "Calendar");
+  }
+  _initialize() {
+    super._initialize();
+    this._cursor = startOfDay(/* @__PURE__ */ new Date());
+    this._shownMonth = null;
+    this._headerEl.addEventListener("pointerdown", (event) => this._onHeaderPointerDown(event));
+    this._gridEl.addEventListener("pointerdown", (event) => this._onGridPointerDown(event));
+    this._gridEl.addEventListener("click", (event) => this._onGridClick(event));
+    this._gridEl.addEventListener("dblclick", (event) => this._onGridDoubleClick(event));
+    this._gridEl.addEventListener("keydown", (event) => {
+      if (this.handleKey(event)) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    });
+    this.el.addEventListener("wheel", (event) => this._onWheel(event), { passive: false });
+    this._localeDisconnect = getLocaleManager().connect(
+      "locale-change",
+      () => this._renderNames()
+    );
+    this._renderNames();
+  }
+  _render() {
+    const monthId = uniqueId("wy-calendar-month");
+    const navigation = /* @__PURE__ */ __name((action) => `<span class="wy-calendar-navigation" data-action="${action}" role="button" aria-label="${NAVIGATION_LABELS[action]}"></span>`, "navigation");
+    const cells = Array.from({ length: WEEKS }, () => {
+      const days = Array.from(
+        { length: 7 },
+        () => '<span class="wy-calendar-day" role="gridcell"></span>'
+      ).join("");
+      return `<div class="wy-calendar-week" role="row"><span class="wy-calendar-week-number" role="rowheader"></span>${days}</div>`;
+    }).join("");
+    const element = createElement(`
+            <div class="wy-calendar">
+                <div class="wy-calendar-header">
+                    <span class="wy-calendar-heading wy-calendar-month-heading">
+                        ${navigation("previous-month")}
+                        <span class="wy-calendar-title">
+                            <span class="wy-calendar-sizer" aria-hidden="true"></span>
+                            <span class="wy-calendar-month" id="${monthId}"></span>
+                        </span>
+                        ${navigation("next-month")}
+                    </span>
+                    <span class="wy-calendar-heading wy-calendar-year-heading">
+                        ${navigation("previous-year")}
+                        <span class="wy-calendar-title">
+                            <span class="wy-calendar-year" id="${monthId}-year"></span>
+                        </span>
+                        ${navigation("next-year")}
+                    </span>
+                </div>
+                <div class="wy-calendar-grid" role="grid" aria-labelledby="${monthId} ${monthId}-year">
+                    <div class="wy-calendar-day-names" role="row">
+                        <span class="wy-calendar-week-number"></span>
+                        ${'<span class="wy-calendar-day-name" role="columnheader"></span>'.repeat(7)}
+                    </div>
+                    ${cells}
+                </div>
+            </div>
+        `);
+    this._headerEl = element.querySelector(".wy-calendar-header");
+    this._gridEl = element.querySelector(".wy-calendar-grid");
+    this._monthEl = element.querySelector(".wy-calendar-month");
+    this._yearEl = element.querySelector(".wy-calendar-year");
+    this._sizerEl = element.querySelector(".wy-calendar-sizer");
+    this._dayNameEls = [...element.querySelectorAll(".wy-calendar-day-name")];
+    this._weekEls = [...element.querySelectorAll(".wy-calendar-week")];
+    this._dayEls = [...element.querySelectorAll(".wy-calendar-day")];
+    this._navigationEls = [...element.querySelectorAll(".wy-calendar-navigation")];
+    this._idPrefix = uniqueId("wy-calendar-day");
+    this._dayEls.forEach((cell, index) => {
+      cell.id = `${this._idPrefix}-${index}`;
+    });
+    return element;
+  }
+  /**
+   * The grid of days.
+   *
+   * @type {HTMLElement}
+   */
+  get focusElement() {
+    return this._gridEl;
+  }
+  /**
+   * Selects a day, as if the user did.
+   *
+   * @param {Date} date
+   * @returns {boolean} Whether the day could be selected (it is not outside the date range).
+   */
+  selectDay(date) {
+    const day = checkDate(date);
+    if (!day || !this._isInRange(day)) {
+      return false;
+    }
+    this._moveCursor(day);
+    if (!this._date || compareDays(this._date, day) !== 0) {
+      this._setDate(day);
+      this.emit("day-selected", this);
+    }
+    return true;
+  }
+  /**
+   * Shows the previous month.
+   */
+  previousMonth() {
+    this._moveCursor(addMonths(this._cursor, -1));
+  }
+  /**
+   * Shows the next month.
+   */
+  nextMonth() {
+    this._moveCursor(addMonths(this._cursor, 1));
+  }
+  /**
+   * Shows the same month in the previous year.
+   */
+  previousYear() {
+    this._moveCursor(addMonths(this._cursor, -12));
+  }
+  /**
+   * Shows the same month in the next year.
+   */
+  nextYear() {
+    this._moveCursor(addMonths(this._cursor, 12));
+  }
+  /**
+   * Handles a key as the calendar's keyboard navigation does. Widgets that keep the focus
+   * themselves while showing a calendar (such as a date edit) forward their keys to it.
+   *
+   * @param {KeyboardEvent} event
+   * @returns {boolean} Whether the key was handled.
+   */
+  handleKey(event) {
+    if (!this.isSensitive || event.altKey || event.ctrlKey || event.metaKey) {
+      return false;
+    }
+    const cursor = this._cursor;
+    const weekday = (cursor.getDay() - this._getFirstDayOfWeek() + 7) % 7;
+    const rtl = getComputedStyle(this.el).direction === "rtl";
+    switch (event.key) {
+      case Key.LEFT:
+        this._moveCursor(addDays(cursor, rtl ? 1 : -1));
+        break;
+      case Key.RIGHT:
+        this._moveCursor(addDays(cursor, rtl ? -1 : 1));
+        break;
+      case Key.UP:
+        this._moveCursor(addDays(cursor, -7));
+        break;
+      case Key.DOWN:
+        this._moveCursor(addDays(cursor, 7));
+        break;
+      case Key.HOME:
+        this._moveCursor(addDays(cursor, -weekday));
+        break;
+      case Key.END:
+        this._moveCursor(addDays(cursor, 6 - weekday));
+        break;
+      case Key.PAGE_UP:
+        this._moveCursor(addMonths(cursor, event.shiftKey ? -12 : -1));
+        break;
+      case Key.PAGE_DOWN:
+        this._moveCursor(addMonths(cursor, event.shiftKey ? 12 : 1));
+        break;
+      case Key.SPACE:
+        this.selectDay(cursor);
+        break;
+      case Key.ENTER:
+        if (this.selectDay(cursor)) {
+          this.emit("day-activate", this);
+        }
+        break;
+      default:
+        return false;
+    }
+    return true;
+  }
+  destroy() {
+    this._localeDisconnect();
+    super.destroy();
+  }
+  _getFirstDayOfWeek() {
+    return this._firstDayOfWeek ?? getLocaleManager().firstDayOfWeek;
+  }
+  _isInRange(day) {
+    return (!this._minDate || compareDays(day, this._minDate) >= 0) && (!this._maxDate || compareDays(day, this._maxDate) <= 0);
+  }
+  _clampToRange(day) {
+    if (this._minDate && compareDays(day, this._minDate) < 0) {
+      return new Date(this._minDate);
+    }
+    if (this._maxDate && compareDays(day, this._maxDate) > 0) {
+      return new Date(this._maxDate);
+    }
+    return day;
+  }
+  _setDate(day) {
+    this._date = day;
+    this.emit("date-change", this);
+    this._renderDays();
+  }
+  _moveCursor(day) {
+    this._cursor = this._clampToRange(day);
+    this._renderDays();
+  }
+  _renderNames() {
+    const manager = getLocaleManager();
+    const first = this._getFirstDayOfWeek();
+    const shortNames = manager.shortDayNames;
+    const longNames = manager.longDayNames;
+    this._dayNameEls.forEach((element, index) => {
+      const day = (first + index) % 7;
+      element.textContent = shortNames[day];
+      element.title = longNames[day];
+      element.setAttribute("aria-label", longNames[day]);
+      element.classList.toggle("wy-weekend", day === 0 || day === 6);
+    });
+    this._sizerEl.textContent = "";
+    for (const name of manager.longMonthNames) {
+      const span = document.createElement("span");
+      span.textContent = name;
+      this._sizerEl.append(span);
+    }
+    this._numberFormat = new Intl.NumberFormat(manager.locale, { useGrouping: false });
+    this._labelFormat = new Intl.DateTimeFormat(manager.locale, { dateStyle: "full" });
+    this._shownMonth = null;
+    this._renderDays();
+  }
+  _renderDays() {
+    const manager = getLocaleManager();
+    const cursor = this._cursor;
+    const year = cursor.getFullYear();
+    const month = cursor.getMonth();
+    const first = this._getFirstDayOfWeek();
+    const today = startOfDay(/* @__PURE__ */ new Date());
+    this._monthEl.textContent = manager.longMonthNames[month];
+    this._yearEl.textContent = this._numberFormat.format(year);
+    const firstOfMonth = makeDate(year, month, 1);
+    const offset = (firstOfMonth.getDay() - first + 7) % 7;
+    const start = addDays(firstOfMonth, -offset);
+    this._dayEls.forEach((cell, index) => {
+      const day = addDays(start, index);
+      const inRange = this._isInRange(day);
+      const isCursor = compareDays(day, cursor) === 0;
+      const selected = Boolean(this._date) && compareDays(day, this._date) === 0;
+      cell.textContent = this._numberFormat.format(day.getDate());
+      cell.dataset.date = `${day.getFullYear()}-${day.getMonth() + 1}-${day.getDate()}`;
+      cell.setAttribute("aria-label", this._labelFormat.format(day));
+      cell.setAttribute("aria-selected", String(selected));
+      cell.classList.toggle("wy-other-month", day.getMonth() !== month);
+      cell.classList.toggle("wy-today", compareDays(day, today) === 0);
+      cell.classList.toggle("wy-selected", selected);
+      cell.classList.toggle("wy-cursor", isCursor);
+      cell.classList.toggle("wy-disabled", !inRange);
+      cell.classList.toggle("wy-weekend", day.getDay() === 0 || day.getDay() === 6);
+      if (inRange) {
+        cell.removeAttribute("aria-disabled");
+      } else {
+        cell.setAttribute("aria-disabled", "true");
+      }
+      if (isCursor) {
+        this._gridEl.setAttribute("aria-activedescendant", cell.id);
+      }
+    });
+    const monday = (8 - first) % 7;
+    this._weekEls.forEach((week, index) => {
+      const number = week.querySelector(".wy-calendar-week-number");
+      const day = addDays(start, index * 7 + monday);
+      number.textContent = this._numberFormat.format(getIsoWeek(day));
+    });
+    for (const element of this._navigationEls) {
+      const months = {
+        "previous-month": -1,
+        "next-month": 1,
+        "previous-year": -12,
+        "next-year": 12
+      }[element.dataset.action];
+      const target = addMonths(makeDate(year, month, 1), months);
+      const last = makeDate(target.getFullYear(), target.getMonth(), 31);
+      const disabled = this._minDate && compareDays(last, this._minDate) < 0 || this._maxDate && compareDays(target, this._maxDate) > 0;
+      element.classList.toggle("wy-disabled", Boolean(disabled));
+      element.setAttribute("aria-disabled", String(Boolean(disabled)));
+    }
+    const shown = year * 12 + month;
+    if (this._shownMonth !== null && this._shownMonth !== shown) {
+      this._shownMonth = shown;
+      this.emit("month-change", this);
+    }
+    this._shownMonth = shown;
+  }
+  _dayFromCell(cell) {
+    const [year, month, day] = cell.dataset.date.split("-").map(Number);
+    return makeDate(year, month - 1, day);
+  }
+  _onHeaderPointerDown(event) {
+    const button = event.target.closest(".wy-calendar-navigation");
+    if (event.button !== 0 || !button || button.classList.contains("wy-disabled")) {
+      return;
+    }
+    event.preventDefault();
+    this.focus();
+    const actions = {
+      "previous-month": /* @__PURE__ */ __name(() => this.previousMonth(), "previous-month"),
+      "next-month": /* @__PURE__ */ __name(() => this.nextMonth(), "next-month"),
+      "previous-year": /* @__PURE__ */ __name(() => this.previousYear(), "previous-year"),
+      "next-year": /* @__PURE__ */ __name(() => this.nextYear(), "next-year")
+    };
+    actions[button.dataset.action]();
+  }
+  _onGridPointerDown(event) {
+    const cell = event.target.closest(".wy-calendar-day");
+    if (event.button !== 0 || !cell) {
+      return;
+    }
+    this.focus();
+    this.selectDay(this._dayFromCell(cell));
+  }
+  _onGridClick(event) {
+    const cell = event.target.closest(".wy-calendar-day");
+    if (cell && this._activateOnClick && this._isInRange(this._dayFromCell(cell))) {
+      this.emit("day-activate", this);
+    }
+  }
+  _onGridDoubleClick(event) {
+    const cell = event.target.closest(".wy-calendar-day");
+    if (cell && !this._activateOnClick && this._isInRange(this._dayFromCell(cell))) {
+      this.emit("day-activate", this);
+    }
+  }
+  _onWheel(event) {
+    if (!this.isSensitive || !event.deltaY) {
+      return;
+    }
+    event.preventDefault();
+    if (event.deltaY < 0) {
+      this.previousMonth();
+    } else {
+      this.nextMonth();
+    }
+  }
+};
+defineProperties(Calendar, {
+  canFocus: { value: true },
+  /**
+   * The selected day, or `null`. Setting it also shows its month.
+   */
+  date: {
+    value: null,
+    coerce: checkDate,
+    set(date) {
+      if (date === this._date || date && this._date && compareDays(date, this._date) === 0) {
+        return false;
+      }
+      this._date = date;
+      if (date) {
+        this._cursor = date;
+      }
+      this._renderDays();
+    }
+  },
+  /**
+   * The day with the keyboard focus, which determines the month shown. It stays within the date
+   * range.
+   */
+  cursor: {
+    signal: false,
+    get() {
+      return new Date(this._cursor);
+    },
+    set(date) {
+      const day = checkDate(date);
+      if (day) {
+        this._moveCursor(day);
+      }
+      return false;
+    }
+  },
+  /**
+   * The year shown.
+   */
+  year: {
+    signal: false,
+    get() {
+      return this._cursor.getFullYear();
+    },
+    set(year) {
+      this._moveCursor(
+        makeDate(Number(year), this._cursor.getMonth(), this._cursor.getDate())
+      );
+      return false;
+    }
+  },
+  /**
+   * The month shown, from 0 (January) to 11.
+   */
+  month: {
+    signal: false,
+    get() {
+      return this._cursor.getMonth();
+    },
+    set(month) {
+      this._moveCursor(
+        makeDate(this._cursor.getFullYear(), Number(month), this._cursor.getDate())
+      );
+      return false;
+    }
+  },
+  /**
+   * The earliest day that can be chosen, or `null`.
+   */
+  minDate: {
+    value: null,
+    coerce: checkDate,
+    set(date) {
+      if (date && this._minDate && compareDays(date, this._minDate) === 0) {
+        return false;
+      }
+      this._minDate = date;
+      this._moveCursor(this._cursor);
+    }
+  },
+  /**
+   * The latest day that can be chosen, or `null`.
+   */
+  maxDate: {
+    value: null,
+    coerce: checkDate,
+    set(date) {
+      if (date && this._maxDate && compareDays(date, this._maxDate) === 0) {
+        return false;
+      }
+      this._maxDate = date;
+      this._moveCursor(this._cursor);
+    }
+  },
+  /**
+   * The first day of the week (0 for Sunday, 1 for Monday and so on), or `null` for the
+   * locale's.
+   */
+  firstDayOfWeek: {
+    value: null,
+    coerce(day) {
+      if (day === null || day === void 0) {
+        return null;
+      }
+      const value = Number(day);
+      if (!Number.isInteger(value) || value < 0 || value > 6) {
+        throw new RangeError(`Invalid first day of the week ${day}.`);
+      }
+      return value;
+    },
+    changed() {
+      this._renderNames();
+    }
+  },
+  /**
+   * Whether the month and year headings with their navigation buttons are shown.
+   */
+  showHeading: {
+    value: true,
+    coerce: Boolean,
+    changed(show) {
+      this._headerEl.hidden = !show;
+    }
+  },
+  /**
+   * Whether the names of the days are shown.
+   */
+  showDayNames: {
+    value: true,
+    coerce: Boolean,
+    changed(show) {
+      this.el.classList.toggle("wy-no-day-names", !show);
+    }
+  },
+  /**
+   * Whether ISO week numbers are shown.
+   */
+  showWeekNumbers: {
+    value: false,
+    coerce: Boolean,
+    changed(show) {
+      this.el.classList.toggle("wy-show-week-numbers", show);
+    }
+  },
+  /**
+   * Whether a single click on a day also activates it, as in a date picker.
+   */
+  activateOnClick: { value: false, coerce: Boolean }
+});
+registerType("calendar", Calendar);
+
+// src/widgets/toggle-button.js
+var ToggleButton = class extends Button {
+  static {
+    __name(this, "ToggleButton");
+  }
+  _initialize() {
+    super._initialize();
+    this._updateState();
+  }
+  _render() {
+    return createElement('<div class="wy-button wy-toggle-button" role="button"></div>');
+  }
+  /**
+   * Makes the button active. The same as setting `active` to `true`.
+   */
+  activate() {
+    this.active = true;
+  }
+  /**
+   * Makes the button inactive. The same as setting `active` to `false`.
+   */
+  deactivate() {
+    this.active = false;
+  }
+  /**
+   * Toggles the button.
+   */
+  toggle() {
+    this.active = !this._active;
+  }
+  /**
+   * Adds another button to the group of this button, creating the group if needed. The same as
+   * `other.group = button.group` once the button has a group.
+   *
+   * @param {ToggleButton} button Any button with `active` and `group`, such as a radio menu
+   *     item.
+   */
+  join(button) {
+    if (!button || !("group" in button) || !("active" in button)) {
+      throw new TypeError("Only toggling widgets with a group can be joined.");
+    }
+    if (!this._group) {
+      this.group = new ButtonGroup();
+    }
+    this._group.addButton(button);
+  }
+  _onClicked() {
+    this.inconsistent = false;
+    this.toggle();
+  }
+  /**
+   * Updates the state classes and the accessible state.
+   *
+   * @protected
+   */
+  _updateState() {
+    this.el.classList.toggle("wy-active", this._active);
+    this.el.classList.toggle("wy-inconsistent", this._inconsistent);
+    const state = this._inconsistent ? "mixed" : String(this._active);
+    this._setAccessibleState(state);
+  }
+  /**
+   * Sets the accessible toggle state.
+   *
+   * @protected
+   * @param {'true' | 'false' | 'mixed'} state
+   */
+  _setAccessibleState(state) {
+    this.el.setAttribute("aria-pressed", state);
+  }
+  /**
+   * Called after `group` changed.
+   *
+   * @protected
+   * @param {ButtonGroup | null} _old
+   * @param {ButtonGroup | null} _group
+   */
+  _onGroupChange(_old, _group) {
+  }
+};
+defineProperties(ToggleButton, {
+  /**
+   * Whether the button is pressed in (checked, for check boxes and radio buttons).
+   */
+  active: {
+    value: false,
+    coerce: Boolean,
+    changed(active) {
+      this._updateState();
+      this.emit(active ? "activate" : "deactivate", this);
+      this.emit("toggle", this);
+    }
+  },
+  /**
+   * Whether the button shows the "mixed" state, between active and inactive. Clicking the
+   * button clears it.
+   */
+  inconsistent: {
+    value: false,
+    coerce: Boolean,
+    changed() {
+      this._updateState();
+    }
+  },
+  /**
+   * The `ButtonGroup` the button is in, or `null`. At most one button of a group is active.
+   */
+  group: {
+    value: null,
+    set(group) {
+      if (group !== null && !(group instanceof ButtonGroup)) {
+        throw new TypeError("The group must be a ButtonGroup or null.");
+      }
+      const old = this._group;
+      this._group = group;
+      if (old && old.buttons.includes(this)) {
+        old.removeButton(this);
+      }
+      if (group && !group.buttons.includes(this)) {
+        group.addButton(this);
+      }
+      this._onGroupChange(old, group);
+    }
+  }
+});
+registerType("toggle-button", ToggleButton);
+
+// src/widgets/check-box.js
+var CheckBox = class extends ToggleButton {
+  static {
+    __name(this, "CheckBox");
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-check-box" role="checkbox">
+                <span class="wy-check-indicator" aria-hidden="true"></span>
+                <div class="wy-check-box-body"></div>
+            </div>
+        `);
+    this._bodyEl = element.querySelector(".wy-check-box-body");
+    return element;
+  }
+  _createLabel() {
+    return new Label({ hAlign: Align.START });
+  }
+  _setAccessibleState(state) {
+    this.el.setAttribute("aria-checked", state);
+  }
+};
+registerType("check-box", CheckBox);
+
+// src/widgets/menu-item.js
+var ACCELERATOR_FLASH_DURATION = 150;
+var MenuItem = class _MenuItem extends AbstractMenuItem {
+  static {
+    __name(this, "MenuItem");
+  }
+  _initialize() {
+    super._initialize();
+    this._mnemonic = "";
+    this._acceleratorValue = null;
+    this._ownImage = false;
+    this._submenuDisconnects = [];
+    this._flashTimer = 0;
+    this.el.setAttribute("role", this._getRole());
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-menu-item">
+                <span class="wy-menu-item-toggle" aria-hidden="true"></span>
+                <span class="wy-menu-item-icon" aria-hidden="true"></span>
+                <span class="wy-menu-item-label"></span>
+                <span class="wy-menu-item-accelerator" aria-hidden="true"></span>
+                <span class="wy-menu-item-arrow" aria-hidden="true"></span>
+            </div>
+        `);
+    this._iconEl = element.querySelector(".wy-menu-item-icon");
+    this._labelEl = element.querySelector(".wy-menu-item-label");
+    this._acceleratorEl = element.querySelector(".wy-menu-item-accelerator");
+    return element;
+  }
+  /**
+   * The ARIA role of the item.
+   *
+   * @protected
+   * @returns {string}
+   */
+  _getRole() {
+    return "menuitem";
+  }
+  /**
+   * Activates the item: emits `activate`. Unlike activating it in a menu, this does not close
+   * menus. Does nothing if the item is insensitive.
+   *
+   * @returns {boolean} Whether the item was activated.
+   */
+  activate() {
+    if (!this.isSensitive) {
+      return false;
+    }
+    this.emit("activate", this);
+    return true;
+  }
+  /**
+   * Destroys the item and its submenu.
+   */
+  destroy() {
+    this._setSubmenu(null);
+    clearTimeout(this._flashTimer);
+    super.destroy();
+  }
+  /**
+   * Activates the item as the user did it in a menu: closes all menus first (so the focus is
+   * back where it was, before a handler may move it), then activates it.
+   *
+   * @protected
+   */
+  _onUserActivate() {
+    if (!this.isSensitive) {
+      return;
+    }
+    getMenuManager().hideAllOpenMenus();
+    this.activate();
+  }
+  /**
+   * Activates the item because its accelerator was pressed.
+   *
+   * @protected
+   * @returns {boolean} Whether it was activated.
+   */
+  _activateByAccelerator() {
+    if (!this.visible || !this._isChainSensitive()) {
+      return false;
+    }
+    this._flashTopLevelItem();
+    return this.activate();
+  }
+  _findAccelerator(event) {
+    if (this._acceleratorValue && matchesAccelerator(this._acceleratorValue, event)) {
+      return this;
+    }
+    return this._submenu ? this._submenu._findAccelerator(event) : null;
+  }
+  _flashTopLevelItem() {
+    let item = this;
+    while (item?.parent?.isMenu) {
+      item = item.parent.attachWidget;
+    }
+    if (item instanceof _MenuItem && item !== this && item.parent?.isMenuBar) {
+      item.el.classList.add("wy-accelerator-flash");
+      clearTimeout(item._flashTimer);
+      item._flashTimer = setTimeout(() => {
+        item.el.classList.remove("wy-accelerator-flash");
+      }, ACCELERATOR_FLASH_DURATION);
+    }
+  }
+  _attachChildElement(widget) {
+    this._iconEl.append(widget.el);
+  }
+  _setImage(image, own) {
+    const old = this._image;
+    if (old === image) {
+      return false;
+    }
+    if (image && !(image instanceof Image)) {
+      throw new TypeError("The image of a menu item must be an Image.");
+    }
+    this._image = image;
+    this._ownImage = own;
+    if (old && !old.destroyed && this._children.includes(old)) {
+      this.removeChild(old);
+    }
+    if (image) {
+      this.addChild(image);
+    }
+    this.el.classList.toggle("wy-has-icon", Boolean(image));
+    return true;
+  }
+  _setSubmenu(submenu, destroyOld = true) {
+    if (submenu && !submenu.isMenu) {
+      throw new TypeError("A submenu must be a Menu.");
+    }
+    const old = this._submenu;
+    if (old === submenu) {
+      return false;
+    }
+    this._submenuDisconnects.forEach((disconnect) => disconnect());
+    this._submenuDisconnects = [];
+    this._submenu = submenu;
+    if (old && !old.destroyed) {
+      old.hide();
+      old._setAttachWidget(null);
+      if (destroyOld) {
+        old.destroy();
+      }
+    }
+    if (submenu) {
+      submenu.hide();
+      submenu._setAttachWidget(this);
+      this._submenuDisconnects.push(
+        submenu.connect("visible-change", () => this._onSubmenuVisibleChange()),
+        submenu.connect("destroy", () => {
+          if (this._submenu === submenu) {
+            this._setSubmenu(null, false);
+            this.emit("submenu-change", this);
+          }
+        })
+      );
+    }
+    const hasSubmenu = Boolean(submenu);
+    this.el.classList.toggle("wy-has-submenu", hasSubmenu);
+    if (hasSubmenu) {
+      this.el.setAttribute("aria-haspopup", "menu");
+      this.el.setAttribute("aria-controls", submenu.el.id);
+    } else {
+      this.el.removeAttribute("aria-haspopup");
+      this.el.removeAttribute("aria-controls");
+    }
+    this._onSubmenuVisibleChange();
+    return true;
+  }
+  _onSubmenuVisibleChange() {
+    const open = Boolean(this._submenu?.visible);
+    this.el.classList.toggle("wy-submenu-open", open);
+    if (this._submenu) {
+      this.el.setAttribute("aria-expanded", String(open));
+    } else {
+      this.el.removeAttribute("aria-expanded");
+    }
+  }
+  _onIsVisibleChange(isVisible) {
+    super._onIsVisibleChange(isVisible);
+    if (!isVisible) {
+      this._submenu?.hide();
+    }
+  }
+  _onIsSensitiveChange(isSensitive) {
+    super._onIsSensitiveChange(isSensitive);
+    if (!isSensitive) {
+      this._submenu?.hide();
+    }
+  }
+};
+defineProperties(MenuItem, {
+  /**
+   * The label. With `useUnderline`, an underscore marks the mnemonic, as in `'_File'`.
+   */
+  label: {
+    value: "",
+    changed(label) {
+      this._mnemonic = renderMnemonicLabel(this._labelEl, label, this._useUnderline).mnemonic;
+    }
+  },
+  /**
+   * Whether underscores in the label mark the mnemonic.
+   */
+  useUnderline: {
+    value: true,
+    changed(useUnderline) {
+      this._mnemonic = renderMnemonicLabel(this._labelEl, this._label, useUnderline).mnemonic;
+    }
+  },
+  /**
+   * The mnemonic character (lowercase), or `''` for none.
+   */
+  mnemonic: {
+    readOnly: true,
+    get() {
+      return this._mnemonic;
+    }
+  },
+  /**
+   * The name of the icon shown before the label, e.g. `'document-save'`, or `''` for none. The
+   * icon is shown by an `Image` (see `image`).
+   */
+  icon: {
+    value: "",
+    changed(icon) {
+      if (icon) {
+        if (this._image && this._ownImage) {
+          this._image.icon = icon;
+        } else {
+          this._setImage(new Image({ icon }), true);
+        }
+      } else if (this._ownImage) {
+        const image = this._image;
+        this._setImage(null, false);
+        image?.destroy();
+      }
+    }
+  },
+  /**
+   * The `Image` shown before the label, or `null`. Set it for a custom image; `icon` sets it
+   * too.
+   */
+  image: {
+    value: null,
+    set(image) {
+      const old = this._ownImage ? this._image : null;
+      if (!this._setImage(image, false)) {
+        return false;
+      }
+      old?.destroy();
+      if (this._icon) {
+        this._icon = "";
+        this.emit("icon-change", this);
+      }
+    }
+  },
+  /**
+   * The accelerator, e.g. `'Ctrl+S'`, `'Ctrl+Shift+Z'` or `'F5'`, or `''` for none. It is shown
+   * right-aligned (with the platform's notation) and activates the item in the window.
+   */
+  accelerator: {
+    value: "",
+    coerce(accelerator) {
+      const text = accelerator || "";
+      if (text) {
+        parseAccelerator(text);
+      }
+      return text;
+    },
+    changed(accelerator) {
+      this._acceleratorValue = accelerator ? parseAccelerator(accelerator) : null;
+      this._acceleratorEl.textContent = accelerator ? formatAccelerator(this._acceleratorValue) : "";
+      if (accelerator) {
+        this.el.setAttribute(
+          "aria-keyshortcuts",
+          toAriaKeyShortcuts(this._acceleratorValue)
+        );
+      } else {
+        this.el.removeAttribute("aria-keyshortcuts");
+      }
+      this.el.classList.toggle("wy-has-accelerator", Boolean(accelerator));
+    }
+  },
+  /**
+   * The submenu, a `Menu`, or `null`. The item owns it: replacing the submenu or destroying the
+   * item destroys it. An item with a submenu shows an arrow and opens the submenu instead of
+   * activating.
+   */
+  submenu: {
+    value: null,
+    set(submenu) {
+      return this._setSubmenu(submenu || null);
+    }
+  },
+  /**
+   * Whether the item is placed at the far end of a menu bar, like a Help menu.
+   */
+  rightJustified: {
+    value: false,
+    changed(rightJustified) {
+      this.el.classList.toggle("wy-right-justified", rightJustified);
+    }
+  }
+});
+registerType("menu-item", MenuItem);
+
+// src/widgets/check-menu-item.js
+var CheckMenuItem = class extends MenuItem {
+  static {
+    __name(this, "CheckMenuItem");
+  }
+  _initialize() {
+    super._initialize();
+    this.el.classList.add("wy-check-menu-item");
+    this._updateCheckState();
+  }
+  _getRole() {
+    return "menuitemcheckbox";
+  }
+  /**
+   * Activates the item: toggles it and emits `activate`. Does nothing if it is insensitive.
+   *
+   * @returns {boolean} Whether the item was activated.
+   */
+  activate() {
+    if (!this.isSensitive) {
+      return false;
+    }
+    this._toggleOnActivate();
+    this.emit("activate", this);
+    return true;
+  }
+  /**
+   * Changes `active` for an activation. Radio items override this.
+   *
+   * @protected
+   */
+  _toggleOnActivate() {
+    this.inconsistent = false;
+    this.active = !this._active;
+  }
+  _updateCheckState() {
+    this.el.classList.toggle("wy-active", this._active);
+    this.el.classList.toggle("wy-inconsistent", this._inconsistent);
+    this.el.classList.toggle("wy-draw-as-radio", this._drawAsRadio);
+    this.el.setAttribute(
+      "aria-checked",
+      this._inconsistent ? "mixed" : String(Boolean(this._active))
+    );
+  }
+};
+defineProperties(CheckMenuItem, {
+  /**
+   * Whether the item is checked.
+   */
+  active: {
+    value: false,
+    coerce: Boolean,
+    changed() {
+      this._updateCheckState();
+      this.emit("toggle", this);
+    }
+  },
+  /**
+   * Whether the check shows an "in between" state (a dash), e.g. for a setting that applies to
+   * some of the selected objects only. Activating the item clears it.
+   */
+  inconsistent: {
+    value: false,
+    coerce: Boolean,
+    changed() {
+      this._updateCheckState();
+    }
+  },
+  /**
+   * Whether the check is drawn as a radio dot.
+   */
+  drawAsRadio: {
+    value: false,
+    coerce: Boolean,
+    changed() {
+      this._updateCheckState();
+    }
+  }
+});
+registerType("check-menu-item", CheckMenuItem);
+
+// src/widgets/tool-item.js
+var ToolItem = class extends AbstractToolItem {
+  static {
+    __name(this, "ToolItem");
+  }
+  _initialize() {
+    super._initialize();
+    this._ownImage = false;
+    this._submenuDisconnects = [];
+    this.el.setAttribute("role", this._getRole());
+    this._behavior = attachButtonBehavior(this, {
+      focusOnPress: false,
+      onActivate: /* @__PURE__ */ __name(() => this._onUserActivate(), "onActivate")
+    });
+    this._arrowEl.addEventListener("pointerdown", (event) => this._onArrowPointerDown(event));
+    this.el.addEventListener("keydown", (event) => this._onKeyDown(event));
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-tool-item">
+                <span class="wy-tool-item-button">
+                    <span class="wy-tool-item-icon" aria-hidden="true"></span>
+                    <span class="wy-tool-item-label" aria-hidden="true"></span>
+                </span>
+                <span class="wy-tool-item-arrow" aria-hidden="true" hidden></span>
+            </div>
+        `);
+    this._iconEl = element.querySelector(".wy-tool-item-icon");
+    this._labelEl = element.querySelector(".wy-tool-item-label");
+    this._arrowEl = element.querySelector(".wy-tool-item-arrow");
+    return element;
+  }
+  /**
+   * Activates the item: emits `activate`. Does nothing if it is insensitive.
+   *
+   * @returns {boolean} Whether the item was activated.
+   */
+  activate() {
+    if (!this.isSensitive) {
+      return false;
+    }
+    this.emit("activate", this);
+    return true;
+  }
+  /**
+   * Opens the submenu, if any.
+   *
+   * @param {boolean} [keyboard] Whether to select the first item, as when using the keyboard.
+   */
+  popupSubmenu(keyboard = false) {
+    const submenu = this._submenu;
+    if (!submenu || !this.isSensitive || !this.isVisible) {
+      return;
+    }
+    const vertical = this.toolBar?.orientation === Orientation.VERTICAL;
+    submenu.popup(this, {
+      side: vertical ? "right" : "bottom",
+      align: "start",
+      owner: this._arrowEl,
+      selectFirst: keyboard
+    });
+  }
+  /**
+   * Destroys the item and its submenu.
+   */
+  destroy() {
+    this._setSubmenu(null);
+    this._behavior.destroy();
+    super.destroy();
+  }
+  /**
+   * The ARIA role of the item.
+   *
+   * @protected
+   * @returns {string}
+   */
+  _getRole() {
+    return "button";
+  }
+  /**
+   * Activates the item as the user did it (by pressing it, or with Enter or Space).
+   *
+   * @protected
+   */
+  _onUserActivate() {
+    this.activate();
+  }
+  /**
+   * The text for the item in menus: the label, or else the tooltip.
+   *
+   * @protected
+   * @returns {string}
+   */
+  _getMenuLabel() {
+    if (this._label) {
+      return this._label;
+    }
+    const tooltip = this.tooltipLabel || "";
+    return this._useUnderline ? tooltip.replace(/_/g, "__") : tooltip;
+  }
+  _createMenuProxy() {
+    const proxy = new MenuItem({
+      label: this._getMenuLabel(),
+      useUnderline: this._useUnderline,
+      icon: this._icon,
+      sensitive: this.sensitive
+    });
+    proxy.connect("activate", () => this._onUserActivate());
+    return proxy;
+  }
+  _onToolBarChange() {
+    const toolBar = this.toolBar;
+    if (this._ownImage && this._image && toolBar) {
+      this._image.pixelSize = toolBar.iconSize;
+    }
+  }
+  _attachChildElement(widget) {
+    this._iconEl.append(widget.el);
+  }
+  _setImage(image, own) {
+    const old = this._image;
+    if (old === image) {
+      return false;
+    }
+    if (image && !(image instanceof Image)) {
+      throw new TypeError("The image of a tool item must be an Image.");
+    }
+    this._image = image;
+    this._ownImage = own;
+    if (old && !old.destroyed && this._children.includes(old)) {
+      this.removeChild(old);
+    }
+    if (image) {
+      this.addChild(image);
+      this._onToolBarChange();
+    }
+    this.el.classList.toggle("wy-has-icon", Boolean(image));
+    return true;
+  }
+  _setSubmenu(submenu, destroyOld = true) {
+    if (submenu && !submenu.isMenu) {
+      throw new TypeError("A submenu must be a Menu.");
+    }
+    const old = this._submenu;
+    if (old === submenu) {
+      return false;
+    }
+    this._submenuDisconnects.forEach((disconnect) => disconnect());
+    this._submenuDisconnects = [];
+    this._submenu = submenu;
+    if (old && !old.destroyed) {
+      old.hide();
+      old._setAttachWidget(null);
+      if (destroyOld) {
+        old.destroy();
+      }
+    }
+    if (submenu) {
+      submenu.hide();
+      submenu._setAttachWidget(this);
+      this._submenuDisconnects.push(
+        submenu.connect("visible-change", () => {
+          this.el.classList.toggle("wy-submenu-open", submenu.visible);
+          this.el.setAttribute("aria-expanded", String(submenu.visible));
+        }),
+        submenu.connect("destroy", () => {
+          if (this._submenu === submenu) {
+            this._setSubmenu(null, false);
+            this.emit("submenu-change", this);
+          }
+        })
+      );
+    }
+    const hasSubmenu = Boolean(submenu);
+    this._arrowEl.hidden = !hasSubmenu;
+    this.el.classList.toggle("wy-has-submenu", hasSubmenu);
+    this.el.classList.remove("wy-submenu-open");
+    if (hasSubmenu) {
+      this.el.setAttribute("aria-haspopup", "menu");
+      this.el.setAttribute("aria-expanded", "false");
+      this.el.setAttribute("aria-keyshortcuts", "Alt+ArrowDown");
+    } else {
+      this.el.removeAttribute("aria-haspopup");
+      this.el.removeAttribute("aria-expanded");
+      this.el.removeAttribute("aria-keyshortcuts");
+    }
+    return true;
+  }
+  _onArrowPointerDown(event) {
+    event.stopPropagation();
+    if (event.button !== 0 || !this.isSensitive) {
+      return;
+    }
+    this._tooltip?.disappear();
+    if (this._submenu?.visible) {
+      this._submenu.hide();
+    } else {
+      this.popupSubmenu();
+    }
+  }
+  _onKeyDown(event) {
+    if (!this._submenu || event.defaultPrevented || event.target !== this.el) {
+      return;
+    }
+    const horizontal = this.toolBar?.orientation !== Orientation.VERTICAL;
+    const opens = event.key === Key.DOWN && (event.altKey || horizontal) || event.key === Key.RIGHT && event.altKey;
+    if (opens) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.popupSubmenu(true);
+    }
+  }
+  _updateLabel() {
+    renderMnemonicLabel(this._labelEl, this._label, this._useUnderline);
+    const text = parseMnemonic(this._label, this._useUnderline).text;
+    this.el.classList.toggle("wy-has-label", Boolean(text));
+    if (text) {
+      this.el.setAttribute("aria-label", text);
+    } else {
+      this.el.removeAttribute("aria-label");
+    }
+  }
+  _onIsSensitiveChange(isSensitive) {
+    super._onIsSensitiveChange(isSensitive);
+    if (!isSensitive) {
+      this._submenu?.hide();
+    }
+  }
+  _onIsVisibleChange(isVisible) {
+    super._onIsVisibleChange(isVisible);
+    if (!isVisible) {
+      this._submenu?.hide();
+    }
+  }
+};
+defineProperties(ToolItem, {
+  canFocus: { value: true },
+  /**
+   * The label. With `useUnderline`, an underscore marks a mnemonic (used in the overflow menu).
+   */
+  label: {
+    value: "",
+    changed() {
+      this._updateLabel();
+    }
+  },
+  /**
+   * Whether underscores in the label mark a mnemonic.
+   */
+  useUnderline: {
+    value: false,
+    changed() {
+      this._updateLabel();
+    }
+  },
+  /**
+   * The name of the icon, e.g. `'document-save'`, or `''` for none. The icon is shown by an
+   * `Image` (see `image`), sized by the tool bar's `iconSize`.
+   */
+  icon: {
+    value: "",
+    changed(icon) {
+      if (icon) {
+        if (this._image && this._ownImage) {
+          this._image.icon = icon;
+        } else {
+          this._setImage(new Image({ icon }), true);
+        }
+      } else if (this._ownImage) {
+        const image = this._image;
+        this._setImage(null, false);
+        image?.destroy();
+      }
+    }
+  },
+  /**
+   * The `Image` shown as the icon, or `null`. Set it for a custom image; `icon` sets it too.
+   */
+  image: {
+    value: null,
+    set(image) {
+      const old = this._ownImage ? this._image : null;
+      if (!this._setImage(image, false)) {
+        return false;
+      }
+      old?.destroy();
+      if (this._icon) {
+        this._icon = "";
+        this.emit("icon-change", this);
+      }
+    }
+  },
+  /**
+   * Whether the item is important: in the `BOTH_HORIZONTAL` tool bar style only important
+   * items show their label next to the icon.
+   */
+  isImportant: {
+    value: false,
+    changed(isImportant) {
+      this.el.classList.toggle("wy-important", isImportant);
+    }
+  },
+  /**
+   * The submenu opened by the item's arrow, a `Menu`, or `null`. The item owns it: replacing
+   * the submenu or destroying the item destroys it.
+   */
+  submenu: {
+    value: null,
+    set(submenu) {
+      return this._setSubmenu(submenu || null);
+    }
+  }
+});
+registerType("tool-item", ToolItem);
+
+// src/widgets/check-tool-item.js
+var CheckToolItem = class extends ToolItem {
+  static {
+    __name(this, "CheckToolItem");
+  }
+  _initialize() {
+    super._initialize();
+    this.el.classList.add("wy-check-tool-item");
+    this._updateActiveState();
+  }
+  /**
+   * Activates the item: toggles it and emits `activate`. Does nothing if it is insensitive.
+   *
+   * @returns {boolean} Whether the item was activated.
+   */
+  activate() {
+    if (!this.isSensitive) {
+      return false;
+    }
+    this._toggleOnActivate();
+    this.emit("activate", this);
+    return true;
+  }
+  /**
+   * Changes `active` for an activation. Radio items override this.
+   *
+   * @protected
+   */
+  _toggleOnActivate() {
+    this.active = !this._active;
+  }
+  _createMenuProxy() {
+    const proxy = new CheckMenuItem({
+      label: this._getMenuLabel(),
+      useUnderline: this._useUnderline,
+      active: this._active,
+      drawAsRadio: this._getRole() === "radio",
+      sensitive: this.sensitive
+    });
+    proxy.connect("activate", () => this._onUserActivate());
+    return proxy;
+  }
+  _updateActiveState() {
+    this.el.classList.toggle("wy-active", this._active);
+    if (this._getRole() === "radio") {
+      this.el.setAttribute("aria-checked", String(this._active));
+    } else {
+      this.el.setAttribute("aria-pressed", String(this._active));
+    }
+  }
+};
+defineProperties(CheckToolItem, {
+  /**
+   * Whether the item is active (checked), which draws it pressed.
+   */
+  active: {
+    value: false,
+    coerce: Boolean,
+    changed() {
+      this._updateActiveState();
+      this.emit("toggle", this);
+    }
+  }
+});
+registerType("check-tool-item", CheckToolItem);
+
+// src/widgets/popover.js
+var PopoverCloseReason = Object.freeze({
+  API: "api",
+  // The popover was closed with `popdown()`.
+  ESCAPE: "escape",
+  // Escape was pressed.
+  OUTSIDE: "outside",
+  // A pointer button was pressed outside the popover and its owner.
+  SCROLL: "scroll",
+  // Something outside the popover scrolled.
+  RESIZE: "resize",
+  // The screen was resized.
+  BLUR: "blur",
+  // The page lost the focus.
+  OWNER: "owner"
+  // The owner was hidden, made insensitive or destroyed.
+});
+var TEXT_INPUT_SELECTOR = 'input, textarea, [contenteditable]:not([contenteditable="false"])';
+var Popover = class _Popover extends Bin {
+  static {
+    __name(this, "Popover");
+  }
+  _initialize() {
+    super._initialize();
+    this._anchor = null;
+    this._ownerDisconnects = [];
+    this._onDocumentPointerDown = this._onDocumentPointerDown.bind(this);
+    this._onDocumentKeyDown = this._onDocumentKeyDown.bind(this);
+    this._onDocumentScroll = this._onDocumentScroll.bind(this);
+    this._onWindowBlur = this._onWindowBlur.bind(this);
+    this._onScreenSizeChange = this._onScreenSizeChange.bind(this);
+    this._screenDisconnect = null;
+    this.el.addEventListener("mousedown", (event) => {
+      if (!this._takeFocus && !event.target.closest?.(TEXT_INPUT_SELECTOR)) {
+        event.preventDefault();
+      }
+    });
+    this._recalculateVisibility();
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-popover">
+                <div class="wy-popover-body"></div>
+            </div>
+        `);
+    this._bodyEl = element.querySelector(".wy-popover-body");
+    return element;
+  }
+  /**
+   * The element that holds the content. Plain elements may be appended to it instead of setting a
+   * child widget.
+   *
+   * @type {HTMLElement}
+   */
+  get contentElement() {
+    return this._bodyEl;
+  }
+  /**
+   * Opens the popover next to an anchor, or moves it there if it is already open.
+   *
+   * @param {Element | Widget | {x: number, y: number, width: number, height: number}} [anchor]
+   *     What to place the popover next to: an element, a widget or a rectangle in viewport
+   *     coordinates. Defaults to the anchor of the previous call, or the owner.
+   * @param {object} [options] Overrides `side`, `align`, `offset` and `matchAnchorWidth`.
+   * @param {'bottom' | 'top' | 'right' | 'left'} [options.side]
+   * @param {'start' | 'end' | 'center'} [options.align]
+   * @param {number} [options.offset]
+   * @param {boolean} [options.matchAnchorWidth]
+   * @throws {Error} If there is nothing to place the popover next to.
+   */
+  popup(anchor, options = {}) {
+    if (this.destroyed) {
+      throw new Error("A destroyed popover cannot be opened.");
+    }
+    for (const name of ["side", "align", "offset", "matchAnchorWidth"]) {
+      if (options[name] !== void 0) {
+        this[name] = options[name];
+      }
+    }
+    if (anchor) {
+      this._anchor = anchor;
+    }
+    if (!this._anchor && !this._owner) {
+      throw new Error("A popover needs an anchor or an owner to be placed next to.");
+    }
+    const wasOpen = this._isOpen;
+    if (!wasOpen) {
+      this._isOpen = true;
+      getScreen().layer.append(this.el);
+      this._listen(true);
+      this._recalculateVisibility();
+    }
+    this.el.style.zIndex = String(getScreen().nextZIndex());
+    this.reposition();
+    if (!wasOpen) {
+      this.emit("is-open-change", this);
+      this.emit("open", this);
+    }
+  }
+  /**
+   * Closes the popover.
+   *
+   * @param {string} [reason] One of `PopoverCloseReason`; passed to the `close` signal.
+   */
+  popdown(reason = PopoverCloseReason.API) {
+    if (!this._isOpen) {
+      return;
+    }
+    this._isOpen = false;
+    this._listen(false);
+    this.el.remove();
+    this._recalculateVisibility();
+    this.emit("is-open-change", this);
+    this.emit("close", this, reason);
+  }
+  /**
+   * Opens the popover if it is closed, and closes it otherwise.
+   *
+   * @param {Element | Widget | {x: number, y: number, width: number, height: number}} [anchor]
+   */
+  toggle(anchor) {
+    if (this._isOpen) {
+      this.popdown();
+    } else {
+      this.popup(anchor);
+    }
+  }
+  /**
+   * Places the open popover next to its anchor again, e.g. after its content changed size.
+   */
+  reposition() {
+    if (!this._isOpen) {
+      return;
+    }
+    const anchor = this._getAnchorTarget();
+    const rect = anchor instanceof Element ? anchor.getBoundingClientRect() : anchor;
+    this.el.style.minWidth = this._matchAnchorWidth ? `${rect.width}px` : "";
+    placePopup(this.el, rect, { side: this._side, align: this._align, offset: this._offset });
+  }
+  /**
+   * Whether an element is part of the popover or its owner, so that pressing on it does not
+   * close the popover.
+   *
+   * @param {Node | null} node
+   * @returns {boolean}
+   */
+  containsElement(node) {
+    if (!node) {
+      return false;
+    }
+    if (this.el.contains(node) || this._owner?.el.contains(node)) {
+      return true;
+    }
+    let popover = Widget.fromElement(node);
+    while (popover && !(popover instanceof _Popover)) {
+      popover = popover.parent;
+    }
+    const owner = popover && popover !== this ? popover.owner : null;
+    return Boolean(owner && this.el.contains(owner.el));
+  }
+  destroy() {
+    this.popdown(PopoverCloseReason.OWNER);
+    this._connectOwner(null);
+    super.destroy();
+  }
+  _isShown() {
+    return this._visible && this._isOpen;
+  }
+  _getAnchorTarget() {
+    const anchor = this._anchor || this._owner;
+    return anchor instanceof Widget ? anchor.el : anchor;
+  }
+  _listen(listen) {
+    const method = listen ? "addEventListener" : "removeEventListener";
+    document[method]("pointerdown", this._onDocumentPointerDown, true);
+    document[method]("keydown", this._onDocumentKeyDown, true);
+    document[method]("scroll", this._onDocumentScroll, true);
+    window[method]("blur", this._onWindowBlur);
+    if (listen) {
+      this._screenDisconnect = getScreen().connect("size-change", this._onScreenSizeChange);
+    } else {
+      this._screenDisconnect?.();
+      this._screenDisconnect = null;
+    }
+  }
+  _connectOwner(owner) {
+    for (const disconnect of this._ownerDisconnects) {
+      disconnect();
+    }
+    this._ownerDisconnects = [];
+    if (!owner) {
+      return;
+    }
+    const onOwnerGone = /* @__PURE__ */ __name(() => {
+      if (owner.destroyed || !owner.isVisible || !owner.isSensitive) {
+        this.popdown(PopoverCloseReason.OWNER);
+      }
+    }, "onOwnerGone");
+    this._ownerDisconnects = [
+      owner.connect("destroy", onOwnerGone),
+      owner.connect("is-visible-change", onOwnerGone),
+      owner.connect("is-sensitive-change", onOwnerGone)
+    ];
+  }
+  _onDocumentPointerDown(event) {
+    if (this._closeOnOutsidePress && !this.containsElement(event.target)) {
+      this.popdown(PopoverCloseReason.OUTSIDE);
+    }
+  }
+  _onDocumentKeyDown(event) {
+    if (event.key !== Key.ESCAPE || event.defaultPrevented) {
+      return;
+    }
+    const others = [...getScreen().layer.querySelectorAll(":scope > .wy-popover")];
+    const topmost = others.reduce(
+      (result, x) => Number(x.style.zIndex) > Number(result.style.zIndex) ? x : result,
+      this.el
+    );
+    if (topmost !== this.el) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    this.popdown(PopoverCloseReason.ESCAPE);
+  }
+  _onDocumentScroll(event) {
+    if (this._closeOnScroll && !this.el.contains(event.target)) {
+      this.popdown(PopoverCloseReason.SCROLL);
+    }
+  }
+  _onWindowBlur() {
+    this.popdown(PopoverCloseReason.BLUR);
+  }
+  _onScreenSizeChange() {
+    this.popdown(PopoverCloseReason.RESIZE);
+  }
+};
+defineProperties(Popover, {
+  isTopLevel: { value: true, readOnly: true },
+  /**
+   * Whether the popover is open.
+   */
+  isOpen: { value: false, readOnly: true },
+  /**
+   * The widget the popover belongs to, or `null`. Presses on the owner do not close the popover
+   * (the owner usually toggles it itself), and the popover closes when the owner is hidden, made
+   * insensitive or destroyed. It is also the default anchor.
+   */
+  owner: {
+    value: null,
+    coerce(owner) {
+      if (owner !== null && !(owner instanceof Widget)) {
+        throw new TypeError("The owner of a popover must be a widget or null.");
+      }
+      return owner;
+    },
+    changed(owner) {
+      this._connectOwner(owner);
+    }
+  },
+  /**
+   * The side of the anchor the popover prefers: `'bottom'`, `'top'`, `'right'` or `'left'`. It
+   * flips to the other side when there is not enough room.
+   */
+  side: {
+    value: "bottom",
+    coerce(side) {
+      if (!["bottom", "top", "right", "left"].includes(side)) {
+        throw new RangeError(`Invalid popover side '${side}'.`);
+      }
+      return side;
+    },
+    changed() {
+      this.reposition();
+    }
+  },
+  /**
+   * The alignment along the side of the anchor: `'start'`, `'center'` or `'end'`.
+   */
+  align: {
+    value: "start",
+    coerce(align) {
+      if (!["start", "center", "end"].includes(align)) {
+        throw new RangeError(`Invalid popover alignment '${align}'.`);
+      }
+      return align;
+    },
+    changed() {
+      this.reposition();
+    }
+  },
+  /**
+   * The distance from the anchor in pixels.
+   */
+  offset: {
+    value: 1,
+    coerce: Number,
+    changed() {
+      this.reposition();
+    }
+  },
+  /**
+   * Whether the popover is at least as wide as its anchor, like the list of a combo box.
+   */
+  matchAnchorWidth: {
+    value: false,
+    changed() {
+      this.reposition();
+    }
+  },
+  /**
+   * Whether pressing on the popover may move the keyboard focus into it. Off by default, so the
+   * owner keeps the focus.
+   */
+  takeFocus: { value: false },
+  /**
+   * Whether pressing outside the popover and its owner closes it.
+   */
+  closeOnOutsidePress: { value: true },
+  /**
+   * Whether scrolling something outside the popover closes it.
+   */
+  closeOnScroll: { value: true }
+});
+registerType("popover", Popover);
+
+// src/widgets/combo-box.js
+var TYPE_AHEAD_TIMEOUT = 1e3;
+var PAGE_ITEMS = 10;
+function toItem(item) {
+  if (typeof item === "string" || typeof item === "number") {
+    return { id: null, label: String(item), sensitive: true };
+  }
+  if (!item || typeof item !== "object") {
+    throw new TypeError("A combo box item must be a string or an object with a label.");
+  }
+  return {
+    id: item.id ?? null,
+    label: item.label === null || item.label === void 0 ? "" : String(item.label),
+    sensitive: item.sensitive !== false
+  };
+}
+__name(toItem, "toItem");
+var ComboBox = class extends Widget {
+  static {
+    __name(this, "ComboBox");
+  }
+  _initialize() {
+    super._initialize();
+    this._items = [];
+    this._highlighted = -1;
+    this._typeAhead = "";
+    this._typeAheadTime = 0;
+    this._modelDisconnects = [];
+    this._pressOpened = false;
+    this._entryText = "";
+    this._listId = uniqueId("wy-combo-box-list");
+    this._popover = new Popover({ owner: this, matchAnchorWidth: true });
+    this._popover.addStyleClass("wy-combo-box-popover");
+    this._popover.connect("close", (_popover, reason) => this._onPopoverClose(reason));
+    this._listEl = createElement(
+      `<div class="wy-combo-box-list" role="listbox" id="${this._listId}"></div>`
+    );
+    this._popover.contentElement.append(this._listEl);
+    this._buttonEl.addEventListener("pointerdown", (event) => this._onButtonPointerDown(event));
+    this.el.addEventListener("keydown", (event) => this._onKeyDown(event));
+    this._entryEl.addEventListener("input", () => this._onEntryInput());
+    this.el.addEventListener("focusout", (event) => this._onFocusOut(event));
+    this._listEl.addEventListener("pointermove", (event) => this._onListPointerMove(event));
+    this._listEl.addEventListener("click", (event) => this._onListClick(event));
+    this._onDocumentPointerUp = this._onDocumentPointerUp.bind(this);
+    this._updateEntryMode();
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-combo-box" role="combobox" aria-haspopup="listbox" aria-expanded="false">
+                <input class="wy-combo-box-entry" type="text" autocomplete="off" spellcheck="false" hidden />
+                <div class="wy-combo-box-button">
+                    <span class="wy-combo-box-label">
+                        <span class="wy-combo-box-sizer" aria-hidden="true"></span>
+                        <span class="wy-combo-box-text"></span>
+                    </span>
+                    <span class="wy-combo-box-arrow" aria-hidden="true"></span>
+                </div>
+            </div>
+        `);
+    this._entryEl = element.querySelector(".wy-combo-box-entry");
+    this._buttonEl = element.querySelector(".wy-combo-box-button");
+    this._sizerEl = element.querySelector(".wy-combo-box-sizer");
+    this._textEl = element.querySelector(".wy-combo-box-text");
+    return element;
+  }
+  /**
+   * The element with the focus: the root element, or the entry with `hasEntry`.
+   *
+   * @type {HTMLElement}
+   */
+  get focusElement() {
+    return this._hasEntry ? this._entryEl : this.el;
+  }
+  /**
+   * The popover showing the list.
+   *
+   * @type {Popover}
+   */
+  get popover() {
+    return this._popover;
+  }
+  /**
+   * Returns an item.
+   *
+   * @param {number} index
+   * @returns {ComboBoxItem}
+   * @throws {RangeError} If there is no such item.
+   */
+  getItem(index) {
+    const item = this._items[index];
+    if (!item) {
+      throw new RangeError(`There is no item at index ${index}.`);
+    }
+    return { ...item };
+  }
+  /**
+   * Returns the index of the first item with an id, or -1.
+   *
+   * @param {string | number} id
+   * @returns {number}
+   */
+  indexOfId(id) {
+    return this._items.findIndex((x) => x.id !== null && x.id === id);
+  }
+  /**
+   * Adds an item at the end.
+   *
+   * @param {string | {id?: string | number | null, label: string, sensitive?: boolean}} item
+   * @returns {number} The index of the item.
+   */
+  appendItem(item) {
+    return this.insertItem(this._items.length, item);
+  }
+  /**
+   * Adds an item at the start.
+   *
+   * @param {string | {id?: string | number | null, label: string, sensitive?: boolean}} item
+   * @returns {number} The index of the item.
+   */
+  prependItem(item) {
+    return this.insertItem(0, item);
+  }
+  /**
+   * Inserts an item. The active item stays active.
+   *
+   * @param {number} index Between 0 and `itemsCount`.
+   * @param {string | {id?: string | number | null, label: string, sensitive?: boolean}} item
+   * @returns {number} The index of the item.
+   * @throws {RangeError} If the index is out of range.
+   */
+  insertItem(index, item) {
+    this._checkNoModel();
+    if (index < 0 || index > this._items.length) {
+      throw new RangeError(`Invalid item index ${index}.`);
+    }
+    this._items.splice(index, 0, toItem(item));
+    const active = this._activeIndex;
+    this._renderItems();
+    if (active >= index) {
+      this._setActiveIndex(active + 1, false);
+    }
+    return index;
+  }
+  /**
+   * Removes an item. When it was active, no item is active afterwards.
+   *
+   * @param {number} index
+   * @throws {RangeError} If there is no such item.
+   */
+  removeItem(index) {
+    this._checkNoModel();
+    this.getItem(index);
+    this._items.splice(index, 1);
+    const active = this._activeIndex;
+    this._renderItems();
+    if (active === index) {
+      this._setActiveIndex(-1, true);
+    } else if (active > index) {
+      this._setActiveIndex(active - 1, false);
+    }
+  }
+  /**
+   * Removes all items.
+   */
+  removeAllItems() {
+    this.items = [];
+  }
+  /**
+   * Opens the list.
+   */
+  openPopup() {
+    this.popupOpen = true;
+  }
+  /**
+   * Closes the list.
+   */
+  closePopup() {
+    this.popupOpen = false;
+  }
+  /**
+   * Opens the list if it is closed, and closes it otherwise.
+   */
+  togglePopup() {
+    this.popupOpen = !this._popupOpen;
+  }
+  destroy() {
+    document.removeEventListener("pointerup", this._onDocumentPointerUp, true);
+    this._connectModel(null);
+    this._popover.destroy();
+    super.destroy();
+  }
+  _checkNoModel() {
+    if (this._model) {
+      throw new Error("The items of a combo box with a model come from the model.");
+    }
+  }
+  /**
+   * Replaces the items, keeping the active item active if it is still there (by id, or else by
+   * label).
+   *
+   * @protected
+   * @param {ComboBoxItem[]} items
+   */
+  _setItems(items) {
+    const old = this._items[this._activeIndex] || null;
+    this._items = items;
+    this._renderItems();
+    let index = -1;
+    if (old && old.id !== null) {
+      index = this.indexOfId(old.id);
+    } else if (old) {
+      index = items.findIndex((x) => x.label === old.label);
+    }
+    const changed = !old || index < 0;
+    this._setActiveIndex(index, changed && Boolean(old));
+  }
+  _renderItems() {
+    const document2 = this.el.ownerDocument;
+    this._listEl.textContent = "";
+    this._sizerEl.textContent = "";
+    this._items.forEach((item, index) => {
+      const option = document2.createElement("div");
+      option.className = "wy-combo-box-item";
+      option.id = `${this._listId}-${index}`;
+      option.setAttribute("role", "option");
+      option.dataset.index = String(index);
+      option.textContent = item.label || "\xA0";
+      if (!item.sensitive) {
+        option.classList.add("wy-insensitive");
+        option.setAttribute("aria-disabled", "true");
+      }
+      this._listEl.append(option);
+      const sizer = document2.createElement("span");
+      sizer.textContent = item.label;
+      this._sizerEl.append(sizer);
+    });
+    this._highlighted = Math.min(this._highlighted, this._items.length - 1);
+    this._syncList();
+    if (this._popupOpen) {
+      this._popover.reposition();
+    }
+  }
+  _syncList() {
+    for (const option of this._listEl.children) {
+      const index = Number(option.dataset.index);
+      option.setAttribute("aria-selected", String(index === this._activeIndex));
+      option.classList.toggle("wy-active", index === this._activeIndex);
+      option.classList.toggle("wy-highlighted", index === this._highlighted);
+    }
+    const target = this.focusElement;
+    if (this._popupOpen && this._highlighted >= 0) {
+      target.setAttribute("aria-activedescendant", `${this._listId}-${this._highlighted}`);
+    } else {
+      target.removeAttribute("aria-activedescendant");
+    }
+  }
+  _setActiveIndex(index, emitChange) {
+    const oldId = this.activeId;
+    const changed = index !== this._activeIndex;
+    this._activeIndex = index;
+    const item = this._items[index] || null;
+    this._textEl.textContent = item ? item.label : "";
+    this._buttonEl.classList.toggle("wy-empty", !item);
+    if (this._hasEntry && item && this._entryEl.value !== item.label) {
+      this._entryEl.value = item.label;
+    }
+    this._syncList();
+    if (changed) {
+      this.emit("active-index-change", this);
+    }
+    if (this.activeId !== oldId) {
+      this.emit("active-id-change", this);
+    }
+    if (emitChange) {
+      this.emit("change", this);
+    }
+  }
+  /**
+   * Makes an item active because the user chose it.
+   *
+   * @protected
+   * @param {number} index
+   */
+  _choose(index) {
+    const item = this._items[index];
+    if (!item || !item.sensitive) {
+      return;
+    }
+    if (this._hasEntry) {
+      this._entryEl.value = item.label;
+      this._entryText = item.label;
+      this.emit("text-change", this);
+    }
+    if (index !== this._activeIndex) {
+      this._setActiveIndex(index, true);
+    }
+  }
+  _findSensitive(start, step) {
+    for (let index = start; index >= 0 && index < this._items.length; index += step) {
+      if (this._items[index].sensitive) {
+        return index;
+      }
+    }
+    return -1;
+  }
+  _showPopup() {
+    if (this._popupOpen || !this.isSensitive || !this.isVisible || !this._items.length) {
+      return false;
+    }
+    this._popupOpen = true;
+    this._highlighted = this._activeIndex >= 0 ? this._activeIndex : this._findSensitive(0, 1);
+    this.el.classList.add("wy-active");
+    this.focusElement.setAttribute("aria-expanded", "true");
+    this.focusElement.setAttribute("aria-controls", this._listId);
+    this._popover.popup(this.el);
+    this._syncList();
+    this._scrollToHighlighted();
+    this.emit("popup-open-change", this);
+    return true;
+  }
+  _hidePopup() {
+    if (!this._popupOpen) {
+      return false;
+    }
+    this._popover.popdown();
+    return true;
+  }
+  _onPopoverClose(_reason) {
+    if (!this._popupOpen) {
+      return;
+    }
+    this._popupOpen = false;
+    this._pressOpened = false;
+    this.el.classList.remove("wy-active");
+    this.focusElement.setAttribute("aria-expanded", "false");
+    this.focusElement.removeAttribute("aria-controls");
+    this._syncList();
+    this.emit("popup-open-change", this);
+  }
+  _scrollToHighlighted() {
+    const option = this._listEl.children[this._highlighted];
+    option?.scrollIntoView({ block: "nearest" });
+  }
+  _highlight(index) {
+    if (index < 0 || index === this._highlighted) {
+      return;
+    }
+    this._highlighted = index;
+    this._syncList();
+    this._scrollToHighlighted();
+  }
+  _typeAheadSearch(character) {
+    const now = performance.now();
+    if (now - this._typeAheadTime > TYPE_AHEAD_TIMEOUT) {
+      this._typeAhead = "";
+    }
+    this._typeAheadTime = now;
+    this._typeAhead += character;
+    const locale = getLocaleManager().locale;
+    const prefix = this._typeAhead.toLocaleLowerCase(locale);
+    const repeated = [...prefix].every((x) => x === prefix[0]);
+    const search = repeated ? prefix[0] : prefix;
+    const current = this._popupOpen ? this._highlighted : this._activeIndex;
+    const start = repeated ? current + 1 : Math.max(current, 0);
+    const count = this._items.length;
+    for (let offset = 0; offset < count; offset++) {
+      const index = (start + offset) % count;
+      const item = this._items[index];
+      if (item.sensitive && item.label.toLocaleLowerCase(locale).startsWith(search)) {
+        return index;
+      }
+    }
+    return -1;
+  }
+  _updateEntryMode() {
+    const hasEntry = this._hasEntry;
+    this.el.classList.toggle("wy-has-entry", hasEntry);
+    this._entryEl.hidden = !hasEntry;
+    if (hasEntry) {
+      this.el.removeAttribute("role");
+      this.el.removeAttribute("aria-haspopup");
+      this.el.removeAttribute("aria-expanded");
+      this.el.removeAttribute("tabindex");
+      this._entryEl.setAttribute("role", "combobox");
+      this._entryEl.setAttribute("aria-haspopup", "listbox");
+      this._entryEl.setAttribute("aria-autocomplete", "list");
+      this._entryEl.setAttribute("aria-expanded", String(this._popupOpen));
+      const item = this._items[this._activeIndex];
+      this._entryEl.value = item ? item.label : this._entryText;
+    } else {
+      this._entryEl.tabIndex = -1;
+      this.el.setAttribute("role", "combobox");
+      this.el.setAttribute("aria-haspopup", "listbox");
+      this.el.setAttribute("aria-expanded", String(this._popupOpen));
+    }
+    this._updateTabIndex();
+  }
+  _connectModel(model) {
+    for (const disconnect of this._modelDisconnects) {
+      disconnect();
+    }
+    this._modelDisconnects = [];
+    if (model) {
+      this._modelDisconnects = ["rows-change", "id-column-change"].map(
+        (name) => model.connect(name, () => this._loadModel())
+      );
+    }
+  }
+  _loadModel() {
+    const model = this._model;
+    if (!model) {
+      return;
+    }
+    const rows = typeof model.getRows === "function" ? model.getRows() : model.rows;
+    const idColumn = typeof model.getIdColumn === "function" ? model.getIdColumn() : model.idColumn;
+    const column = this._column;
+    const items = (rows || []).map((row) => {
+      const label = column ? row[column] : Object.values(row)[0];
+      return toItem({ id: idColumn ? row[idColumn] : null, label });
+    });
+    this._setItems(items);
+  }
+  _onButtonPointerDown(event) {
+    if (event.button !== 0 || !this.isSensitive) {
+      return;
+    }
+    if (this._hasEntry) {
+      event.preventDefault();
+    }
+    this.focus();
+    if (this._popupOpen) {
+      this._hidePopup();
+    } else if (this._showPopup()) {
+      this._pressOpened = true;
+      document.addEventListener("pointerup", this._onDocumentPointerUp, true);
+    }
+  }
+  _onDocumentPointerUp(event) {
+    document.removeEventListener("pointerup", this._onDocumentPointerUp, true);
+    const pressOpened = this._pressOpened;
+    this._pressOpened = false;
+    if (!pressOpened || !this._popupOpen) {
+      return;
+    }
+    const option = event.target.closest?.(".wy-combo-box-item");
+    if (option && this._listEl.contains(option)) {
+      this._choose(Number(option.dataset.index));
+      this._hidePopup();
+    }
+  }
+  _onListPointerMove(event) {
+    const option = event.target.closest(".wy-combo-box-item");
+    if (option && !option.classList.contains("wy-insensitive")) {
+      this._highlighted = Number(option.dataset.index);
+      this._syncList();
+    }
+  }
+  _onListClick(event) {
+    const option = event.target.closest(".wy-combo-box-item");
+    if (!option || option.classList.contains("wy-insensitive")) {
+      return;
+    }
+    this._choose(Number(option.dataset.index));
+    this._hidePopup();
+  }
+  _onFocusOut(event) {
+    if (this._popupOpen && !this.el.contains(event.relatedTarget)) {
+      this._popover.popdown(PopoverCloseReason.BLUR);
+    }
+  }
+  _onEntryInput() {
+    const text = this._entryEl.value;
+    this._entryText = text;
+    const index = this._items.findIndex((x) => x.label === text);
+    if (index !== this._activeIndex) {
+      this._setActiveIndex(index, true);
+    }
+    this.emit("text-change", this);
+  }
+  _onKeyDown(event) {
+    if (event.defaultPrevented || !this.isSensitive || event.isComposing) {
+      return;
+    }
+    const handled = this._popupOpen ? this._onOpenKeyDown(event) : this._onClosedKeyDown(event);
+    if (handled) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }
+  _onClosedKeyDown(event) {
+    const count = this._items.length;
+    const active = this._activeIndex;
+    if (event.altKey && event.key === Key.DOWN || event.key === Key.F4) {
+      this._showPopup();
+      return true;
+    }
+    if (event.altKey || event.ctrlKey || event.metaKey) {
+      return false;
+    }
+    switch (event.key) {
+      case Key.DOWN:
+        this._choose(this._findSensitive(active < 0 ? 0 : active + 1, 1));
+        return true;
+      case Key.UP:
+        this._choose(this._findSensitive(active < 0 ? count - 1 : active - 1, -1));
+        return true;
+      case Key.HOME:
+      case Key.PAGE_UP:
+        if (this._hasEntry && event.key === Key.HOME) {
+          return false;
+        }
+        this._choose(this._findSensitive(0, 1));
+        return true;
+      case Key.END:
+      case Key.PAGE_DOWN:
+        if (this._hasEntry && event.key === Key.END) {
+          return false;
+        }
+        this._choose(this._findSensitive(count - 1, -1));
+        return true;
+      case Key.ENTER:
+        if (this._hasEntry) {
+          this.emit("activate", this);
+          return false;
+        }
+        this._showPopup();
+        return true;
+      case Key.SPACE:
+        if (this._hasEntry) {
+          return false;
+        }
+        this._showPopup();
+        return true;
+    }
+    if (!this._hasEntry && event.key.length === 1 && event.key !== " ") {
+      this._choose(this._typeAheadSearch(event.key));
+      return true;
+    }
+    return false;
+  }
+  _onOpenKeyDown(event) {
+    const count = this._items.length;
+    const highlighted = this._highlighted;
+    if (event.altKey && event.key === Key.UP) {
+      this._choose(highlighted);
+      this._hidePopup();
+      return true;
+    }
+    switch (event.key) {
+      case Key.DOWN:
+        this._highlight(this._findSensitive(highlighted + 1, 1));
+        return true;
+      case Key.UP:
+        this._highlight(this._findSensitive(Math.max(highlighted - 1, 0), -1));
+        return true;
+      case Key.PAGE_DOWN:
+        this._highlight(
+          this._findSensitive(Math.min(highlighted + PAGE_ITEMS, count - 1), -1)
+        );
+        return true;
+      case Key.PAGE_UP:
+        this._highlight(this._findSensitive(Math.max(highlighted - PAGE_ITEMS, 0), 1));
+        return true;
+      case Key.HOME:
+        this._highlight(this._findSensitive(0, 1));
+        return true;
+      case Key.END:
+        this._highlight(this._findSensitive(count - 1, -1));
+        return true;
+      case Key.ENTER:
+      case Key.SPACE:
+        if (this._hasEntry && event.key === Key.SPACE) {
+          return false;
+        }
+        this._choose(highlighted);
+        this._hidePopup();
+        return true;
+      case Key.TAB:
+        this._choose(highlighted);
+        this._hidePopup();
+        return false;
+    }
+    if (!this._hasEntry && event.key.length === 1 && !event.ctrlKey && !event.metaKey) {
+      this._highlight(this._typeAheadSearch(event.key));
+      return true;
+    }
+    return false;
+  }
+};
+defineProperties(ComboBox, {
+  canFocus: {
+    value: true
+  },
+  vAlign: { value: Align.CENTER },
+  /**
+   * The items, as objects with `id`, `label` and `sensitive`. Set an array of labels or of
+   * objects with a `label` and optionally an `id` and `sensitive`. The active item stays active
+   * if it is still there.
+   */
+  items: {
+    get() {
+      return this._items.map((x) => ({ ...x }));
+    },
+    set(items) {
+      this._checkNoModel();
+      if (!Array.isArray(items)) {
+        throw new TypeError("The items of a combo box must be an array.");
+      }
+      this._setItems(items.map(toItem));
+    }
+  },
+  /**
+   * The number of items.
+   */
+  itemsCount: {
+    readOnly: true,
+    get() {
+      return this._items.length;
+    }
+  },
+  /**
+   * A model providing the items instead of `items`, or `null`: an object with `rows` (or
+   * `getRows()`), optionally `idColumn` (or `getIdColumn()`), and a `rows-change` signal.
+   */
+  model: {
+    value: null,
+    changed(model) {
+      this._connectModel(model);
+      if (model) {
+        this._loadModel();
+      } else {
+        this._setItems([]);
+      }
+    }
+  },
+  /**
+   * The column of the model rows to show, or `null` for the first column.
+   */
+  column: {
+    value: null,
+    changed() {
+      this._loadModel();
+    }
+  },
+  /**
+   * The index of the active item, or -1 if there is none.
+   */
+  activeIndex: {
+    value: -1,
+    signal: false,
+    coerce(index) {
+      const value = Number(index);
+      if (!Number.isInteger(value) || value < -1 || value >= this._items.length) {
+        throw new RangeError(`There is no item at index ${index}.`);
+      }
+      return value;
+    },
+    set(index) {
+      this._setActiveIndex(index, true);
+      return false;
+    }
+  },
+  /**
+   * The same as `activeIndex`.
+   */
+  active: {
+    signal: false,
+    get() {
+      return this._activeIndex;
+    },
+    set(index) {
+      this.activeIndex = index;
+      return false;
+    }
+  },
+  /**
+   * The id of the active item, or `null` if there is none or it has no id.
+   */
+  activeId: {
+    signal: false,
+    get() {
+      return this._items[this._activeIndex]?.id ?? null;
+    },
+    set(id) {
+      if (id === null || id === void 0) {
+        this.activeIndex = -1;
+        return false;
+      }
+      const index = this.indexOfId(id);
+      if (index < 0) {
+        throw new Error(`There is no item with id '${id}'.`);
+      }
+      this.activeIndex = index;
+      return false;
+    }
+  },
+  /**
+   * The text: the label of the active item, or with `hasEntry` the text of the entry. Setting
+   * it without an entry makes the first item with that label active.
+   */
+  text: {
+    signal: false,
+    get() {
+      if (this._hasEntry) {
+        return this._entryText;
+      }
+      return this._items[this._activeIndex]?.label ?? "";
+    },
+    set(text) {
+      text = text === null || text === void 0 ? "" : String(text);
+      if (this._hasEntry) {
+        if (text === this._entryText) {
+          return false;
+        }
+        this._entryEl.value = text;
+        this._onEntryInput();
+        return false;
+      }
+      this.activeIndex = this._items.findIndex((x) => x.label === text);
+      return false;
+    }
+  },
+  /**
+   * Whether the combo box has a text entry, where any text can be typed.
+   */
+  hasEntry: {
+    value: false,
+    coerce: Boolean,
+    changed() {
+      this._updateEntryMode();
+    }
+  },
+  /**
+   * Whether the list is open.
+   */
+  popupOpen: {
+    value: false,
+    signal: false,
+    set(open) {
+      if (open) {
+        this._showPopup();
+      } else {
+        this._hidePopup();
+      }
+      return false;
+    }
+  },
+  /**
+   * Text shown while no item is active (or the entry is empty), as a hint.
+   */
+  placeholder: {
+    value: "",
+    changed(placeholder) {
+      this._entryEl.placeholder = placeholder || "";
+      this._textEl.dataset.placeholder = placeholder || "";
+    }
+  },
+  /**
+   * The accessible name of the combo box, for combo boxes without a visible label.
+   */
+  accessibleName: {
+    value: "",
+    changed(name) {
+      for (const element of [this.el, this._entryEl]) {
+        if (name) {
+          element.setAttribute("aria-label", name);
+        } else {
+          element.removeAttribute("aria-label");
+        }
+      }
+    }
+  }
+});
+registerType("combo-box", ComboBox);
+
+// src/widgets/line-edit.js
+var EntryIconPosition = Object.freeze({
+  PRIMARY: "primary",
+  // At the start (the left in left-to-right text).
+  SECONDARY: "secondary"
+  // At the end.
+});
+function checkValidator(validator) {
+  if (validator === null || validator === void 0) {
+    return null;
+  }
+  if (typeof validator === "function" || typeof validator?.validate === "function" || typeof validator?.isValid === "function") {
+    return validator;
+  }
+  throw new TypeError("A validator must be a function or have a validate(text) method.");
+}
+__name(checkValidator, "checkValidator");
+var LineEdit = class extends Widget {
+  static {
+    __name(this, "LineEdit");
+  }
+  _initialize() {
+    super._initialize();
+    this._inputEl.addEventListener("input", () => this._onInput());
+    this._inputEl.addEventListener("keydown", (event) => this._onInputKeyDown(event));
+    this._inputEl.addEventListener("blur", () => this._onInputBlur());
+    for (const position of Object.values(EntryIconPosition)) {
+      const iconEl = this._iconEls[position];
+      iconEl.addEventListener("pointerdown", (event) => {
+        if (this._isIconActivatable(position)) {
+          this.emit("icon-press", this, position, event);
+        }
+      });
+      iconEl.addEventListener("pointerup", (event) => {
+        if (this._isIconActivatable(position)) {
+          this.emit("icon-release", this, position, event);
+        }
+      });
+    }
+    this._updateEditable();
+    this._updateAlignment();
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-line-edit wy-entry">
+                <span class="wy-line-edit-icon wy-primary" hidden></span>
+                <input class="wy-line-edit-input" type="text" autocomplete="off" spellcheck="false" />
+                <span class="wy-line-edit-icon wy-secondary" hidden></span>
+            </div>
+        `);
+    this._inputEl = element.querySelector("input");
+    this._iconEls = {
+      [EntryIconPosition.PRIMARY]: element.querySelector(".wy-primary"),
+      [EntryIconPosition.SECONDARY]: element.querySelector(".wy-secondary")
+    };
+    return element;
+  }
+  /**
+   * The native input element.
+   *
+   * @type {HTMLInputElement}
+   */
+  get focusElement() {
+    return this._inputEl;
+  }
+  /**
+   * Emits `activate`, as pressing Enter does. An invalid text is corrected first if the
+   * validator can fix it up.
+   */
+  activate() {
+    this._fixup();
+    this.emit("activate", this);
+  }
+  /**
+   * Selects a range of characters. The selection is kept when the line edit gets the focus.
+   *
+   * @param {number} start The first character.
+   * @param {number} [end] The character after the last one, or -1 (the default) for the end of
+   *     the text. When smaller than `start`, the selection extends backward.
+   */
+  selectRegion(start, end = -1) {
+    const length = this._inputEl.value.length;
+    start = Math.max(0, Math.min(start, length));
+    end = end < 0 ? length : Math.min(end, length);
+    if (end < start) {
+      this._inputEl.setSelectionRange(end, start, "backward");
+    } else {
+      this._inputEl.setSelectionRange(start, end);
+    }
+  }
+  /**
+   * Selects all text.
+   */
+  selectAll() {
+    this.selectRegion(0, -1);
+  }
+  /**
+   * Returns the selected range, or `null` if nothing is selected.
+   *
+   * @returns {{start: number, end: number} | null}
+   */
+  getSelectionBounds() {
+    const start = this._inputEl.selectionStart ?? 0;
+    const end = this._inputEl.selectionEnd ?? 0;
+    return start === end ? null : { start, end };
+  }
+  /**
+   * Returns the selected text, or `''`.
+   *
+   * @returns {string}
+   */
+  getSelectedText() {
+    const bounds = this.getSelectionBounds();
+    return bounds ? this._inputEl.value.slice(bounds.start, bounds.end) : "";
+  }
+  /**
+   * Inserts text at a position, as if typed there (subject to `maxLength`).
+   *
+   * @param {string} text
+   * @param {number} [position] The character to insert before, or -1 (the default) for the
+   *     cursor position.
+   * @returns {number} The position after the inserted text.
+   */
+  insertText(text, position = -1) {
+    const value = this._inputEl.value;
+    const at = position < 0 ? this._inputEl.selectionStart ?? value.length : position;
+    const index = Math.max(0, Math.min(at, value.length));
+    let inserted = String(text);
+    if (this._maxLength > 0) {
+      inserted = inserted.slice(0, Math.max(0, this._maxLength - value.length));
+    }
+    this.text = value.slice(0, index) + inserted + value.slice(index);
+    const end = index + inserted.length;
+    this._inputEl.setSelectionRange(end, end);
+    return end;
+  }
+  /**
+   * Deletes a range of characters.
+   *
+   * @param {number} start
+   * @param {number} [end] The character after the last one, or -1 (the default) for the end.
+   */
+  deleteText(start, end = -1) {
+    const value = this._inputEl.value;
+    start = Math.max(0, Math.min(start, value.length));
+    end = end < 0 ? value.length : Math.max(start, Math.min(end, value.length));
+    this.text = value.slice(0, start) + value.slice(end);
+    this._inputEl.setSelectionRange(start, start);
+  }
+  /**
+   * Deletes the selected text, if any.
+   */
+  deleteSelection() {
+    const bounds = this.getSelectionBounds();
+    if (bounds) {
+      this.deleteText(bounds.start, bounds.end);
+    }
+  }
+  /**
+   * Checks a text with the validator. Subclasses extend this with their own rules.
+   *
+   * @protected
+   * @param {string} text
+   * @returns {boolean}
+   */
+  _validate(text) {
+    const validator = this._validator;
+    if (!validator) {
+      return true;
+    }
+    if (typeof validator === "function") {
+      return Boolean(validator(text));
+    }
+    if (typeof validator.validate === "function") {
+      return Boolean(validator.validate(text));
+    }
+    return Boolean(validator.isValid(text));
+  }
+  /**
+   * Validates the current text and updates `isValid` and the invalid state.
+   *
+   * @protected
+   */
+  _revalidate() {
+    const valid = this._validate(this._text);
+    this.el.classList.toggle("wy-invalid", !valid);
+    if (valid) {
+      this._inputEl.removeAttribute("aria-invalid");
+    } else {
+      this._inputEl.setAttribute("aria-invalid", "true");
+    }
+    if (valid !== this._isValid) {
+      this._isValid = valid;
+      this.emit("is-valid-change", this);
+    }
+  }
+  /**
+   * Lets the validator correct an invalid text.
+   *
+   * @protected
+   */
+  _fixup() {
+    const validator = this._validator;
+    if (this._isValid || typeof validator?.fixup !== "function") {
+      return;
+    }
+    const fixed = validator.fixup(this._text);
+    if (typeof fixed === "string") {
+      this.text = fixed;
+    }
+  }
+  /**
+   * Called after the text changed, by the user or programmatically. Emits `change`.
+   *
+   * @protected
+   * @param {string} _text
+   */
+  _onTextChange(_text) {
+    this.emit("change", this);
+  }
+  /**
+   * Puts a text in the input. When the input has the focus, the selection is kept as far as
+   * possible, and a cursor at the end of the text stays at the end.
+   *
+   * @protected
+   * @param {string} text
+   */
+  _setInputValue(text) {
+    const input = this._inputEl;
+    if (input.value === text) {
+      return;
+    }
+    if (document.activeElement !== input) {
+      input.value = text;
+      return;
+    }
+    const oldLength = input.value.length;
+    const start = input.selectionStart ?? oldLength;
+    const end = input.selectionEnd ?? oldLength;
+    const direction = input.selectionDirection || "none";
+    input.value = text;
+    if (start === oldLength && end === oldLength) {
+      input.setSelectionRange(text.length, text.length);
+    } else {
+      input.setSelectionRange(
+        Math.min(start, text.length),
+        Math.min(end, text.length),
+        direction
+      );
+    }
+  }
+  _isIconActivatable(position) {
+    return this.isSensitive && Boolean(this[`_${position}Icon`]) && this[`_${position}IconActivatable`];
+  }
+  _updateIcon(position) {
+    const element = this._iconEls[position];
+    const name = this[`_${position}Icon`];
+    const tooltip = this[`_${position}IconTooltip`];
+    const activatable = this[`_${position}IconActivatable`];
+    element.hidden = !name;
+    element.innerHTML = name ? getIcon(name) || "" : "";
+    element.classList.toggle("wy-activatable", activatable);
+    element.title = tooltip || "";
+    if (name && activatable && tooltip) {
+      element.setAttribute("role", "button");
+      element.setAttribute("aria-label", tooltip);
+      element.removeAttribute("aria-hidden");
+    } else {
+      element.removeAttribute("role");
+      element.removeAttribute("aria-label");
+      element.setAttribute("aria-hidden", "true");
+    }
+    this.el.classList.toggle(`wy-has-${position}-icon`, Boolean(name));
+  }
+  _updateEditable() {
+    const editable = this._editable && this.isSensitive;
+    this._inputEl.readOnly = !editable;
+    this.el.classList.toggle("wy-read-only", !this._editable);
+    if (this._editable) {
+      this._inputEl.removeAttribute("aria-readonly");
+    } else {
+      this._inputEl.setAttribute("aria-readonly", "true");
+    }
+    if (editable !== this._isEditable) {
+      this._isEditable = editable;
+      this.emit("is-editable-change", this);
+    }
+  }
+  _updateAlignment() {
+    const xAlign = this._xAlign;
+    const align = xAlign <= 0.25 ? "start" : xAlign >= 0.75 ? "end" : "center";
+    this._inputEl.style.textAlign = align === "start" ? "" : align;
+  }
+  _onIsSensitiveChange(isSensitive) {
+    super._onIsSensitiveChange(isSensitive);
+    this._updateEditable();
+  }
+  _onInput() {
+    const value = this._inputEl.value;
+    this.text = value;
+    this._setInputValue(this._text);
+  }
+  _onInputKeyDown(event) {
+    if (event.key === Key.ENTER && !event.isComposing && !event.altKey && !event.ctrlKey) {
+      this.activate();
+    }
+  }
+  _onInputBlur() {
+    this._fixup();
+  }
+};
+defineProperties(LineEdit, {
+  canFocus: { value: true },
+  vAlign: { value: Align.CENTER },
+  /**
+   * The text.
+   */
+  text: {
+    value: "",
+    coerce(text) {
+      text = text === null || text === void 0 ? "" : String(text);
+      text = text.replace(/\r\n|[\r\n]/g, " ");
+      if (this._maxLength > 0 && text.length > this._maxLength) {
+        text = text.slice(0, this._maxLength);
+      }
+      return text;
+    },
+    changed(text) {
+      this._setInputValue(text);
+      this._revalidate();
+      this._onTextChange(text);
+    }
+  },
+  /**
+   * The value: the text, or `null` if it is not valid. Setting it sets the text.
+   */
+  value: {
+    signal: false,
+    get() {
+      return this._isValid ? this._text : null;
+    },
+    set(value) {
+      this.text = value;
+      return false;
+    }
+  },
+  /**
+   * Text shown while the line edit is empty, as a hint.
+   */
+  placeholder: {
+    value: "",
+    changed(placeholder) {
+      this._inputEl.placeholder = placeholder || "";
+    }
+  },
+  /**
+   * Whether the user can change the text. A line edit that is not sensitive is never editable.
+   */
+  editable: {
+    value: true,
+    coerce: Boolean,
+    changed() {
+      this._updateEditable();
+    }
+  },
+  /**
+   * Whether the user can currently change the text: it is `editable` and sensitive.
+   */
+  isEditable: { value: true, readOnly: true },
+  /**
+   * Whether the text is shown. When `false`, the line edit is a password entry that shows every
+   * character as a dot.
+   */
+  visibility: {
+    value: true,
+    coerce: Boolean,
+    changed(visibility) {
+      const input = this._inputEl;
+      const focused = document.activeElement === input;
+      const start = input.selectionStart;
+      const end = input.selectionEnd;
+      const direction = input.selectionDirection || "none";
+      input.type = visibility ? "text" : "password";
+      if (focused && start !== null) {
+        input.setSelectionRange(start, end, direction);
+      }
+    }
+  },
+  /**
+   * The maximum number of characters, or 0 for no limit. A longer text is truncated.
+   */
+  maxLength: {
+    value: 0,
+    coerce(maxLength) {
+      return Math.max(0, Math.floor(Number(maxLength) || 0));
+    },
+    changed(maxLength) {
+      if (maxLength > 0) {
+        this._inputEl.maxLength = maxLength;
+      } else {
+        this._inputEl.removeAttribute("maxlength");
+      }
+      if (maxLength > 0 && this._text.length > maxLength) {
+        this.text = this._text.slice(0, maxLength);
+      }
+    }
+  },
+  /**
+   * The natural width in characters, or -1 for the default width.
+   */
+  widthChars: {
+    value: -1,
+    coerce(widthChars) {
+      return Math.max(-1, Math.floor(Number(widthChars)));
+    },
+    changed(widthChars) {
+      this.el.style.setProperty(
+        "--wy-entry-width",
+        widthChars >= 0 ? `calc(${widthChars}ch + 2px)` : null
+      );
+    }
+  },
+  /**
+   * The horizontal alignment of the text, from 0 (at the start) to 1 (at the end).
+   */
+  xAlign: {
+    value: 0,
+    coerce(xAlign) {
+      const value = Number(xAlign);
+      if (!Number.isFinite(value)) {
+        throw new RangeError(`Invalid alignment ${xAlign}.`);
+      }
+      return Math.max(0, Math.min(1, value));
+    },
+    changed() {
+      this._updateAlignment();
+      this.emit("alignment-change", this);
+    }
+  },
+  /**
+   * The alignment of the text as a `Justification`: `START`, `CENTER` or `END`. The same as
+   * `xAlign` 0, 0.5 or 1.
+   */
+  alignment: {
+    signal: false,
+    get() {
+      return this._xAlign <= 0.25 ? Justification.START : this._xAlign >= 0.75 ? Justification.END : Justification.CENTER;
+    },
+    set(alignment) {
+      const xAligns = {
+        [Justification.START]: 0,
+        [Justification.FILL]: 0,
+        [Justification.CENTER]: 0.5,
+        [Justification.END]: 1
+      };
+      if (!(alignment in xAligns)) {
+        throw new RangeError(`Invalid alignment '${alignment}'.`);
+      }
+      this.xAlign = xAligns[alignment];
+      return false;
+    }
+  },
+  /**
+   * Whether the line edit has a frame. Without one it blends into its surroundings, e.g. when
+   * editing a table cell.
+   */
+  hasFrame: {
+    value: true,
+    coerce: Boolean,
+    changed(hasFrame) {
+      this.el.classList.toggle("wy-no-frame", !hasFrame);
+    }
+  },
+  /**
+   * The border style: one of `ShadowType`. `NONE` is the same as having no frame.
+   */
+  shadowType: {
+    value: ShadowType.IN,
+    coerce(shadowType) {
+      if (!Object.values(ShadowType).includes(shadowType)) {
+        throw new RangeError(`Invalid shadow type '${shadowType}'.`);
+      }
+      return shadowType;
+    },
+    changed(shadowType) {
+      this.el.classList.toggle("wy-shadow-none", shadowType === ShadowType.NONE);
+    }
+  },
+  /**
+   * The validator of the text, or `null`: an object with a `validate(text)` method (and
+   * optionally `fixup(text)`), or a function. An invalid text is shown in the invalid state.
+   */
+  validator: {
+    value: null,
+    coerce: checkValidator,
+    changed() {
+      this._revalidate();
+    }
+  },
+  /**
+   * Whether the text is valid according to the validator.
+   */
+  isValid: { value: true, readOnly: true },
+  /**
+   * The name of the icon at the start, or `''` for none.
+   */
+  primaryIcon: {
+    value: "",
+    coerce: /* @__PURE__ */ __name((name) => name || "", "coerce"),
+    changed() {
+      this._updateIcon(EntryIconPosition.PRIMARY);
+    }
+  },
+  /**
+   * The name of the icon at the end, or `''` for none.
+   */
+  secondaryIcon: {
+    value: "",
+    coerce: /* @__PURE__ */ __name((name) => name || "", "coerce"),
+    changed() {
+      this._updateIcon(EntryIconPosition.SECONDARY);
+    }
+  },
+  /**
+   * Whether the icon at the start emits `icon-press` and `icon-release`.
+   */
+  primaryIconActivatable: {
+    value: true,
+    coerce: Boolean,
+    changed() {
+      this._updateIcon(EntryIconPosition.PRIMARY);
+    }
+  },
+  /**
+   * Whether the icon at the end emits `icon-press` and `icon-release`.
+   */
+  secondaryIconActivatable: {
+    value: true,
+    coerce: Boolean,
+    changed() {
+      this._updateIcon(EntryIconPosition.SECONDARY);
+    }
+  },
+  /**
+   * The tooltip (and accessible name) of the icon at the start.
+   */
+  primaryIconTooltip: {
+    value: "",
+    changed() {
+      this._updateIcon(EntryIconPosition.PRIMARY);
+    }
+  },
+  /**
+   * The tooltip (and accessible name) of the icon at the end.
+   */
+  secondaryIconTooltip: {
+    value: "",
+    changed() {
+      this._updateIcon(EntryIconPosition.SECONDARY);
+    }
+  },
+  /**
+   * The cursor position, as a character index.
+   */
+  cursorPosition: {
+    signal: false,
+    get() {
+      return this._inputEl.selectionEnd ?? this._inputEl.value.length;
+    },
+    set(position) {
+      const index = Math.max(0, Math.min(Number(position) || 0, this._inputEl.value.length));
+      this._inputEl.setSelectionRange(index, index);
+      return false;
+    }
+  },
+  /**
+   * The accessible name of the input, for line edits without a visible label.
+   */
+  accessibleName: {
+    value: "",
+    changed(name) {
+      if (name) {
+        this._inputEl.setAttribute("aria-label", name);
+      } else {
+        this._inputEl.removeAttribute("aria-label");
+      }
+    }
+  }
+});
+registerType("line-edit", LineEdit);
+
+// src/widgets/date-edit.js
+var DEFAULT_DATE_FORMAT = Object.freeze({ dateStyle: "medium" });
+function getDateFieldOrder(locale) {
+  const format = new Intl.DateTimeFormat(locale, {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: "UTC"
+  });
+  return format.formatToParts(Date.UTC(2006, 10, 22)).map((x) => x.type).filter((x) => x === "day" || x === "month" || x === "year");
+}
+__name(getDateFieldOrder, "getDateFieldOrder");
+function toFullYear(year, digits, referenceYear) {
+  if (digits > 2) {
+    return year;
+  }
+  let result = Math.floor(referenceYear / 100) * 100 + year;
+  if (result > referenceYear + 50) {
+    result -= 100;
+  } else if (result <= referenceYear - 50) {
+    result += 100;
+  }
+  return result;
+}
+__name(toFullYear, "toFullYear");
+function findMonth(word, locale) {
+  const manager = getLocaleManager();
+  const normalize = /* @__PURE__ */ __name((text) => text.toLocaleLowerCase(locale).normalize("NFD").replace(/[\u0300-\u036f.]/g, ""), "normalize");
+  const target = normalize(word);
+  if (!target) {
+    return -1;
+  }
+  const names = [manager.longMonthNames, manager.shortMonthNames];
+  if (locale !== manager.locale) {
+    const format = /* @__PURE__ */ __name((month) => Array.from(
+      { length: 12 },
+      (_x, i) => new Intl.DateTimeFormat(locale, { month, timeZone: "UTC" }).format(
+        Date.UTC(2021, i, 1)
+      )
+    ), "format");
+    names.splice(0, 2, format("long"), format("short"));
+  }
+  for (const list of names) {
+    const index = list.findIndex((x) => normalize(x) === target);
+    if (index >= 0) {
+      return index;
+    }
+  }
+  if (target.length >= 3) {
+    const matches = names[0].map((x, i) => normalize(x).startsWith(target) ? i : -1).filter((x) => x >= 0);
+    if (matches.length === 1) {
+      return matches[0];
+    }
+  }
+  return -1;
+}
+__name(findMonth, "findMonth");
+function parseLocaleDate(text, locale, reference) {
+  locale = locale || getLocaleManager().locale;
+  const referenceYear = (reference || /* @__PURE__ */ new Date()).getFullYear();
+  const trimmed = String(text).trim();
+  if (!trimmed) {
+    return null;
+  }
+  const tokens = trimmed.match(/\p{L}+|\d+/gu) || [];
+  const numbers = [];
+  let month = -1;
+  for (const token of tokens) {
+    if (/^\d+$/.test(token)) {
+      numbers.push({ value: Number(token), digits: token.length });
+    } else if (month < 0) {
+      month = findMonth(token, locale);
+    }
+  }
+  let fields;
+  const order = getDateFieldOrder(locale);
+  if (month >= 0) {
+    const rest = order.filter((x) => x !== "month");
+    if (numbers.length < 1 || numbers.length > 2) {
+      return null;
+    }
+    fields = { month: month + 1 };
+    const yearIndex = numbers.findIndex((x) => x.digits >= 3);
+    if (numbers.length === 2 && yearIndex >= 0) {
+      fields.year = numbers[yearIndex];
+      fields.day = numbers[1 - yearIndex];
+    } else if (numbers.length === 2) {
+      rest.forEach((name, i) => fields[name] = numbers[i]);
+    } else {
+      fields.day = numbers[0];
+    }
+  } else if (numbers.length === 3) {
+    const names = numbers[0].digits >= 3 ? ["year", "month", "day"] : order;
+    fields = {};
+    names.forEach((name, i) => fields[name] = numbers[i]);
+  } else if (numbers.length === 2) {
+    const names = order.filter((x) => x !== "year");
+    fields = {};
+    names.forEach((name, i) => fields[name] = numbers[i]);
+  } else {
+    return null;
+  }
+  const day = typeof fields.day === "object" ? fields.day.value : fields.day;
+  const monthNumber = typeof fields.month === "object" ? fields.month.value : fields.month;
+  const year = fields.year ? toFullYear(fields.year.value, fields.year.digits, referenceYear) : referenceYear;
+  if (!(monthNumber >= 1 && monthNumber <= 12)) {
+    return null;
+  }
+  if (!(day >= 1 && day <= getDaysInMonth(year, monthNumber - 1))) {
+    return null;
+  }
+  return makeDate(year, monthNumber - 1, day);
+}
+__name(parseLocaleDate, "parseLocaleDate");
+function checkDate2(date) {
+  if (date === null || date === void 0 || date === "") {
+    return null;
+  }
+  if (typeof date === "string") {
+    const match = /^(\d{4,})-(\d{1,2})-(\d{1,2})$/.exec(date.trim());
+    const parsed = match ? makeDate(Number(match[1]), Number(match[2]) - 1, Number(match[3])) : null;
+    if (!parsed || parsed.getDate() !== Number(match[3])) {
+      throw new TypeError(`Invalid ISO date '${date}'.`);
+    }
+    return parsed;
+  }
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    throw new TypeError("Expected a valid Date, an ISO date string or null.");
+  }
+  return startOfDay(date);
+}
+__name(checkDate2, "checkDate");
+function sameDay(first, second) {
+  if (!first || !second) {
+    return first === second;
+  }
+  return compareDays(first, second) === 0;
+}
+__name(sameDay, "sameDay");
+var DateEdit = class extends LineEdit {
+  static {
+    __name(this, "DateEdit");
+  }
+  _initialize() {
+    super._initialize();
+    this._calendar = null;
+    this._popover = null;
+    this._formatter = null;
+    this._updatingText = false;
+    this._inputEl.setAttribute("aria-haspopup", "grid");
+    this._inputEl.setAttribute("aria-expanded", "false");
+    this._buttonEl.addEventListener("pointerdown", (event) => this._onButtonPointerDown(event));
+    this._buttonEl.addEventListener("mousedown", (event) => event.preventDefault());
+    this.el.addEventListener("focusout", (event) => this._onFocusOut(event));
+    this._localeDisconnect = getLocaleManager().connect("locale-change", () => {
+      this._formatter = null;
+      this._updateText();
+    });
+  }
+  _render() {
+    const element = super._render();
+    this._buttonEl = createElement(`
+            <span class="wy-date-edit-button" role="button" aria-label="Choose date"></span>
+        `);
+    element.classList.add("wy-date-edit");
+    element.append(this._buttonEl);
+    return element;
+  }
+  /**
+   * The calendar shown in the popup. It is created on first use.
+   *
+   * @type {Calendar}
+   */
+  get calendar() {
+    if (!this._calendar) {
+      this._calendar = new Calendar({ activateOnClick: true });
+      this._calendar.connect("day-activate", () => this._onCalendarActivate());
+      this._popover = new Popover({ owner: this, align: "end" });
+      this._popover.addStyleClass("wy-date-edit-popover");
+      this._popover.child = this._calendar;
+      this._popover.connect("close", () => this._onPopoverClose());
+      this._calendar.focusElement.id = uniqueId("wy-date-edit-calendar");
+    }
+    return this._calendar;
+  }
+  /**
+   * Sets several properties, applying the date range before the date so that the date is checked
+   * against the new range.
+   *
+   * @param {Record<string, unknown>} properties
+   * @returns {boolean}
+   */
+  set(properties) {
+    const { date, value, ...rest } = properties;
+    let changed = super.set(rest);
+    for (const [name, dateValue] of [
+      ["date", date],
+      ["value", value]
+    ]) {
+      if (dateValue !== void 0 && this.setProperty(name, dateValue)) {
+        changed = true;
+      }
+    }
+    return changed;
+  }
+  /**
+   * Opens the calendar.
+   */
+  openPopup() {
+    this.popupOpen = true;
+  }
+  /**
+   * Closes the calendar.
+   */
+  closePopup() {
+    this.popupOpen = false;
+  }
+  /**
+   * Opens the calendar if it is closed, and closes it otherwise.
+   */
+  togglePopup() {
+    this.popupOpen = !this._popupOpen;
+  }
+  /**
+   * Formats a date as the date edit shows it.
+   *
+   * @param {Date} date
+   * @returns {string}
+   */
+  formatDate(date) {
+    if (!this._formatter) {
+      this._formatter = new Intl.DateTimeFormat(getLocaleManager().locale, this._format);
+    }
+    return this._formatter.format(date);
+  }
+  /**
+   * Parses a typed date. Override to accept other notations.
+   *
+   * @param {string} text
+   * @returns {Date | null}
+   */
+  parseDate(text) {
+    return parseLocaleDate(text, getLocaleManager().locale, this._date || /* @__PURE__ */ new Date());
+  }
+  activate() {
+    this._normalizeText();
+    super.activate();
+  }
+  destroy() {
+    this._localeDisconnect();
+    this._popover?.destroy();
+    super.destroy();
+  }
+  _validate(text) {
+    if (!super._validate(text)) {
+      return false;
+    }
+    if (!text.trim()) {
+      return true;
+    }
+    const date = this.parseDate(text);
+    return Boolean(date) && this._isInRange(date);
+  }
+  _isInRange(date) {
+    return (!this._minDate || compareDays(date, this._minDate) >= 0) && (!this._maxDate || compareDays(date, this._maxDate) <= 0);
+  }
+  _onTextChange(text) {
+    if (this._updatingText) {
+      return;
+    }
+    if (!text.trim()) {
+      this._setDate(null);
+    } else if (this._isValid) {
+      this._setDate(this.parseDate(text));
+    }
+  }
+  _setDate(date) {
+    if (sameDay(date, this._date)) {
+      return;
+    }
+    this._date = date;
+    if (this._calendar) {
+      this._calendar.date = date;
+    }
+    this.emit("date-change", this);
+    this.emit("value-change", this);
+    this.emit("change", this);
+  }
+  _updateText() {
+    this._updatingText = true;
+    try {
+      this.text = this._date ? this.formatDate(this._date) : "";
+    } finally {
+      this._updatingText = false;
+    }
+  }
+  _normalizeText() {
+    if (this._isValid) {
+      this._updateText();
+    }
+  }
+  _showPopup() {
+    if (this._popupOpen || !this.isSensitive || !this.isVisible) {
+      return;
+    }
+    const calendar = this.calendar;
+    this._popupOpen = true;
+    calendar.minDate = this._minDate;
+    calendar.maxDate = this._maxDate;
+    calendar.date = this._date;
+    calendar.cursor = this._date || startOfDay(/* @__PURE__ */ new Date());
+    this.el.classList.add("wy-active");
+    this._inputEl.setAttribute("aria-expanded", "true");
+    this._inputEl.setAttribute("aria-controls", calendar.focusElement.id);
+    this._popover.popup(this.el);
+    this.emit("popup-open-change", this);
+  }
+  _onPopoverClose() {
+    if (!this._popupOpen) {
+      return;
+    }
+    this._popupOpen = false;
+    this.el.classList.remove("wy-active");
+    this._inputEl.setAttribute("aria-expanded", "false");
+    this._inputEl.removeAttribute("aria-controls");
+    this._inputEl.removeAttribute("aria-activedescendant");
+    this.emit("popup-open-change", this);
+  }
+  _onCalendarActivate() {
+    const date = this._calendar.date;
+    this._setDate(date);
+    this._updateText();
+    this._popover.popdown();
+    this.focus();
+  }
+  _onButtonPointerDown(event) {
+    if (event.button !== 0 || !this.isSensitive) {
+      return;
+    }
+    event.preventDefault();
+    this.focus();
+    this.togglePopup();
+  }
+  _onFocusOut(event) {
+    if (this._popupOpen && !this.el.contains(event.relatedTarget)) {
+      this._popover.popdown(PopoverCloseReason.BLUR);
+    }
+  }
+  _onInputKeyDown(event) {
+    if (event.altKey && event.key === Key.DOWN || event.key === Key.F4) {
+      event.preventDefault();
+      this.togglePopup();
+      return;
+    }
+    if (this._popupOpen) {
+      if (event.altKey && event.key === Key.UP) {
+        event.preventDefault();
+        this._popover.popdown();
+        return;
+      }
+      const calendar = this._calendar;
+      if (event.key !== Key.SPACE && calendar.handleKey(event)) {
+        event.preventDefault();
+        const cursor = calendar.focusElement.getAttribute("aria-activedescendant");
+        this._inputEl.setAttribute("aria-activedescendant", cursor || "");
+        return;
+      }
+    }
+    super._onInputKeyDown(event);
+  }
+  _onInputBlur() {
+    super._onInputBlur();
+    this._normalizeText();
+  }
+};
+defineProperties(DateEdit, {
+  /**
+   * The date, or `null` if none (or no valid date) was entered. Set a `Date`, an ISO date string
+   * (yyyy-mm-dd) or `null`. Dates are days: the time is ignored.
+   */
+  date: {
+    value: null,
+    signal: false,
+    coerce: checkDate2,
+    set(date) {
+      if (date && !this._isInRange(date)) {
+        throw new RangeError("The date is outside the range of the date edit.");
+      }
+      this._setDate(date);
+      this._updateText();
+      return false;
+    }
+  },
+  /**
+   * The same as `date`.
+   */
+  value: {
+    signal: false,
+    get() {
+      return this._date;
+    },
+    set(value) {
+      this.date = value;
+      return false;
+    }
+  },
+  /**
+   * The earliest date that can be entered, or `null`.
+   */
+  minDate: {
+    value: null,
+    coerce: checkDate2,
+    set(date) {
+      if (sameDay(date, this._minDate)) {
+        return false;
+      }
+      this._minDate = date;
+      this._revalidate();
+      if (this._calendar) {
+        this._calendar.minDate = date;
+      }
+    }
+  },
+  /**
+   * The latest date that can be entered, or `null`.
+   */
+  maxDate: {
+    value: null,
+    coerce: checkDate2,
+    set(date) {
+      if (sameDay(date, this._maxDate)) {
+        return false;
+      }
+      this._maxDate = date;
+      this._revalidate();
+      if (this._calendar) {
+        this._calendar.maxDate = date;
+      }
+    }
+  },
+  /**
+   * How dates are shown: options of `Intl.DateTimeFormat`, such as `{dateStyle: 'short'}` or
+   * `{year: 'numeric', month: 'long', day: 'numeric'}`.
+   */
+  format: {
+    value: DEFAULT_DATE_FORMAT,
+    coerce(format) {
+      if (!format || typeof format !== "object") {
+        throw new TypeError("The format of a date edit must be an object of options.");
+      }
+      new Intl.DateTimeFormat(getLocaleManager().locale, format);
+      return Object.freeze({ ...format });
+    },
+    changed() {
+      this._formatter = null;
+      this._normalizeText();
+    }
+  },
+  /**
+   * Whether the calendar is open.
+   */
+  popupOpen: {
+    value: false,
+    signal: false,
+    set(open) {
+      if (open) {
+        this._showPopup();
+      } else {
+        this._popover?.popdown();
+      }
+      return false;
+    }
+  }
+});
+registerType("date-edit", DateEdit);
+
+// src/widgets/window.js
+var RESIZE_CURSORS = Object.freeze({
+  n: CursorShape.RESIZE_N,
+  ne: CursorShape.RESIZE_NE,
+  e: CursorShape.RESIZE_E,
+  se: CursorShape.RESIZE_SE,
+  s: CursorShape.RESIZE_S,
+  sw: CursorShape.RESIZE_SW,
+  w: CursorShape.RESIZE_W,
+  nw: CursorShape.RESIZE_NW
+});
+var Window = class extends AbstractWindow {
+  static {
+    __name(this, "Window");
+  }
+  _initialize() {
+    super._initialize();
+    this._placed = false;
+    this._userSize = null;
+    this._restoreRect = null;
+    this._overlayEl = null;
+    this._gesture = null;
+    this._onScreenSizeChange = this._onScreenSizeChange.bind(this);
+    getScreen().connect("size-change", this._onScreenSizeChange);
+    this._headerEl.addEventListener("pointerdown", (event) => this._onHeaderPointerDown(event));
+    this._headerEl.addEventListener("dblclick", (event) => this._onHeaderDoubleClick(event));
+    for (const button of this._headerEl.querySelectorAll("button")) {
+      button.addEventListener(
+        "click",
+        () => this._onHeaderButtonClick(button.dataset.action)
+      );
+    }
+    for (const resizer of this.el.querySelectorAll("[data-resize]")) {
+      resizer.addEventListener(
+        "pointerdown",
+        (event) => this._onResizerPointerDown(event, resizer.dataset.resize)
+      );
+    }
+    this._syncDecorations();
+  }
+  _render() {
+    const titleId = uniqueId("wy-window-title");
+    const element = createElement(`
+            <div class="wy-window" role="dialog" aria-labelledby="${titleId}">
+                <div class="wy-window-header">
+                    <div class="wy-window-title" id="${titleId}"></div>
+                    <div class="wy-window-buttons">
+                        <button type="button" class="wy-window-button wy-window-maximize" data-action="maximize" tabindex="-1" aria-label="Maximize"></button>
+                        <button type="button" class="wy-window-button wy-window-restore" data-action="restore" tabindex="-1" aria-label="Restore"></button>
+                        <button type="button" class="wy-window-button wy-window-close" data-action="close" tabindex="-1" aria-label="Close"></button>
+                    </div>
+                </div>
+                <div class="wy-window-body"></div>
+                <div class="wy-window-resizer" data-resize="n"></div>
+                <div class="wy-window-resizer" data-resize="e"></div>
+                <div class="wy-window-resizer" data-resize="s"></div>
+                <div class="wy-window-resizer" data-resize="w"></div>
+                <div class="wy-window-resizer" data-resize="ne"></div>
+                <div class="wy-window-resizer" data-resize="se"></div>
+                <div class="wy-window-resizer" data-resize="sw"></div>
+                <div class="wy-window-resizer" data-resize="nw"></div>
+                <div class="wy-window-grip" data-resize="se"></div>
+            </div>
+        `);
+    this._headerEl = element.querySelector(".wy-window-header");
+    this._titleEl = element.querySelector(".wy-window-title");
+    this._bodyEl = element.querySelector(".wy-window-body");
+    return element;
+  }
+  /**
+   * Moves the window. The same as setting `position`.
+   *
+   * @param {number} x
+   * @param {number} y
+   */
+  move(x, y) {
+    this.position = { x, y };
+  }
+  /**
+   * Resizes the window.
+   *
+   * @param {number} width
+   * @param {number} height
+   */
+  resize(width, height) {
+    this._userSize = { width, height };
+    this._applySize();
+    this._constrain();
+    this.emit("size-change", this);
+  }
+  /**
+   * Centers the window on the screen, or over `transientFor` if set.
+   */
+  center() {
+    const size = this._getSize();
+    const screen = getScreen().size;
+    let x = (screen.width - size.width) / 2;
+    let y = (screen.height - size.height) / 2;
+    const parent = this._transientFor;
+    if (parent?.visible && !parent.el.classList.contains("wy-main-window")) {
+      const rect = parent.el.getBoundingClientRect();
+      x = rect.left + (rect.width - size.width) / 2;
+      y = rect.top + (rect.height - size.height) / 3;
+    }
+    this._setPosition(Math.round(x), Math.round(y));
+  }
+  /**
+   * Requests to close the window, as if the close button was clicked. Handlers of
+   * `close-request` can cancel it by returning `true`.
+   *
+   * @returns {boolean} Whether the window closed.
+   */
+  close() {
+    if (this.emit("close-request", this)) {
+      return false;
+    }
+    this.emit("close", this);
+    if (this.destroyed) {
+      return true;
+    }
+    if (this._destroyOnClose) {
+      this.destroy();
+    } else {
+      this.hide();
+    }
+    return true;
+  }
+  destroy() {
+    getScreen().disconnect("size-change", this._onScreenSizeChange);
+    this._endGesture();
+    this._overlayEl?.remove();
+    super.destroy();
+  }
+  _onVisibleChange(visible) {
+    if (visible) {
+      getScreen().layer.append(this.el);
+    }
+    super._onVisibleChange(visible);
+    if (visible) {
+      this._raise();
+      this._syncOverlay();
+      if (!this._placed) {
+        this._placed = true;
+        if (this._x < 0 || this._y < 0) {
+          const x = this._x;
+          const y = this._y;
+          this.center();
+          this._setPosition(x < 0 ? this._x : x, y < 0 ? this._y : y);
+        } else {
+          this._setPosition(this._x, this._y);
+        }
+      }
+      this._constrain();
+    } else {
+      this._endGesture();
+      this._syncOverlay();
+      this.el.remove();
+    }
+  }
+  _raise() {
+    if (!this._visible) {
+      return;
+    }
+    const screen = getScreen();
+    if (this._modal && this._overlayEl) {
+      this._overlayEl.style.zIndex = String(screen.nextZIndex());
+    }
+    this.el.style.zIndex = String(screen.nextZIndex());
+  }
+  _syncOverlay() {
+    const wanted = this._modal && this._visible;
+    if (wanted && !this._overlayEl) {
+      this._overlayEl = createElement('<div class="wy-overlay"></div>');
+      this._overlayEl.addEventListener("pointerdown", (event) => {
+        event.preventDefault();
+        this._blink();
+      });
+    }
+    if (wanted) {
+      this.el.before(this._overlayEl);
+      this._overlayEl.style.zIndex = String(Math.max(0, this.zIndex - 1));
+    } else {
+      this._overlayEl?.remove();
+    }
+  }
+  _applyLayoutStyle() {
+    this._applySize();
+  }
+  _applySize() {
+    const style = this.el.style;
+    const size = this._userSize || { width: this._width, height: this._height };
+    style.width = size.width >= 0 ? `${size.width}px` : "";
+    style.height = size.height >= 0 ? `${size.height}px` : "";
+  }
+  _getSize() {
+    return { width: this.el.offsetWidth, height: this.el.offsetHeight };
+  }
+  _setPosition(x, y) {
+    this._x = x;
+    this._y = y;
+    this.el.style.left = `${x}px`;
+    this.el.style.top = `${y}px`;
+  }
+  _constrain() {
+    if (!this._visible || this._maximized) {
+      return;
+    }
+    const screen = getScreen().size;
+    const size = this._getSize();
+    if (size.width > screen.width || size.height > screen.height) {
+      this._userSize = this._userSize || { ...size };
+    }
+    if (this._userSize) {
+      let changed = false;
+      if (size.width > screen.width) {
+        this._userSize.width = screen.width;
+        changed = true;
+      }
+      if (size.height > screen.height) {
+        this._userSize.height = screen.height;
+        changed = true;
+      }
+      if (changed) {
+        this._applySize();
+      }
+    }
+    const width = Math.min(this.el.offsetWidth, screen.width);
+    const height = Math.min(this.el.offsetHeight, screen.height);
+    this._setPosition(
+      clamp(this._x, 0, Math.max(0, screen.width - width)),
+      clamp(this._y, 0, Math.max(0, screen.height - height))
+    );
+  }
+  _syncDecorations() {
+    const decorated = this._decorated;
+    const resizable = this._resizable && decorated && !this._maximized;
+    this.el.classList.toggle("wy-undecorated", !decorated);
+    this.el.classList.toggle("wy-resizable", resizable);
+    this.el.classList.toggle("wy-maximized", this._maximized);
+    this.el.classList.toggle("wy-has-grip", resizable && this._hasResizeGrip);
+    this.el.classList.toggle("wy-closable", this._closable);
+    this.el.classList.toggle("wy-maximizable", this._maximizable);
+  }
+  _onScreenSizeChange() {
+    this._constrain();
+  }
+  _onHeaderButtonClick(action) {
+    switch (action) {
+      case "close":
+        this.close();
+        break;
+      case "maximize":
+        this.maximized = true;
+        break;
+      case "restore":
+        this.maximized = false;
+        break;
+    }
+  }
+  _onHeaderDoubleClick(event) {
+    if (event.target.closest("button") || !this._maximizable) {
+      return;
+    }
+    this.maximized = !this._maximized;
+  }
+  _onHeaderPointerDown(event) {
+    if (event.button !== MouseButton.PRIMARY - 1 || event.target.closest("button")) {
+      return;
+    }
+    if (!this._movable || this._maximized) {
+      return;
+    }
+    const rect = this.el.getBoundingClientRect();
+    this._startGesture(
+      event,
+      CursorShape.MOVE,
+      (moveEvent) => {
+        const screen = getScreen().size;
+        const x = moveEvent.clientX - (event.clientX - rect.left);
+        const y = moveEvent.clientY - (event.clientY - rect.top);
+        this._setPosition(
+          Math.round(clamp(x, 0, Math.max(0, screen.width - rect.width))),
+          Math.round(clamp(y, 0, Math.max(0, screen.height - rect.height)))
+        );
+      },
+      () => this.emit("position-change", this)
+    );
+  }
+  _onResizerPointerDown(event, direction) {
+    if (event.button !== MouseButton.PRIMARY - 1 || !this._resizable || this._maximized) {
+      return;
+    }
+    event.stopPropagation();
+    const start = this.el.getBoundingClientRect();
+    const screen = getScreen().size;
+    this._startGesture(
+      event,
+      RESIZE_CURSORS[direction],
+      (moveEvent) => {
+        const dx = clamp(moveEvent.clientX, 0, screen.width) - event.clientX;
+        const dy = clamp(moveEvent.clientY, 0, screen.height) - event.clientY;
+        let width = start.width;
+        let height = start.height;
+        if (direction.includes("e")) {
+          width = start.width + dx;
+        } else if (direction.includes("w")) {
+          width = start.width - dx;
+        }
+        if (direction.includes("s")) {
+          height = start.height + dy;
+        } else if (direction.includes("n")) {
+          height = start.height - dy;
+        }
+        this._userSize = { width: Math.round(width), height: Math.round(height) };
+        this._applySize();
+        const actual = this._getSize();
+        const x = direction.includes("w") ? start.right - actual.width : start.left;
+        const y = direction.includes("n") ? start.bottom - actual.height : start.top;
+        this._setPosition(Math.round(x), Math.round(y));
+      },
+      () => {
+        this._userSize = this._getSize();
+        this._applySize();
+        this.emit("size-change", this);
+      }
+    );
+  }
+  _startGesture(event, shape, onMove, onEnd) {
+    this._endGesture();
+    const target = event.currentTarget;
+    target.setPointerCapture(event.pointerId);
+    const move = /* @__PURE__ */ __name((moveEvent) => onMove(moveEvent), "move");
+    const end = /* @__PURE__ */ __name(() => {
+      this._endGesture();
+      onEnd?.();
+    }, "end");
+    target.addEventListener("pointermove", move);
+    target.addEventListener("pointerup", end);
+    target.addEventListener("pointercancel", end);
+    getCursor().pushShape(shape, "window");
+    this._gesture = { target, move, end };
+    event.preventDefault();
+  }
+  _endGesture() {
+    const gesture = this._gesture;
+    if (!gesture) {
+      return;
+    }
+    this._gesture = null;
+    gesture.target.removeEventListener("pointermove", gesture.move);
+    gesture.target.removeEventListener("pointerup", gesture.end);
+    gesture.target.removeEventListener("pointercancel", gesture.end);
+    getCursor().popShape("window");
+  }
+};
+defineProperties(Window, {
+  title: {
+    value: "",
+    changed(title) {
+      this._titleEl.textContent = title;
+    }
+  },
+  /**
+   * The position of the window's top-left corner on the screen, as `{x, y}`. A negative
+   * coordinate centers the window in that direction when it is first shown.
+   */
+  position: {
+    get() {
+      return { x: this._x, y: this._y };
+    },
+    set(position) {
+      if (position.x === this._x && position.y === this._y) {
+        return false;
+      }
+      this._placed = this._visible || this._placed;
+      if (this._visible) {
+        this._setPosition(position.x, position.y);
+        this._constrain();
+      } else {
+        this._x = position.x;
+        this._y = position.y;
+      }
+    }
+  },
+  /**
+   * The x coordinate of the window, or -1 to center it.
+   */
+  x: {
+    value: -1,
+    signal: false,
+    set(x) {
+      this.position = { x, y: this._y };
+      return false;
+    }
+  },
+  /**
+   * The y coordinate of the window, or -1 to center it.
+   */
+  y: {
+    value: -1,
+    signal: false,
+    set(y) {
+      this.position = { x: this._x, y };
+      return false;
+    }
+  },
+  /**
+   * The window whose top this window floats on, e.g. the parent of a dialog. It is centered over
+   * it when first shown.
+   */
+  transientFor: { value: null },
+  /**
+   * Whether the window fills the screen. Only has an effect when `maximizable`.
+   */
+  maximized: {
+    value: false,
+    set(maximized) {
+      if (maximized && !this._maximizable) {
+        return false;
+      }
+      if (maximized) {
+        this._restoreRect = {
+          x: this._x,
+          y: this._y,
+          size: this._userSize && { ...this._userSize }
+        };
+      }
+      this._maximized = maximized;
+      this._syncDecorations();
+      if (!maximized && this._restoreRect) {
+        this._userSize = this._restoreRect.size;
+        this._applySize();
+        this._setPosition(this._restoreRect.x, this._restoreRect.y);
+        this._constrain();
+        this._restoreRect = null;
+      }
+    }
+  },
+  /**
+   * Whether the window can be maximized. Shows or hides the maximize button.
+   */
+  maximizable: {
+    value: true,
+    changed(maximizable) {
+      if (!maximizable && this._maximized) {
+        this.maximized = false;
+      }
+      this._syncDecorations();
+    }
+  },
+  /**
+   * Whether the user can resize the window.
+   */
+  resizable: {
+    value: true,
+    changed() {
+      this._syncDecorations();
+    }
+  },
+  /**
+   * Whether the window has a close button.
+   */
+  closable: {
+    value: true,
+    changed() {
+      this._syncDecorations();
+    }
+  },
+  /**
+   * Whether the user can move the window by dragging its title bar.
+   */
+  movable: { value: true },
+  /**
+   * Whether closing destroys the window. If `false`, closing hides it, so it can be shown again.
+   */
+  destroyOnClose: { value: true },
+  modal: {
+    value: false,
+    changed() {
+      this._syncOverlay();
+      this._raise();
+    }
+  },
+  /**
+   * The opacity of the window, from 0 to 1.
+   */
+  opacity: {
+    value: 1,
+    coerce(opacity) {
+      return clamp(Number(opacity), 0, 1);
+    },
+    changed(opacity) {
+      this.el.style.opacity = opacity === 1 ? "" : String(opacity);
+    }
+  },
+  /**
+   * Whether the window has a title bar and border. Undecorated windows cannot be resized by the
+   * user.
+   */
+  decorated: {
+    value: true,
+    changed() {
+      this._syncDecorations();
+    }
+  },
+  /**
+   * Whether a resizable window shows a resize grip in its bottom-right corner.
+   */
+  hasResizeGrip: {
+    value: true,
+    changed() {
+      this._syncDecorations();
+    }
+  }
+});
+registerType("window", Window);
+
+// src/widgets/dialog.js
+var RESPONSE_LABELS = Object.freeze({
+  [Response.OK]: "_OK",
+  [Response.CANCEL]: "_Cancel",
+  [Response.CLOSE]: "_Close",
+  [Response.YES]: "_Yes",
+  [Response.NO]: "_No",
+  [Response.APPLY]: "_Apply",
+  [Response.HELP]: "_Help"
+});
+var RESPONSES = new Set(Object.values(Response));
+var ESCAPE_RESPONSES = [Response.CANCEL, Response.CLOSE, Response.NO];
+var Dialog = class extends Window {
+  static {
+    __name(this, "Dialog");
+  }
+  _initialize() {
+    super._initialize();
+    this._buttons = /* @__PURE__ */ new Map();
+    this._runResolvers = [];
+    this._responding = 0;
+    this._closeAfterResponse = false;
+    this._parentHandler = null;
+    this.el.classList.add("wy-dialog");
+    this._vbox = new Box({ orientation: Orientation.VERTICAL });
+    this._vbox.addStyleClass("wy-dialog-vbox");
+    this._contentArea = new Box({
+      orientation: Orientation.VERTICAL,
+      spacing: 6,
+      vExpand: true
+    });
+    this._contentArea.addStyleClass("wy-dialog-content");
+    this._actionArea = new ButtonBox({ layoutStyle: ButtonBoxStyle.END, spacing: 6 });
+    this._actionArea.addStyleClass("wy-dialog-actions");
+    this._vbox.addChild(this._contentArea);
+    this._vbox.addChild(this._actionArea);
+    this.insertChild(this._vbox, 0);
+    this.el.addEventListener("keydown", (event) => this._onDialogKeyDown(event));
+    this.connect("close", () => {
+      if (!this._responding && !this._closeAfterResponse) {
+        this.response(Response.NONE);
+      }
+    });
+  }
+  /**
+   * The vertical box for the content, above the buttons.
+   *
+   * @type {Box}
+   */
+  get contentArea() {
+    return this._contentArea;
+  }
+  /**
+   * The button box with the buttons.
+   *
+   * @type {ButtonBox}
+   */
+  get actionArea() {
+    return this._actionArea;
+  }
+  /**
+   * Adds a widget to the content area.
+   *
+   * @param {Widget} widget
+   * @returns {Widget}
+   */
+  addChild(widget) {
+    return this._contentArea.addChild(widget);
+  }
+  /**
+   * Adds a button for a response. The label defaults to the standard label of the response
+   * (such as `'_OK'`); underscores mark mnemonics. The argument order is the original
+   * toolkit's; `addButton(label, response)` works as well when `response` is a standard
+   * `Response` and `label` is not.
+   *
+   * @param {string} response The response id.
+   * @param {string | Button} [label] The label, or a button to use.
+   * @returns {Widget} The button.
+   * @throws {Error} If there already is a button for the response.
+   */
+  addButton(response, label) {
+    if (typeof label === "string" && RESPONSES.has(label) && !RESPONSES.has(response) && !this._buttons.has(label)) {
+      [response, label] = [label, response];
+    }
+    if (label instanceof Widget) {
+      return this.addActionWidget(label, response);
+    }
+    const text = label ?? RESPONSE_LABELS[response] ?? String(response);
+    const button = new Button({ label: text, useUnderline: true });
+    return this.addActionWidget(button, response);
+  }
+  /**
+   * Adds buttons, as `[response, label]` pairs.
+   *
+   * @param {...([string, string?] | string)} buttons
+   */
+  addButtons(...buttons) {
+    for (const button of buttons) {
+      if (Array.isArray(button)) {
+        this.addButton(button[0], button[1]);
+      } else {
+        this.addButton(button);
+      }
+    }
+  }
+  /**
+   * Adds a widget to the action area for a response. Buttons emit the response when
+   * activated. A Help button is placed apart, at the other end.
+   *
+   * @param {Widget} widget
+   * @param {string} response
+   * @returns {Widget} The widget.
+   * @throws {Error} If there already is a widget for the response.
+   */
+  addActionWidget(widget, response) {
+    response = String(response);
+    if (this._buttons.has(response)) {
+      throw new Error(`The dialog already has a button for response '${response}'.`);
+    }
+    this._actionArea.addChild(widget);
+    this._buttons.set(response, widget);
+    if (response === Response.HELP) {
+      this._actionArea.setChildSecondary(widget, true);
+    }
+    if (typeof widget.activate === "function") {
+      widget.connect("activate", () => this.response(response));
+    }
+    widget.connect("destroy", () => {
+      if (this._buttons.get(response) === widget) {
+        this._buttons.delete(response);
+      }
+    });
+    if (response === this._defaultResponse && "isDefault" in widget) {
+      widget.isDefault = true;
+    }
+    return widget;
+  }
+  /**
+   * Removes (and destroys) the button of a response.
+   *
+   * @param {string} response
+   * @throws {Error} If there is no button for the response.
+   */
+  removeButton(response) {
+    const button = this._buttons.get(response);
+    if (!button) {
+      throw new Error(`The dialog has no button for response '${response}'.`);
+    }
+    this._buttons.delete(response);
+    button.destroy();
+  }
+  /**
+   * Returns the button of a response, or `null`.
+   *
+   * @param {string} response
+   * @returns {Widget | null}
+   */
+  getButton(response) {
+    return this._buttons.get(response) || null;
+  }
+  /**
+   * Returns the button of a response, or `null`. GTK's name of `getButton()`.
+   *
+   * @param {string} response
+   * @returns {Widget | null}
+   */
+  getWidgetForResponse(response) {
+    return this.getButton(response);
+  }
+  /**
+   * Makes the button of a response sensitive or not.
+   *
+   * @param {string} response
+   * @param {boolean} sensitive
+   */
+  setResponseSensitive(response, sensitive) {
+    const button = this._buttons.get(response);
+    if (button) {
+      button.sensitive = sensitive;
+    }
+  }
+  /**
+   * Gives a response: emits `response`, and settles the promise of `run()`.
+   *
+   * @param {string} response
+   */
+  response(response) {
+    this._settle(response);
+    this._responding += 1;
+    try {
+      this.emit("response", this, response);
+    } finally {
+      this._responding -= 1;
+    }
+  }
+  /**
+   * Shows the dialog modally and waits for a response. The dialog closes after the response.
+   *
+   * @returns {Promise<string>} The response; `Response.NONE` when the dialog was closed
+   *     otherwise.
+   */
+  run() {
+    if (this.destroyed) {
+      return Promise.reject(new Error("The dialog has been destroyed."));
+    }
+    const wasModal = this._modal;
+    this.modal = true;
+    const promise = new Promise((resolve) => this._runResolvers.push(resolve));
+    this.present();
+    return promise.then((response) => {
+      if (!this.destroyed) {
+        this.modal = wasModal;
+        if (this._visible) {
+          this._closeAfterResponse = true;
+          try {
+            this.close();
+          } finally {
+            this._closeAfterResponse = false;
+          }
+        }
+      }
+      return response;
+    });
+  }
+  destroy() {
+    if (this.destroyed) {
+      return;
+    }
+    this._parentHandler?.();
+    this._parentHandler = null;
+    super.destroy();
+    this._settle(Response.NONE);
+  }
+  _onVisibleChange(visible) {
+    super._onVisibleChange(visible);
+    const button = this._defaultResponse !== null && this._buttons.get(this._defaultResponse);
+    const focusWidget = this._focusWidget;
+    if (visible && button && (!focusWidget || this._actionArea.isAncestorOf(focusWidget)) && button !== focusWidget) {
+      button.focus();
+    }
+  }
+  _settle(response) {
+    const resolvers = this._runResolvers;
+    this._runResolvers = [];
+    for (const resolve of resolvers) {
+      resolve(response);
+    }
+  }
+  _onDialogKeyDown(event) {
+    if (event.key !== Key.ESCAPE || event.defaultPrevented || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) {
+      return;
+    }
+    const source = Widget.fromElement(event.target);
+    if (source && source.window !== this) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    for (const response of ESCAPE_RESPONSES) {
+      const button = this._buttons.get(response);
+      if (button && button.isVisible && button.isSensitive) {
+        this.response(response);
+        return;
+      }
+    }
+    if (this._closable) {
+      this.close();
+    }
+  }
+  _syncDefaultButton(response, oldResponse) {
+    const old = oldResponse !== null ? this._buttons.get(oldResponse) : null;
+    if (old && "isDefault" in old) {
+      old.isDefault = false;
+    }
+    const button = response !== null ? this._buttons.get(response) : null;
+    if (button && "isDefault" in button) {
+      button.isDefault = true;
+    }
+  }
+  _syncParentHandler() {
+    this._parentHandler?.();
+    this._parentHandler = null;
+    const parent = this._transientFor;
+    if (parent && this._destroyWithParent) {
+      this._parentHandler = parent.connect("destroy", () => {
+        if (!this.destroyed) {
+          this.destroy();
+        }
+      });
+    }
+  }
+};
+defineProperties(Dialog, {
+  resizable: { value: false },
+  maximizable: { value: false },
+  /**
+   * The child of a dialog is its content: setting it replaces the content area's children.
+   */
+  child: {
+    get() {
+      return this._contentArea?.children[0] || null;
+    },
+    set(widget) {
+      this._contentArea.removeAllChildren();
+      if (widget) {
+        this._contentArea.addChild(widget);
+      }
+    }
+  },
+  /**
+   * The response whose button Enter activates, or `null`. That button is drawn as the default
+   * button.
+   */
+  defaultResponse: {
+    value: null,
+    changed(response, oldResponse) {
+      this._syncDefaultButton(response, oldResponse);
+    }
+  },
+  /**
+   * The window the dialog belongs to. The dialog is centered over it when first shown.
+   */
+  transientFor: {
+    value: null,
+    changed() {
+      this._syncParentHandler();
+    }
+  },
+  /**
+   * Whether the dialog is destroyed when its `transientFor` window is destroyed.
+   */
+  destroyWithParent: {
+    value: false,
+    changed() {
+      this._syncParentHandler();
+    }
+  }
+});
+Dialog.builderProperties = {
+  /**
+   * Adds buttons: an array of `[response, label]` pairs, response ids, or objects with a
+   * `response` and further button properties (such as `label`).
+   *
+   * @param {object} builder
+   * @param {Dialog} dialog
+   * @param {Array<string | [string, string?] | {response: string}>} buttons
+   */
+  buttons(builder, dialog, buttons) {
+    if (!Array.isArray(buttons)) {
+      throw new Error("Dialog buttons must be an array.");
+    }
+    for (const button of buttons) {
+      if (Array.isArray(button)) {
+        dialog.addButton(button[0], button[1]);
+      } else if (button && typeof button === "object") {
+        const { response, ...spec } = button;
+        if (spec.type) {
+          dialog.addActionWidget(builder.build(spec)[0], response);
+        } else {
+          dialog.addButton(response, spec.label);
+        }
+      } else {
+        dialog.addButton(button);
+      }
+    }
+  }
+};
+registerType("dialog", Dialog);
+
+// src/widgets/expander.js
+var Expander = class extends Bin {
+  static {
+    __name(this, "Expander");
+  }
+  _initialize() {
+    super._initialize();
+    this._releaseLabelWidget = null;
+    this._headerEl.addEventListener("click", (event) => this._onHeaderClick(event));
+    this._headerEl.addEventListener("keydown", (event) => this._onHeaderKeyDown(event));
+    this._syncExpanded();
+    this._syncSpacing();
+  }
+  _render() {
+    const bodyId = uniqueId("wy-expander-body");
+    const element = createElement(`
+            <div class="wy-expander">
+                <div class="wy-expander-header" role="button" aria-expanded="false" aria-controls="${bodyId}">
+                    <span class="wy-expander-arrow" aria-hidden="true"></span>
+                    <span class="wy-expander-label"></span>
+                </div>
+                <div class="wy-expander-body" id="${bodyId}"></div>
+            </div>
+        `);
+    this._headerEl = element.querySelector(".wy-expander-header");
+    this._labelEl = element.querySelector(".wy-expander-label");
+    this._bodyEl = element.querySelector(".wy-expander-body");
+    return element;
+  }
+  /**
+   * The title, which takes the keyboard focus.
+   *
+   * @type {HTMLElement}
+   */
+  get focusElement() {
+    return this._headerEl;
+  }
+  /**
+   * Toggles the expander, as a click on its title does, and emits `activate`.
+   */
+  activate() {
+    this.expanded = !this._expanded;
+    this.emit("activate", this);
+  }
+  destroy() {
+    this._labelWidget?.destroy();
+    super.destroy();
+  }
+  _getFocusChain() {
+    const chain = getAuxiliaryFocusChain(this._labelWidget);
+    return this._expanded ? [...chain, ...super._getFocusChain()] : chain;
+  }
+  _computeExpand(direction) {
+    return this._expanded && super._computeExpand(direction);
+  }
+  _onIsVisibleChange(isVisible) {
+    super._onIsVisibleChange(isVisible);
+    refreshAuxiliaryWidgets([this._labelWidget]);
+  }
+  _onIsSensitiveChange(isSensitive) {
+    super._onIsSensitiveChange(isSensitive);
+    refreshAuxiliaryWidgets([this._labelWidget]);
+  }
+  _syncExpanded() {
+    const expanded = this._expanded;
+    this.el.classList.toggle("wy-expanded", expanded);
+    this._headerEl.setAttribute("aria-expanded", String(expanded));
+    this._bodyEl.hidden = !expanded;
+    this._refreshExpand();
+    const focusWidget = this.window?.focusWidget;
+    if (!expanded && this.child && focusWidget && this.child.isAncestorOf(focusWidget)) {
+      this.focus();
+    }
+  }
+  _syncSpacing() {
+    this.el.style.rowGap = this._spacing ? `${this._spacing}px` : "";
+  }
+  _onHeaderClick(event) {
+    if (!this.isSensitive) {
+      return;
+    }
+    const widget = this._labelWidget;
+    if (widget && widget.canFocus && widget.el.contains(event.target)) {
+      return;
+    }
+    this.focus();
+    this.activate();
+  }
+  _onHeaderKeyDown(event) {
+    if (event.target !== this._headerEl || event.ctrlKey || event.altKey || event.metaKey) {
+      return;
+    }
+    if (event.key === Key.ENTER || event.key === Key.SPACE) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.activate();
+    } else if (event.key === Key.RIGHT && !this._expanded) {
+      event.preventDefault();
+      this.activate();
+    } else if (event.key === Key.LEFT && this._expanded) {
+      event.preventDefault();
+      this.activate();
+    }
+  }
+  _onLabelWidgetDestroy() {
+    this._releaseLabelWidget = null;
+    this.labelWidget = null;
+  }
+};
+defineProperties(Expander, {
+  /**
+   * Expanders take the keyboard focus on their title.
+   */
+  canFocus: { value: true },
+  /**
+   * Whether the child is shown.
+   */
+  expanded: {
+    value: false,
+    coerce: Boolean,
+    changed() {
+      this._syncExpanded();
+    }
+  },
+  /**
+   * The text of the title. It is not shown while there is a `labelWidget`, and reads as `null`
+   * then.
+   */
+  label: {
+    value: "",
+    coerce(label) {
+      return label === null || label === void 0 ? "" : String(label);
+    },
+    get() {
+      return this._labelWidget ? null : this._label;
+    },
+    changed(label) {
+      if (!this._labelWidget) {
+        this._labelEl.textContent = label;
+      }
+    }
+  },
+  /**
+   * A widget to show as the title instead of the text, or `null`. The expander owns it.
+   */
+  labelWidget: {
+    value: null,
+    set(widget) {
+      if (this._releaseLabelWidget) {
+        this._releaseLabelWidget();
+        this._releaseLabelWidget = null;
+      }
+      this._labelWidget = widget || null;
+      this._labelEl.textContent = widget ? "" : this._label;
+      if (widget) {
+        this._releaseLabelWidget = attachAuxiliaryWidget(
+          this,
+          widget,
+          this._labelEl,
+          () => this._onLabelWidgetDestroy()
+        );
+      }
+    }
+  },
+  /**
+   * The space between the title and the child, in pixels.
+   */
+  spacing: {
+    value: 0,
+    changed() {
+      this._syncSpacing();
+    }
+  }
+});
+registerType("expander", Expander);
+
+// src/widgets/fixed.js
+function checkCoordinate(value, name) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) {
+    throw new TypeError(`Invalid ${name} coordinate: ${value}.`);
+  }
+  return Math.round(number);
+}
+__name(checkCoordinate, "checkCoordinate");
+var Fixed = class extends Container {
+  static {
+    __name(this, "Fixed");
+  }
+  _initialize() {
+    super._initialize();
+    this._positions = /* @__PURE__ */ new Map();
+    this._pendingPosition = null;
+  }
+  _render() {
+    return createElement('<div class="wy-fixed"></div>');
+  }
+  /**
+   * Adds a child at a position.
+   *
+   * @param {import('./widget.js').Widget} widget
+   * @param {number} [x]
+   * @param {number} [y]
+   * @returns {import('./widget.js').Widget} The widget.
+   */
+  addChild(widget, x = 0, y = 0) {
+    this._pendingPosition = { x: checkCoordinate(x, "x"), y: checkCoordinate(y, "y") };
+    try {
+      return super.addChild(widget);
+    } finally {
+      this._pendingPosition = null;
+    }
+  }
+  /**
+   * Adds a child at a position. The same as `addChild()`, with the name GTK uses.
+   *
+   * @param {import('./widget.js').Widget} widget
+   * @param {number} x
+   * @param {number} y
+   * @returns {import('./widget.js').Widget}
+   */
+  put(widget, x, y) {
+    return this.addChild(widget, x, y);
+  }
+  insertChild(widget, index) {
+    const position = this._pendingPosition || { x: 0, y: 0 };
+    const result = super.insertChild(widget, index);
+    this._positions.set(widget, position);
+    return result;
+  }
+  removeChild(widget) {
+    const index = super.removeChild(widget);
+    this._positions.delete(widget);
+    for (const name of ["gridArea", "margin", "justifySelf", "alignSelf"]) {
+      widget._setLayoutStyle(name, "");
+    }
+    widget._applyLayoutStyle();
+    return index;
+  }
+  /**
+   * Moves a child to another position.
+   *
+   * @param {import('./widget.js').Widget} widget
+   * @param {number} x
+   * @param {number} y
+   * @throws {Error} If the widget is not a child.
+   */
+  move(widget, x, y) {
+    if (!this._positions.has(widget)) {
+      throw new Error("The widget is not a child of this fixed container.");
+    }
+    this._positions.set(widget, { x: checkCoordinate(x, "x"), y: checkCoordinate(y, "y") });
+    this._queueLayout();
+  }
+  /**
+   * Returns the position of a child.
+   *
+   * @param {import('./widget.js').Widget} widget
+   * @returns {{x: number, y: number}}
+   * @throws {Error} If the widget is not a child.
+   */
+  getChildPosition(widget) {
+    const position = this._positions.get(widget);
+    if (!position) {
+      throw new Error("The widget is not a child of this fixed container.");
+    }
+    return { ...position };
+  }
+  _updateLayout() {
+    for (const child of this._children) {
+      const position = this._positions.get(child);
+      const margin = child.margin;
+      child._setLayoutStyle("gridArea", "1 / 1");
+      child._setLayoutStyle("justifySelf", "start");
+      child._setLayoutStyle("alignSelf", "start");
+      child._setLayoutStyle(
+        "margin",
+        `${position.y + margin.top}px ${margin.right}px ${margin.bottom}px ${position.x + margin.left}px`
+      );
+    }
+  }
+};
+Fixed.builderProperties = {
+  /**
+   * Builds the children, each an object with the widget's own properties plus `x` and `y`.
+   *
+   * @param {object} builder
+   * @param {Fixed} fixed
+   * @param {object[]} children
+   */
+  children(builder, fixed, children) {
+    if (!Array.isArray(children)) {
+      throw new Error("Fixed children must be an array.");
+    }
+    for (const child of children) {
+      const { x, y, ...spec } = child;
+      fixed.addChild(builder.build(spec)[0], x ?? 0, y ?? 0);
+    }
+  }
+};
+registerType("fixed", Fixed);
+
+// src/widgets/frame.js
+var SHADOW_TYPES = new Set(Object.values(ShadowType));
+var LABEL_INDENT = 8;
+var Frame = class extends Bin {
+  static {
+    __name(this, "Frame");
+  }
+  _initialize() {
+    super._initialize();
+    this._releaseLabelWidget = null;
+    this._syncLabel();
+    this._syncLabelAlignment();
+  }
+  _render() {
+    const labelId = uniqueId("wy-frame-label");
+    const element = createElement(`
+            <div class="wy-frame wy-shadow-etched-in" role="group">
+                <div class="wy-frame-header">
+                    <div class="wy-frame-label" id="${labelId}"></div>
+                </div>
+                <div class="wy-frame-body"></div>
+            </div>
+        `);
+    this._headerEl = element.querySelector(".wy-frame-header");
+    this._labelEl = element.querySelector(".wy-frame-label");
+    this._bodyEl = element.querySelector(".wy-frame-body");
+    return element;
+  }
+  destroy() {
+    this._labelWidget?.destroy();
+    super.destroy();
+  }
+  _getFocusChain() {
+    return [...getAuxiliaryFocusChain(this._labelWidget), ...super._getFocusChain()];
+  }
+  _onIsVisibleChange(isVisible) {
+    super._onIsVisibleChange(isVisible);
+    refreshAuxiliaryWidgets([this._labelWidget]);
+  }
+  _onIsSensitiveChange(isSensitive) {
+    super._onIsSensitiveChange(isSensitive);
+    refreshAuxiliaryWidgets([this._labelWidget]);
+  }
+  _syncLabel() {
+    const widget = this._labelWidget;
+    const hasLabel = Boolean(widget || this._label);
+    if (!widget) {
+      this._labelEl.textContent = this._label;
+    }
+    this.el.classList.toggle("wy-has-label", hasLabel);
+    if (hasLabel) {
+      this.el.setAttribute("aria-labelledby", this._labelEl.id);
+    } else {
+      this.el.removeAttribute("aria-labelledby");
+    }
+  }
+  _syncLabelAlignment() {
+    const start = this._labelXAlign;
+    this._headerEl.style.gridTemplateColumns = `minmax(${LABEL_INDENT}px, ${start}fr) auto minmax(${LABEL_INDENT}px, ${1 - start}fr)`;
+  }
+  _onLabelWidgetDestroy() {
+    this._releaseLabelWidget = null;
+    this.labelWidget = null;
+  }
+};
+defineProperties(Frame, {
+  /**
+   * The text of the label, shown bold on the top border. It is not shown while there is a
+   * `labelWidget`, and reads as `null` then, like in the original toolkit.
+   */
+  label: {
+    value: "",
+    coerce(label) {
+      return label === null || label === void 0 ? "" : String(label);
+    },
+    get() {
+      return this._labelWidget ? null : this._label;
+    },
+    changed() {
+      this._syncLabel();
+    }
+  },
+  /**
+   * A widget to show as the label instead of the text, or `null`. The frame owns it: it is
+   * destroyed with the frame, and destroying it removes it from the frame.
+   */
+  labelWidget: {
+    value: null,
+    set(widget) {
+      if (this._releaseLabelWidget) {
+        this._releaseLabelWidget();
+        this._releaseLabelWidget = null;
+      }
+      this._labelWidget = widget || null;
+      this._labelEl.textContent = "";
+      if (widget) {
+        this._releaseLabelWidget = attachAuxiliaryWidget(
+          this,
+          widget,
+          this._labelEl,
+          () => this._onLabelWidgetDestroy()
+        );
+      }
+      this._syncLabel();
+    }
+  },
+  /**
+   * The position of the label along the top border, from 0 (at the left) to 1 (at the right).
+   * The label keeps its natural size.
+   */
+  labelXAlign: {
+    value: 0.5,
+    coerce(align) {
+      const value = Number(align);
+      if (!Number.isFinite(value)) {
+        throw new TypeError(`Invalid label alignment: ${align}.`);
+      }
+      return clamp(value, 0, 1);
+    },
+    changed() {
+      this._syncLabelAlignment();
+    }
+  },
+  /**
+   * The original toolkit's name of `labelXAlign`.
+   */
+  labelHAlign: {
+    signal: false,
+    get() {
+      return this._labelXAlign;
+    },
+    set(align) {
+      this.labelXAlign = align;
+      return false;
+    }
+  },
+  /**
+   * The style of the border: one of `ShadowType`. Defaults to an etched line, like GTK.
+   */
+  shadowType: {
+    value: ShadowType.ETCHED_IN,
+    coerce(shadowType) {
+      if (!SHADOW_TYPES.has(shadowType)) {
+        throw new TypeError(`Invalid shadow type: ${shadowType}.`);
+      }
+      return shadowType;
+    },
+    changed(shadowType, oldShadowType) {
+      this.el.classList.remove(`wy-shadow-${oldShadowType}`);
+      this.el.classList.add(`wy-shadow-${shadowType}`);
+    }
+  }
+});
+registerType("frame", Frame);
+
+// src/widgets/grid.js
+var EXPANDING_TRACK = "minmax(auto, 1fr)";
+var HOMOGENEOUS_TRACK = "minmax(max-content, 1fr)";
+var ATTACHMENT_KEYS = [
+  "row",
+  "column",
+  "row-span",
+  "rowSpan",
+  "col-span",
+  "colSpan",
+  "column-span",
+  "columnSpan"
+];
+function checkIndex(value, name) {
+  if (!Number.isInteger(value) || value < 0) {
+    throw new RangeError(`Invalid grid ${name}: ${value}.`);
+  }
+}
+__name(checkIndex, "checkIndex");
+function checkSpan(value, name) {
+  if (!Number.isInteger(value) || value < 1) {
+    throw new RangeError(`Invalid grid ${name}: ${value}.`);
+  }
+}
+__name(checkSpan, "checkSpan");
+var Grid = class extends Container {
+  static {
+    __name(this, "Grid");
+  }
+  _initialize() {
+    super._initialize();
+    this._attachments = /* @__PURE__ */ new Map();
+    this._pendingAttachment = null;
+  }
+  _render() {
+    return createElement('<div class="wy-grid"></div>');
+  }
+  /**
+   * Adds a child at a cell. Without a position, the child is put in column 0 of a new row
+   * below all other children.
+   *
+   * @param {import('./widget.js').Widget} widget
+   * @param {number} [row] The first row the child occupies.
+   * @param {number} [column] The first column the child occupies.
+   * @param {number} [rowSpan] The number of rows the child spans.
+   * @param {number} [columnSpan] The number of columns the child spans.
+   * @returns {import('./widget.js').Widget} The widget.
+   * @throws {RangeError} If the position or a span is invalid.
+   */
+  addChild(widget, row, column, rowSpan = 1, columnSpan = 1) {
+    const attachment = this._createAttachment(row, column, rowSpan, columnSpan);
+    this._pendingAttachment = attachment;
+    try {
+      return super.addChild(widget);
+    } finally {
+      this._pendingAttachment = null;
+    }
+  }
+  /**
+   * Adds a child at a cell. The same as `addChild()`, with the name GTK uses.
+   *
+   * @param {import('./widget.js').Widget} widget
+   * @param {number} row
+   * @param {number} column
+   * @param {number} [rowSpan]
+   * @param {number} [columnSpan]
+   * @returns {import('./widget.js').Widget}
+   */
+  attach(widget, row, column, rowSpan = 1, columnSpan = 1) {
+    return this.addChild(widget, row, column, rowSpan, columnSpan);
+  }
+  insertChild(widget, index) {
+    const attachment = this._pendingAttachment || this._createAttachment(void 0, void 0, 1, 1);
+    const result = super.insertChild(widget, index);
+    this._attachments.set(widget, attachment);
+    this._queueLayout();
+    return result;
+  }
+  removeChild(widget) {
+    const index = super.removeChild(widget);
+    this._attachments.delete(widget);
+    this._clearChildPlacement(widget);
+    return index;
+  }
+  /**
+   * Returns the attachment of a child.
+   *
+   * @param {import('./widget.js').Widget} widget
+   * @returns {GridAttachment}
+   * @throws {Error} If the widget is not a child.
+   */
+  getChildPosition(widget) {
+    const attachment = this._attachments.get(widget);
+    if (!attachment) {
+      throw new Error("The widget is not a child of this grid.");
+    }
+    return { ...attachment };
+  }
+  /**
+   * Moves a child to another cell, or changes its spans.
+   *
+   * @param {import('./widget.js').Widget} widget
+   * @param {number} row
+   * @param {number} column
+   * @param {number} [rowSpan]
+   * @param {number} [columnSpan]
+   * @throws {Error} If the widget is not a child.
+   */
+  setChildPosition(widget, row, column, rowSpan = 1, columnSpan = 1) {
+    if (!this._attachments.has(widget)) {
+      throw new Error("The widget is not a child of this grid.");
+    }
+    this._attachments.set(widget, this._createAttachment(row, column, rowSpan, columnSpan));
+    this._onChildrenChange();
+  }
+  /**
+   * Returns the child whose area covers a cell, or `null`.
+   *
+   * @param {number} row
+   * @param {number} column
+   * @returns {import('./widget.js').Widget | null}
+   */
+  getChildAt(row, column) {
+    for (const child of this._children) {
+      const a = this._attachments.get(child);
+      if (row >= a.row && row < a.row + a.rowSpan && column >= a.column && column < a.column + a.columnSpan) {
+        return child;
+      }
+    }
+    return null;
+  }
+  /**
+   * Inserts an empty row: children at or below it move down, and children spanning across it
+   * grow.
+   *
+   * @param {number} position
+   */
+  insertRow(position) {
+    this._insertTrack(position, "row", "rowSpan");
+  }
+  /**
+   * Inserts an empty column: children at or right of it move right, and children spanning
+   * across it grow.
+   *
+   * @param {number} position
+   */
+  insertColumn(position) {
+    this._insertTrack(position, "column", "columnSpan");
+  }
+  /**
+   * Removes a row: children only in that row are destroyed, children spanning it shrink and
+   * children below it move up.
+   *
+   * @param {number} position
+   */
+  removeRow(position) {
+    this._removeTrack(position, "row", "rowSpan");
+  }
+  /**
+   * Removes a column: children only in that column are destroyed, children spanning it shrink
+   * and children right of it move left.
+   *
+   * @param {number} position
+   */
+  removeColumn(position) {
+    this._removeTrack(position, "column", "columnSpan");
+  }
+  _createAttachment(row, column, rowSpan, columnSpan) {
+    if (row === void 0 || row === null) {
+      row = this.rowCount;
+      column = column ?? 0;
+    }
+    column = column ?? 0;
+    checkIndex(row, "row");
+    checkIndex(column, "column");
+    checkSpan(rowSpan, "row span");
+    checkSpan(columnSpan, "column span");
+    return { row, column, rowSpan, columnSpan };
+  }
+  _insertTrack(position, key, spanKey) {
+    checkIndex(position, key);
+    for (const attachment of this._attachments.values()) {
+      if (attachment[key] >= position) {
+        attachment[key] += 1;
+      } else if (attachment[key] + attachment[spanKey] > position) {
+        attachment[spanKey] += 1;
+      }
+    }
+    this._onChildrenChange();
+  }
+  _removeTrack(position, key, spanKey) {
+    checkIndex(position, key);
+    for (const child of [...this._children]) {
+      const attachment = this._attachments.get(child);
+      const start = attachment[key];
+      const end = start + attachment[spanKey];
+      if (start === position && end === position + 1) {
+        child.destroy();
+      } else if (start > position) {
+        attachment[key] -= 1;
+      } else if (end > position) {
+        attachment[spanKey] -= 1;
+      }
+    }
+    this._onChildrenChange();
+  }
+  _clearChildPlacement(widget) {
+    widget._setLayoutStyle("gridRow", "");
+    widget._setLayoutStyle("gridColumn", "");
+  }
+  _updateLayout() {
+    const style = this.bodyElement.style;
+    style.rowGap = this._rowSpacing ? `${this._rowSpacing}px` : "";
+    style.columnGap = this._columnSpacing ? `${this._columnSpacing}px` : "";
+    const visible = this._children.filter((x) => x.visible);
+    const columns = this._computeTracks(visible, "column", "columnSpan", "isHExpand");
+    const rows = this._computeTracks(visible, "row", "rowSpan", "isVExpand");
+    style.gridTemplateColumns = this._toTemplate(columns, this._columnHomogeneous);
+    style.gridTemplateRows = this._toTemplate(rows, this._rowHomogeneous);
+    for (const child of this._children) {
+      if (!child.visible) {
+        continue;
+      }
+      const a = this._attachments.get(child);
+      child._setLayoutStyle("gridRow", this._toLines(rows, a.row, a.rowSpan));
+      child._setLayoutStyle("gridColumn", this._toLines(columns, a.column, a.columnSpan));
+    }
+  }
+  /**
+   * Computes the used tracks in one direction: a map from track index to CSS line index, and
+   * whether each used track expands.
+   *
+   * @param {import('./widget.js').Widget[]} visible
+   * @param {'row' | 'column'} key
+   * @param {'rowSpan' | 'columnSpan'} spanKey
+   * @param {'isHExpand' | 'isVExpand'} expandKey
+   * @returns {{indexes: Map<number, number>, expands: boolean[]}}
+   */
+  _computeTracks(visible, key, spanKey, expandKey) {
+    const used = /* @__PURE__ */ new Set();
+    const expanding = /* @__PURE__ */ new Set();
+    for (const child of visible) {
+      const a = this._attachments.get(child);
+      for (let i = a[key]; i < a[key] + a[spanKey]; ++i) {
+        used.add(i);
+      }
+      if (a[spanKey] === 1 && child[expandKey]) {
+        expanding.add(a[key]);
+      }
+    }
+    for (const child of visible) {
+      const a = this._attachments.get(child);
+      if (a[spanKey] === 1 || !child[expandKey]) {
+        continue;
+      }
+      const tracks = [];
+      for (let i = a[key]; i < a[key] + a[spanKey]; ++i) {
+        tracks.push(i);
+      }
+      if (!tracks.some((x) => expanding.has(x))) {
+        tracks.forEach((x) => expanding.add(x));
+      }
+    }
+    const indexes = /* @__PURE__ */ new Map();
+    const expands = [];
+    for (const track of [...used].sort((x, y) => x - y)) {
+      indexes.set(track, indexes.size + 1);
+      expands.push(expanding.has(track));
+    }
+    return { indexes, expands };
+  }
+  _toTemplate(tracks, homogeneous) {
+    if (!tracks.expands.length) {
+      return "";
+    }
+    return tracks.expands.map((expands) => {
+      if (homogeneous) {
+        return HOMOGENEOUS_TRACK;
+      }
+      return expands ? EXPANDING_TRACK : "auto";
+    }).join(" ");
+  }
+  _toLines(tracks, start, span) {
+    const first = tracks.indexes.get(start);
+    const last = tracks.indexes.get(start + span - 1);
+    return `${first} / ${last + 1}`;
+  }
+};
+defineProperties(Grid, {
+  /**
+   * The space between rows, in pixels.
+   */
+  rowSpacing: {
+    value: 0,
+    changed() {
+      this._queueLayout();
+    }
+  },
+  /**
+   * The space between columns, in pixels.
+   */
+  columnSpacing: {
+    value: 0,
+    changed() {
+      this._queueLayout();
+    }
+  },
+  /**
+   * Whether all rows get the same height.
+   */
+  rowHomogeneous: {
+    value: false,
+    changed() {
+      this._queueLayout();
+    }
+  },
+  /**
+   * Whether all columns get the same width.
+   */
+  columnHomogeneous: {
+    value: false,
+    changed() {
+      this._queueLayout();
+    }
+  },
+  /**
+   * The number of rows: one more than the last row any child occupies.
+   */
+  rowCount: {
+    readOnly: true,
+    get() {
+      let count = 0;
+      for (const a of this._attachments.values()) {
+        count = Math.max(count, a.row + a.rowSpan);
+      }
+      return count;
+    }
+  },
+  /**
+   * The number of columns: one more than the last column any child occupies.
+   */
+  columnCount: {
+    readOnly: true,
+    get() {
+      let count = 0;
+      for (const a of this._attachments.values()) {
+        count = Math.max(count, a.column + a.columnSpan);
+      }
+      return count;
+    }
+  }
+});
+Grid.builderProperties = {
+  /**
+   * Builds the children, each an object with the widget's own properties plus `row`, `column`,
+   * `row-span` (or `rowSpan`) and `col-span` (or `colSpan`, `columnSpan`).
+   *
+   * @param {object} builder
+   * @param {Grid} grid
+   * @param {object[]} children
+   */
+  children(builder, grid, children) {
+    if (!Array.isArray(children)) {
+      throw new Error("Grid children must be an array.");
+    }
+    for (const child of children) {
+      const spec = { ...child };
+      for (const key of ATTACHMENT_KEYS) {
+        delete spec[key];
+      }
+      const widget = builder.build(spec)[0];
+      const rowSpan = child.rowSpan ?? child["row-span"] ?? 1;
+      const columnSpan = child.columnSpan ?? child["column-span"] ?? child.colSpan ?? child["col-span"] ?? 1;
+      grid.addChild(widget, child.row, child.column, rowSpan, columnSpan);
+    }
+  }
+};
+registerType("grid", Grid);
+
+// src/widgets/link-button.js
+var LinkButton = class extends Button {
+  static {
+    __name(this, "LinkButton");
+  }
+  _render() {
+    return createElement('<div class="wy-button wy-link-button" role="link"></div>');
+  }
+  /**
+   * Activates the link: emits `activate` and, unless a handler returned `true`, opens the URI
+   * and marks the link visited.
+   */
+  activate() {
+    if (this.emit("activate", this) || !this._uri) {
+      return;
+    }
+    this.visited = true;
+    globalThis.open(this._uri, "_blank", "noopener,noreferrer");
+  }
+  _getContentLabel() {
+    return this._label || this._uri;
+  }
+};
+defineProperties(LinkButton, {
+  relief: { value: Relief.NONE },
+  /**
+   * The URI the link opens.
+   */
+  uri: {
+    value: "",
+    coerce(uri) {
+      return uri === null || uri === void 0 ? "" : String(uri);
+    },
+    changed(uri) {
+      if (uri) {
+        this.el.dataset.uri = uri;
+      } else {
+        delete this.el.dataset.uri;
+      }
+      this._syncContent();
+    }
+  },
+  /**
+   * Whether the link has been opened.
+   */
+  visited: {
+    value: false,
+    coerce: Boolean,
+    changed(visited) {
+      this.el.classList.toggle("wy-visited", visited);
+    }
+  }
+});
+registerType("link-button", LinkButton);
+
+// src/widgets/main-window.js
+var MainWindow = class extends AbstractWindow {
+  static {
+    __name(this, "MainWindow");
+  }
+  _initialize() {
+    if (Application.mainWindow) {
+      throw new Error("There can only be one main window.");
+    }
+    super._initialize();
+    this._originalTitle = typeof document !== "undefined" ? document.title : "";
+    Application._setMainWindow(this);
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-main-window" role="application">
+                <div class="wy-main-window-body"></div>
+            </div>
+        `);
+    this._bodyEl = element.querySelector(".wy-main-window-body");
+    return element;
+  }
+  /**
+   * The element the main window fills.
+   *
+   * @type {HTMLElement}
+   */
+  get hostElement() {
+    return this._host || document.body;
+  }
+  destroy() {
+    super.destroy();
+    if (!this._host) {
+      document.title = this._originalTitle;
+      document.documentElement.classList.remove("wy-page");
+    }
+  }
+  _onVisibleChange(visible) {
+    if (visible) {
+      const host = this.hostElement;
+      this.el.classList.toggle("wy-embedded", Boolean(this._host));
+      document.documentElement.classList.toggle("wy-page", !this._host);
+      host.append(this.el);
+    }
+    super._onVisibleChange(visible);
+    if (!visible) {
+      this.el.remove();
+    }
+  }
+};
+defineProperties(MainWindow, {
+  /**
+   * The element to fill, or `null` for the whole page. Set it before showing the window.
+   */
+  host: {
+    value: null,
+    changed() {
+      if (this._visible) {
+        this._onVisibleChange(true);
+      }
+    }
+  },
+  title: {
+    value: "",
+    changed(title) {
+      if (!this._host) {
+        document.title = title;
+      }
+      this.el.setAttribute("aria-label", title);
+    }
+  }
+});
+registerType("main-window", MainWindow);
+
+// src/widgets/menu-bar.js
+var MenuBar = class extends Box {
+  static {
+    __name(this, "MenuBar");
+  }
+  _initialize() {
+    super._initialize();
+    this._pressedItem = null;
+    this._submenuDisconnect = null;
+    this.el.addEventListener("pointerdown", (event) => this._onPointerDown(event));
+    this.el.addEventListener("pointermove", (event) => this._onPointerMove(event));
+    this.el.addEventListener("pointerup", (event) => this._onPointerUp(event));
+    this.el.addEventListener("keydown", (event) => this._onKeyDown(event));
+    this._stopAccelerators = trackAccelerators(this, this);
+  }
+  _render() {
+    return createElement(
+      '<div class="wy-menu-bar" role="menubar" tabindex="-1" aria-orientation="horizontal"></div>'
+    );
+  }
+  insertChild(widget, index) {
+    if (!(widget instanceof AbstractMenuItem)) {
+      throw new TypeError("Only menu items can be added to a menu bar.");
+    }
+    return super.insertChild(widget, index);
+  }
+  removeChild(widget) {
+    if (widget === this._selected) {
+      this._select(null);
+    }
+    return super.removeChild(widget);
+  }
+  destroy() {
+    this._select(null);
+    this._stopAccelerators();
+    super.destroy();
+  }
+  _getSelectableItems() {
+    return this._children.filter((x) => x._isSelectable());
+  }
+  _itemFromTarget(target) {
+    let widget = Widget.fromElement(target);
+    while (widget && widget.parent !== this) {
+      widget = widget.parent;
+    }
+    return widget && widget !== this && widget._isSelectable() ? widget : null;
+  }
+  /**
+   * Selects an item, opening its menu, or deselects (with `null`), closing it.
+   *
+   * @protected
+   * @param {AbstractMenuItem | null} item
+   * @param {boolean} [keyboard] Whether the keyboard opened it, which selects the menu's first
+   *     item.
+   */
+  _select(item, keyboard = false) {
+    const old = this._selected;
+    if (old === item) {
+      if (item?.submenu && !item.submenu.visible) {
+        this._popupSubmenu(item, keyboard);
+      }
+      return;
+    }
+    this._selected = item;
+    if (old && !old.destroyed) {
+      old._setSelected(false);
+      this._submenuDisconnect?.();
+      this._submenuDisconnect = null;
+      old.submenu?.hide();
+    }
+    const manager = getMenuManager();
+    if (item) {
+      manager._addShell(this);
+      item._setSelected(true);
+      if (item.submenu) {
+        this._popupSubmenu(item, keyboard);
+      } else {
+        this.el.focus({ preventScroll: true });
+      }
+    } else {
+      manager._removeShell(this);
+    }
+    this.emit("selected-change", this);
+  }
+  _popupSubmenu(item, keyboard) {
+    const submenu = item.submenu;
+    this._submenuDisconnect?.();
+    this._submenuDisconnect = submenu.connect("visible-change", () => {
+      if (!submenu.visible && this._selected === item) {
+        this._select(null);
+      }
+    });
+    submenu.popup(item, {
+      side: "bottom",
+      align: "start",
+      owner: this.el,
+      selectFirst: keyboard
+    });
+  }
+  /**
+   * Moves the selection to the next (1) or previous (-1) item, wrapping around, and opens its
+   * menu.
+   *
+   * @protected
+   * @param {number} delta
+   * @param {boolean} [keyboard]
+   */
+  _moveSelectionBy(delta, keyboard = false) {
+    const items = this._getSelectableItems();
+    if (!items.length) {
+      return;
+    }
+    const index = items.indexOf(this._selected);
+    const next = index < 0 ? 0 : (index + delta + items.length) % items.length;
+    this._select(items[next], keyboard);
+  }
+  _deactivateShell() {
+    this._select(null);
+  }
+  _containsTarget(target) {
+    return this.el.contains(target);
+  }
+  _onItemGone(item) {
+    if (item === this._selected) {
+      this._select(null);
+    }
+  }
+  _findAccelerator(event) {
+    for (const child of this._children) {
+      const item = child._findAccelerator(event);
+      if (item) {
+        return item;
+      }
+    }
+    return null;
+  }
+  /**
+   * Handles the menu bar keys of the window: F10 opens the first menu and Alt with a mnemonic
+   * opens the matching menu.
+   *
+   * @protected
+   * @param {KeyboardEvent} event
+   * @returns {boolean} Whether the key was handled.
+   */
+  _handleWindowKey(event) {
+    if (!this.isVisible || !this.isSensitive) {
+      return false;
+    }
+    const items = this._getSelectableItems();
+    if (event.key === Key.F10 && !event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey) {
+      if (!items.length) {
+        return false;
+      }
+      this._select(items[0], true);
+      return true;
+    }
+    if (!event.altKey || event.ctrlKey || event.metaKey) {
+      return false;
+    }
+    const character = /^Key[A-Z]$/.test(event.code || "") ? event.code.slice(3).toLowerCase() : /^Digit\d$/.test(event.code || "") ? event.code.slice(5) : event.key.toLowerCase();
+    const item = items.find((x) => x.mnemonic && x.mnemonic === character);
+    if (!item) {
+      return false;
+    }
+    if (item.submenu) {
+      this._select(item, true);
+    } else {
+      item._onUserActivate?.();
+    }
+    return true;
+  }
+  _onPointerDown(event) {
+    if (event.button !== 0) {
+      return;
+    }
+    const item = this._itemFromTarget(event.target);
+    if (!item) {
+      if (this._selected) {
+        getMenuManager().hideAllOpenMenus();
+      }
+      return;
+    }
+    if (item === this._selected) {
+      this._pressedItem = null;
+      getMenuManager().hideAllOpenMenus();
+      return;
+    }
+    this._pressedItem = item;
+    this._select(item);
+  }
+  _onPointerMove(event) {
+    if (!this._selected) {
+      return;
+    }
+    const item = this._itemFromTarget(event.target);
+    if (item && item !== this._selected) {
+      this._select(item);
+    }
+  }
+  _onPointerUp(event) {
+    const pressed = this._pressedItem;
+    this._pressedItem = null;
+    const item = this._itemFromTarget(event.target);
+    if (item && item === pressed && !item.submenu) {
+      item._onUserActivate?.();
+    }
+  }
+  _onKeyDown(event) {
+    if (!this._selected || event.defaultPrevented) {
+      return;
+    }
+    let handled = true;
+    switch (event.key) {
+      case Key.LEFT:
+        this._moveSelectionBy(-1, true);
+        break;
+      case Key.RIGHT:
+        this._moveSelectionBy(1, true);
+        break;
+      case Key.ENTER:
+      case Key.SPACE:
+      case Key.DOWN:
+        if (this._selected.submenu) {
+          this._popupSubmenu(this._selected, true);
+        } else if (event.key !== Key.DOWN) {
+          this._selected._onUserActivate?.();
+        }
+        break;
+      case Key.ESCAPE:
+      case Key.F10:
+      case Key.TAB:
+        getMenuManager().hideAllOpenMenus();
+        handled = event.key !== Key.TAB;
+        break;
+      default: {
+        const character = event.key.length === 1 ? event.key.toLowerCase() : "";
+        const item = this._getSelectableItems().find(
+          (x) => character && x.mnemonic === character
+        );
+        if (item) {
+          if (item.submenu) {
+            this._select(item, true);
+          } else {
+            item._onUserActivate?.();
+          }
+        } else {
+          handled = false;
+        }
+      }
+    }
+    if (handled) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }
+  _onIsVisibleChange(isVisible) {
+    super._onIsVisibleChange(isVisible);
+    if (!isVisible) {
+      this._select(null);
+    }
+  }
+  _onIsSensitiveChange(isSensitive) {
+    super._onIsSensitiveChange(isSensitive);
+    if (!isSensitive) {
+      this._select(null);
+    }
+  }
+};
+defineProperties(MenuBar, {
+  orientation: { value: Orientation.HORIZONTAL },
+  vExpand: { value: false },
+  /**
+   * Whether this is a menu shell (a container of menu items).
+   */
+  isMenuShell: { value: true, readOnly: true },
+  /**
+   * Whether this is a menu bar.
+   */
+  isMenuBar: { value: true, readOnly: true },
+  /**
+   * The selected item, whose menu is open, or `null`. Setting it opens that item's menu.
+   */
+  selected: {
+    value: null,
+    set(item) {
+      if (item && (item.parent !== this || !item._isSelectable())) {
+        throw new Error("Only a selectable item of the menu bar can be selected.");
+      }
+      this._select(item || null);
+      return false;
+    }
+  }
+});
+registerType("menu-bar", MenuBar);
+
+// src/widgets/menu-button.js
+var DIRECTION_ALIASES = Object.freeze({
+  down: Position.BOTTOM,
+  up: Position.TOP
+});
+var MenuButton = class extends Bin {
+  static {
+    __name(this, "MenuButton");
+  }
+  _initialize() {
+    super._initialize();
+    this._menuDisconnects = [];
+    this._keyboardOpen = false;
+    this.el.addEventListener("pointerdown", (event) => this._onPointerDown(event));
+    this._behavior = attachButtonBehavior(this, {
+      onActivate: /* @__PURE__ */ __name(() => {
+        this._keyboardOpen = true;
+        this.active = !this._active;
+        this._keyboardOpen = false;
+      }, "onActivate")
+    });
+    this._updateArrow();
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-button wy-menu-button" role="button" aria-haspopup="menu" aria-expanded="false">
+                <span class="wy-menu-button-content">
+                    <span class="wy-menu-button-icon" aria-hidden="true" hidden></span>
+                    <span class="wy-menu-button-label" hidden></span>
+                    <span class="wy-menu-button-child"></span>
+                </span>
+                <span class="wy-menu-button-arrow" aria-hidden="true"></span>
+            </div>
+        `);
+    this._iconEl = element.querySelector(".wy-menu-button-icon");
+    this._labelEl = element.querySelector(".wy-menu-button-label");
+    this._bodyEl = element.querySelector(".wy-menu-button-child");
+    return element;
+  }
+  /**
+   * Opens the menu.
+   */
+  popup() {
+    this.active = true;
+  }
+  /**
+   * Closes the menu.
+   */
+  popdown() {
+    this.active = false;
+  }
+  /**
+   * Destroys the button and its menu.
+   */
+  destroy() {
+    this._setMenu(null);
+    this._behavior.destroy();
+    super.destroy();
+  }
+  _onPointerDown(event) {
+    if (event.button !== 0 || !this.isSensitive) {
+      return;
+    }
+    event.stopImmediatePropagation();
+    this._tooltip?.disappear();
+    this.focus();
+    this.active = !this._active;
+  }
+  _setMenu(menu, destroyOld = true) {
+    if (menu && !menu.isMenu) {
+      throw new TypeError("The menu of a menu button must be a Menu.");
+    }
+    const old = this._menu;
+    if (old === menu) {
+      return false;
+    }
+    this._menuDisconnects.forEach((disconnect) => disconnect());
+    this._menuDisconnects = [];
+    this.active = false;
+    this._menu = menu;
+    if (old && !old.destroyed) {
+      old.hide();
+      old._setAttachWidget(null);
+      if (destroyOld) {
+        old.destroy();
+      }
+    }
+    if (menu) {
+      menu.hide();
+      menu._setAttachWidget(this);
+      this.el.setAttribute("aria-controls", menu.el.id);
+      this._menuDisconnects.push(
+        menu.connect("visible-change", () => {
+          if (!menu.visible) {
+            this.active = false;
+          }
+        }),
+        menu.connect("destroy", () => {
+          if (this._menu === menu) {
+            this._setMenu(null, false);
+            this.emit("menu-change", this);
+          }
+        })
+      );
+    } else {
+      this.el.removeAttribute("aria-controls");
+    }
+    return true;
+  }
+  _updateArrow() {
+    this.el.dataset.direction = this._direction;
+  }
+  _updateContent() {
+    const hasChild = this._children.length > 0;
+    const icon = this._icon ? getIcon(this._icon) : null;
+    this._iconEl.innerHTML = icon || "";
+    this._iconEl.hidden = !icon || hasChild;
+    this._labelEl.hidden = !this._label || hasChild;
+  }
+  _onChildrenChange() {
+    super._onChildrenChange();
+    this._updateContent();
+  }
+  _onIsSensitiveChange(isSensitive) {
+    super._onIsSensitiveChange(isSensitive);
+    if (!isSensitive) {
+      this.active = false;
+    }
+  }
+  _onIsVisibleChange(isVisible) {
+    super._onIsVisibleChange(isVisible);
+    if (!isVisible) {
+      this.active = false;
+    }
+  }
+};
+defineProperties(MenuButton, {
+  canFocus: { value: true },
+  /**
+   * The label. An underscore marks the mnemonic, as in `'_Options'`.
+   */
+  label: {
+    value: "",
+    changed(label) {
+      renderMnemonicLabel(this._labelEl, label, this._useUnderline);
+      this._updateContent();
+    }
+  },
+  /**
+   * Whether underscores in the label mark the mnemonic.
+   */
+  useUnderline: {
+    value: true,
+    changed(useUnderline) {
+      renderMnemonicLabel(this._labelEl, this._label, useUnderline);
+    }
+  },
+  /**
+   * The name of an icon shown before the label, or `''` for none.
+   */
+  icon: {
+    value: "",
+    changed() {
+      this._updateContent();
+    }
+  },
+  /**
+   * The menu that the button pops up, or `null`. The button owns it: replacing the menu or
+   * destroying the button destroys it.
+   */
+  menu: {
+    value: null,
+    set(menu) {
+      return this._setMenu(menu || null);
+    }
+  },
+  /**
+   * The menu, under the original toolkit's name. The same as `menu`.
+   */
+  submenu: {
+    signal: false,
+    get() {
+      return this._menu;
+    },
+    set(menu) {
+      this.menu = menu;
+      return false;
+    }
+  },
+  /**
+   * Where the menu pops up: one of `Position` (`'bottom'` by default). `'down'` and `'up'` are
+   * accepted too.
+   */
+  direction: {
+    value: Position.BOTTOM,
+    coerce(direction) {
+      const value = DIRECTION_ALIASES[direction] || direction;
+      if (!Object.values(Position).includes(value)) {
+        throw new RangeError(`Invalid menu button direction '${direction}'.`);
+      }
+      return value;
+    },
+    changed() {
+      this._updateArrow();
+    }
+  },
+  /**
+   * Whether the menu is open. Setting it opens or closes the menu.
+   */
+  active: {
+    value: false,
+    set(active) {
+      active = Boolean(active);
+      if (active === this._active) {
+        return false;
+      }
+      if (active && (!this._menu || !this.isSensitive || !this.isVisible)) {
+        return false;
+      }
+      this._active = active;
+      this.el.classList.toggle("wy-active", active);
+      this.el.setAttribute("aria-expanded", String(active));
+      if (active) {
+        this._menu.popup(this, {
+          side: this._direction,
+          align: "start",
+          owner: this.el,
+          selectFirst: this._keyboardOpen
+        });
+      } else if (this._menu?.visible) {
+        this._menu.hide();
+      }
+      this.emit("toggle", this);
+    }
+  }
+});
+registerType("menu-button", MenuButton);
+
+// src/widgets/menu.js
+var SUBMENU_OFFSET = -3;
+var POINTER_SLOP = 3;
+var SCROLL_STEP = 4;
+var SUBMENU_PATH_TOLERANCE = 4;
+var Menu = class extends Box {
+  static {
+    __name(this, "Menu");
+  }
+  _initialize() {
+    super._initialize();
+    this._attachWidget = null;
+    this._ownerElement = null;
+    this._placement = null;
+    this._submenuTimer = 0;
+    this._deferTimer = 0;
+    this._deferredItem = null;
+    this._pressedItem = null;
+    this._popupPointer = null;
+    this._pointerMoved = false;
+    this._lastPointer = null;
+    this._scrollFrame = 0;
+    this._stopAccelerators = null;
+    this._disconnectAttachDestroy = null;
+    this.el.id = uniqueId("wy-menu");
+    this.el.addEventListener("pointermove", (event) => this._onPointerMove(event));
+    this.el.addEventListener("pointerleave", () => this._onPointerLeave());
+    this.el.addEventListener("pointerdown", (event) => this._onPointerDown(event));
+    this.el.addEventListener("pointerup", (event) => this._onPointerUp(event));
+    this.el.addEventListener("keydown", (event) => this._onKeyDown(event));
+    this.el.addEventListener("mousedown", (event) => event.preventDefault());
+    this.el.addEventListener("contextmenu", (event) => event.preventDefault());
+    this._bodyEl.addEventListener("scroll", () => this._updateScrollArrows(), {
+      passive: true
+    });
+    for (const [element, direction] of [
+      [this._scrollUpEl, -1],
+      [this._scrollDownEl, 1]
+    ]) {
+      element.addEventListener("pointerenter", () => this._startScrolling(direction));
+      element.addEventListener("pointerleave", () => this._stopScrolling());
+    }
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-menu" role="menu" tabindex="-1" aria-orientation="vertical" data-wy-popup>
+                <div class="wy-menu-scroll wy-menu-scroll-up" aria-hidden="true"></div>
+                <div class="wy-menu-body"></div>
+                <div class="wy-menu-scroll wy-menu-scroll-down" aria-hidden="true"></div>
+            </div>
+        `);
+    this._bodyEl = element.querySelector(".wy-menu-body");
+    this._scrollUpEl = element.querySelector(".wy-menu-scroll-up");
+    this._scrollDownEl = element.querySelector(".wy-menu-scroll-down");
+    return element;
+  }
+  /**
+   * Shows the menu next to an anchor: a widget, an element, a rectangle or a point (all in
+   * viewport coordinates), or at the pointer when `null`. The menu is flipped and shifted to
+   * stay on screen.
+   *
+   * @param {Widget | Element | {x: number, y: number, width?: number, height?: number} | null}
+   *     [anchor]
+   * @param {PopupOptions} [options]
+   * @returns {this}
+   */
+  popup(anchor = null, options = {}) {
+    if (this.destroyed) {
+      throw new Error("The menu has been destroyed.");
+    }
+    const anchorElement = anchor instanceof Widget ? anchor.el : anchor instanceof Element ? anchor : null;
+    const isSubmenu = anchor instanceof Widget && Boolean(anchor.parent?.isMenu);
+    const side = options.side || (isSubmenu ? "right" : "bottom");
+    const beside = isSubmenu && (side === "right" || side === "left");
+    this._placement = {
+      anchor: anchorElement || toRectangle(anchor),
+      side,
+      align: options.align || "start",
+      offset: options.offset ?? (beside ? SUBMENU_OFFSET : 0),
+      alignFirstItem: beside
+    };
+    this._ownerElement = options.owner === void 0 ? anchorElement : options.owner;
+    this._popupPointer = getMenuManager().pointer;
+    this._pointerMoved = false;
+    this._pressedItem = null;
+    if (this._visible) {
+      this._place();
+    } else {
+      this.visible = true;
+    }
+    if (options.focus !== false) {
+      this.el.focus({ preventScroll: true });
+    }
+    if (options.selectFirst) {
+      this.selectFirst();
+    }
+    this.emit("popup", this);
+    return this;
+  }
+  /**
+   * Shows the menu at the pointer, as a context menu. Pass the event that asked for the menu
+   * (a DOM or toolkit event); without one, the last known pointer position is used.
+   *
+   * @param {Event | {nativeEvent?: Event | null} | null} [event]
+   * @param {PopupOptions} [options]
+   * @returns {this}
+   */
+  popupAtPointer(event = null, options = {}) {
+    const native = event && "nativeEvent" in event ? event.nativeEvent : event;
+    let point = getMenuManager().pointer;
+    if (native && typeof native.clientX === "number" && !(typeof KeyboardEvent !== "undefined" && native instanceof KeyboardEvent)) {
+      point = { x: native.clientX, y: native.clientY };
+    }
+    return this.popup(pointRectangle(point.x, point.y), {
+      side: "bottom",
+      align: "start",
+      owner: null,
+      ...options
+    });
+  }
+  /**
+   * Shows the menu below a widget, or to its right. The original toolkit's name for `popup()`.
+   *
+   * @param {Widget} widget
+   * @param {boolean} [showOnSide] Whether to show the menu to the right of the widget.
+   * @returns {this}
+   */
+  appearAtWidget(widget, showOnSide = false) {
+    return this.popup(widget, { side: showOnSide ? "right" : "bottom" });
+  }
+  /**
+   * Shows the menu at a position in viewport coordinates.
+   *
+   * @param {{x: number, y: number}} position
+   * @returns {this}
+   */
+  appearAtPosition(position) {
+    return this.popup(pointRectangle(position.x, position.y), { side: "bottom", owner: null });
+  }
+  /**
+   * Hides the menu. The same as `hide()`.
+   */
+  disappear() {
+    this.hide();
+  }
+  /**
+   * Attaches the menu to a widget: the menu belongs to the widget's window (the accelerators of
+   * its items work there) and is destroyed with the widget.
+   *
+   * @param {Widget} widget
+   */
+  attachToWidget(widget) {
+    if (!(widget instanceof Widget)) {
+      throw new TypeError("A menu can only be attached to a widget.");
+    }
+    this._setAttachWidget(widget);
+    this._disconnectAttachDestroy = widget.connect("destroy", () => {
+      if (!this.destroyed) {
+        this.destroy();
+      }
+    });
+  }
+  /**
+   * Detaches the menu from the widget it is attached to.
+   */
+  detach() {
+    this._setAttachWidget(null);
+  }
+  /**
+   * Selects the first selectable item.
+   */
+  selectFirst() {
+    const items = this._getSelectableItems();
+    this._selectItem(items[0] || null, true);
+  }
+  /**
+   * Selects the last selectable item.
+   */
+  selectLast() {
+    const items = this._getSelectableItems();
+    this._selectItem(items[items.length - 1] || null, true);
+  }
+  insertChild(widget, index) {
+    if (!(widget instanceof AbstractMenuItem)) {
+      throw new TypeError("Only menu items can be added to a menu.");
+    }
+    return super.insertChild(widget, index);
+  }
+  removeChild(widget) {
+    if (widget === this._selected) {
+      this._selectItem(null);
+    }
+    return super.removeChild(widget);
+  }
+  destroy() {
+    this.hide();
+    this._setAttachWidget(null);
+    super.destroy();
+  }
+  /**
+   * Sets the widget the menu is attached to (for a submenu, its menu item). Menus attached to
+   * other widgets than menu items make their accelerators work in that widget's window.
+   *
+   * @protected
+   * @param {Widget | null} widget
+   */
+  _setAttachWidget(widget) {
+    if (widget === this._attachWidget) {
+      return;
+    }
+    this._stopAccelerators?.();
+    this._stopAccelerators = null;
+    this._disconnectAttachDestroy?.();
+    this._disconnectAttachDestroy = null;
+    this._attachWidget = widget;
+    if (widget && !(widget instanceof AbstractMenuItem)) {
+      this._stopAccelerators = trackAccelerators(widget, this);
+    }
+    if (widget instanceof AbstractMenuItem) {
+      this.el.setAttribute("aria-labelledby", widget.el.id);
+    } else {
+      this.el.removeAttribute("aria-labelledby");
+    }
+    this.emit("attach-widget-change", this);
+  }
+  _findAccelerator(event) {
+    for (const child of this._children) {
+      const item = child._findAccelerator(event);
+      if (item) {
+        return item;
+      }
+    }
+    return null;
+  }
+  _deactivateShell() {
+    this.hide();
+  }
+  _containsTarget(target) {
+    return this.el.contains(target) || Boolean(this._ownerElement?.contains(target));
+  }
+  _onVisibleChange(visible) {
+    this.el.hidden = !visible;
+    const manager = getMenuManager();
+    if (visible) {
+      const screen = getScreen();
+      this._bodyEl.scrollTop = 0;
+      screen.layer.append(this.el);
+      this.el.style.zIndex = String(screen.nextZIndex());
+      manager._addShell(this);
+    } else {
+      this._cancelTimers();
+      this._stopScrolling();
+      this._selectItem(null);
+      const parent = this.parentMenu;
+      if (parent?.visible && this.el.contains(document.activeElement)) {
+        parent.el.focus({ preventScroll: true });
+      }
+      this.el.remove();
+      manager._removeShell(this);
+    }
+    this._recalculateVisibility();
+    this._recalculateSensitivity();
+    if (visible) {
+      this._place();
+    }
+  }
+  _place() {
+    const placement = this._placement || {
+      anchor: toRectangle(null),
+      side: "bottom",
+      align: "start",
+      offset: 0,
+      alignFirstItem: false
+    };
+    this.el.style.left = "0px";
+    this.el.style.top = "0px";
+    this.el.style.maxHeight = `${getScreen().height}px`;
+    const rect = placement.anchor instanceof Element ? placement.anchor.getBoundingClientRect() : placement.anchor;
+    let anchor = {
+      x: rect.x ?? rect.left,
+      y: rect.y ?? rect.top,
+      width: rect.width,
+      height: rect.height
+    };
+    if (placement.alignFirstItem) {
+      const shift = this._getFirstItemOffset();
+      anchor = {
+        x: anchor.x,
+        y: anchor.y - shift,
+        width: anchor.width,
+        height: anchor.height + 2 * shift
+      };
+    }
+    placePopup(this.el, anchor, {
+      side: placement.side,
+      align: placement.align,
+      offset: placement.offset
+    });
+    this._updateScrollArrows();
+  }
+  _getFirstItemOffset() {
+    const first = this._children.find((x) => x.visible);
+    if (!first) {
+      return 0;
+    }
+    return first.el.getBoundingClientRect().top - this.el.getBoundingClientRect().top;
+  }
+  _getSelectableItems() {
+    return this._children.filter((x) => x._isSelectable());
+  }
+  _itemFromTarget(target) {
+    let widget = Widget.fromElement(target);
+    while (widget && widget.parent !== this) {
+      widget = widget.parent;
+    }
+    return widget && widget !== this ? widget : null;
+  }
+  _selectItem(item, keyboard = false) {
+    this._cancelTimers();
+    const old = this._selected;
+    if (old === item) {
+      return;
+    }
+    this._selected = item;
+    if (old && !old.destroyed) {
+      old._setSelected(false);
+      old.submenu?.hide();
+    }
+    if (item) {
+      item._setSelected(true);
+      this.el.setAttribute("aria-activedescendant", item.el.id);
+      if (keyboard) {
+        item.el.scrollIntoView({ block: "nearest" });
+      }
+    } else {
+      this.el.removeAttribute("aria-activedescendant");
+    }
+    this.emit("selected-change", this);
+  }
+  _onItemGone(item) {
+    if (item === this._selected) {
+      this._selectItem(null);
+    }
+  }
+  _openSubmenu(item, keyboard = false) {
+    const submenu = item.submenu;
+    if (!submenu || !item._isSelectable() || !this._visible) {
+      return;
+    }
+    this._cancelTimers();
+    if (!submenu.visible) {
+      submenu.popup(item, { focus: keyboard });
+    } else if (keyboard) {
+      submenu.el.focus({ preventScroll: true });
+    }
+    if (keyboard) {
+      submenu.selectFirst();
+    }
+  }
+  _moveSelection(delta) {
+    const items = this._getSelectableItems();
+    if (!items.length) {
+      return;
+    }
+    const index = items.indexOf(this._selected);
+    let next;
+    if (index < 0) {
+      next = delta > 0 ? 0 : items.length - 1;
+    } else {
+      next = (index + delta + items.length) % items.length;
+    }
+    this._selectItem(items[next], true);
+  }
+  _activateSelected() {
+    const item = this._selected;
+    if (!item || !item._isSelectable()) {
+      return;
+    }
+    if (item.submenu) {
+      this._openSubmenu(item, true);
+    } else {
+      item._onUserActivate?.();
+    }
+  }
+  /**
+   * Closes this menu level, as Escape does: a submenu returns the focus to its parent menu,
+   * and a top-level menu closes all menus.
+   *
+   * @protected
+   */
+  _closeLevel() {
+    const parent = this.parentMenu;
+    if (parent?.visible) {
+      parent.el.focus({ preventScroll: true });
+      this.hide();
+    } else {
+      getMenuManager().hideAllOpenMenus();
+    }
+  }
+  _getRootMenu() {
+    let menu = this;
+    while (menu.parentMenu) {
+      menu = menu.parentMenu;
+    }
+    return menu;
+  }
+  _getMenuBar() {
+    const attached = this._getRootMenu()._attachWidget;
+    return attached?.parent?.isMenuBar ? attached.parent : null;
+  }
+  _onKeyDown(event) {
+    if (event.defaultPrevented) {
+      return;
+    }
+    let handled = true;
+    switch (event.key) {
+      case Key.DOWN:
+        this._moveSelection(1);
+        break;
+      case Key.UP:
+        this._moveSelection(-1);
+        break;
+      case Key.HOME:
+      case Key.PAGE_UP:
+        this.selectFirst();
+        break;
+      case Key.END:
+      case Key.PAGE_DOWN:
+        this.selectLast();
+        break;
+      case Key.RIGHT:
+        if (this._selected?.submenu) {
+          this._openSubmenu(this._selected, true);
+        } else {
+          this._getMenuBar()?._moveSelectionBy(1, true);
+        }
+        break;
+      case Key.LEFT:
+        if (this.parentMenu?.visible) {
+          this._closeLevel();
+        } else {
+          this._getMenuBar()?._moveSelectionBy(-1, true);
+        }
+        break;
+      case Key.ENTER:
+      case Key.SPACE:
+        this._activateSelected();
+        break;
+      case Key.ESCAPE:
+        this._closeLevel();
+        break;
+      case Key.TAB:
+        break;
+      case Key.F10:
+      case Key.CONTEXT_MENU:
+        getMenuManager().hideAllOpenMenus();
+        break;
+      default:
+        handled = this._onCharacterKey(event);
+    }
+    if (handled) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }
+  _onCharacterKey(event) {
+    if (event.ctrlKey || event.metaKey || event.key.length !== 1) {
+      return false;
+    }
+    const character = event.key.toLowerCase();
+    const items = this._getSelectableItems();
+    const matches = items.filter((x) => x.mnemonic === character);
+    if (matches.length === 1) {
+      const item = matches[0];
+      this._selectItem(item, true);
+      if (item.submenu) {
+        this._openSubmenu(item, true);
+      } else {
+        item._onUserActivate?.();
+      }
+      return true;
+    }
+    const candidates = matches.length ? matches : items.filter(
+      (x) => (x._labelEl?.textContent || "").trim().toLowerCase().startsWith(character)
+    );
+    if (candidates.length) {
+      const index = candidates.indexOf(this._selected);
+      this._selectItem(candidates[(index + 1) % candidates.length], true);
+    }
+    return true;
+  }
+  _onPointerMove(event) {
+    if (!this._pointerMoved) {
+      const start = this._popupPointer;
+      if (start && Math.hypot(event.clientX - start.x, event.clientY - start.y) <= POINTER_SLOP) {
+        return;
+      }
+      this._pointerMoved = true;
+    }
+    if (document.activeElement !== this.el) {
+      this.el.focus({ preventScroll: true });
+    }
+    const target = this._itemFromTarget(event.target);
+    const item = target && target._isSelectable() ? target : null;
+    const point = { x: event.clientX, y: event.clientY };
+    const previous = this._lastPointer;
+    this._lastPointer = point;
+    if (item === this._selected) {
+      this._cancelDeferredSelection();
+      return;
+    }
+    if (this._isMovingTowardsSubmenu(previous, point)) {
+      this._deferSelection(item);
+      return;
+    }
+    this._hoverItem(item);
+  }
+  _hoverItem(item) {
+    this._cancelDeferredSelection();
+    if (!item) {
+      if (!this._selected?.submenu?.visible) {
+        this._selectItem(null);
+      }
+      return;
+    }
+    this._selectItem(item);
+    if (item.submenu) {
+      this._submenuTimer = setTimeout(() => {
+        this._submenuTimer = 0;
+        if (!this.destroyed && this._selected === item) {
+          this._openSubmenu(item);
+        }
+      }, settings.submenuDelay);
+    }
+  }
+  _isMovingTowardsSubmenu(previous, point) {
+    const submenu = this._selected?.submenu;
+    if (!previous || !submenu?.visible) {
+      return false;
+    }
+    const rect = submenu.el.getBoundingClientRect();
+    const edge = submenu.el.dataset.side === "left" ? rect.right : rect.left;
+    return isInTriangle(
+      point,
+      previous,
+      { x: edge, y: rect.top - SUBMENU_PATH_TOLERANCE },
+      { x: edge, y: rect.bottom + SUBMENU_PATH_TOLERANCE }
+    );
+  }
+  _deferSelection(item) {
+    this._deferredItem = item;
+    clearTimeout(this._deferTimer);
+    this._deferTimer = setTimeout(() => {
+      this._deferTimer = 0;
+      if (!this.destroyed && this._visible) {
+        this._hoverItem(this._deferredItem);
+      }
+    }, settings.submenuDelay);
+  }
+  _cancelDeferredSelection() {
+    clearTimeout(this._deferTimer);
+    this._deferTimer = 0;
+    this._deferredItem = null;
+  }
+  _cancelTimers() {
+    clearTimeout(this._submenuTimer);
+    this._submenuTimer = 0;
+    this._cancelDeferredSelection();
+  }
+  _onPointerLeave() {
+    this._lastPointer = null;
+    if (!this._selected?.submenu?.visible) {
+      this._cancelTimers();
+      this._selectItem(null);
+    } else {
+      this._cancelDeferredSelection();
+    }
+  }
+  _onPointerDown(event) {
+    this._pointerMoved = true;
+    const target = this._itemFromTarget(event.target);
+    const item = target && target._isSelectable() ? target : null;
+    this._pressedItem = item;
+    if (item) {
+      this._selectItem(item);
+      if (item.submenu) {
+        this._openSubmenu(item);
+      }
+    }
+  }
+  _onPointerUp(event) {
+    const pressed = this._pressedItem;
+    this._pressedItem = null;
+    const target = this._itemFromTarget(event.target);
+    const item = target && target._isSelectable() ? target : null;
+    if (!item || !this._pointerMoved && pressed !== item) {
+      return;
+    }
+    if (item.submenu) {
+      this._selectItem(item);
+      this._openSubmenu(item);
+    } else {
+      item._onUserActivate?.();
+    }
+  }
+  _updateScrollArrows() {
+    const body = this._bodyEl;
+    const scrollable = body.scrollHeight > body.clientHeight + 1;
+    if (scrollable !== this._scrollable) {
+      this._scrollable = scrollable;
+      this.el.classList.toggle("wy-scrollable", scrollable);
+    }
+    const atStart = body.scrollTop <= 0;
+    const atEnd = body.scrollTop + body.clientHeight >= body.scrollHeight - 1;
+    this._scrollUpEl.classList.toggle("wy-disabled", atStart);
+    this._scrollDownEl.classList.toggle("wy-disabled", atEnd);
+    if (atStart && this._scrollDirection < 0 || atEnd && this._scrollDirection > 0) {
+      this._stopScrolling();
+    }
+  }
+  _startScrolling(direction) {
+    this._stopScrolling();
+    this._scrollDirection = direction;
+    const step = /* @__PURE__ */ __name(() => {
+      this._bodyEl.scrollTop += direction * SCROLL_STEP;
+      this._scrollFrame = requestAnimationFrame(step);
+    }, "step");
+    this._scrollFrame = requestAnimationFrame(step);
+  }
+  _stopScrolling() {
+    cancelAnimationFrame(this._scrollFrame);
+    this._scrollFrame = 0;
+    this._scrollDirection = 0;
+  }
+};
+function toRectangle(anchor) {
+  if (!anchor) {
+    const pointer = getMenuManager().pointer;
+    return pointRectangle(pointer.x, pointer.y);
+  }
+  if (typeof anchor.x !== "number" || typeof anchor.y !== "number") {
+    throw new TypeError("A menu anchor must be a widget, an element, a rectangle or a point.");
+  }
+  return { x: anchor.x, y: anchor.y, width: anchor.width || 0, height: anchor.height || 0 };
+}
+__name(toRectangle, "toRectangle");
+function isInTriangle(point, a, b, c) {
+  const cross = /* @__PURE__ */ __name((p, q, r) => (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x), "cross");
+  const first = cross(a, b, point);
+  const second = cross(b, c, point);
+  const third = cross(c, a, point);
+  return first >= 0 && second >= 0 && third >= 0 || first <= 0 && second <= 0 && third <= 0;
+}
+__name(isInTriangle, "isInTriangle");
+function getKeyboardAnchor(widget) {
+  const active = document.activeElement;
+  const element = active instanceof Element && widget.el.contains(active) ? active : widget.el;
+  const rect = element.getBoundingClientRect();
+  return {
+    x: rect.left,
+    y: rect.top,
+    width: Math.min(rect.width, 32),
+    height: Math.min(rect.height, 24)
+  };
+}
+__name(getKeyboardAnchor, "getKeyboardAnchor");
+function attachContextMenu(widget, menuOrFactory) {
+  if (!(widget instanceof Widget)) {
+    throw new TypeError("A context menu can only be attached to a widget.");
+  }
+  const factory = typeof menuOrFactory === "function" ? menuOrFactory : null;
+  const fixedMenu = factory ? null : menuOrFactory;
+  if (!factory && !(fixedMenu instanceof Menu)) {
+    throw new TypeError("A context menu must be a Menu or a function that creates one.");
+  }
+  fixedMenu?.attachToWidget(widget);
+  let keyboardTime = -Infinity;
+  const open = /* @__PURE__ */ __name((event, keyboard) => {
+    const menu = factory ? factory(widget, event) : fixedMenu;
+    if (!menu) {
+      return false;
+    }
+    if (factory) {
+      if (!(menu instanceof Menu)) {
+        throw new TypeError("A context menu factory must return a Menu or null.");
+      }
+      const disconnect = menu.connect("visible-change", () => {
+        if (!menu.visible) {
+          disconnect();
+          setTimeout(() => menu.destroyed || menu.destroy());
+        }
+      });
+    }
+    if (keyboard) {
+      menu.popup(getKeyboardAnchor(widget), {
+        side: "bottom",
+        owner: null,
+        selectFirst: true
+      });
+    } else {
+      menu.popupAtPointer(event);
+    }
+    return true;
+  }, "open");
+  const onContextMenu = /* @__PURE__ */ __name((event) => {
+    if (!widget.isSensitive) {
+      return;
+    }
+    if (event.timeStamp - keyboardTime < 500) {
+      event.preventDefault();
+      return;
+    }
+    if (open(event, false)) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }, "onContextMenu");
+  const onKeyDown = /* @__PURE__ */ __name((event) => {
+    const menuKey = event.key === Key.CONTEXT_MENU || event.key === Key.F10 && event.shiftKey && !event.ctrlKey && !event.altKey && !event.metaKey;
+    if (!menuKey || event.defaultPrevented || !widget.isSensitive) {
+      return;
+    }
+    keyboardTime = event.timeStamp;
+    if (open(event, true)) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }, "onKeyDown");
+  widget.el.addEventListener("contextmenu", onContextMenu);
+  widget.el.addEventListener("keydown", onKeyDown);
+  return () => {
+    widget.el.removeEventListener("contextmenu", onContextMenu);
+    widget.el.removeEventListener("keydown", onKeyDown);
+    if (fixedMenu && !fixedMenu.destroyed && fixedMenu.attachWidget === widget) {
+      fixedMenu.detach();
+    }
+  };
+}
+__name(attachContextMenu, "attachContextMenu");
+defineProperties(Menu, {
+  isTopLevel: { value: true, readOnly: true },
+  orientation: { value: Orientation.VERTICAL },
+  visible: {
+    value: false,
+    changed(visible) {
+      this._onVisibleChange(visible);
+    }
+  },
+  /**
+   * Whether this is a menu shell (a container of menu items).
+   */
+  isMenuShell: { value: true, readOnly: true },
+  /**
+   * Whether this is a menu.
+   */
+  isMenu: { value: true, readOnly: true },
+  /**
+   * The selected (highlighted) item, or `null`.
+   */
+  selected: {
+    value: null,
+    set(item) {
+      if (item && (item.parent !== this || !item._isSelectable())) {
+        throw new Error("Only a selectable item of the menu can be selected.");
+      }
+      this._selectItem(item || null, true);
+      return false;
+    }
+  },
+  /**
+   * The widget the menu is attached to (for a submenu, its menu item), or `null`.
+   */
+  attachWidget: {
+    readOnly: true,
+    get() {
+      return this._attachWidget;
+    }
+  },
+  /**
+   * The menu this menu is a submenu of, or `null`.
+   */
+  parentMenu: {
+    readOnly: true,
+    get() {
+      const parent = this._attachWidget?.parent;
+      return parent?.isMenu ? parent : null;
+    }
+  },
+  /**
+   * The position of the menu's top-left corner in viewport coordinates, as `{x, y}`. Setting it
+   * moves the menu there, keeping it on screen.
+   */
+  position: {
+    signal: false,
+    get() {
+      return { x: this.el.offsetLeft, y: this.el.offsetTop };
+    },
+    set(position) {
+      if (!position || typeof position.x !== "number" || typeof position.y !== "number") {
+        throw new TypeError("A position must have numeric x and y.");
+      }
+      this._placement = {
+        anchor: pointRectangle(position.x, position.y),
+        side: "bottom",
+        align: "start",
+        offset: 0,
+        alignFirstItem: false
+      };
+      if (this._visible) {
+        this._place();
+      }
+      return false;
+    }
+  },
+  /**
+   * The x position of the menu. Does not signal.
+   */
+  x: {
+    signal: false,
+    get() {
+      return this.position.x;
+    },
+    set(x) {
+      this.position = { x, y: this.position.y };
+      return false;
+    }
+  },
+  /**
+   * The y position of the menu. Does not signal.
+   */
+  y: {
+    signal: false,
+    get() {
+      return this.position.y;
+    },
+    set(y) {
+      this.position = { x: this.position.x, y };
+      return false;
+    }
+  }
+});
+registerType("menu", Menu);
+
+// src/widgets/message-dialog.js
+var MessageType = Object.freeze({
+  INFO: "info",
+  WARNING: "warning",
+  QUESTION: "question",
+  ERROR: "error",
+  OTHER: "other"
+  // No icon.
+});
+var ButtonsType = Object.freeze({
+  NONE: "none",
+  OK: "ok",
+  CLOSE: "close",
+  CANCEL: "cancel",
+  YES_NO: "yes-no",
+  OK_CANCEL: "ok-cancel"
+});
+var ICONS2 = Object.freeze({
+  [MessageType.INFO]: "dialog-information",
+  [MessageType.WARNING]: "dialog-warning",
+  [MessageType.QUESTION]: "dialog-question",
+  [MessageType.ERROR]: "dialog-error",
+  [MessageType.OTHER]: ""
+});
+var BUTTONS = Object.freeze({
+  [ButtonsType.NONE]: { responses: [], defaultResponse: null },
+  [ButtonsType.OK]: { responses: [Response.OK], defaultResponse: Response.OK },
+  [ButtonsType.CLOSE]: { responses: [Response.CLOSE], defaultResponse: Response.CLOSE },
+  [ButtonsType.CANCEL]: { responses: [Response.CANCEL], defaultResponse: Response.CANCEL },
+  [ButtonsType.YES_NO]: { responses: [Response.NO, Response.YES], defaultResponse: Response.YES },
+  [ButtonsType.OK_CANCEL]: {
+    responses: [Response.CANCEL, Response.OK],
+    defaultResponse: Response.OK
+  }
+});
+var ICON_SIZE = 48;
+var MessageDialog = class extends Dialog {
+  static {
+    __name(this, "MessageDialog");
+  }
+  _initialize() {
+    super._initialize();
+    this.el.classList.add("wy-message-dialog");
+    this._image = new Image({ pixelSize: ICON_SIZE, vAlign: Align.START });
+    this._image.addStyleClass("wy-message-dialog-icon");
+    this._textLabel = new Label({ wrap: true, selectable: true, maxWidthChars: 50 });
+    this._textLabel.addStyleClass("wy-message-dialog-text");
+    this._secondaryLabel = new Label({ wrap: true, selectable: true, maxWidthChars: 50 });
+    this._secondaryLabel.addStyleClass("wy-message-dialog-secondary-text");
+    this._messageArea = new Box({ orientation: Orientation.VERTICAL, spacing: 6 });
+    this._messageArea.addChild(this._textLabel);
+    this._messageArea.addChild(this._secondaryLabel);
+    const box = new Box({ spacing: 12 });
+    box.addStyleClass("wy-message-dialog-box");
+    box.addChild(this._image);
+    box.addChild(this._messageArea);
+    this.contentArea.addChild(box);
+    this._syncIcon();
+    this._syncTexts();
+  }
+  /**
+   * The vertical box with the texts, to add more widgets to.
+   *
+   * @type {Box}
+   */
+  get messageArea() {
+    return this._messageArea;
+  }
+  /**
+   * The image showing the icon of the message type.
+   *
+   * @type {Image}
+   */
+  get image() {
+    return this._image;
+  }
+  _syncIcon() {
+    const icon = ICONS2[this._messageType];
+    this._image.icon = icon;
+    this._image.visible = Boolean(icon);
+  }
+  _syncTexts() {
+    this._textLabel.useMarkup = this._useMarkup;
+    this._textLabel.text = this._text;
+    this._secondaryLabel.useMarkup = this._secondaryUseMarkup;
+    this._secondaryLabel.text = this._secondaryText;
+    this._secondaryLabel.visible = Boolean(this._secondaryText);
+  }
+  _addButtons(buttonsType) {
+    const { responses, defaultResponse } = BUTTONS[buttonsType];
+    for (const response of responses) {
+      this.addButton(response);
+    }
+    if (defaultResponse) {
+      this.defaultResponse = defaultResponse;
+    }
+  }
+};
+defineProperties(MessageDialog, {
+  /**
+   * The kind of message: one of `MessageType`, which selects the icon.
+   */
+  messageType: {
+    value: MessageType.INFO,
+    coerce(messageType) {
+      if (!Object.hasOwn(ICONS2, messageType)) {
+        throw new TypeError(`Invalid message type: ${messageType}.`);
+      }
+      return messageType;
+    },
+    changed() {
+      this._syncIcon();
+    }
+  },
+  /**
+   * The primary text, shown bold.
+   */
+  text: {
+    value: "",
+    coerce(text) {
+      return text === null || text === void 0 ? "" : String(text);
+    },
+    changed() {
+      this._syncTexts();
+    }
+  },
+  /**
+   * The secondary text, shown below the primary text, or `''`.
+   */
+  secondaryText: {
+    value: "",
+    coerce(text) {
+      return text === null || text === void 0 ? "" : String(text);
+    },
+    changed() {
+      this._syncTexts();
+    }
+  },
+  /**
+   * Whether the primary text is markup (see `Label`).
+   */
+  useMarkup: {
+    value: false,
+    changed() {
+      this._syncTexts();
+    }
+  },
+  /**
+   * Whether the secondary text is markup (see `Label`).
+   */
+  secondaryUseMarkup: {
+    value: false,
+    changed() {
+      this._syncTexts();
+    }
+  },
+  /**
+   * The standard buttons: one of `ButtonsType`. They are added when this is set, so set it
+   * once.
+   */
+  buttonsType: {
+    value: ButtonsType.NONE,
+    coerce(buttonsType) {
+      if (!Object.hasOwn(BUTTONS, buttonsType)) {
+        throw new TypeError(`Invalid buttons type: ${buttonsType}.`);
+      }
+      return buttonsType;
+    },
+    set(buttonsType) {
+      if (this._buttonsType !== ButtonsType.NONE) {
+        throw new Error("The buttons of a message dialog can only be set once.");
+      }
+      this._buttonsType = buttonsType;
+      this._addButtons(buttonsType);
+    }
+  }
+});
+MessageDialog.builderProperties = {
+  ...Dialog.builderProperties,
+  /**
+   * Adds buttons: a `ButtonsType` preset, or buttons like for a `Dialog`.
+   *
+   * @param {object} builder
+   * @param {MessageDialog} dialog
+   * @param {string | Array} buttons
+   */
+  buttons(builder, dialog, buttons) {
+    if (typeof buttons === "string") {
+      dialog.buttonsType = buttons;
+    } else {
+      Dialog.builderProperties.buttons(builder, dialog, buttons);
+    }
+  }
+};
+registerType("message-dialog", MessageDialog);
+function createMessageDialog(text, options, defaults) {
+  const { title, secondaryText, messageType, transientFor, buttonsType } = {
+    ...defaults,
+    ...options
+  };
+  return new MessageDialog({
+    title: title ?? "",
+    text,
+    secondaryText: secondaryText ?? "",
+    messageType,
+    transientFor: transientFor ?? null,
+    buttonsType
+  });
+}
+__name(createMessageDialog, "createMessageDialog");
+async function alert(text, options = {}) {
+  const dialog = createMessageDialog(text, options, {
+    messageType: MessageType.INFO,
+    buttonsType: ButtonsType.OK
+  });
+  await dialog.run();
+}
+__name(alert, "alert");
+async function confirm(text, options = {}) {
+  const dialog = createMessageDialog(text, options, {
+    messageType: MessageType.QUESTION,
+    buttonsType: ButtonsType.OK_CANCEL
+  });
+  const response = await dialog.run();
+  return response === Response.OK || response === Response.YES;
+}
+__name(confirm, "confirm");
+async function prompt(text, options = {}) {
+  const dialog = createMessageDialog(text, options, {
+    messageType: MessageType.QUESTION,
+    buttonsType: ButtonsType.OK_CANCEL
+  });
+  const lineEdit = new LineEdit({
+    text: options.value ?? "",
+    placeholder: options.placeholder ?? "",
+    hExpand: true
+  });
+  dialog.messageArea.addChild(lineEdit);
+  const result = dialog.run();
+  lineEdit.focus();
+  lineEdit.selectAll?.();
+  const response = await result;
+  return response === Response.OK ? lineEdit.text : null;
+}
+__name(prompt, "prompt");
+
+// src/widgets/notebook.js
+var TAB_POSITIONS = new Set(Object.values(Position));
+var Notebook = class extends Container {
+  static {
+    __name(this, "Notebook");
+  }
+  _initialize() {
+    super._initialize();
+    this._tabs = /* @__PURE__ */ new Map();
+    this._pendingLabel = "";
+    this._drag = null;
+    this._current = null;
+    this._tabsEl.addEventListener("pointerdown", (event) => this._onTabsPointerDown(event));
+    this._tabsEl.addEventListener("keydown", (event) => this._onTabsKeyDown(event));
+    this._tabsEl.addEventListener("wheel", (event) => this._onTabsWheel(event), {
+      passive: false
+    });
+    this._tabsEl.addEventListener("scroll", () => this._syncArrows());
+    this.el.addEventListener("keydown", (event) => this._onKeyDown(event));
+    this._backwardEl.addEventListener("click", () => this.previousPage());
+    this._forwardEl.addEventListener("click", () => this.nextPage());
+    this._tabsObserver = null;
+    if (typeof ResizeObserver !== "undefined") {
+      this._tabsObserver = new ResizeObserver(() => {
+        if (!this.destroyed) {
+          this._scrollToCurrentTab();
+        }
+      });
+      this._tabsObserver.observe(this._tabsEl);
+    }
+    this._syncTabPosition();
+    this._syncFlags();
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-notebook wy-tabs-top wy-show-border">
+                <div class="wy-notebook-header">
+                    <button type="button" class="wy-notebook-arrow wy-notebook-arrow-backward" tabindex="-1" aria-hidden="true"></button>
+                    <div class="wy-notebook-tabs" role="tablist"></div>
+                    <button type="button" class="wy-notebook-arrow wy-notebook-arrow-forward" tabindex="-1" aria-hidden="true"></button>
+                </div>
+                <div class="wy-notebook-pages"></div>
+            </div>
+        `);
+    this._headerEl = element.querySelector(".wy-notebook-header");
+    this._tabsEl = element.querySelector(".wy-notebook-tabs");
+    this._backwardEl = element.querySelector(".wy-notebook-arrow-backward");
+    this._forwardEl = element.querySelector(".wy-notebook-arrow-forward");
+    this._bodyEl = element.querySelector(".wy-notebook-pages");
+    return element;
+  }
+  /**
+   * The tab list, which takes the keyboard focus.
+   *
+   * @type {HTMLElement}
+   */
+  get focusElement() {
+    return this._tabsEl;
+  }
+  /**
+   * Adds a page at the end.
+   *
+   * @param {Widget} child The page.
+   * @param {string | Widget} [tabLabel] The text or widget of its tab.
+   * @returns {number} The index of the page.
+   */
+  appendPage(child, tabLabel = "") {
+    return this.insertPage(child, tabLabel, this._children.length);
+  }
+  /**
+   * Adds a page at the start.
+   *
+   * @param {Widget} child
+   * @param {string | Widget} [tabLabel]
+   * @returns {number} The index of the page.
+   */
+  prependPage(child, tabLabel = "") {
+    return this.insertPage(child, tabLabel, 0);
+  }
+  /**
+   * Inserts a page.
+   *
+   * @param {Widget} child
+   * @param {string | Widget} [tabLabel]
+   * @param {number} [position] The index, or -1 (the default) for the end.
+   * @returns {number} The index of the page.
+   */
+  insertPage(child, tabLabel = "", position = -1) {
+    const index = position < 0 ? this._children.length : position;
+    this._pendingLabel = tabLabel ?? "";
+    try {
+      this.insertChild(child, index);
+    } finally {
+      this._pendingLabel = "";
+    }
+    return this._children.indexOf(child);
+  }
+  /**
+   * Removes a page, without destroying it.
+   *
+   * @param {number} index The index, or -1 for the last page.
+   * @returns {Widget} The removed page.
+   */
+  removePage(index) {
+    const page = this.getPage(index < 0 ? this._children.length - 1 : index);
+    this.removeChild(page);
+    return page;
+  }
+  /**
+   * Returns a page.
+   *
+   * @param {number} index
+   * @returns {Widget}
+   * @throws {RangeError} If there is no such page.
+   */
+  getPage(index) {
+    return this.getChild(index);
+  }
+  /**
+   * Returns the index of a page, or -1.
+   *
+   * @param {Widget} child
+   * @returns {number}
+   */
+  pageNum(child) {
+    return this._children.indexOf(child);
+  }
+  /**
+   * Switches to the next visible page, if any.
+   */
+  nextPage() {
+    this._step(1);
+  }
+  /**
+   * Switches to the previous visible page, if any.
+   */
+  previousPage() {
+    this._step(-1);
+  }
+  /**
+   * Sets the tab label of a page: a text or a widget.
+   *
+   * @param {Widget} child
+   * @param {string | Widget | null} label
+   */
+  setTabLabel(child, label) {
+    const tab = this._getTab(child);
+    tab.release?.();
+    tab.release = null;
+    tab.labelWidget = null;
+    tab.labelEl.textContent = "";
+    tab.text = "";
+    if (label instanceof Widget) {
+      tab.labelWidget = label;
+      tab.release = attachAuxiliaryWidget(this, label, tab.labelEl, () => {
+        tab.release = null;
+        tab.labelWidget = null;
+      });
+    } else {
+      tab.text = label === null || label === void 0 ? "" : String(label);
+      tab.labelEl.textContent = tab.text;
+    }
+  }
+  /**
+   * Returns the tab label widget of a page, or `null` if it has a text label.
+   *
+   * @param {Widget} child
+   * @returns {Widget | null}
+   */
+  getTabLabel(child) {
+    return this._getTab(child).labelWidget;
+  }
+  /**
+   * Returns the tab label text of a page, or `null` if it has a label widget.
+   *
+   * @param {Widget} child
+   * @returns {string | null}
+   */
+  getTabLabelText(child) {
+    const tab = this._getTab(child);
+    return tab.labelWidget ? null : tab.text;
+  }
+  /**
+   * Sets the tab label text of a page.
+   *
+   * @param {Widget} child
+   * @param {string} text
+   */
+  setTabLabelText(child, text) {
+    this.setTabLabel(child, String(text ?? ""));
+  }
+  /**
+   * Sets whether the tab of a page has a close button, overriding `closable`.
+   *
+   * @param {Widget} child
+   * @param {boolean | null} closable `null` to follow the notebook's `closable`.
+   */
+  setTabClosable(child, closable) {
+    const tab = this._getTab(child);
+    tab.closable = closable === null || closable === void 0 ? null : Boolean(closable);
+    this._syncTab(child);
+  }
+  /**
+   * Returns whether the tab of a page has a close button.
+   *
+   * @param {Widget} child
+   * @returns {boolean}
+   */
+  getTabClosable(child) {
+    const tab = this._getTab(child);
+    return tab.closable ?? this._closable;
+  }
+  /**
+   * Closes a page as if its close button was clicked: emits `page-close`, and destroys the page
+   * unless a handler returned `true`.
+   *
+   * @param {Widget} child
+   * @returns {boolean} Whether the page was closed.
+   */
+  closePage(child) {
+    const index = this._children.indexOf(child);
+    if (index < 0) {
+      throw new Error("The widget is not a page of this notebook.");
+    }
+    if (this.emit("page-close", this, child, index)) {
+      return false;
+    }
+    child.destroy();
+    return true;
+  }
+  insertChild(widget, index) {
+    const label = this._pendingLabel;
+    super.insertChild(widget, index);
+    this.setTabLabel(widget, label);
+    this._syncTab(widget);
+    this.emit("page-add", this, widget, this._children.indexOf(widget));
+    if (!this._current && widget.visible) {
+      this._setCurrent(widget);
+    } else {
+      this._syncCurrent();
+    }
+    return widget;
+  }
+  removeChild(widget) {
+    const wasCurrent = widget === this._current;
+    const index = super.removeChild(widget);
+    const tab = this._tabs.get(widget);
+    this._tabs.delete(widget);
+    tab.release?.();
+    tab.labelWidget?.destroy();
+    tab.tabEl.remove();
+    tab.pageEl.remove();
+    this.emit("page-remove", this, widget, index);
+    if (wasCurrent) {
+      this._current = null;
+      this._setCurrent(this._findVisible(index, 1) || this._findVisible(index - 1, -1));
+    } else {
+      this._syncCurrent();
+    }
+    return index;
+  }
+  reorderChild(widget, index) {
+    super.reorderChild(widget, index);
+    this._syncCurrent();
+    this.emit("page-reorder", this, widget, this._children.indexOf(widget));
+  }
+  destroy() {
+    this._endDrag();
+    this._tabsObserver?.disconnect();
+    for (const tab of this._tabs.values()) {
+      tab.labelWidget?.destroy();
+    }
+    super.destroy();
+  }
+  _getFocusChain() {
+    const page = this._current;
+    if (!page || !page.isVisible || !page.isSensitive) {
+      return [];
+    }
+    const chain = page.canFocus ? [page] : [];
+    if (page instanceof Container) {
+      chain.push(...page._getFocusChain());
+    }
+    const tab = this._tabs.get(page);
+    return [...getAuxiliaryFocusChain(tab?.labelWidget ?? null), ...chain];
+  }
+  _onIsVisibleChange(isVisible) {
+    super._onIsVisibleChange(isVisible);
+    refreshAuxiliaryWidgets([...this._tabs.values()].map((x) => x.labelWidget));
+  }
+  _onIsSensitiveChange(isSensitive) {
+    super._onIsSensitiveChange(isSensitive);
+    refreshAuxiliaryWidgets([...this._tabs.values()].map((x) => x.labelWidget));
+  }
+  _onChildVisibleChange(widget) {
+    super._onChildVisibleChange(widget);
+    if (!this._tabs.has(widget)) {
+      return;
+    }
+    this._syncTab(widget);
+    if (!widget.visible && widget === this._current) {
+      const index = this._children.indexOf(widget);
+      this._setCurrent(this._findVisible(index + 1, 1) || this._findVisible(index - 1, -1));
+    } else if (widget.visible && !this._current) {
+      this._setCurrent(widget);
+    }
+  }
+  _attachChildElement(widget, index) {
+    let tab = this._tabs.get(widget);
+    if (!tab) {
+      tab = this._createTab(widget);
+      this._tabs.set(widget, tab);
+    }
+    tab.pageEl.append(widget.el);
+    const next = this._children[index + 1];
+    const nextTab = next ? this._tabs.get(next) : null;
+    this._bodyEl.insertBefore(tab.pageEl, nextTab ? nextTab.pageEl : null);
+    this._tabsEl.insertBefore(tab.tabEl, nextTab ? nextTab.tabEl : null);
+  }
+  _detachChildElement(widget) {
+    const tab = this._tabs.get(widget);
+    tab?.tabEl.remove();
+    tab?.pageEl.remove();
+  }
+  _createTab(widget) {
+    const tabId = uniqueId("wy-notebook-tab");
+    const pageId = uniqueId("wy-notebook-page");
+    const tabEl = createElement(`
+            <div class="wy-notebook-tab" role="tab" id="${tabId}" aria-controls="${pageId}" aria-selected="false">
+                <span class="wy-notebook-tab-label"></span>
+                <button type="button" class="wy-notebook-tab-close" tabindex="-1" aria-label="Close"></button>
+            </div>
+        `);
+    const pageEl = createElement(
+      `<div class="wy-notebook-page" role="tabpanel" id="${pageId}" aria-labelledby="${tabId}"></div>`
+    );
+    const closeEl = tabEl.querySelector(".wy-notebook-tab-close");
+    closeEl.addEventListener("pointerdown", (event) => event.stopPropagation());
+    closeEl.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (this.isSensitive) {
+        this.closePage(widget);
+      }
+    });
+    return {
+      tabEl,
+      labelEl: tabEl.querySelector(".wy-notebook-tab-label"),
+      closeEl,
+      pageEl,
+      text: "",
+      labelWidget: null,
+      release: null,
+      closable: null
+    };
+  }
+  _getTab(child) {
+    const tab = this._tabs.get(child);
+    if (!tab) {
+      throw new Error("The widget is not a page of this notebook.");
+    }
+    return tab;
+  }
+  _syncTab(child) {
+    const tab = this._tabs.get(child);
+    if (!tab) {
+      return;
+    }
+    const current = child === this._current;
+    tab.tabEl.hidden = !child.visible;
+    tab.tabEl.classList.toggle("wy-active", current);
+    tab.tabEl.setAttribute("aria-selected", String(current));
+    tab.closeEl.hidden = !(tab.closable ?? this._closable);
+    tab.pageEl.classList.toggle("wy-current", current);
+    tab.pageEl.inert = !current;
+    tab.pageEl.setAttribute("aria-hidden", String(!current));
+  }
+  _syncCurrent() {
+    for (const child of this._children) {
+      this._syncTab(child);
+    }
+    const tab = this._current ? this._tabs.get(this._current) : null;
+    if (tab) {
+      this._tabsEl.setAttribute("aria-activedescendant", tab.tabEl.id);
+    } else {
+      this._tabsEl.removeAttribute("aria-activedescendant");
+    }
+    this._syncArrows();
+  }
+  _setCurrent(child) {
+    if (child === this._current) {
+      this._syncCurrent();
+      return;
+    }
+    const focusWidget = this.window?.focusWidget;
+    const hadFocusInPage = Boolean(
+      focusWidget && this._current && this._current.isAncestorOf(focusWidget)
+    );
+    this._current = child || null;
+    this._currentPage = child ? this._children.indexOf(child) : -1;
+    this._syncCurrent();
+    this._scrollToCurrentTab();
+    if (hadFocusInPage) {
+      this.focus();
+    }
+    this.emit("current-page-change", this);
+    this.emit("switch-page", this, this._current, this._currentPage);
+  }
+  _findVisible(start, step) {
+    for (let i = start; i >= 0 && i < this._children.length; i += step) {
+      if (this._children[i].visible) {
+        return this._children[i];
+      }
+    }
+    return null;
+  }
+  _step(step) {
+    const index = this._children.indexOf(this._current);
+    const next = this._findVisible(index + step, step);
+    if (next) {
+      this._setCurrent(next);
+    }
+  }
+  _scrollToCurrentTab() {
+    const tab = this._current ? this._tabs.get(this._current) : null;
+    if (!tab || !this._tabsEl.isConnected) {
+      return;
+    }
+    const strip = this._tabsEl;
+    const vertical = this._isVerticalTabs();
+    const start = vertical ? tab.tabEl.offsetTop : tab.tabEl.offsetLeft;
+    const size = vertical ? tab.tabEl.offsetHeight : tab.tabEl.offsetWidth;
+    const scroll = vertical ? strip.scrollTop : strip.scrollLeft;
+    const page = vertical ? strip.clientHeight : strip.clientWidth;
+    let value = scroll;
+    if (start < scroll) {
+      value = start;
+    } else if (start + size > scroll + page) {
+      value = start + size - page;
+    }
+    if (vertical) {
+      strip.scrollTop = value;
+    } else {
+      strip.scrollLeft = value;
+    }
+    this._syncArrows();
+  }
+  _isVerticalTabs() {
+    return this._tabPosition === Position.LEFT || this._tabPosition === Position.RIGHT;
+  }
+  _syncArrows() {
+    const strip = this._tabsEl;
+    const vertical = this._isVerticalTabs();
+    const overflows = this._scrollable && (vertical ? strip.scrollHeight > strip.clientHeight + 1 : strip.scrollWidth > strip.clientWidth + 1);
+    this.el.classList.toggle("wy-overflowing", overflows);
+    const index = this._children.indexOf(this._current);
+    this._backwardEl.disabled = !this._findVisible(index - 1, -1);
+    this._forwardEl.disabled = !this._findVisible(index + 1, 1);
+  }
+  _syncTabPosition() {
+    for (const position of TAB_POSITIONS) {
+      this.el.classList.toggle(`wy-tabs-${position}`, position === this._tabPosition);
+    }
+    this._tabsEl.setAttribute(
+      "aria-orientation",
+      this._isVerticalTabs() ? "vertical" : "horizontal"
+    );
+    this._syncArrows();
+  }
+  _syncFlags() {
+    this.el.classList.toggle("wy-show-border", this._showBorder);
+    this.el.classList.toggle("wy-scrollable", this._scrollable);
+    this.el.classList.toggle("wy-reorderable", this._reorderable);
+    this._headerEl.hidden = !this._showTabs;
+    this._syncCurrent();
+  }
+  _getChildOfTab(element) {
+    for (const [child, tab] of this._tabs) {
+      if (tab.tabEl === element) {
+        return child;
+      }
+    }
+    return null;
+  }
+  _onTabsPointerDown(event) {
+    if (event.button !== 0 || !this.isSensitive) {
+      return;
+    }
+    const tabEl = event.target.closest(".wy-notebook-tab");
+    const child = tabEl ? this._getChildOfTab(tabEl) : null;
+    if (!child) {
+      return;
+    }
+    const labelWidget = this._tabs.get(child).labelWidget;
+    if (labelWidget && labelWidget.el.contains(event.target) && labelWidget.canFocus) {
+      return;
+    }
+    event.preventDefault();
+    this._setCurrent(child);
+    this.focus();
+    if (this._reorderable) {
+      this._startDrag(event, child);
+    }
+  }
+  _startDrag(event, child) {
+    this._endDrag();
+    const strip = this._tabsEl;
+    strip.setPointerCapture(event.pointerId);
+    const vertical = this._isVerticalTabs();
+    const startCoordinate = vertical ? event.clientY : event.clientX;
+    const move = /* @__PURE__ */ __name((moveEvent) => {
+      const coordinate = vertical ? moveEvent.clientY : moveEvent.clientX;
+      const drag = this._drag;
+      if (!drag.started) {
+        if (Math.abs(coordinate - startCoordinate) < settings.dragThreshold) {
+          return;
+        }
+        drag.started = true;
+        this._tabs.get(child).tabEl.classList.add("wy-dragging");
+      }
+      this._dragTo(child, coordinate, vertical);
+    }, "move");
+    const end = /* @__PURE__ */ __name(() => this._endDrag(), "end");
+    strip.addEventListener("pointermove", move);
+    strip.addEventListener("pointerup", end);
+    strip.addEventListener("pointercancel", end);
+    this._drag = { child, move, end, started: false };
+  }
+  _dragTo(child, coordinate, vertical) {
+    const index = this._children.indexOf(child);
+    const tabs = this._children.map((x) => this._tabs.get(x).tabEl);
+    let target = index;
+    for (let i = 0; i < tabs.length; ++i) {
+      if (i === index || tabs[i].hidden) {
+        continue;
+      }
+      const rect = tabs[i].getBoundingClientRect();
+      const middle = vertical ? rect.top + rect.height / 2 : rect.left + rect.width / 2;
+      if (i < index && coordinate < middle) {
+        target = Math.min(target, i);
+      } else if (i > index && coordinate > middle) {
+        target = Math.max(target, i);
+      }
+    }
+    if (target !== index) {
+      this.reorderChild(child, target);
+    }
+  }
+  _endDrag() {
+    const drag = this._drag;
+    if (!drag) {
+      return;
+    }
+    this._drag = null;
+    const strip = this._tabsEl;
+    strip.removeEventListener("pointermove", drag.move);
+    strip.removeEventListener("pointerup", drag.end);
+    strip.removeEventListener("pointercancel", drag.end);
+    this._tabs.get(drag.child)?.tabEl.classList.remove("wy-dragging");
+  }
+  _onTabsKeyDown(event) {
+    if (event.target !== this._tabsEl || event.ctrlKey || event.altKey || event.metaKey) {
+      return;
+    }
+    const vertical = this._isVerticalTabs();
+    switch (event.key) {
+      case (vertical ? Key.UP : Key.LEFT):
+        this.previousPage();
+        break;
+      case (vertical ? Key.DOWN : Key.RIGHT):
+        this.nextPage();
+        break;
+      case Key.HOME:
+        this._setCurrent(this._findVisible(0, 1));
+        break;
+      case Key.END:
+        this._setCurrent(this._findVisible(this._children.length - 1, -1));
+        break;
+      case Key.DELETE:
+        if (this._current && this.getTabClosable(this._current)) {
+          this.closePage(this._current);
+          break;
+        }
+        return;
+      default:
+        return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  _onKeyDown(event) {
+    if (!event.ctrlKey || event.altKey || event.metaKey || event.defaultPrevented) {
+      return;
+    }
+    if (event.key === Key.PAGE_UP) {
+      this.previousPage();
+    } else if (event.key === Key.PAGE_DOWN) {
+      this.nextPage();
+    } else {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  _onTabsWheel(event) {
+    if (!this.isSensitive || !event.deltaY || event.ctrlKey) {
+      return;
+    }
+    event.preventDefault();
+    if (event.deltaY > 0) {
+      this.nextPage();
+    } else {
+      this.previousPage();
+    }
+  }
+};
+defineProperties(Notebook, {
+  /**
+   * Notebooks take the keyboard focus on their tabs.
+   */
+  canFocus: { value: true },
+  /**
+   * The index of the shown page, or -1 when there is none. Setting an invisible page has no
+   * effect.
+   */
+  currentPage: {
+    value: -1,
+    signal: false,
+    get() {
+      return this._current ? this._children.indexOf(this._current) : -1;
+    },
+    set(index) {
+      if (!Number.isInteger(index) || index < -1 || index >= this._children.length) {
+        throw new RangeError(`Invalid page index: ${index}.`);
+      }
+      const child = index < 0 ? null : this._children[index];
+      if (child && !child.visible) {
+        return false;
+      }
+      this._setCurrent(child);
+      return false;
+    }
+  },
+  /**
+   * The number of pages.
+   */
+  pageCount: {
+    readOnly: true,
+    get() {
+      return this._children.length;
+    }
+  },
+  /**
+   * The side the tabs are at: one of `Position`.
+   */
+  tabPosition: {
+    value: Position.TOP,
+    coerce(position) {
+      if (!TAB_POSITIONS.has(position)) {
+        throw new TypeError(`Invalid tab position: ${position}.`);
+      }
+      return position;
+    },
+    changed() {
+      this._syncTabPosition();
+    }
+  },
+  /**
+   * Whether the tabs are shown.
+   */
+  showTabs: {
+    value: true,
+    changed() {
+      this._syncFlags();
+    }
+  },
+  /**
+   * Whether a border is drawn around the pages.
+   */
+  showBorder: {
+    value: true,
+    changed() {
+      this._syncFlags();
+    }
+  },
+  /**
+   * Whether the tabs scroll, with arrow buttons, when they do not fit. Otherwise the notebook
+   * is at least as large as all its tabs.
+   */
+  scrollable: {
+    value: false,
+    changed() {
+      this._syncFlags();
+    }
+  },
+  /**
+   * Whether tabs have a close button, unless set per page with `setTabClosable()`.
+   */
+  closable: {
+    value: false,
+    changed() {
+      this._syncFlags();
+    }
+  },
+  /**
+   * Whether the user can reorder the tabs by dragging them.
+   */
+  reorderable: {
+    value: false,
+    changed() {
+      this._syncFlags();
+    }
+  }
+});
+Notebook.builderProperties = {
+  /**
+   * Builds the pages. A page object may have a `tabLabel` (or `tab-label`): a text, or a widget
+   * object to build.
+   *
+   * @param {object} builder
+   * @param {Notebook} notebook
+   * @param {object[]} children
+   */
+  children(builder, notebook, children) {
+    if (!Array.isArray(children)) {
+      throw new Error("Notebook children must be an array.");
+    }
+    for (const child of children) {
+      const { tabLabel, "tab-label": kebabTabLabel, ...spec } = child;
+      let label = tabLabel ?? kebabTabLabel ?? "";
+      if (label && typeof label === "object" && !(label instanceof Widget)) {
+        label = builder.build(label)[0];
+      }
+      notebook.appendPage(builder.build(spec)[0], label);
+    }
+  }
+};
+registerType("notebook", Notebook);
+
+// src/widgets/paned.js
+var SPLITTER_SIZE = 6;
+var KEY_STEP = 10;
+var KEY_PAGE_FRACTION = 0.1;
+var Paned = class extends Container {
+  static {
+    __name(this, "Paned");
+  }
+  _initialize() {
+    super._initialize();
+    this._paneOptions = /* @__PURE__ */ new Map();
+    this._pendingOptions = null;
+    this._reference = -1;
+    this._lastPosition = null;
+    this._drag = null;
+    this._previousFocus = null;
+    this._splitterEl.addEventListener("pointerdown", (event) => this._onPointerDown(event));
+    this._splitterEl.addEventListener("keydown", (event) => this._onKeyDown(event));
+    this.el.addEventListener("keydown", (event) => this._onPanedKeyDown(event));
+    this._paneObserver = null;
+    if (typeof ResizeObserver !== "undefined") {
+      this._paneObserver = new ResizeObserver(() => {
+        if (!this.destroyed) {
+          this._checkPosition();
+        }
+      });
+      this._paneObserver.observe(this._paneEls[0]);
+      this._paneObserver.observe(this.el);
+    }
+    this._queueLayout();
+  }
+  _render() {
+    const firstId = uniqueId("wy-paned-pane");
+    const element = createElement(`
+            <div class="wy-paned wy-horizontal">
+                <div class="wy-paned-pane" id="${firstId}"></div>
+                <div class="wy-paned-splitter" role="separator" tabindex="-1" aria-controls="${firstId}"></div>
+                <div class="wy-paned-pane"></div>
+            </div>
+        `);
+    this._paneEls = [...element.querySelectorAll(".wy-paned-pane")];
+    this._splitterEl = element.querySelector(".wy-paned-splitter");
+    return element;
+  }
+  /**
+   * The splitter, which takes the keyboard focus.
+   *
+   * @type {HTMLElement}
+   */
+  get focusElement() {
+    return this._splitterEl;
+  }
+  /**
+   * The element of the splitter, e.g. for styling.
+   *
+   * @type {HTMLElement}
+   */
+  get splitterElement() {
+    return this._splitterEl;
+  }
+  /**
+   * Adds a child as the first or second pane.
+   *
+   * @param {import('./widget.js').Widget} widget
+   * @param {boolean} [resize] Whether the pane takes part in resizing the paned.
+   * @param {boolean} [shrink] Whether the pane may become smaller than the child's minimum size.
+   * @returns {import('./widget.js').Widget} The widget.
+   * @throws {Error} If the paned already has two children.
+   */
+  addChild(widget, resize = true, shrink = false) {
+    this._pendingOptions = { resize: resize !== false, shrink: Boolean(shrink) };
+    try {
+      return super.addChild(widget);
+    } finally {
+      this._pendingOptions = null;
+    }
+  }
+  /**
+   * Adds the first pane, like GTK's `pack1()`.
+   *
+   * @param {import('./widget.js').Widget} widget
+   * @param {boolean} [resize]
+   * @param {boolean} [shrink]
+   * @returns {import('./widget.js').Widget}
+   */
+  pack1(widget, resize = true, shrink = false) {
+    this.addChild(widget, resize, shrink);
+    this.reorderChild(widget, 0);
+    return widget;
+  }
+  /**
+   * Adds the second pane, like GTK's `pack2()`.
+   *
+   * @param {import('./widget.js').Widget} widget
+   * @param {boolean} [resize]
+   * @param {boolean} [shrink]
+   * @returns {import('./widget.js').Widget}
+   */
+  pack2(widget, resize = true, shrink = false) {
+    return this.addChild(widget, resize, shrink);
+  }
+  insertChild(widget, index) {
+    if (this._children.length >= 2) {
+      throw new Error("A paned can contain at most two children.");
+    }
+    const options = this._pendingOptions || { resize: true, shrink: false };
+    this._paneOptions.set(widget, options);
+    try {
+      return super.insertChild(widget, index);
+    } catch (error) {
+      this._paneOptions.delete(widget);
+      throw error;
+    }
+  }
+  removeChild(widget) {
+    const index = super.removeChild(widget);
+    this._paneOptions.delete(widget);
+    return index;
+  }
+  /**
+   * Returns the pane flags of a child.
+   *
+   * @param {import('./widget.js').Widget} widget
+   * @returns {PaneOptions}
+   * @throws {Error} If the widget is not a child.
+   */
+  getChildOptions(widget) {
+    const options = this._paneOptions.get(widget);
+    if (!options) {
+      throw new Error("The widget is not a child of this paned.");
+    }
+    return { ...options };
+  }
+  /**
+   * Changes the pane flags of a child.
+   *
+   * @param {import('./widget.js').Widget} widget
+   * @param {Partial<PaneOptions>} options
+   * @throws {Error} If the widget is not a child.
+   */
+  setChildOptions(widget, options) {
+    const current = this.getChildOptions(widget);
+    const position = this._measurePosition();
+    if (this._positionSet && position !== null) {
+      this._position = position;
+      this._reference = this._getAvailableSize();
+    }
+    this._paneOptions.set(widget, {
+      resize: options.resize ?? current.resize,
+      shrink: options.shrink ?? current.shrink
+    });
+    this._queueLayout();
+  }
+  destroy() {
+    this._endDrag();
+    this._paneObserver?.disconnect();
+    super.destroy();
+  }
+  _attachChildElement(_widget, _index) {
+    this._syncPaneElements();
+  }
+  _detachChildElement(widget) {
+    widget.el.remove();
+  }
+  _onChildrenChange() {
+    this._syncPaneElements();
+    super._onChildrenChange();
+  }
+  _syncPaneElements() {
+    this._children.forEach((child, index) => {
+      const pane = this._paneEls[index];
+      if (child.el.parentNode !== pane) {
+        pane.append(child.el);
+      }
+    });
+  }
+  _getHorizontal() {
+    return this._orientation === Orientation.HORIZONTAL;
+  }
+  /**
+   * Returns the size available to both panes together, without the splitter, or -1 when the
+   * paned is not rendered.
+   *
+   * @returns {number}
+   */
+  _getAvailableSize() {
+    if (!this.el.isConnected) {
+      return -1;
+    }
+    const size = this._getHorizontal() ? this.el.clientWidth : this.el.clientHeight;
+    if (!size) {
+      return -1;
+    }
+    return Math.max(0, size - SPLITTER_SIZE);
+  }
+  _getVisiblePanes() {
+    return this._children.filter((x) => x.visible);
+  }
+  _updateLayout() {
+    const horizontal = this._getHorizontal();
+    const style = this.el.style;
+    this.el.classList.toggle("wy-horizontal", horizontal);
+    this.el.classList.toggle("wy-vertical", !horizontal);
+    this._splitterEl.setAttribute("aria-orientation", horizontal ? "vertical" : "horizontal");
+    const visible = this._getVisiblePanes();
+    const [first, second] = this._children;
+    this._paneEls[0].hidden = !first?.visible;
+    this._paneEls[1].hidden = !second?.visible;
+    this._splitterEl.hidden = visible.length !== 2;
+    let template;
+    if (visible.length === 2) {
+      template = this._getTemplate(first, second);
+    } else if (visible.length === 1) {
+      const min = this._paneOptions.get(visible[0]).shrink ? "0px" : "min-content";
+      template = visible[0] === first ? `minmax(${min}, 1fr) 0px 0px` : `0px 0px minmax(${min}, 1fr)`;
+    } else {
+      template = "0px 0px 0px";
+    }
+    style.gridTemplateColumns = horizontal ? template : "";
+    style.gridTemplateRows = horizontal ? "" : template;
+    this._checkPosition();
+  }
+  _getTemplate(first, second) {
+    const firstOptions = this._paneOptions.get(first);
+    const secondOptions = this._paneOptions.get(second);
+    const firstMin = firstOptions.shrink ? "0px" : "min-content";
+    const secondMin = secondOptions.shrink ? "0px" : "min-content";
+    const splitter = `${SPLITTER_SIZE}px`;
+    if (!this._positionSet) {
+      return `minmax(${firstMin}, 1fr) ${splitter} minmax(${secondMin}, 1fr)`;
+    }
+    if (this._reference < 0) {
+      this._reference = this._getAvailableSize();
+    }
+    const reference = Math.max(this._reference, 0);
+    const position = this._clampPosition(this._position, reference);
+    const rest = Math.max(0, reference - position);
+    if (firstOptions.resize === secondOptions.resize) {
+      return `minmax(${firstMin}, ${position}fr) ${splitter} minmax(${secondMin}, ${rest}fr)`;
+    }
+    if (firstOptions.resize) {
+      return `minmax(${firstMin}, 1fr) ${splitter} minmax(${secondMin}, ${rest}px)`;
+    }
+    return `minmax(${firstMin}, ${position}px) ${splitter} minmax(${secondMin}, 1fr)`;
+  }
+  _clampPosition(position, available) {
+    const maximum = Math.min(this._maxSplitterPosition, available);
+    const minimum = Math.min(this._minSplitterPosition, maximum);
+    return clamp(position, Math.max(0, minimum), Math.max(0, maximum));
+  }
+  /**
+   * Returns the rendered position of the splitter, or `null` when it is not shown.
+   *
+   * @returns {number | null}
+   */
+  _measurePosition() {
+    if (this._splitterEl.hidden || !this.el.isConnected) {
+      return null;
+    }
+    const splitter = this._splitterEl.getBoundingClientRect();
+    const own = this.el.getBoundingClientRect();
+    if (!own.width && !own.height) {
+      return null;
+    }
+    const position = this._getHorizontal() ? splitter.left - own.left - this.el.clientLeft : splitter.top - own.top - this.el.clientTop;
+    return Math.round(position);
+  }
+  _checkPosition() {
+    const position = this._measurePosition();
+    if (position === null) {
+      return;
+    }
+    const available = this._getAvailableSize();
+    this._splitterEl.setAttribute("aria-valuenow", String(position));
+    this._splitterEl.setAttribute("aria-valuemin", "0");
+    this._splitterEl.setAttribute("aria-valuemax", String(Math.max(0, available)));
+    if (position !== this._lastPosition) {
+      this._lastPosition = position;
+      this.emit("position-change", this);
+    }
+  }
+  /**
+   * Moves the splitter as the user does: the position is clamped to the minimum sizes of the
+   * panes, and the rendered position is stored.
+   *
+   * @param {number} position
+   */
+  _moveSplitter(position) {
+    const available = this._getAvailableSize();
+    if (available < 0) {
+      this.position = position;
+      return;
+    }
+    this._position = this._clampPosition(Math.round(position), available);
+    this._reference = available;
+    this._positionSet = true;
+    this._updateLayout();
+    const actual = this._measurePosition();
+    if (actual !== null) {
+      this._position = actual;
+    }
+  }
+  _onPointerDown(event) {
+    if (event.button !== 0 || !this.isSensitive || this._drag) {
+      return;
+    }
+    event.preventDefault();
+    const horizontal = this._getHorizontal();
+    const splitter = this._splitterEl.getBoundingClientRect();
+    const offset = horizontal ? event.clientX - splitter.left : event.clientY - splitter.top;
+    this._splitterEl.setPointerCapture(event.pointerId);
+    const move = /* @__PURE__ */ __name((moveEvent) => {
+      const own = this.el.getBoundingClientRect();
+      const pointer = horizontal ? moveEvent.clientX - own.left - this.el.clientLeft : moveEvent.clientY - own.top - this.el.clientTop;
+      this._moveSplitter(pointer - offset);
+    }, "move");
+    const end = /* @__PURE__ */ __name(() => this._endDrag(), "end");
+    this._splitterEl.addEventListener("pointermove", move);
+    this._splitterEl.addEventListener("pointerup", end);
+    this._splitterEl.addEventListener("pointercancel", end);
+    this._drag = { move, end };
+    this.el.classList.add("wy-dragging");
+    getCursor().pushShape(horizontal ? CursorShape.RESIZE_H : CursorShape.RESIZE_V, "paned");
+  }
+  _endDrag() {
+    const drag = this._drag;
+    if (!drag) {
+      return;
+    }
+    this._drag = null;
+    this.el.classList.remove("wy-dragging");
+    this._splitterEl.removeEventListener("pointermove", drag.move);
+    this._splitterEl.removeEventListener("pointerup", drag.end);
+    this._splitterEl.removeEventListener("pointercancel", drag.end);
+    getCursor().popShape("paned");
+  }
+  /**
+   * Gives the splitter the keyboard focus, as F8 does.
+   *
+   * @returns {boolean} Whether the splitter got the focus.
+   */
+  focusSplitter() {
+    if (this._splitterEl.hidden || !this.isSensitive || !this.isVisible) {
+      return false;
+    }
+    this._previousFocus = this.window?.focusWidget ?? null;
+    this._splitterEl.focus({ preventScroll: true });
+    return document.activeElement === this._splitterEl;
+  }
+  _onPanedKeyDown(event) {
+    if (event.key !== Key.F8 || event.ctrlKey || event.altKey || event.metaKey) {
+      return;
+    }
+    if (event.target === this._splitterEl) {
+      return;
+    }
+    if (this.focusSplitter()) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  }
+  _onKeyDown(event) {
+    if (event.ctrlKey || event.altKey || event.metaKey || this._splitterEl.hidden) {
+      return;
+    }
+    if (event.key === Key.ESCAPE || event.key === Key.ENTER) {
+      const previous = this._previousFocus;
+      this._previousFocus = null;
+      if (previous && !previous.destroyed && previous.focus()) {
+        event.preventDefault();
+        event.stopPropagation();
+      } else {
+        this._splitterEl.blur();
+      }
+      return;
+    }
+    const horizontal = this._getHorizontal();
+    const available = this._getAvailableSize();
+    const current = this._measurePosition() ?? 0;
+    const page = Math.max(KEY_STEP, Math.round(available * KEY_PAGE_FRACTION));
+    const decrease = horizontal ? Key.LEFT : Key.UP;
+    const increase = horizontal ? Key.RIGHT : Key.DOWN;
+    let position;
+    switch (event.key) {
+      case decrease:
+        position = current - KEY_STEP;
+        break;
+      case increase:
+        position = current + KEY_STEP;
+        break;
+      case Key.PAGE_UP:
+        position = current - page;
+        break;
+      case Key.PAGE_DOWN:
+        position = current + page;
+        break;
+      case Key.HOME:
+        position = 0;
+        break;
+      case Key.END:
+        position = available;
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    this._moveSplitter(position);
+  }
+};
+defineProperties(Paned, {
+  /**
+   * The direction the panes are placed in: one of `Orientation`. Horizontal places them side
+   * by side, with a vertical splitter.
+   */
+  orientation: {
+    value: Orientation.HORIZONTAL,
+    changed() {
+      this._reference = -1;
+      this._queueLayout();
+    }
+  },
+  /**
+   * The position of the splitter: the size of the first pane in pixels. Reading it returns
+   * the rendered position when the paned is shown. Setting it sets `positionSet`.
+   */
+  position: {
+    value: -1,
+    signal: false,
+    get() {
+      return this._measurePosition() ?? this._position;
+    },
+    set(position) {
+      const value = Number(position);
+      if (!Number.isFinite(value)) {
+        throw new TypeError(`Invalid paned position: ${position}.`);
+      }
+      if (value < 0) {
+        this.positionSet = false;
+        return false;
+      }
+      this._position = Math.round(value);
+      this._reference = this._getAvailableSize();
+      if (!this._positionSet) {
+        this._positionSet = true;
+        this.emit("position-set-change", this);
+      }
+      this._queueLayout();
+      return false;
+    }
+  },
+  /**
+   * Whether `position` was set. When `false`, the panes share the space equally.
+   */
+  positionSet: {
+    value: false,
+    changed(positionSet) {
+      if (!positionSet) {
+        this._position = -1;
+        this._reference = -1;
+      } else if (this._position < 0) {
+        this._position = this._measurePosition() ?? 0;
+        this._reference = this._getAvailableSize();
+      }
+      this._queueLayout();
+    }
+  },
+  /**
+   * The original toolkit's name of `position`.
+   */
+  splitterPosition: {
+    signal: false,
+    get() {
+      return this.position;
+    },
+    set(position) {
+      this.position = position;
+      return false;
+    }
+  },
+  /**
+   * The smallest position the splitter can have, in pixels.
+   */
+  minSplitterPosition: {
+    value: 0,
+    changed() {
+      this._queueLayout();
+    }
+  },
+  /**
+   * The largest position the splitter can have, in pixels.
+   */
+  maxSplitterPosition: {
+    value: Infinity,
+    changed() {
+      this._queueLayout();
+    }
+  }
+});
+Paned.builderProperties = {
+  /**
+   * Builds the (at most two) children. A child object may have `resize` and `shrink` flags
+   * besides the widget's own properties.
+   *
+   * @param {object} builder
+   * @param {Paned} paned
+   * @param {object[]} children
+   */
+  children(builder, paned, children) {
+    if (!Array.isArray(children)) {
+      throw new Error("Paned children must be an array.");
+    }
+    for (const child of children) {
+      const { resize, shrink, ...spec } = child;
+      paned.addChild(builder.build(spec)[0], resize ?? true, shrink ?? false);
+    }
+  }
+};
+registerType("paned", Paned);
+
+// src/widgets/progress-bar.js
+var PULSE_BLOCK_SIZE = 0.2;
+var ProgressBar = class extends Widget {
+  static {
+    __name(this, "ProgressBar");
+  }
+  _initialize() {
+    super._initialize();
+    this._pulsing = false;
+    this._pulsePosition = 0;
+    this._pulseDirection = 1;
+    this._applyOrientation();
+    this._update();
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+                <div class="wy-progress-fill"></div>
+                <div class="wy-progress-text"></div>
+                <div class="wy-progress-text wy-progress-text-filled" aria-hidden="true"></div>
+            </div>
+        `);
+    this._fillEl = element.querySelector(".wy-progress-fill");
+    this._textEl = element.querySelector(".wy-progress-text");
+    this._filledTextEl = element.querySelector(".wy-progress-text-filled");
+    return element;
+  }
+  /**
+   * Whether the bar is in activity mode, after `pulse()`.
+   *
+   * @type {boolean}
+   */
+  get isPulsing() {
+    return this._pulsing;
+  }
+  /**
+   * Moves the block of activity mode by `pulseStep`, switching to activity mode first. Call it
+   * regularly while the operation makes progress of an unknown amount.
+   */
+  pulse() {
+    if (!this._pulsing) {
+      this._pulsing = true;
+      this._pulsePosition = 0;
+      this._pulseDirection = 1;
+    } else {
+      let position = this._pulsePosition + this._pulseStep * this._pulseDirection;
+      if (position >= 1) {
+        position = 2 - position;
+        this._pulseDirection = -1;
+      } else if (position <= 0) {
+        position = -position;
+        this._pulseDirection = 1;
+      }
+      this._pulsePosition = clamp(position, 0, 1);
+    }
+    this._update();
+  }
+  _applyOrientation() {
+    const horizontal = this._orientation === Orientation.HORIZONTAL;
+    this.el.classList.toggle("wy-horizontal", horizontal);
+    this.el.classList.toggle("wy-vertical", !horizontal);
+    this.el.classList.toggle("wy-inverted", this._inverted);
+    this.el.setAttribute("aria-orientation", this._orientation);
+  }
+  _getText() {
+    if (!this._showText) {
+      return "";
+    }
+    if (this._text || this._pulsing) {
+      return this._text;
+    }
+    const format = new Intl.NumberFormat(getLocaleManager().locale, {
+      style: "percent",
+      maximumFractionDigits: 0
+    });
+    return format.format(this._fraction);
+  }
+  _update() {
+    let start = 0;
+    let end = this._fraction;
+    if (this._pulsing) {
+      start = this._pulsePosition * (1 - PULSE_BLOCK_SIZE);
+      end = start + PULSE_BLOCK_SIZE;
+    }
+    const fromEnd = this._orientation === Orientation.VERTICAL ? !this._inverted : this._inverted;
+    const before = `${((fromEnd ? 1 - end : start) * 100).toFixed(3)}%`;
+    const after = `${((fromEnd ? start : 1 - end) * 100).toFixed(3)}%`;
+    const inset = this._orientation === Orientation.HORIZONTAL ? `0 ${after} 0 ${before}` : `${before} 0 ${after} 0`;
+    this._fillEl.style.inset = inset;
+    this._filledTextEl.style.clipPath = `inset(${inset})`;
+    this.el.classList.toggle("wy-empty", end - start <= 0);
+    this.el.classList.toggle("wy-pulsing", this._pulsing);
+    const text = this._getText();
+    this._textEl.textContent = text;
+    this._filledTextEl.textContent = text;
+    if (this._pulsing) {
+      this.el.removeAttribute("aria-valuenow");
+    } else {
+      this.el.setAttribute("aria-valuenow", String(Math.round(this._fraction * 100)));
+    }
+    if (this._text) {
+      this.el.setAttribute("aria-valuetext", this._text);
+    } else {
+      this.el.removeAttribute("aria-valuetext");
+    }
+  }
+};
+defineProperties(ProgressBar, {
+  /**
+   * The fraction of the work that is done, between 0 and 1. Setting it leaves activity mode.
+   */
+  fraction: {
+    value: 0,
+    coerce(fraction) {
+      if (typeof fraction !== "number" || Number.isNaN(fraction)) {
+        throw new TypeError(`Invalid progress fraction ${fraction}.`);
+      }
+      if (this._pulsing) {
+        this._pulsing = false;
+        this._update();
+      }
+      return clamp(fraction, 0, 1);
+    },
+    changed() {
+      this._update();
+    }
+  },
+  /**
+   * The fraction of the bar the block of activity mode moves per `pulse()`.
+   */
+  pulseStep: {
+    value: 0.1,
+    coerce(step) {
+      if (typeof step !== "number" || !(step > 0 && step <= 1)) {
+        throw new Error(`Invalid pulse step ${step}.`);
+      }
+      return step;
+    }
+  },
+  /**
+   * The text shown with `showText`. Newlines are shown as spaces. When empty, the percentage is
+   * shown instead (except in activity mode).
+   */
+  text: {
+    value: "",
+    coerce(text) {
+      return text === null || text === void 0 ? "" : String(text).replace(/\n/g, " ");
+    },
+    changed() {
+      this._update();
+    }
+  },
+  /**
+   * Whether the text (or the percentage) is shown on the bar.
+   */
+  showText: {
+    value: false,
+    coerce: Boolean,
+    changed() {
+      this._update();
+    }
+  },
+  /**
+   * How the text is shortened when it does not fit: one of `EllipsizeMode`. Without
+   * ellipsizing, the bar is at least as wide as its text. Middle ellipsizing is done at the
+   * end.
+   */
+  ellipsize: {
+    value: EllipsizeMode.NONE,
+    coerce(mode) {
+      if (!Object.values(EllipsizeMode).includes(mode)) {
+        throw new Error(`Invalid ellipsize mode '${mode}'.`);
+      }
+      return mode;
+    },
+    changed(mode) {
+      this.el.classList.toggle("wy-ellipsize", mode !== EllipsizeMode.NONE);
+      this.el.classList.toggle("wy-ellipsize-start", mode === EllipsizeMode.START);
+    }
+  },
+  /**
+   * The direction of the bar: one of `Orientation`.
+   */
+  orientation: {
+    value: Orientation.HORIZONTAL,
+    coerce(orientation) {
+      if (!Object.values(Orientation).includes(orientation)) {
+        throw new Error(`Invalid orientation '${orientation}'.`);
+      }
+      return orientation;
+    },
+    changed() {
+      this._applyOrientation();
+      this._update();
+    }
+  },
+  /**
+   * Whether the bar fills in the opposite direction: from right to left, or from top to
+   * bottom.
+   */
+  inverted: {
+    value: false,
+    coerce: Boolean,
+    changed() {
+      this._applyOrientation();
+      this._update();
+    }
+  }
+});
+registerType("progress-bar", ProgressBar);
+
+// src/widgets/radio-button.js
+var ARROW_DIRECTIONS = Object.freeze({
+  [Key.UP]: -1,
+  [Key.LEFT]: -1,
+  [Key.DOWN]: 1,
+  [Key.RIGHT]: 1
+});
+var RadioButton = class _RadioButton extends CheckBox {
+  static {
+    __name(this, "RadioButton");
+  }
+  _initialize() {
+    super._initialize();
+    this._disconnectGroup = null;
+    this.el.addEventListener("keydown", (event) => this._onKeyDown(event));
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-check-box wy-radio-button" role="radio">
+                <span class="wy-check-indicator" aria-hidden="true"></span>
+                <div class="wy-check-box-body"></div>
+            </div>
+        `);
+    this._bodyEl = element.querySelector(".wy-check-box-body");
+    return element;
+  }
+  _onClicked() {
+    this.inconsistent = false;
+    if (!this._active) {
+      this.active = true;
+    }
+    this.focus();
+  }
+  _onGroupChange(old, group) {
+    this._disconnectGroup?.();
+    this._disconnectGroup = null;
+    if (group) {
+      this._disconnectGroup = group.connect(
+        "active-change",
+        () => this._updateGroupFocus(group)
+      );
+      this._updateGroupFocus(group);
+    }
+    if (old) {
+      this._updateGroupFocus(old);
+    }
+    this._updateTabIndex();
+  }
+  _updateGroupFocus(group) {
+    for (const button of group.buttons) {
+      if (button instanceof _RadioButton) {
+        button._updateTabIndex();
+      }
+    }
+  }
+  /**
+   * Whether the button is the group's stop in the focus chain.
+   *
+   * @protected
+   * @returns {boolean}
+   */
+  _isFocusStop() {
+    const group = this._group;
+    const active = group?.active;
+    if (!active || active === this) {
+      return true;
+    }
+    return !(active instanceof Widget) || !active.isVisible || !active.isSensitive || !active._canFocus;
+  }
+  _onIsVisibleChange(isVisible) {
+    super._onIsVisibleChange(isVisible);
+    if (this._group) {
+      this._updateGroupFocus(this._group);
+    }
+  }
+  _onIsSensitiveChange(isSensitive) {
+    super._onIsSensitiveChange(isSensitive);
+    if (this._group) {
+      this._updateGroupFocus(this._group);
+    }
+  }
+  _updateTabIndex() {
+    this.focusElement.tabIndex = this.canFocus && this._isSensitiveCache ? 0 : -1;
+  }
+  _onKeyDown(event) {
+    const direction = ARROW_DIRECTIONS[event.key];
+    if (!direction || event.altKey || event.ctrlKey || event.metaKey || event.target !== this.focusElement || !this._group) {
+      return;
+    }
+    const buttons = this._group.buttons.filter(
+      (x) => x === this || x instanceof _RadioButton && x.isVisible && x.isSensitive
+    );
+    if (buttons.length < 2) {
+      return;
+    }
+    event.preventDefault();
+    const index = buttons.indexOf(this);
+    const next = buttons[(index + direction + buttons.length) % buttons.length];
+    next.inconsistent = false;
+    next.active = true;
+    next.focus();
+  }
+  destroy() {
+    this._disconnectGroup?.();
+    this._disconnectGroup = null;
+    super.destroy();
+  }
+};
+defineProperties(RadioButton, {
+  /**
+   * Whether the button can take the focus. Within a group, only the active button can (see
+   * the class description).
+   */
+  canFocus: {
+    get() {
+      return this._canFocus && this._isFocusStop();
+    }
+  }
+});
+registerType("radio-button", RadioButton);
+
+// src/widgets/radio-menu-item.js
+var RadioMenuItem = class extends CheckMenuItem {
+  static {
+    __name(this, "RadioMenuItem");
+  }
+  _initialize() {
+    super._initialize();
+    this.el.classList.add("wy-radio-menu-item");
+  }
+  _getRole() {
+    return "menuitemradio";
+  }
+  /**
+   * Joins another item to this item's group. The group is created on first use.
+   *
+   * @param {RadioMenuItem | import('./widget.js').Widget} button
+   */
+  join(button) {
+    if (!this._group) {
+      this.group = new ButtonGroup();
+    }
+    this._group.addButton(button);
+  }
+  _toggleOnActivate() {
+    this.inconsistent = false;
+    this.active = true;
+  }
+  destroy() {
+    this.group = null;
+    super.destroy();
+  }
+};
+defineProperties(RadioMenuItem, {
+  drawAsRadio: { value: true },
+  /**
+   * The `ButtonGroup` of the item, or `null`. Items of the same group exclude each other.
+   */
+  group: {
+    value: null,
+    set(group) {
+      const old = this._group;
+      this._group = group;
+      if (old && old.buttons.includes(this)) {
+        old.removeButton(this);
+      }
+      if (group && !group.buttons.includes(this)) {
+        group.addButton(this);
+      }
+    }
+  }
+});
+registerType("radio-menu-item", RadioMenuItem);
+
+// src/widgets/radio-tool-item.js
+var RadioToolItem = class extends CheckToolItem {
+  static {
+    __name(this, "RadioToolItem");
+  }
+  _initialize() {
+    super._initialize();
+    this.el.classList.add("wy-radio-tool-item");
+  }
+  /**
+   * Joins another item to this item's group. The group is created on first use.
+   *
+   * @param {RadioToolItem | import('./widget.js').Widget} button
+   */
+  join(button) {
+    if (!this._group) {
+      this.group = new ButtonGroup();
+    }
+    this._group.addButton(button);
+  }
+  destroy() {
+    this.group = null;
+    super.destroy();
+  }
+  _getRole() {
+    return "radio";
+  }
+  _toggleOnActivate() {
+    this.active = true;
+  }
+};
+defineProperties(RadioToolItem, {
+  /**
+   * The `ButtonGroup` of the item, or `null`. Items of the same group exclude each other.
+   */
+  group: {
+    value: null,
+    set(group) {
+      const old = this._group;
+      this._group = group;
+      if (old && old.buttons.includes(this)) {
+        old.removeButton(this);
+      }
+      if (group && !group.buttons.includes(this)) {
+        group.addButton(this);
+      }
+    }
+  }
+});
+registerType("radio-tool-item", RadioToolItem);
+
+// src/widgets/resizer.js
+var CURSOR_SHAPES = Object.freeze({
+  e: CursorShape.RESIZE_E,
+  s: CursorShape.RESIZE_S,
+  se: CursorShape.RESIZE_SE
+});
+var KEY_STEP2 = 10;
+function toDimension(value) {
+  if (!value || typeof value !== "object") {
+    throw new TypeError("A size must be an object with a width and a height.");
+  }
+  const width = Number(value.width ?? -1);
+  const height = Number(value.height ?? -1);
+  if (!Number.isFinite(width) || !Number.isFinite(height)) {
+    throw new TypeError(`Invalid size: ${JSON.stringify(value)}.`);
+  }
+  return Object.freeze({
+    width: width < 0 ? -1 : Math.round(width),
+    height: height < 0 ? -1 : Math.round(height)
+  });
+}
+__name(toDimension, "toDimension");
+function clampComponent(value, minimum, maximum) {
+  if (value < 0) {
+    return value;
+  }
+  if (maximum >= 0) {
+    value = Math.min(value, maximum);
+  }
+  return Math.max(value, minimum >= 0 ? minimum : 0);
+}
+__name(clampComponent, "clampComponent");
+function dimensionProperty(name, component) {
+  return {
+    signal: false,
+    get() {
+      return this[`_${name}`][component];
+    },
+    set(value) {
+      this[name] = { ...this[`_${name}`], [component]: value };
+      return false;
+    }
+  };
+}
+__name(dimensionProperty, "dimensionProperty");
+var Resizer = class extends Bin {
+  static {
+    __name(this, "Resizer");
+  }
+  _initialize() {
+    super._initialize();
+    this._drag = null;
+    for (const handle of this.el.querySelectorAll("[data-direction]")) {
+      handle.addEventListener(
+        "pointerdown",
+        (event) => this._onPointerDown(event, handle.dataset.direction)
+      );
+    }
+    this.el.addEventListener("keydown", (event) => this._onKeyDown(event));
+    this._syncDirections();
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-resizer">
+                <div class="wy-resizer-body"></div>
+                <div class="wy-resizer-handle wy-resizer-e" data-direction="e"></div>
+                <div class="wy-resizer-handle wy-resizer-s" data-direction="s"></div>
+                <div class="wy-resizer-handle wy-resizer-se" data-direction="se"></div>
+                <div class="wy-resizer-grip" data-direction="se"></div>
+            </div>
+        `);
+    this._bodyEl = element.querySelector(".wy-resizer-body");
+    this._handleEls = {
+      e: element.querySelector(".wy-resizer-e"),
+      s: element.querySelector(".wy-resizer-s"),
+      se: element.querySelector(".wy-resizer-se")
+    };
+    this._gripEl = element.querySelector(".wy-resizer-grip");
+    return element;
+  }
+  /**
+   * The handle that takes the keyboard focus: the corner handle when resizing in both
+   * directions, otherwise the edge handle.
+   *
+   * @type {HTMLElement}
+   */
+  get focusElement() {
+    const directions = this._resizeDirections;
+    const horizontal = Boolean(directions & ResizeDirections.HORIZONTAL);
+    const vertical = Boolean(directions & ResizeDirections.VERTICAL);
+    if (horizontal && vertical) {
+      return this._handleEls.se;
+    }
+    return vertical ? this._handleEls.s : this._handleEls.e;
+  }
+  destroy() {
+    this._endDrag();
+    super.destroy();
+  }
+  _applyLayoutStyle() {
+    super._applyLayoutStyle();
+    this._applySize();
+  }
+  _applySize() {
+    const size = this._clampSize(this._size);
+    const style = this._bodyEl.style;
+    style.width = size.width >= 0 ? `${size.width}px` : "";
+    style.height = size.height >= 0 ? `${size.height}px` : "";
+    style.minWidth = this._minSize.width >= 0 ? `${this._minSize.width}px` : "";
+    style.minHeight = this._minSize.height >= 0 ? `${this._minSize.height}px` : "";
+    style.maxWidth = this._maxSize.width >= 0 ? `${this._maxSize.width}px` : "";
+    style.maxHeight = this._maxSize.height >= 0 ? `${this._maxSize.height}px` : "";
+    this.el.classList.toggle("wy-sized-width", size.width >= 0);
+    this.el.classList.toggle("wy-sized-height", size.height >= 0);
+  }
+  _clampSize(size, childMinimum = null) {
+    const minimumWidth = Math.max(this._minSize.width, childMinimum?.width ?? -1);
+    const minimumHeight = Math.max(this._minSize.height, childMinimum?.height ?? -1);
+    return {
+      width: clampComponent(size.width, minimumWidth, this._maxSize.width),
+      height: clampComponent(size.height, minimumHeight, this._maxSize.height)
+    };
+  }
+  _syncDirections() {
+    const directions = this._resizeDirections;
+    const horizontal = Boolean(directions & ResizeDirections.HORIZONTAL);
+    const vertical = Boolean(directions & ResizeDirections.VERTICAL);
+    this._handleEls.e.hidden = !horizontal;
+    this._handleEls.s.hidden = !vertical;
+    this._handleEls.se.hidden = !(horizontal && vertical);
+    this._gripEl.hidden = !(horizontal && vertical && this._hasGrip);
+    for (const handle of Object.values(this._handleEls)) {
+      handle.removeAttribute("tabindex");
+    }
+    this._updateTabIndex();
+  }
+  /**
+   * Measures the size of the child area in some state of its CSS size, restoring it after.
+   *
+   * @param {string} width A CSS width, e.g. `'min-content'`.
+   * @param {string} height A CSS height.
+   * @returns {{width: number, height: number}}
+   */
+  _measureBody(width, height) {
+    const style = this._bodyEl.style;
+    const saved = [style.width, style.height, style.minWidth, style.minHeight];
+    style.width = width;
+    style.height = height;
+    style.minWidth = style.minHeight = "";
+    const rect = this._bodyEl.getBoundingClientRect();
+    [style.width, style.height, style.minWidth, style.minHeight] = saved;
+    return { width: Math.ceil(rect.width), height: Math.ceil(rect.height) };
+  }
+  _getRatio() {
+    if (this._useChildRatio) {
+      const natural = this._measureBody("max-content", "max-content");
+      if (natural.width > 0 && natural.height > 0) {
+        return natural.width / natural.height;
+      }
+    }
+    return this._ratio > 0 ? this._ratio : 1;
+  }
+  /**
+   * Resizes as the user does: to the given size of the child area, limited by the minimum and
+   * maximum sizes and the child's minimum size, keeping the ratio when asked.
+   *
+   * @param {{width: number, height: number}} size
+   * @param {string} direction `'e'`, `'s'` or `'se'`.
+   * @param {{width: number, height: number}} childMinimum
+   * @param {number | null} ratio
+   * @param {{width: number, height: number}} origin The size when resizing started.
+   */
+  _resizeTo(size, direction, childMinimum, ratio, origin) {
+    const directions = this._resizeDirections;
+    let width = direction.includes("e") && directions & ResizeDirections.HORIZONTAL;
+    const height = direction.includes("s") && directions & ResizeDirections.VERTICAL;
+    let result = {
+      width: width ? size.width : this._size.width,
+      height: height ? size.height : this._size.height
+    };
+    if (ratio) {
+      if (width && height) {
+        const byWidth = Math.abs(size.width - origin.width);
+        const byHeight = Math.abs(size.height - origin.height) * ratio;
+        width = byWidth >= byHeight;
+      }
+      result = width ? { width: size.width, height: Math.round(size.width / ratio) } : { width: Math.round(size.height * ratio), height: size.height };
+    }
+    result = this._clampSize(result, childMinimum);
+    if (ratio) {
+      if (result.width !== Math.round(result.height * ratio)) {
+        if (width) {
+          result.height = Math.round(result.width / ratio);
+        } else {
+          result.width = Math.round(result.height * ratio);
+        }
+      }
+    }
+    this.size = result;
+  }
+  _onPointerDown(event, direction) {
+    if (event.button !== 0 || !this.isSensitive || this._drag) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    const target = event.currentTarget;
+    target.setPointerCapture(event.pointerId);
+    const rect = this._bodyEl.getBoundingClientRect();
+    const start = { width: Math.round(rect.width), height: Math.round(rect.height) };
+    const childMinimum = this._measureBody("min-content", "min-content");
+    const ratio = this._keepRatio ? this._getRatio() : null;
+    this._size = toDimension({
+      width: this._resizeDirections & ResizeDirections.HORIZONTAL ? start.width : -1,
+      height: this._resizeDirections & ResizeDirections.VERTICAL ? start.height : -1
+    });
+    if (ratio) {
+      this._size = toDimension(start);
+    }
+    const move = /* @__PURE__ */ __name((moveEvent) => {
+      this._resizeTo(
+        {
+          width: start.width + moveEvent.clientX - event.clientX,
+          height: start.height + moveEvent.clientY - event.clientY
+        },
+        direction,
+        childMinimum,
+        ratio,
+        start
+      );
+    }, "move");
+    const end = /* @__PURE__ */ __name(() => this._endDrag(), "end");
+    target.addEventListener("pointermove", move);
+    target.addEventListener("pointerup", end);
+    target.addEventListener("pointercancel", end);
+    this._drag = { target, move, end };
+    this.el.classList.add("wy-resizing");
+    getCursor().pushShape(CURSOR_SHAPES[direction], "resizer");
+  }
+  _endDrag() {
+    const drag = this._drag;
+    if (!drag) {
+      return;
+    }
+    this._drag = null;
+    this.el.classList.remove("wy-resizing");
+    drag.target.removeEventListener("pointermove", drag.move);
+    drag.target.removeEventListener("pointerup", drag.end);
+    drag.target.removeEventListener("pointercancel", drag.end);
+    getCursor().popShape("resizer");
+  }
+  _onKeyDown(event) {
+    if (event.target !== this.focusElement || event.ctrlKey || event.altKey) {
+      return;
+    }
+    const deltas = {
+      [Key.LEFT]: [-KEY_STEP2, 0, "e"],
+      [Key.RIGHT]: [KEY_STEP2, 0, "e"],
+      [Key.UP]: [0, -KEY_STEP2, "s"],
+      [Key.DOWN]: [0, KEY_STEP2, "s"]
+    };
+    const delta = deltas[event.key];
+    if (!delta) {
+      return;
+    }
+    event.preventDefault();
+    const rect = this._bodyEl.getBoundingClientRect();
+    const childMinimum = this._measureBody("min-content", "min-content");
+    const ratio = this._keepRatio ? this._getRatio() : null;
+    this._size = toDimension({
+      width: this._size.width >= 0 || delta[0] ? Math.round(rect.width) : -1,
+      height: this._size.height >= 0 || delta[1] ? Math.round(rect.height) : -1
+    });
+    this._resizeTo(
+      { width: rect.width + delta[0], height: rect.height + delta[1] },
+      delta[2],
+      childMinimum,
+      ratio,
+      { width: rect.width, height: rect.height }
+    );
+  }
+};
+defineProperties(Resizer, {
+  /**
+   * The size of the child area, as `{width, height}`; a component of -1 means the natural
+   * size. The user changes it by dragging.
+   */
+  size: {
+    value: Object.freeze({ width: -1, height: -1 }),
+    coerce: toDimension,
+    set(size) {
+      const old = this._size;
+      if (old.width === size.width && old.height === size.height) {
+        return false;
+      }
+      this._size = size;
+      this._applySize();
+    }
+  },
+  /**
+   * The width of the child area, or -1 for the natural width. The same as `size.width`.
+   */
+  width: { value: void 0, ...dimensionProperty("size", "width") },
+  /**
+   * The height of the child area, or -1 for the natural height. The same as `size.height`.
+   */
+  height: { value: void 0, ...dimensionProperty("size", "height") },
+  /**
+   * The minimum size of the child area; a component of -1 means no minimum.
+   */
+  minSize: {
+    value: Object.freeze({ width: -1, height: -1 }),
+    coerce: toDimension,
+    changed() {
+      this._applySize();
+    }
+  },
+  /**
+   * The minimum width of the child area, or -1 for none.
+   */
+  minWidth: dimensionProperty("minSize", "width"),
+  /**
+   * The minimum height of the child area, or -1 for none.
+   */
+  minHeight: dimensionProperty("minSize", "height"),
+  /**
+   * The maximum size of the child area; a component of -1 means no maximum.
+   */
+  maxSize: {
+    value: Object.freeze({ width: -1, height: -1 }),
+    coerce: toDimension,
+    changed() {
+      this._applySize();
+    }
+  },
+  /**
+   * The maximum width of the child area, or -1 for none.
+   */
+  maxWidth: dimensionProperty("maxSize", "width"),
+  /**
+   * The maximum height of the child area, or -1 for none.
+   */
+  maxHeight: dimensionProperty("maxSize", "height"),
+  /**
+   * The directions the user can resize in: a mask of `ResizeDirections`.
+   */
+  resizeDirections: {
+    value: ResizeDirections.ALL,
+    coerce(directions) {
+      const value = Number(directions);
+      if (!Number.isInteger(value)) {
+        throw new TypeError(`Invalid resize directions: ${directions}.`);
+      }
+      return value & ResizeDirections.ALL;
+    },
+    changed() {
+      this._syncDirections();
+    }
+  },
+  /**
+   * The original toolkit's name of `resizeDirections`.
+   */
+  directions: {
+    signal: false,
+    get() {
+      return this._resizeDirections;
+    },
+    set(directions) {
+      this.resizeDirections = directions;
+      return false;
+    }
+  },
+  /**
+   * Whether the corner shows a resize grip, when resizing in both directions.
+   */
+  hasGrip: {
+    value: true,
+    changed() {
+      this._syncDirections();
+    }
+  },
+  /**
+   * Whether resizing keeps the ratio of width to height.
+   */
+  keepRatio: { value: false },
+  /**
+   * The ratio of width to height that `keepRatio` keeps, unless `useChildRatio` is set.
+   */
+  ratio: {
+    value: 1,
+    coerce(ratio) {
+      const value = Number(ratio);
+      if (!Number.isFinite(value) || value <= 0) {
+        throw new TypeError(`Invalid ratio: ${ratio}.`);
+      }
+      return value;
+    }
+  },
+  /**
+   * Whether `keepRatio` keeps the ratio of the child's natural size instead of `ratio`.
+   */
+  useChildRatio: { value: true }
+});
+registerType("resizer", Resizer);
+
+// src/widgets/scroll-area.js
+var STEP_INCREMENT = 10;
+var PAGE_INCREMENT_FRACTION = 0.9;
+var OVERFLOW = Object.freeze({
+  [Policy.ALWAYS]: "scroll",
+  [Policy.AUTOMATIC]: "auto",
+  [Policy.NEVER]: "hidden"
+});
+var SHADOW_TYPES2 = new Set(Object.values(ShadowType));
+function checkPolicy(policy) {
+  if (!Object.hasOwn(OVERFLOW, policy)) {
+    throw new TypeError(`Invalid scroll bar policy: ${policy}.`);
+  }
+  return policy;
+}
+__name(checkPolicy, "checkPolicy");
+function checkAdjustment(adjustment) {
+  if (!(adjustment instanceof Adjustment)) {
+    throw new TypeError("A scroll area adjustment must be an Adjustment.");
+  }
+  return adjustment;
+}
+__name(checkAdjustment, "checkAdjustment");
+function checkSize(size) {
+  const value = Number(size);
+  if (!Number.isFinite(value)) {
+    throw new TypeError(`Invalid size: ${size}.`);
+  }
+  return Math.max(-1, Math.round(value));
+}
+__name(checkSize, "checkSize");
+var ScrollArea = class extends Bin {
+  static {
+    __name(this, "ScrollArea");
+  }
+  _initialize() {
+    super._initialize();
+    this._syncing = false;
+    this._observedChild = null;
+    this._adjustmentHandlers = /* @__PURE__ */ new Map();
+    this._hAdjustment = null;
+    this._vAdjustment = null;
+    this.hAdjustment = new Adjustment({ stepIncrement: STEP_INCREMENT });
+    this.vAdjustment = new Adjustment({ stepIncrement: STEP_INCREMENT });
+    this.el.addEventListener("scroll", () => this._syncAdjustments(), { passive: true });
+    this._contentObserver = null;
+    if (typeof ResizeObserver !== "undefined") {
+      this._contentObserver = new ResizeObserver(() => {
+        if (!this.destroyed) {
+          this._syncNaturalSize();
+          this._syncAdjustments();
+        }
+      });
+      this._contentObserver.observe(this.el);
+    }
+    this._mutationObserver = null;
+    this._measureQueued = false;
+    this._syncPolicies();
+  }
+  _render() {
+    return createElement('<div class="wy-scroll-area wy-shadow-in"></div>');
+  }
+  /**
+   * Scrolls as little as possible to show a descendant, as far as it fits.
+   *
+   * @param {import('./widget.js').Widget} widget A descendant.
+   * @throws {Error} If the widget is not a descendant.
+   */
+  scrollToWidget(widget) {
+    if (widget === this || !this.isAncestorOf(widget)) {
+      throw new Error("The widget is not in this scroll area.");
+    }
+    this._syncAdjustments();
+    const rect = widget.el.getBoundingClientRect();
+    const own = this.el.getBoundingClientRect();
+    const x = rect.left - own.left - this.el.clientLeft + this.el.scrollLeft;
+    const y = rect.top - own.top - this.el.clientTop + this.el.scrollTop;
+    this._hAdjustment.clampPage(x, x + rect.width);
+    this._vAdjustment.clampPage(y, y + rect.height);
+  }
+  /**
+   * Scrolls to a position of the content.
+   *
+   * @param {number} x
+   * @param {number} y
+   */
+  scrollTo(x, y) {
+    this._syncAdjustments();
+    this._hAdjustment.value = x;
+    this._vAdjustment.value = y;
+  }
+  destroy() {
+    this._contentObserver?.disconnect();
+    this._mutationObserver?.disconnect();
+    for (const disconnect of this._adjustmentHandlers.values()) {
+      disconnect();
+    }
+    this._adjustmentHandlers.clear();
+    super.destroy();
+  }
+  _onChildrenChange() {
+    super._onChildrenChange();
+    const child = this._children[0] || null;
+    if (child !== this._observedChild) {
+      if (this._observedChild) {
+        this._contentObserver?.unobserve(this._observedChild.el);
+      }
+      this._observedChild = child;
+      if (child) {
+        this._contentObserver?.observe(child.el);
+      }
+    }
+    this._syncNaturalSize();
+    this._syncAdjustments();
+  }
+  _onChildLayoutChange(widget) {
+    super._onChildLayoutChange(widget);
+    this._queueNaturalSize();
+  }
+  _setAdjustment(name, adjustment) {
+    const field = `_${name}`;
+    const old = this[field];
+    if (old === adjustment) {
+      return false;
+    }
+    this._adjustmentHandlers.get(name)?.();
+    this[field] = adjustment;
+    const horizontal = name === "hAdjustment";
+    this._adjustmentHandlers.set(
+      name,
+      adjustment.connect("value-change", () => this._onAdjustmentValueChange(horizontal))
+    );
+    this._syncAdjustments();
+    return true;
+  }
+  _onAdjustmentValueChange(horizontal) {
+    if (this._syncing) {
+      return;
+    }
+    if (horizontal) {
+      this.el.scrollLeft = this._hAdjustment.value;
+    } else {
+      this.el.scrollTop = this._vAdjustment.value;
+    }
+  }
+  _syncAdjustments() {
+    if (this._syncing || !this._hAdjustment || !this._vAdjustment) {
+      return;
+    }
+    const element = this.el;
+    this._syncing = true;
+    try {
+      this._hAdjustment.set({
+        lower: 0,
+        upper: element.scrollWidth,
+        pageSize: element.clientWidth,
+        pageIncrement: Math.max(
+          STEP_INCREMENT,
+          Math.round(element.clientWidth * PAGE_INCREMENT_FRACTION)
+        ),
+        value: element.scrollLeft
+      });
+      this._vAdjustment.set({
+        lower: 0,
+        upper: element.scrollHeight,
+        pageSize: element.clientHeight,
+        pageIncrement: Math.max(
+          STEP_INCREMENT,
+          Math.round(element.clientHeight * PAGE_INCREMENT_FRACTION)
+        ),
+        value: element.scrollTop
+      });
+    } finally {
+      this._syncing = false;
+    }
+  }
+  _syncPolicies() {
+    const style = this.el.style;
+    style.overflowX = OVERFLOW[this._hPolicy];
+    style.overflowY = OVERFLOW[this._vPolicy];
+    this.el.classList.toggle("wy-h-never", this._hPolicy === Policy.NEVER);
+    this.el.classList.toggle("wy-v-never", this._vPolicy === Policy.NEVER);
+    this._syncNaturalSize();
+    this._syncAdjustments();
+  }
+  /**
+   * Whether the natural size of the content must be measured: in directions that do not
+   * scroll or that propagate it. (A direction that does not scroll while the other does is
+   * measured; when only the vertical direction does not scroll, the height follows the content
+   * by itself.)
+   *
+   * @returns {{width: boolean, height: boolean}}
+   */
+  _getMeasuredDirections() {
+    const hNever = this._hPolicy === Policy.NEVER;
+    const vNever = this._vPolicy === Policy.NEVER;
+    return {
+      width: !(hNever && vNever) && (hNever || this._propagateNaturalWidth),
+      height: !vNever && this._propagateNaturalHeight
+    };
+  }
+  _queueNaturalSize() {
+    if (this._measureQueued) {
+      return;
+    }
+    this._measureQueued = true;
+    queueMicrotask(() => {
+      this._measureQueued = false;
+      if (!this.destroyed) {
+        this._syncNaturalSize();
+      }
+    });
+  }
+  /**
+   * Updates the natural size of the scroll area. Scroll areas are size-contained, so their
+   * content does not affect their size: their natural size is `minContentWidth` by
+   * `minContentHeight`, unless it is measured from the content (see
+   * `_getMeasuredDirections()`).
+   */
+  _syncNaturalSize() {
+    const measured = this._getMeasuredDirections();
+    const style = this.el.style;
+    this._syncMutationObserver(measured.width || measured.height);
+    const child = this._children[0];
+    if (!child || !child.visible || !this.el.isConnected) {
+      style.removeProperty("--wy-scroll-area-natural-width");
+      style.removeProperty("--wy-scroll-area-natural-height");
+      return;
+    }
+    const size = measured.width || measured.height ? this._measureChild(child) : null;
+    if (measured.width) {
+      style.setProperty("--wy-scroll-area-natural-width", `${size.width}px`);
+    } else {
+      style.removeProperty("--wy-scroll-area-natural-width");
+    }
+    if (measured.height) {
+      style.setProperty("--wy-scroll-area-natural-height", `${size.height}px`);
+    } else {
+      style.removeProperty("--wy-scroll-area-natural-height");
+    }
+    this._mutationObserver?.takeRecords();
+  }
+  /**
+   * Measures the natural size of the child, including its margins and room for the scroll
+   * bar across it.
+   *
+   * @param {import('./widget.js').Widget} child
+   * @returns {{width: number, height: number}}
+   */
+  _measureChild(child) {
+    const style = child.el.style;
+    const saved = [style.width, style.height, style.justifySelf, style.alignSelf];
+    const margin = child.margin;
+    const element = this.el;
+    const verticalBar = element.offsetWidth - element.clientWidth - element.clientLeft * 2;
+    const horizontalBar = element.offsetHeight - element.clientHeight - element.clientTop * 2;
+    style.justifySelf = style.alignSelf = "start";
+    style.width = "max-content";
+    style.height = "max-content";
+    const width = child.el.getBoundingClientRect().width;
+    if (this._hPolicy === Policy.NEVER) {
+      style.width = `${element.clientWidth - margin.left - margin.right}px`;
+    }
+    const height = child.el.getBoundingClientRect().height;
+    [style.width, style.height, style.justifySelf, style.alignSelf] = saved;
+    return {
+      width: Math.ceil(width + margin.left + margin.right + Math.max(0, verticalBar)),
+      height: Math.ceil(height + margin.top + margin.bottom + Math.max(0, horizontalBar))
+    };
+  }
+  _syncMutationObserver(wanted) {
+    if (wanted && !this._mutationObserver && typeof MutationObserver !== "undefined") {
+      this._mutationObserver = new MutationObserver(() => this._queueNaturalSize());
+      this._mutationObserver.observe(this.el, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+        attributes: true,
+        attributeFilter: ["class", "hidden", "style"]
+      });
+    } else if (!wanted && this._mutationObserver) {
+      this._mutationObserver.disconnect();
+      this._mutationObserver = null;
+    }
+  }
+  _syncMinimumSize() {
+    const style = this.el.style;
+    if (this._minContentWidth >= 0) {
+      style.setProperty("--wy-scroll-area-min-width", `${this._minContentWidth}px`);
+    } else {
+      style.removeProperty("--wy-scroll-area-min-width");
+    }
+    if (this._minContentHeight >= 0) {
+      style.setProperty("--wy-scroll-area-min-height", `${this._minContentHeight}px`);
+    } else {
+      style.removeProperty("--wy-scroll-area-min-height");
+    }
+  }
+};
+defineProperties(ScrollArea, {
+  hExpand: { value: true },
+  vExpand: { value: true },
+  /**
+   * The horizontal `Adjustment`: its value is the horizontal scroll offset. Only change its
+   * value; the scroll area sets its bounds and page size.
+   */
+  hAdjustment: {
+    value: null,
+    coerce: checkAdjustment,
+    set(adjustment) {
+      return this._setAdjustment("hAdjustment", adjustment);
+    }
+  },
+  /**
+   * The vertical `Adjustment`: its value is the vertical scroll offset. Only change its
+   * value; the scroll area sets its bounds and page size.
+   */
+  vAdjustment: {
+    value: null,
+    coerce: checkAdjustment,
+    set(adjustment) {
+      return this._setAdjustment("vAdjustment", adjustment);
+    }
+  },
+  /**
+   * When the horizontal scroll bar is shown: one of `Policy`. With `never`, the content fits
+   * the width of the view.
+   */
+  hPolicy: {
+    value: Policy.AUTOMATIC,
+    coerce: checkPolicy,
+    changed() {
+      this._syncPolicies();
+    }
+  },
+  /**
+   * When the vertical scroll bar is shown: one of `Policy`. With `never`, the content fits the
+   * height of the view.
+   */
+  vPolicy: {
+    value: Policy.AUTOMATIC,
+    coerce: checkPolicy,
+    changed() {
+      this._syncPolicies();
+    }
+  },
+  /**
+   * The border around the view: one of `ShadowType`.
+   */
+  shadowType: {
+    value: ShadowType.IN,
+    coerce(shadowType) {
+      if (!SHADOW_TYPES2.has(shadowType)) {
+        throw new TypeError(`Invalid shadow type: ${shadowType}.`);
+      }
+      return shadowType;
+    },
+    changed(shadowType, oldShadowType) {
+      this.el.classList.remove(`wy-shadow-${oldShadowType}`);
+      this.el.classList.add(`wy-shadow-${shadowType}`);
+    }
+  },
+  /**
+   * Whether the natural width of the scroll area is that of its content, instead of
+   * `minContentWidth`. In some containers the natural size is also the minimum size.
+   */
+  propagateNaturalWidth: {
+    value: false,
+    changed() {
+      this._syncNaturalSize();
+    }
+  },
+  /**
+   * Whether the natural height of the scroll area is that of its content, instead of
+   * `minContentHeight`. In some containers the natural size is also the minimum size.
+   */
+  propagateNaturalHeight: {
+    value: false,
+    changed() {
+      this._syncNaturalSize();
+    }
+  },
+  /**
+   * The minimum width of the view in pixels, or -1 for none.
+   */
+  minContentWidth: {
+    value: -1,
+    coerce: checkSize,
+    changed() {
+      this._syncMinimumSize();
+    }
+  },
+  /**
+   * The minimum height of the view in pixels, or -1 for none.
+   */
+  minContentHeight: {
+    value: -1,
+    coerce: checkSize,
+    changed() {
+      this._syncMinimumSize();
+    }
+  }
+});
+registerType("scroll-area", ScrollArea);
+
+// src/widgets/scroll-bar.js
+var ScrollBar = class extends AbstractSlider {
+  static {
+    __name(this, "ScrollBar");
+  }
+  _initialize() {
+    super._initialize();
+    for (const [element, forward] of [
+      [this._backwardEl, false],
+      [this._forwardEl, true]
+    ]) {
+      attachPressRepeat(element, {
+        canStart: /* @__PURE__ */ __name(() => this.isSensitive, "canStart"),
+        onStep: /* @__PURE__ */ __name(() => this._step(forward), "onStep")
+      });
+    }
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-scroll-bar" role="scrollbar">
+                <span class="wy-scroll-bar-stepper wy-backward" aria-hidden="true"></span>
+                <div class="wy-scroll-bar-trough">
+                    <div class="wy-scroll-bar-thumb"></div>
+                </div>
+                <span class="wy-scroll-bar-stepper wy-forward" aria-hidden="true"></span>
+            </div>
+        `);
+    this._backwardEl = element.querySelector(".wy-backward");
+    this._forwardEl = element.querySelector(".wy-forward");
+    this._troughEl = element.querySelector(".wy-scroll-bar-trough");
+    this._thumbEl = element.querySelector(".wy-scroll-bar-thumb");
+    return element;
+  }
+  _createAdjustment() {
+    return new Adjustment({
+      lower: 0,
+      upper: 100,
+      stepIncrement: 1,
+      pageIncrement: 10,
+      pageSize: 10
+    });
+  }
+  _step(forward) {
+    const adjustment = this._adjustment;
+    const oldValue = adjustment.value;
+    if (forward !== this._isReversed()) {
+      adjustment.increment();
+    } else {
+      adjustment.decrement();
+    }
+    return adjustment.value !== oldValue;
+  }
+  _getWheelStep() {
+    const adjustment = this._adjustment;
+    return adjustment.pageSize > 0 ? adjustment.pageSize ** (2 / 3) : adjustment.stepIncrement;
+  }
+  _update() {
+    super._update();
+    const adjustment = this._adjustment;
+    const atLower = adjustment.value <= adjustment.lower;
+    const atUpper = adjustment.value >= adjustment.maximum;
+    const reversed = this._isReversed();
+    this._backwardEl.classList.toggle("wy-disabled", reversed ? atUpper : atLower);
+    this._forwardEl.classList.toggle("wy-disabled", reversed ? atLower : atUpper);
+    this.el.classList.toggle("wy-all-visible", atLower && atUpper);
+  }
+};
+defineProperties(ScrollBar, {
+  /**
+   * Whether pressing the trough with the primary button moves the thumb there. Off for scroll
+   * bars, which page instead.
+   */
+  primaryButtonWarps: { value: false },
+  /**
+   * The size of the page, forwarded to the adjustment.
+   */
+  pageSize: {
+    signal: false,
+    get() {
+      return this._adjustment.pageSize;
+    },
+    set(pageSize) {
+      this._adjustment.pageSize = pageSize;
+      return false;
+    }
+  }
+});
+registerType("scroll-bar", ScrollBar);
+
+// src/widgets/separator-menu-item.js
+var SeparatorMenuItem = class extends AbstractMenuItem {
+  static {
+    __name(this, "SeparatorMenuItem");
+  }
+  _render() {
+    return createElement(`
+            <div class="wy-separator-menu-item" role="separator">
+                <div class="wy-separator-menu-item-line"></div>
+            </div>
+        `);
+  }
+  _isSelectable() {
+    return false;
+  }
+};
+registerType("separator-menu-item", SeparatorMenuItem);
+
+// src/widgets/separator-tool-item.js
+var SeparatorToolItem = class extends AbstractToolItem {
+  static {
+    __name(this, "SeparatorToolItem");
+  }
+  _render() {
+    return createElement(`
+            <div class="wy-separator-tool-item" role="separator">
+                <div class="wy-separator-tool-item-line"></div>
+            </div>
+        `);
+  }
+  _computeExpand(direction) {
+    const horizontal = this.toolBar?.orientation !== Orientation.VERTICAL;
+    return this._expand && direction === "h" === horizontal;
+  }
+  _onToolBarChange() {
+    const horizontal = this.toolBar?.orientation !== Orientation.VERTICAL;
+    this.el.setAttribute("aria-orientation", horizontal ? "vertical" : "horizontal");
+    this._refreshExpand();
+  }
+  _createMenuProxy() {
+    return this._draw ? new SeparatorMenuItem() : null;
+  }
+};
+defineProperties(SeparatorToolItem, {
+  /**
+   * Whether the line is drawn; without it the separator is just space.
+   */
+  draw: {
+    value: true,
+    changed(draw) {
+      this.el.classList.toggle("wy-invisible", !draw);
+    }
+  },
+  /**
+   * Whether the separator takes all extra space, pushing the items after it to the end.
+   */
+  expand: {
+    value: false,
+    changed(expand) {
+      this.el.classList.toggle("wy-expand", expand);
+      this._refreshExpand();
+    }
+  }
+});
+registerType("separator-tool-item", SeparatorToolItem);
+
+// src/widgets/separator.js
+var Separator = class extends Widget {
+  static {
+    __name(this, "Separator");
+  }
+  _initialize() {
+    super._initialize();
+    this._applyOrientation();
+    this._applyThickness();
+  }
+  _render() {
+    return createElement('<div class="wy-separator" role="separator"></div>');
+  }
+  _applyOrientation() {
+    const horizontal = this._orientation === Orientation.HORIZONTAL;
+    this.el.classList.toggle("wy-horizontal", horizontal);
+    this.el.classList.toggle("wy-vertical", !horizontal);
+    this.el.setAttribute("aria-orientation", this._orientation);
+  }
+  _applyThickness() {
+    const thickness = this._thickness;
+    this.el.style.setProperty("--wy-separator-thickness", `${thickness}px`);
+    this.el.style.setProperty("--wy-separator-dark-size", `${Math.ceil(thickness / 2)}px`);
+  }
+};
+defineProperties(Separator, {
+  /**
+   * The direction of the line: one of `Orientation`.
+   */
+  orientation: {
+    value: Orientation.HORIZONTAL,
+    coerce(orientation) {
+      if (!Object.values(Orientation).includes(orientation)) {
+        throw new Error(`Invalid orientation '${orientation}'.`);
+      }
+      return orientation;
+    },
+    changed() {
+      this._applyOrientation();
+    }
+  },
+  /**
+   * The thickness of the line in pixels (at least 1). The default of 2 draws a dark and a light
+   * line.
+   */
+  thickness: {
+    value: 2,
+    coerce(thickness) {
+      if (!Number.isInteger(thickness) || thickness < 1) {
+        throw new Error(`Invalid separator thickness ${thickness}.`);
+      }
+      return thickness;
+    },
+    changed() {
+      this._applyThickness();
+    }
+  }
+});
+registerType("separator", Separator);
+
+// src/widgets/slider.js
+var UNROUNDED_DIGITS = 6;
+function toMark(value, position, label) {
+  const mark = {
+    value: Number(value),
+    position: checkPosition(position),
+    label: label === null || label === void 0 ? null : String(label)
+  };
+  if (!Number.isFinite(mark.value)) {
+    throw new RangeError(`Invalid mark value ${value}.`);
+  }
+  return mark;
+}
+__name(toMark, "toMark");
+function checkPosition(position) {
+  if (!Object.values(Position).includes(position)) {
+    throw new RangeError(`Invalid position '${position}'.`);
+  }
+  return position;
+}
+__name(checkPosition, "checkPosition");
+var Slider = class extends AbstractSlider {
+  static {
+    __name(this, "Slider");
+  }
+  _initialize() {
+    super._initialize();
+    this._marks = [];
+    this._formatter = null;
+    this._wheelRemainder = 0;
+    this._localeDisconnect = getLocaleManager().connect("locale-change", () => {
+      this._formatter = null;
+      this._update();
+    });
+    this._updateValuePosition();
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-slider" role="slider" tabindex="0">
+                <div class="wy-slider-value-area" aria-hidden="true">
+                    <span class="wy-slider-sizer"></span>
+                    <span class="wy-slider-sizer"></span>
+                    <span class="wy-slider-value"></span>
+                </div>
+                <div class="wy-slider-marks wy-before" aria-hidden="true"></div>
+                <div class="wy-slider-trough">
+                    <div class="wy-slider-track"></div>
+                    <div class="wy-slider-fill"></div>
+                    <div class="wy-slider-thumb"></div>
+                </div>
+                <div class="wy-slider-marks wy-after" aria-hidden="true"></div>
+            </div>
+        `);
+    this._valueAreaEl = element.querySelector(".wy-slider-value-area");
+    this._sizerEls = [...element.querySelectorAll(".wy-slider-sizer")];
+    this._valueEl = element.querySelector(".wy-slider-value");
+    this._marksEls = {
+      before: element.querySelector(".wy-slider-marks.wy-before"),
+      after: element.querySelector(".wy-slider-marks.wy-after")
+    };
+    this._troughEl = element.querySelector(".wy-slider-trough");
+    this._thumbEl = element.querySelector(".wy-slider-thumb");
+    return element;
+  }
+  /**
+   * Adds a mark along the trough.
+   *
+   * @param {number} value
+   * @param {string} [position] One of `Position`: where the mark is drawn. `TOP` and `LEFT` are
+   *     before the trough, `BOTTOM` and `RIGHT` after it. Defaults to `BOTTOM`.
+   * @param {string | null} [label] Text shown at the mark.
+   */
+  addMark(value, position = Position.BOTTOM, label = null) {
+    this._marks = [...this._marks, toMark(value, position, label)];
+    this._renderMarks();
+    this.emit("marks-change", this);
+  }
+  /**
+   * Removes all marks.
+   */
+  clearMarks() {
+    this.marks = [];
+  }
+  /**
+   * Formats a value for display. Override to show values differently.
+   *
+   * @param {number} value
+   * @returns {string}
+   */
+  formatValue(value) {
+    if (!this._formatter) {
+      const digits = this._digits < 0 ? UNROUNDED_DIGITS : this._digits;
+      this._formatter = new Intl.NumberFormat(getLocaleManager().locale, {
+        minimumFractionDigits: this._digits < 0 ? 0 : digits,
+        maximumFractionDigits: digits,
+        useGrouping: false
+      });
+    }
+    return this._formatter.format(value);
+  }
+  destroy() {
+    this._localeDisconnect();
+    super.destroy();
+  }
+  _setValueFromUser(value) {
+    if (this._digits >= 0) {
+      const factor = 10 ** this._digits;
+      value = Math.round(value * factor) / factor;
+    }
+    super._setValueFromUser(value);
+  }
+  _applyWheel(notches) {
+    this._wheelRemainder += notches;
+    const whole = Math.trunc(this._wheelRemainder);
+    if (!whole) {
+      return;
+    }
+    this._wheelRemainder -= whole;
+    super._applyWheel(whole);
+  }
+  _update() {
+    super._update();
+    const adjustment = this._adjustment;
+    const text = this.formatValue(adjustment.value);
+    this._valueEl.textContent = text;
+    this.el.setAttribute("aria-valuetext", text);
+    this._sizerEls[0].textContent = this.formatValue(adjustment.lower);
+    this._sizerEls[1].textContent = this.formatValue(adjustment.maximum);
+    this._updateMarkPositions();
+  }
+  _getMarkFraction(value) {
+    const adjustment = this._adjustment;
+    const range = adjustment.maximum - adjustment.lower;
+    const fraction = range > 0 ? clamp((value - adjustment.lower) / range, 0, 1) : 0;
+    return this._isReversed() ? 1 - fraction : fraction;
+  }
+  _renderMarks() {
+    const marks = this._marks || [];
+    for (const [side, element] of Object.entries(this._marksEls)) {
+      element.textContent = "";
+      const sideMarks = marks.filter((x) => {
+        const before = x.position === Position.TOP || x.position === Position.LEFT;
+        return side === "before" === before;
+      });
+      let hasLabels = false;
+      for (const mark of sideMarks) {
+        const markEl = document.createElement("span");
+        markEl.className = "wy-slider-mark";
+        markEl.dataset.value = String(mark.value);
+        if (mark.label) {
+          hasLabels = true;
+          const label = document.createElement("span");
+          label.className = "wy-slider-mark-label";
+          label.textContent = mark.label;
+          markEl.append(label);
+          const sizer = document.createElement("span");
+          sizer.className = "wy-slider-mark-sizer";
+          sizer.textContent = mark.label;
+          element.append(sizer);
+        }
+        element.append(markEl);
+      }
+      element.classList.toggle("wy-has-marks", sideMarks.length > 0);
+      element.classList.toggle("wy-has-labels", hasLabels);
+    }
+    this._updateMarkPositions();
+  }
+  _updateMarkPositions() {
+    if (!this._marksEls) {
+      return;
+    }
+    for (const element of Object.values(this._marksEls)) {
+      for (const mark of element.querySelectorAll(".wy-slider-mark")) {
+        const fraction = this._getMarkFraction(Number(mark.dataset.value));
+        mark.style.setProperty("--wy-mark-fraction", String(fraction));
+      }
+    }
+  }
+  _updateValuePosition() {
+    this.el.dataset.valuePos = this._valuePos;
+    this.el.classList.toggle("wy-draw-value", this._drawValue);
+    this._valueAreaEl.hidden = !this._drawValue;
+  }
+};
+defineProperties(Slider, {
+  canFocus: { value: true },
+  /**
+   * The number of decimals of the value shown. Values set by the user are rounded to it. Use -1
+   * to not round.
+   */
+  digits: {
+    value: 1,
+    coerce(digits) {
+      const value = Math.floor(Number(digits));
+      if (!(value >= -1 && value <= 20)) {
+        throw new RangeError(`Invalid number of digits ${digits}.`);
+      }
+      return value;
+    },
+    changed() {
+      this._formatter = null;
+      this._update();
+    }
+  },
+  /**
+   * Whether the value is shown next to the thumb.
+   */
+  drawValue: {
+    value: true,
+    coerce: Boolean,
+    changed() {
+      this._updateValuePosition();
+    }
+  },
+  /**
+   * Where the value is shown: one of `Position`. On the sides along the trough it follows the
+   * thumb.
+   */
+  valuePos: {
+    value: Position.TOP,
+    coerce: checkPosition,
+    changed() {
+      this._updateValuePosition();
+    }
+  },
+  /**
+   * Whether the trough is filled from the lower end up to the thumb.
+   */
+  hasOrigin: {
+    value: true,
+    coerce: Boolean,
+    changed(hasOrigin) {
+      this.el.classList.toggle("wy-no-origin", !hasOrigin);
+    }
+  },
+  /**
+   * The marks, as objects with `value`, `position` and `label`. See `addMark()`.
+   */
+  marks: {
+    get() {
+      return this._marks.map((x) => ({ ...x }));
+    },
+    set(marks) {
+      if (!Array.isArray(marks)) {
+        throw new TypeError("The marks of a slider must be an array.");
+      }
+      this._marks = marks.map((x) => toMark(x.value, x.position ?? Position.BOTTOM, x.label));
+      this._renderMarks();
+    }
+  }
+});
+registerType("slider", Slider);
+
+// src/widgets/spacer.js
+var Spacer = class extends Widget {
+  static {
+    __name(this, "Spacer");
+  }
+  _initialize() {
+    super._initialize();
+    this._disconnectParent = null;
+    this.connect("parent-change", this._onParentChange, this);
+    this._refreshExpand();
+  }
+  _render() {
+    return createElement('<div class="wy-spacer" aria-hidden="true"></div>');
+  }
+  destroy() {
+    this._disconnectParent?.();
+    this._disconnectParent = null;
+    super.destroy();
+  }
+  _computeExpand(direction) {
+    const orientation = this.parent?.hasProperty?.("orientation") ? this.parent.orientation : null;
+    if (orientation === Orientation.HORIZONTAL) {
+      return direction === "h";
+    }
+    if (orientation === Orientation.VERTICAL) {
+      return direction === "v";
+    }
+    return true;
+  }
+  _onParentChange() {
+    this._disconnectParent?.();
+    this._disconnectParent = null;
+    if (this.parent?.hasProperty?.("orientation")) {
+      this._disconnectParent = this.parent.connect(
+        "orientation-change",
+        () => this._refreshExpand()
+      );
+    }
+    this._refreshExpand();
+  }
+};
+registerType("spacer", Spacer);
+
+// src/widgets/spin-button.js
+var CLIMB_REPEATS = 5;
+function parseLocaleNumber(text, locale) {
+  const manager = getLocaleManager();
+  let decimal = manager.decimalSeparator;
+  let group = manager.groupSeparator;
+  if (locale && locale !== manager.locale) {
+    const parts = new Intl.NumberFormat(locale).formatToParts(12345.6);
+    decimal = parts.find((x) => x.type === "decimal")?.value || ".";
+    group = parts.find((x) => x.type === "group")?.value || ",";
+  }
+  let value = String(text).trim().replace(/[\u2212\u2012\u2013]/g, "-").replace(/[\s\u00a0\u202f]/g, "");
+  if (group !== decimal && (value.includes(decimal) || group !== ".")) {
+    value = value.split(group).join("");
+  }
+  if (decimal !== ".") {
+    value = value.replace(decimal, ".");
+  }
+  if (!/^[+-]?(\d+\.?\d*|\.\d+)$/.test(value)) {
+    return null;
+  }
+  return Number(value);
+}
+__name(parseLocaleNumber, "parseLocaleNumber");
+var SpinButton = class extends LineEdit {
+  static {
+    __name(this, "SpinButton");
+  }
+  _initialize() {
+    super._initialize();
+    this._adjustmentDisconnects = [];
+    this._formatter = null;
+    this._climbStep = 0;
+    this._inputEl.setAttribute("role", "spinbutton");
+    this._inputEl.inputMode = "decimal";
+    this._inputEl.addEventListener("beforeinput", (event) => this._onBeforeInput(event));
+    this.el.addEventListener("wheel", (event) => this._onWheel(event), { passive: false });
+    for (const [element, direction] of [
+      [this._upEl, 1],
+      [this._downEl, -1]
+    ]) {
+      attachPressRepeat(element, {
+        canStart: /* @__PURE__ */ __name(() => this.isSensitive, "canStart"),
+        onStep: /* @__PURE__ */ __name((count) => this._onStepperStep(direction, count), "onStep")
+      });
+      element.addEventListener("mousedown", (event) => {
+        event.preventDefault();
+        this.focus();
+      });
+    }
+    this._localeDisconnect = getLocaleManager().connect("locale-change", () => {
+      this._formatter = null;
+      this._updateText();
+    });
+    this.adjustment = new Adjustment({
+      lower: 0,
+      upper: 100,
+      stepIncrement: 1,
+      pageIncrement: 10
+    });
+  }
+  _render() {
+    const element = super._render();
+    const steppers = createElement(`
+            <span class="wy-spin-button-steppers" aria-hidden="true">
+                <span class="wy-spin-button-stepper wy-up"></span>
+                <span class="wy-spin-button-stepper wy-down"></span>
+            </span>
+        `);
+    this._upEl = steppers.querySelector(".wy-up");
+    this._downEl = steppers.querySelector(".wy-down");
+    element.classList.add("wy-spin-button");
+    element.append(steppers);
+    return element;
+  }
+  /**
+   * Sets several properties, applying the bounds before the value so that it is not clamped to
+   * the old bounds.
+   *
+   * @param {Record<string, unknown>} properties
+   * @returns {boolean}
+   */
+  set(properties) {
+    const { value, ...rest } = properties;
+    let changed = super.set(rest);
+    if (value !== void 0 && this.setProperty("value", value)) {
+      changed = true;
+    }
+    return changed;
+  }
+  /**
+   * Increases the value by `stepIncrement`, or by `pageIncrement` with `page`.
+   *
+   * @param {boolean} [page]
+   */
+  stepUp(page = false) {
+    this.spin(page ? this._adjustment.pageIncrement : this._adjustment.stepIncrement);
+  }
+  /**
+   * Decreases the value by `stepIncrement`, or by `pageIncrement` with `page`.
+   *
+   * @param {boolean} [page]
+   */
+  stepDown(page = false) {
+    this.spin(-(page ? this._adjustment.pageIncrement : this._adjustment.stepIncrement));
+  }
+  /**
+   * Changes the value by an amount, applying typed text first, and wrapping around at the bounds
+   * with `wrap`.
+   *
+   * @param {number} delta
+   */
+  spin(delta) {
+    this.update();
+    const adjustment = this._adjustment;
+    const lower = adjustment.lower;
+    const upper = adjustment.maximum;
+    const value = adjustment.value;
+    let result = value + delta;
+    if (this._wrap && delta > 0 && result > upper) {
+      result = Math.abs(value - upper) < 1e-10 ? lower : upper;
+    } else if (this._wrap && delta < 0 && result < lower) {
+      result = Math.abs(value - lower) < 1e-10 ? upper : lower;
+    }
+    const wrapped = this._wrap && Math.sign(result - value) === -Math.sign(delta);
+    this._setValueFromUser(result);
+    if (wrapped) {
+      this.emit("wrapped", this);
+    }
+  }
+  /**
+   * Applies typed text to the value. Text that is not a number is replaced by the current value.
+   */
+  update() {
+    const value = parseLocaleNumber(this._text);
+    if (value !== null) {
+      this._setValueFromUser(value);
+    }
+    this._updateText();
+  }
+  activate() {
+    this.update();
+    super.activate();
+  }
+  /**
+   * Formats a value for display. Override to show values differently; `parseValue` must then
+   * accept the result.
+   *
+   * @param {number} value
+   * @returns {string}
+   */
+  formatValue(value) {
+    if (!this._formatter) {
+      this._formatter = new Intl.NumberFormat(getLocaleManager().locale, {
+        minimumFractionDigits: this._digits,
+        maximumFractionDigits: this._digits,
+        useGrouping: false
+      });
+    }
+    return this._formatter.format(value);
+  }
+  destroy() {
+    this._localeDisconnect();
+    this._connectAdjustment(null);
+    super.destroy();
+  }
+  _validate(text) {
+    return super._validate(text) && (text.trim() === "" || parseLocaleNumber(text) !== null);
+  }
+  _setValueFromUser(value) {
+    const adjustment = this._adjustment;
+    if (this._snapToTicks && adjustment.stepIncrement > 0) {
+      const steps = Math.round((value - adjustment.lower) / adjustment.stepIncrement);
+      value = adjustment.lower + steps * adjustment.stepIncrement;
+    }
+    const factor = 10 ** this._digits;
+    adjustment.value = Math.round(value * factor) / factor;
+    this._updateText();
+  }
+  _updateText() {
+    if (this._adjustment) {
+      this.text = this.formatValue(this._adjustment.value);
+    }
+  }
+  _updateAria() {
+    const adjustment = this._adjustment;
+    const input = this._inputEl;
+    input.setAttribute("aria-valuenow", String(adjustment.value));
+    input.setAttribute("aria-valuemin", String(adjustment.lower));
+    input.setAttribute("aria-valuemax", String(adjustment.maximum));
+    input.setAttribute("aria-valuetext", this.formatValue(adjustment.value));
+    this._upEl.classList.toggle(
+      "wy-disabled",
+      !this._wrap && adjustment.value >= adjustment.maximum
+    );
+    this._downEl.classList.toggle(
+      "wy-disabled",
+      !this._wrap && adjustment.value <= adjustment.lower
+    );
+  }
+  _connectAdjustment(adjustment) {
+    for (const disconnect of this._adjustmentDisconnects) {
+      disconnect();
+    }
+    this._adjustmentDisconnects = [];
+    if (!adjustment) {
+      return;
+    }
+    this._adjustmentDisconnects = [
+      adjustment.connect("value-change", () => this.emit("value-change", this)),
+      adjustment.connect("lower-change", () => this.emit("lower-change", this)),
+      adjustment.connect("upper-change", () => this.emit("upper-change", this)),
+      adjustment.connect("change", () => {
+        this._updateText();
+        this._updateAria();
+      })
+    ];
+  }
+  _onStepperStep(direction, count) {
+    if (!this.isSensitive) {
+      return false;
+    }
+    const adjustment = this._adjustment;
+    if (count === 0) {
+      this._climbStep = adjustment.stepIncrement;
+    } else if (this._climbRate > 0 && count % CLIMB_REPEATS === 0 && this._climbStep < adjustment.pageIncrement) {
+      this._climbStep = Math.min(
+        this._climbStep + this._climbRate,
+        Math.max(adjustment.pageIncrement, adjustment.stepIncrement)
+      );
+    }
+    const before = adjustment.value;
+    this.spin(direction * this._climbStep);
+    return this._wrap || adjustment.value !== before;
+  }
+  _onInputKeyDown(event) {
+    if (event.altKey || event.ctrlKey || event.metaKey || event.isComposing) {
+      super._onInputKeyDown(event);
+      return;
+    }
+    switch (event.key) {
+      case Key.UP:
+        this.stepUp();
+        break;
+      case Key.DOWN:
+        this.stepDown();
+        break;
+      case Key.PAGE_UP:
+        this.stepUp(true);
+        break;
+      case Key.PAGE_DOWN:
+        this.stepDown(true);
+        break;
+      default:
+        super._onInputKeyDown(event);
+        return;
+    }
+    event.preventDefault();
+  }
+  _onInputBlur() {
+    this.update();
+    super._onInputBlur();
+  }
+  _onBeforeInput(event) {
+    if (!this._numeric || event.data === null || !event.inputType.startsWith("insert")) {
+      return;
+    }
+    const manager = getLocaleManager();
+    const allowed = /* @__PURE__ */ new Set(["-", "+", ".", manager.decimalSeparator, "\u2212"]);
+    for (const character of event.data) {
+      if (!/\d/.test(character) && !allowed.has(character)) {
+        event.preventDefault();
+        return;
+      }
+    }
+  }
+  _onWheel(event) {
+    if (!this.isSensitive || !event.deltaY) {
+      return;
+    }
+    event.preventDefault();
+    if (event.deltaY < 0) {
+      this.stepUp();
+    } else {
+      this.stepDown();
+    }
+  }
+};
+function adjustmentProperty2(name) {
+  return {
+    signal: false,
+    get() {
+      return this._adjustment[name];
+    },
+    set(value) {
+      this._adjustment[name] = value;
+      return false;
+    }
+  };
+}
+__name(adjustmentProperty2, "adjustmentProperty");
+defineProperties(SpinButton, {
+  xAlign: { value: 1 },
+  /**
+   * The `Adjustment` holding the value and its bounds and increments.
+   */
+  adjustment: {
+    value: null,
+    coerce(adjustment) {
+      if (!(adjustment instanceof Adjustment)) {
+        throw new TypeError("The adjustment of a spin button must be an Adjustment.");
+      }
+      return adjustment;
+    },
+    changed(adjustment, old) {
+      this._connectAdjustment(adjustment);
+      this._updateText();
+      this._updateAria();
+      if (old && old.value !== adjustment.value) {
+        this.emit("value-change", this);
+      }
+    }
+  },
+  /**
+   * The value, forwarded to the adjustment.
+   */
+  value: adjustmentProperty2("value"),
+  /**
+   * The minimum value, forwarded to the adjustment.
+   */
+  lower: adjustmentProperty2("lower"),
+  /**
+   * The maximum value, forwarded to the adjustment.
+   */
+  upper: adjustmentProperty2("upper"),
+  /**
+   * The step of the steppers and arrow keys, forwarded to the adjustment.
+   */
+  stepIncrement: adjustmentProperty2("stepIncrement"),
+  /**
+   * The step of Page Up and Page Down, forwarded to the adjustment.
+   */
+  pageIncrement: adjustmentProperty2("pageIncrement"),
+  /**
+   * The number of decimals shown. Values set by the user are rounded to it.
+   */
+  digits: {
+    value: 0,
+    coerce(digits) {
+      const value = Math.floor(Number(digits));
+      if (!(value >= 0 && value <= 20)) {
+        throw new RangeError(`Invalid number of digits ${digits}.`);
+      }
+      return value;
+    },
+    changed() {
+      this._formatter = null;
+      this._updateText();
+      this._updateAria();
+    }
+  },
+  /**
+   * Whether only numeric characters can be typed.
+   */
+  numeric: { value: false, coerce: Boolean },
+  /**
+   * Whether stepping past a bound wraps around to the other bound.
+   */
+  wrap: {
+    value: false,
+    coerce: Boolean,
+    changed() {
+      this._updateAria();
+    }
+  },
+  /**
+   * Whether values set by the user are rounded to the nearest step increment.
+   */
+  snapToTicks: { value: false, coerce: Boolean },
+  /**
+   * How much the step grows while a stepper is held, or 0 to always step by the step
+   * increment.
+   */
+  climbRate: {
+    value: 0,
+    coerce(rate) {
+      return Math.max(0, Number(rate) || 0);
+    }
+  }
+});
+registerType("spin-button", SpinButton);
+
+// src/widgets/status-bar.js
+var SHADOW_TYPES3 = new Set(Object.values(ShadowType));
+var DEFAULT_CONTEXT = "default";
+var StatusBar = class extends Box {
+  static {
+    __name(this, "StatusBar");
+  }
+  _initialize() {
+    super._initialize();
+    this._contexts = [DEFAULT_CONTEXT];
+    this._messages = [];
+    this._nextMessageId = 1;
+    this._gesture = null;
+    this._gripEl.addEventListener("pointerdown", (event) => this._onGripPointerDown(event));
+    this._syncGrip();
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-box wy-status-bar wy-shadow-in" role="status">
+                <span class="wy-status-bar-label"></span>
+                <div class="wy-status-bar-grip" aria-hidden="true"></div>
+            </div>
+        `);
+    this._labelEl = element.querySelector(".wy-status-bar-label");
+    this._gripEl = element.querySelector(".wy-status-bar-grip");
+    return element;
+  }
+  /**
+   * The element of the label that shows the message, e.g. for styling.
+   *
+   * @type {HTMLElement}
+   */
+  get labelElement() {
+    return this._labelEl;
+  }
+  /**
+   * The messages on the stack, from the bottom to the top.
+   *
+   * @type {StatusMessage[]}
+   */
+  get messages() {
+    return this._messages.map((x) => ({ ...x }));
+  }
+  /**
+   * Returns the context id for a description, creating it if needed. The description is not
+   * shown.
+   *
+   * @param {string} description
+   * @returns {number}
+   */
+  getContextId(description) {
+    const index = this._contexts.indexOf(String(description));
+    if (index >= 0) {
+      return index;
+    }
+    this._contexts.push(String(description));
+    return this._contexts.length - 1;
+  }
+  /**
+   * Pushes a message, which is shown until a newer message is pushed or it is removed.
+   *
+   * @param {number} contextId
+   * @param {string} text
+   * @returns {number} The id of the message, for `remove()`.
+   * @throws {Error} If the context id is unknown.
+   */
+  push(contextId, text) {
+    contextId = this._checkContextId(contextId);
+    const message = { id: this._nextMessageId, contextId, text: String(text ?? "") };
+    this._nextMessageId += 1;
+    this._messages.push(message);
+    this._syncLabel();
+    this.emit("text-push", this, contextId, message.text);
+    return message.id;
+  }
+  /**
+   * Removes the most recent message of a context.
+   *
+   * @param {number} [contextId]
+   * @throws {Error} If the context id is unknown.
+   */
+  pop(contextId = 0) {
+    contextId = this._checkContextId(contextId);
+    for (let i = this._messages.length - 1; i >= 0; --i) {
+      if (this._messages[i].contextId === contextId) {
+        const [message] = this._messages.splice(i, 1);
+        this._syncLabel();
+        this.emit("text-pop", this, contextId, message.text);
+        return;
+      }
+    }
+  }
+  /**
+   * Removes a message by its id.
+   *
+   * @param {number} messageId
+   * @param {number} [contextId] If given, the message must be of this context.
+   */
+  remove(messageId, contextId) {
+    if (contextId !== void 0) {
+      contextId = this._checkContextId(contextId);
+    }
+    const index = this._messages.findIndex(
+      (x) => x.id === messageId && (contextId === void 0 || x.contextId === contextId)
+    );
+    if (index >= 0) {
+      this._messages.splice(index, 1);
+      this._syncLabel();
+    }
+  }
+  /**
+   * Removes all messages of a context.
+   *
+   * @param {number} [contextId]
+   * @throws {Error} If the context id is unknown.
+   */
+  removeAll(contextId = 0) {
+    contextId = this._checkContextId(contextId);
+    this._messages = this._messages.filter((x) => x.contextId !== contextId);
+    this._syncLabel();
+  }
+  /**
+   * Pushes a message, with the original toolkit's argument order.
+   *
+   * @param {string} text
+   * @param {number} [contextId]
+   * @returns {number} The id of the message.
+   */
+  pushMessage(text, contextId = 0) {
+    return this.push(contextId, text);
+  }
+  /**
+   * Removes the most recent message of a context. The original toolkit's name of `pop()`.
+   *
+   * @param {number} [contextId]
+   */
+  popMessage(contextId = 0) {
+    this.pop(contextId);
+  }
+  /**
+   * Removes a message, with the original toolkit's arguments.
+   *
+   * @param {number} contextId
+   * @param {number} messageId
+   */
+  removeMessage(contextId, messageId) {
+    this.remove(messageId, contextId ?? 0);
+  }
+  /**
+   * Removes all messages of a context. The original toolkit's name of `removeAll()`.
+   *
+   * @param {number} [contextId]
+   */
+  removeAllMessages(contextId = 0) {
+    this.removeAll(contextId);
+  }
+  destroy() {
+    this._endGesture();
+    super.destroy();
+  }
+  _attachChildElement(widget, index) {
+    const next = this._children[index + 1];
+    this.bodyElement.insertBefore(widget.el, next ? next.el : this._gripEl);
+  }
+  _checkContextId(contextId) {
+    const id = contextId ?? 0;
+    if (!Number.isInteger(id) || id < 0 || id >= this._contexts.length) {
+      throw new Error(`Unknown status bar context id: ${contextId}.`);
+    }
+    return id;
+  }
+  _syncLabel() {
+    const message = this._messages[this._messages.length - 1];
+    const text = message ? message.text : "";
+    if (this._labelEl.textContent !== text) {
+      this._labelEl.textContent = text;
+      this._labelEl.title = text;
+      this.emit("text-change", this);
+    }
+  }
+  _getResizableWindow() {
+    const window2 = this.window;
+    return window2 && typeof window2.resize === "function" && window2.resizable ? window2 : null;
+  }
+  _syncGrip() {
+    if (!this._gripEl) {
+      return;
+    }
+    this._gripEl.hidden = !this._hasResizeGrip;
+  }
+  _onGripPointerDown(event) {
+    const window2 = this._getResizableWindow();
+    if (event.button !== 0 || !window2 || window2.maximized || !this.isSensitive) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    const target = this._gripEl;
+    target.setPointerCapture(event.pointerId);
+    const start = window2.el.getBoundingClientRect();
+    const move = /* @__PURE__ */ __name((moveEvent) => {
+      window2.resize(
+        Math.round(start.width + moveEvent.clientX - event.clientX),
+        Math.round(start.height + moveEvent.clientY - event.clientY)
+      );
+    }, "move");
+    const end = /* @__PURE__ */ __name(() => this._endGesture(), "end");
+    target.addEventListener("pointermove", move);
+    target.addEventListener("pointerup", end);
+    target.addEventListener("pointercancel", end);
+    this._gesture = { target, move, end };
+    getCursor().pushShape(CursorShape.RESIZE_SE, "status-bar");
+  }
+  _endGesture() {
+    const gesture = this._gesture;
+    if (!gesture) {
+      return;
+    }
+    this._gesture = null;
+    gesture.target.removeEventListener("pointermove", gesture.move);
+    gesture.target.removeEventListener("pointerup", gesture.end);
+    gesture.target.removeEventListener("pointercancel", gesture.end);
+    getCursor().popShape("status-bar");
+  }
+};
+defineProperties(StatusBar, {
+  vExpand: { value: false },
+  vAlign: { value: Align.END },
+  spacing: { value: 2 },
+  /**
+   * The text currently shown: the message on top of the stack, or `''`.
+   */
+  text: {
+    readOnly: true,
+    signal: false,
+    get() {
+      return this._labelEl.textContent;
+    }
+  },
+  /**
+   * The border of the bar: one of `ShadowType`. To give only a part of the bar a border, put a
+   * `Frame` in it.
+   */
+  shadowType: {
+    value: ShadowType.IN,
+    coerce(shadowType) {
+      if (!SHADOW_TYPES3.has(shadowType)) {
+        throw new TypeError(`Invalid shadow type: ${shadowType}.`);
+      }
+      return shadowType;
+    },
+    changed(shadowType, oldShadowType) {
+      this.el.classList.remove(`wy-shadow-${oldShadowType}`);
+      this.el.classList.add(`wy-shadow-${shadowType}`);
+    }
+  },
+  /**
+   * Whether the bar shows a grip at its end that resizes its window (when that is a resizable
+   * `Window`).
+   */
+  hasResizeGrip: {
+    value: false,
+    changed() {
+      this._syncGrip();
+    }
+  }
+});
+registerType("status-bar", StatusBar);
+
+// src/columns/abstract-column.js
+var ColumnChange = Object.freeze({
+  STRUCTURE: "structure",
+  // The column was shown or hidden.
+  WIDTH: "width",
+  // The width or how it is computed.
+  HEADER: "header",
+  // The header (label, sorting, resizing).
+  CELLS: "cells"
+  // How cells look.
+});
+var ELLIPSIS = "\u2026";
+var AbstractColumn = class extends Instance {
+  static {
+    __name(this, "AbstractColumn");
+  }
+  _initialize() {
+    super._initialize();
+    this._table = null;
+    this._contentWidth = 0;
+    this._userResized = false;
+    this._allocatedWidth = 0;
+    this._updateCellClass();
+  }
+  /**
+   * The model of the table the column is in, or `null`.
+   *
+   * @type {import('../data/abstract-model.js').AbstractModel | null}
+   */
+  get model() {
+    return this._table?.model || null;
+  }
+  /**
+   * Whether the column sorts its table when its header is clicked.
+   *
+   * @type {boolean}
+   */
+  get isSortable() {
+    return false;
+  }
+  /**
+   * Whether the table can measure the natural width of the cells (the text of the cells).
+   *
+   * @type {boolean}
+   */
+  get isAutoWidth() {
+    return this._width < 0 && !this._userResized;
+  }
+  /**
+   * Returns the text of the cell of a row, used for measuring, type-ahead search and
+   * accessibility.
+   *
+   * @param {object} _row
+   * @param {number} _index
+   * @returns {string}
+   */
+  getCellText(_row, _index) {
+    return "";
+  }
+  /**
+   * Creates the element of a cell. The table sets its class names.
+   *
+   * @protected
+   * @returns {HTMLElement}
+   */
+  _createCell() {
+    const cell = document.createElement("div");
+    cell.setAttribute("role", "gridcell");
+    return cell;
+  }
+  /**
+   * Fills a cell for a row. The default shows `getCellText()`.
+   *
+   * @protected
+   * @param {HTMLElement} cell
+   * @param {object} row
+   * @param {number} index
+   */
+  _renderCell(cell, row, index) {
+    this._renderText(cell, this.getCellText(row, index));
+  }
+  /**
+   * Shows text in a cell, shortened according to `ellipsize`.
+   *
+   * @protected
+   * @param {HTMLElement} cell
+   * @param {string} text
+   */
+  _renderText(cell, text) {
+    if (this._ellipsize === EllipsizeMode.MIDDLE) {
+      text = this._ellipsizeMiddle(text);
+    }
+    if (cell.wyText === text && cell.wyEllipsize === this._ellipsize) {
+      return;
+    }
+    cell.wyText = text;
+    cell.wyEllipsize = this._ellipsize;
+    if (this._ellipsize === EllipsizeMode.START) {
+      const isolate = document.createElement("bdi");
+      isolate.textContent = text;
+      cell.replaceChildren(isolate);
+    } else {
+      cell.textContent = text;
+    }
+  }
+  /**
+   * Returns the class names of a cell.
+   *
+   * @protected
+   * @param {object} row
+   * @param {number} index
+   * @returns {string}
+   */
+  _getCellClassName(row, index) {
+    const extra = this._cellClassName ? this._cellClassName(row, index, this) : "";
+    return extra ? `${this._cellClass} ${extra}` : this._cellClass;
+  }
+  /**
+   * Returns the class names of the cells that are specific to the column type.
+   *
+   * @protected
+   * @returns {string}
+   */
+  _getTypeClassName() {
+    return "";
+  }
+  /**
+   * Measures the natural width of the content of a cell, without padding.
+   *
+   * @protected
+   * @param {object} row
+   * @param {number} index
+   * @param {(text: string) => number} measureText
+   * @returns {number}
+   */
+  _measureCell(row, index, measureText2) {
+    return measureText2(this.getCellText(row, index));
+  }
+  /**
+   * Handles a click on a cell, e.g. to toggle a check box.
+   *
+   * @protected
+   * @param {HTMLElement} _cell
+   * @param {number} _index
+   * @param {MouseEvent} _event
+   * @returns {boolean} Whether the click was handled.
+   */
+  _onCellClick(_cell, _index, _event) {
+    return false;
+  }
+  /**
+   * Handles the Space key on the cursor row. Columns with editable cells toggle them.
+   *
+   * @protected
+   * @param {number} _index
+   * @returns {boolean} Whether the key was handled.
+   */
+  _onCellKeyActivate(_index) {
+    return false;
+  }
+  /**
+   * Returns the model column the table is sorted on when the header is clicked, or `null`.
+   *
+   * @protected
+   * @returns {string | null}
+   */
+  _getSortKey() {
+    return null;
+  }
+  /**
+   * Sets the table. Called by the table.
+   *
+   * @protected
+   * @param {import('../widgets/table.js').Table | null} table
+   */
+  _setTable(table) {
+    if (table && this._table && this._table !== table) {
+      throw new Error("The column has already been added to a table.");
+    }
+    this._table = table;
+    this._contentWidth = 0;
+    this._allocatedWidth = 0;
+    this.emit("table-change", this);
+  }
+  /**
+   * Tells the table that something changed.
+   *
+   * @protected
+   * @param {string} change One of {@link ColumnChange}.
+   */
+  _invalidate(change) {
+    this._table?._onColumnChange(this, change);
+  }
+  _updateCellClass() {
+    const typeClass = this._getTypeClassName();
+    this._cellClass = `wy-table-cell wy-align-${this._alignment} wy-ellipsize-${this._ellipsize}` + (typeClass ? ` ${typeClass}` : "");
+  }
+  _ellipsizeMiddle(text) {
+    const measure = this._table?._measureCellText;
+    const available = this._allocatedWidth - (this._table?._cellPadding || 0);
+    if (!measure || available <= 0 || measure(text) <= available) {
+      return text;
+    }
+    let low = 0;
+    let high = text.length;
+    while (low < high) {
+      const keep = low + high + 1 >>> 1;
+      const candidate = text.slice(0, Math.ceil(keep / 2)) + ELLIPSIS + text.slice(text.length - Math.floor(keep / 2));
+      if (measure(candidate) <= available) {
+        low = keep;
+      } else {
+        high = keep - 1;
+      }
+    }
+    return text.slice(0, Math.ceil(low / 2)) + ELLIPSIS + text.slice(text.length - Math.floor(low / 2));
+  }
+};
+defineProperties(AbstractColumn, {
+  /**
+   * The text of the header.
+   */
+  label: {
+    value: "",
+    coerce(label) {
+      return label === null || label === void 0 ? "" : String(label);
+    },
+    changed() {
+      this._invalidate(ColumnChange.HEADER);
+    }
+  },
+  /**
+   * Another name of `label`.
+   */
+  title: {
+    signal: false,
+    get() {
+      return this._label;
+    },
+    set(title) {
+      this.label = title;
+      return false;
+    }
+  },
+  /**
+   * Whether the column is shown.
+   */
+  visible: {
+    value: true,
+    changed() {
+      this._invalidate(ColumnChange.STRUCTURE);
+    }
+  },
+  /**
+   * The width in pixels, or -1 for the natural width. Resizing the column by dragging its
+   * header sets this.
+   */
+  width: {
+    value: -1,
+    coerce(width) {
+      const value = Number(width);
+      if (!Number.isFinite(value)) {
+        throw new TypeError("A column width must be a number.");
+      }
+      return value < 0 ? -1 : Math.round(value);
+    },
+    changed(width) {
+      if (width < 0) {
+        this._userResized = false;
+      }
+      this._invalidate(ColumnChange.WIDTH);
+    }
+  },
+  /**
+   * The minimum width in pixels, also when resizing.
+   */
+  minWidth: {
+    value: 24,
+    coerce(width) {
+      return Math.max(0, Math.round(Number(width) || 0));
+    },
+    changed() {
+      this._invalidate(ColumnChange.WIDTH);
+    }
+  },
+  /**
+   * Whether the column takes a share of the extra width.
+   */
+  expand: {
+    value: false,
+    changed() {
+      this._invalidate(ColumnChange.WIDTH);
+    }
+  },
+  /**
+   * Whether the user can resize the column by dragging the right edge of its header.
+   */
+  resizable: {
+    value: true,
+    changed() {
+      this._invalidate(ColumnChange.HEADER);
+    }
+  },
+  /**
+   * The alignment of the cell contents: one of `Justification` (`FILL` is `START`).
+   */
+  alignment: {
+    value: Justification.START,
+    coerce(alignment) {
+      if (!Object.values(Justification).includes(alignment)) {
+        throw new RangeError(`Invalid alignment '${alignment}'.`);
+      }
+      return alignment === Justification.FILL ? Justification.START : alignment;
+    },
+    changed() {
+      this._updateCellClass();
+      this._invalidate(ColumnChange.CELLS);
+    }
+  },
+  /**
+   * How text that does not fit is shortened: one of `EllipsizeMode`.
+   */
+  ellipsize: {
+    value: EllipsizeMode.END,
+    coerce(mode) {
+      if (!Object.values(EllipsizeMode).includes(mode)) {
+        throw new RangeError(`Invalid ellipsize mode '${mode}'.`);
+      }
+      return mode;
+    },
+    changed() {
+      this._updateCellClass();
+      this._invalidate(ColumnChange.CELLS);
+    }
+  },
+  /**
+   * A function `(row, index, column) => string` returning extra class names for a cell, or
+   * `null`. Use it to style cells by their value, e.g. negative numbers in red.
+   */
+  cellClassName: {
+    value: null,
+    coerce(method) {
+      if (method !== null && typeof method !== "function") {
+        throw new TypeError("The cell class name must be a function or null.");
+      }
+      return method;
+    },
+    changed() {
+      this._invalidate(ColumnChange.CELLS);
+    }
+  },
+  /**
+   * The table the column is in, or `null`.
+   */
+  table: {
+    readOnly: true,
+    get() {
+      return this._table;
+    }
+  }
+});
+
+// src/columns/data-column.js
+var SortIndicator = Object.freeze({
+  NONE: "none",
+  ASCENDING: "asc",
+  DESCENDING: "desc"
+});
+var DataColumn = class extends AbstractColumn {
+  static {
+    __name(this, "DataColumn");
+  }
+  /**
+   * Whether the column sorts its table when its header is clicked.
+   *
+   * @type {boolean}
+   */
+  get isSortable() {
+    return this._sortable && Boolean(this._getSortKey());
+  }
+  /**
+   * Sorts the model on the column. Without an order, the order is reversed when the model is
+   * already sorted on this column, and ascending otherwise.
+   *
+   * @param {number} [order] One of `SortOrder`.
+   */
+  sort(order) {
+    const model = this.model;
+    const key = this._getSortKey();
+    if (!model || !key) {
+      return;
+    }
+    if (order === void 0) {
+      order = this.sortIndicator === SortIndicator.ASCENDING ? SortOrder.DESCENDING : SortOrder.ASCENDING;
+    }
+    model.sortByColumn(order === SortOrder.NONE ? null : key, order);
+  }
+  /**
+   * Returns the value of the column in a row.
+   *
+   * @param {object} row
+   * @returns {unknown}
+   */
+  getValue(row) {
+    return this._name === null ? void 0 : row[this._name];
+  }
+  getCellText(row, index) {
+    const value = this.getValue(row);
+    if (this._formatter) {
+      const text = this._formatter(value, row, index, this);
+      return text === null || text === void 0 ? "" : String(text);
+    }
+    return this._formatValue(value, row, index);
+  }
+  /**
+   * Converts a value to the text of its cell.
+   *
+   * @protected
+   * @param {unknown} value
+   * @param {object} _row
+   * @param {number} _index
+   * @returns {string}
+   */
+  _formatValue(value, _row, _index) {
+    return value === null || value === void 0 ? "" : String(value);
+  }
+  _renderCell(cell, row, index) {
+    if (this._renderer) {
+      cell.wyText = null;
+      this._renderer(cell, this.getValue(row), row, index, this);
+      return;
+    }
+    super._renderCell(cell, row, index);
+  }
+  _getSortKey() {
+    return this._sortColumn || this._name;
+  }
+};
+defineProperties(DataColumn, {
+  /**
+   * The model column this column shows.
+   */
+  name: {
+    value: null,
+    changed() {
+      this._contentWidth = 0;
+      this._invalidate(ColumnChange.CELLS);
+      this._invalidate(ColumnChange.HEADER);
+    }
+  },
+  /**
+   * The model column to sort on, or `null` to sort on `name`.
+   */
+  sortColumn: {
+    value: null,
+    changed() {
+      this._invalidate(ColumnChange.HEADER);
+    }
+  },
+  /**
+   * Whether clicking the header sorts the model on this column.
+   */
+  sortable: {
+    value: true,
+    changed() {
+      this._invalidate(ColumnChange.HEADER);
+    }
+  },
+  /**
+   * The sort indicator of the header: one of {@link SortIndicator}.
+   */
+  sortIndicator: {
+    readOnly: true,
+    get() {
+      const model = this.model;
+      const key = this._getSortKey();
+      if (!model || !key || model.sortColumn !== key) {
+        return SortIndicator.NONE;
+      }
+      if (model.sortOrder === SortOrder.ASCENDING) {
+        return SortIndicator.ASCENDING;
+      }
+      return model.sortOrder === SortOrder.DESCENDING ? SortIndicator.DESCENDING : SortIndicator.NONE;
+    }
+  },
+  /**
+   * A function `(value, row, index, column) => string` returning the text of a cell, or
+   * `null` for the column's own formatting.
+   */
+  formatter: {
+    value: null,
+    coerce(method) {
+      if (method !== null && typeof method !== "function") {
+        throw new TypeError("The formatter must be a function or null.");
+      }
+      return method;
+    },
+    changed() {
+      this._contentWidth = 0;
+      this._invalidate(ColumnChange.CELLS);
+    }
+  },
+  /**
+   * A function `(cell, value, row, index, column)` that fills the cell element itself, or
+   * `null`. Cells are reused for other rows, so it must set all of the cell's content.
+   */
+  renderer: {
+    value: null,
+    coerce(method) {
+      if (method !== null && typeof method !== "function") {
+        throw new TypeError("The renderer must be a function or null.");
+      }
+      return method;
+    },
+    changed() {
+      this._invalidate(ColumnChange.CELLS);
+    }
+  }
+});
+
+// src/columns/check-box-column.js
+var CHECK_SIZE = 13;
+var CheckBoxColumn = class extends DataColumn {
+  static {
+    __name(this, "CheckBoxColumn");
+  }
+  /**
+   * Toggles the value of a row, as if its check box was clicked. This works when the column is
+   * not editable, too.
+   *
+   * @param {number} index
+   * @returns {boolean} The new value.
+   */
+  toggle(index) {
+    const model = this.model;
+    if (!model || this._name === null) {
+      throw new Error("The column is not connected to a model.");
+    }
+    const row = model.getRow(index);
+    const active = !this.getValue(row);
+    const newIndex = model.updateRow(index, { [this._name]: active });
+    this.emit("toggle", this, newIndex, row, active);
+    return active;
+  }
+  getCellText(row) {
+    return this.getValue(row) ? "\u2713" : "";
+  }
+  _createCell() {
+    const cell = super._createCell();
+    const check = document.createElement("span");
+    check.className = "wy-table-check";
+    check.setAttribute("role", "checkbox");
+    cell.append(check);
+    return cell;
+  }
+  _renderCell(cell, row, index) {
+    if (this._renderer) {
+      super._renderCell(cell, row, index);
+      return;
+    }
+    let check = cell.firstElementChild;
+    if (!check?.classList.contains("wy-table-check")) {
+      check = this._createCell().firstElementChild;
+      cell.replaceChildren(check);
+    }
+    const active = Boolean(this.getValue(row));
+    check.setAttribute("aria-checked", String(active));
+    check.setAttribute("aria-readonly", String(!this._editable));
+    check.setAttribute("aria-label", this._label);
+    check.classList.toggle("wy-active", active);
+  }
+  _getTypeClassName() {
+    return this._editable ? "wy-table-check-cell wy-editable" : "wy-table-check-cell";
+  }
+  _measureCell() {
+    return CHECK_SIZE;
+  }
+  _onCellClick(_cell, index) {
+    if (!this._editable) {
+      return false;
+    }
+    this.toggle(index);
+    return true;
+  }
+  _onCellKeyActivate(index) {
+    return this._onCellClick(null, index);
+  }
+};
+defineProperties(CheckBoxColumn, {
+  alignment: { value: Justification.CENTER },
+  ellipsize: { value: EllipsizeMode.NONE },
+  /**
+   * Whether clicking a check box toggles the value in the model.
+   */
+  editable: {
+    value: true,
+    changed() {
+      this._updateCellClass();
+      this._invalidate(ColumnChange.CELLS);
+    }
+  }
+});
+registerType("check-box-column", CheckBoxColumn);
+
+// src/columns/text-column.js
+var TextColumn = class extends DataColumn {
+  static {
+    __name(this, "TextColumn");
+  }
+};
+registerType("text-column", TextColumn);
+
+// src/data/abstract-model.js
+var COLUMN_TYPES = Object.freeze([
+  "auto",
+  "string",
+  "number",
+  "float",
+  "double",
+  "int",
+  "integer",
+  "timestamp",
+  "bool",
+  "boolean",
+  "date",
+  "time",
+  "date-time",
+  "datetime"
+]);
+var NUMBER_TYPES = /* @__PURE__ */ new Set(["number", "float", "double", "int", "integer", "timestamp"]);
+var DATE_TYPES = /* @__PURE__ */ new Set(["date", "time", "date-time", "datetime"]);
+var COLLATORS = /* @__PURE__ */ new Map();
+function getCollator(locale, caseSensitive) {
+  const key = `${locale}|${caseSensitive}`;
+  let collator = COLLATORS.get(key);
+  if (!collator) {
+    collator = new Intl.Collator(locale, {
+      sensitivity: caseSensitive ? "variant" : "accent",
+      usage: "sort"
+    });
+    COLLATORS.set(key, collator);
+  }
+  return collator;
+}
+__name(getCollator, "getCollator");
+function toTimestamp(value) {
+  if (value instanceof Date) {
+    return value.getTime();
+  }
+  if (typeof value === "number") {
+    return value;
+  }
+  if (typeof value === "string" && value.trim() !== "") {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : Date.parse(value);
+  }
+  return NaN;
+}
+__name(toTimestamp, "toTimestamp");
+function isCaseSensitive(info) {
+  const value = info.caseSensitive ?? info["case-sensitive"];
+  return value !== false;
+}
+__name(isCaseSensitive, "isCaseSensitive");
+var AbstractModel = class extends Instance {
+  static {
+    __name(this, "AbstractModel");
+  }
+  /**
+   * @param {Record<string, unknown> | object[]} [properties] Property values, or (like the
+   *     original toolkit) the initial rows, followed by the other arguments.
+   * @param {string | null} [idColumn] The id column, when the rows are passed as an array.
+   * @param {string | null} [sortColumn] The sort column, when the rows are passed as an array.
+   * @param {number} [sortOrder] The sort order, when the rows are passed as an array.
+   */
+  constructor(properties, idColumn, sortColumn, sortOrder) {
+    if (Array.isArray(properties)) {
+      properties = {
+        rows: properties,
+        idColumn: idColumn ?? null,
+        sortColumn: sortColumn ?? null,
+        sortOrder: sortColumn ? sortOrder ?? SortOrder.ASCENDING : SortOrder.NONE
+      };
+    }
+    super(properties);
+  }
+  _initialize() {
+    super._initialize();
+    this._rows = [];
+    this._indexById = null;
+    this._indexDirty = true;
+    this._columnsInfo = {};
+  }
+  /**
+   * Sets several properties. The sort column and order are applied together, so the rows are
+   * sorted once.
+   *
+   * @param {Record<string, unknown>} properties
+   * @returns {boolean}
+   */
+  set(properties) {
+    const { sortColumn, sortOrder, ...rest } = properties;
+    const { "sort-column": sortColumnKebab, "sort-order": sortOrderKebab, ...others } = rest;
+    let changed = super.set(others);
+    const column = sortColumn !== void 0 ? sortColumn : sortColumnKebab;
+    const order = sortOrder !== void 0 ? sortOrder : sortOrderKebab;
+    if (column !== void 0 || order !== void 0) {
+      const oldColumn = this.sortColumn;
+      const oldOrder = this.sortOrder;
+      if (column !== void 0) {
+        this.sortByColumn(column, order ?? (column ? SortOrder.ASCENDING : SortOrder.NONE));
+      } else {
+        this.sortOrder = order;
+      }
+      changed = changed || oldColumn !== this.sortColumn || oldOrder !== this.sortOrder;
+    }
+    return changed;
+  }
+  /**
+   * Gets a row.
+   *
+   * @param {number} index
+   * @returns {object}
+   * @throws {RangeError} If there is no row at the index.
+   */
+  getRow(index) {
+    const row = Number.isInteger(index) ? this._rows[index] : void 0;
+    if (row === void 0) {
+      throw new RangeError(`There is no row at index ${index}.`);
+    }
+    return row;
+  }
+  /**
+   * Gets a row by its id.
+   *
+   * @param {unknown} id
+   * @returns {object}
+   * @throws {Error} If there is no id column or no row with the id.
+   */
+  getRowById(id) {
+    return this.getRow(this.getRowIndexById(id));
+  }
+  /**
+   * Gets the index of a row by its id.
+   *
+   * @param {unknown} id
+   * @returns {number}
+   * @throws {Error} If there is no id column or no row with the id.
+   */
+  getRowIndexById(id) {
+    const index = this._getIndexById().get(id);
+    if (index === void 0) {
+      throw new RangeError(`There is no row with id ${String(id)}.`);
+    }
+    return index;
+  }
+  /**
+   * Gets the id of the row at an index.
+   *
+   * @param {number} index
+   * @returns {unknown}
+   * @throws {Error} If there is no id column or no row at the index.
+   */
+  getRowIdByIndex(index) {
+    if (!this.idColumn) {
+      throw new Error("The model has no id column.");
+    }
+    return this.getRow(index)[this.idColumn];
+  }
+  /**
+   * Checks whether there is a row with an id.
+   *
+   * @param {unknown} id
+   * @returns {boolean}
+   * @throws {Error} If there is no id column.
+   */
+  hasRowId(id) {
+    return this._getIndexById().has(id);
+  }
+  /**
+   * Gets a value.
+   *
+   * @param {number} index The row index.
+   * @param {string} column
+   * @returns {unknown}
+   */
+  getCellValue(index, column) {
+    return this.getRow(index)[column];
+  }
+  /**
+   * Gets a value by row id.
+   *
+   * @param {unknown} id
+   * @param {string} column
+   * @returns {unknown}
+   */
+  getCellValueById(id, column) {
+    return this.getRowById(id)[column];
+  }
+  /**
+   * Appends a row. If the model is sorted, the row is placed at its sorted position instead.
+   *
+   * @param {object} row
+   * @returns {number} The index of the new row.
+   */
+  appendRow(row) {
+    return this.insertRow(this.rowsCount, row);
+  }
+  /**
+   * Prepends a row. If the model is sorted, the row is placed at its sorted position instead.
+   *
+   * @param {object} row
+   * @returns {number} The index of the new row.
+   */
+  prependRow(row) {
+    return this.insertRow(0, row);
+  }
+  /**
+   * Inserts a row at an index. If the model is sorted, the row is placed at its sorted position
+   * instead.
+   *
+   * @param {number} index Between 0 and `rowsCount`.
+   * @param {object} row
+   * @returns {number} The index the row got.
+   * @throws {RangeError} If the index is invalid.
+   * @throws {Error} If the model has an id column and the id is already in use.
+   */
+  insertRow(_index, _row) {
+    throw new Error(`${this.constructor.name} does not implement insertRow().`);
+  }
+  /**
+   * Appends several rows at once. If the model is sorted, the rows are placed at their sorted
+   * positions. With more than one row, listeners get a single `rows-reorder` signal instead of
+   * one `row-insert` per row.
+   *
+   * @param {object[]} rows
+   */
+  appendRows(rows) {
+    this.insertRows(this.rowsCount, rows);
+  }
+  /**
+   * Inserts several rows at an index. If the model is sorted, the rows are placed at their
+   * sorted positions. With more than one row, listeners get a single `rows-reorder` signal
+   * instead of one `row-insert` per row.
+   *
+   * @param {number} index
+   * @param {object[]} rows
+   */
+  insertRows(_index, _rows) {
+    throw new Error(`${this.constructor.name} does not implement insertRows().`);
+  }
+  /**
+   * Removes a row.
+   *
+   * @param {number} index
+   * @returns {object} The removed row.
+   */
+  removeRow(_index) {
+    throw new Error(`${this.constructor.name} does not implement removeRow().`);
+  }
+  /**
+   * Removes a row by id.
+   *
+   * @param {unknown} id
+   * @returns {object} The removed row.
+   */
+  removeRowById(id) {
+    return this.removeRow(this.getRowIndexById(id));
+  }
+  /**
+   * Removes all rows.
+   */
+  removeAllRows() {
+    throw new Error(`${this.constructor.name} does not implement removeAllRows().`);
+  }
+  /**
+   * Replaces a row by another row object. The model stays sorted.
+   *
+   * @param {number} index
+   * @param {object} row
+   * @returns {number} The index of the new row.
+   */
+  replaceRow(_index, _row) {
+    throw new Error(`${this.constructor.name} does not implement replaceRow().`);
+  }
+  /**
+   * Replaces a row by id.
+   *
+   * @param {unknown} id
+   * @param {object} row
+   * @returns {number} The index of the new row.
+   */
+  replaceRowById(id, row) {
+    return this.replaceRow(this.getRowIndexById(id), row);
+  }
+  /**
+   * Changes values of a row: the given columns are assigned to the row object. The model stays
+   * sorted, so the row may move.
+   *
+   * @param {number} index
+   * @param {Record<string, unknown>} changes Values by column.
+   * @returns {number} The index of the row after the change.
+   */
+  updateRow(_index, _changes) {
+    throw new Error(`${this.constructor.name} does not implement updateRow().`);
+  }
+  /**
+   * Changes values of a row by id.
+   *
+   * @param {unknown} id
+   * @param {Record<string, unknown>} changes
+   * @returns {number} The index of the row after the change.
+   */
+  updateRowById(id, changes) {
+    return this.updateRow(this.getRowIndexById(id), changes);
+  }
+  /**
+   * Sets a single value. The model stays sorted, so the row may move.
+   *
+   * @param {number} index
+   * @param {string} column
+   * @param {unknown} value
+   * @returns {number} The index of the row after the change.
+   */
+  setCellValue(index, column, value) {
+    return this.updateRow(index, { [column]: value });
+  }
+  /**
+   * Sets a single value by row id.
+   *
+   * @param {unknown} id
+   * @param {string} column
+   * @param {unknown} value
+   * @returns {number} The index of the row after the change.
+   */
+  setCellValueById(id, column, value) {
+    return this.setCellValue(this.getRowIndexById(id), column, value);
+  }
+  /**
+   * Calls a function for every row, in order.
+   *
+   * @param {(row: object, index: number) => void} method
+   * @param {object} [context]
+   */
+  forEachRow(method, context) {
+    this._rows.forEach((row, index) => method.call(context, row, index));
+  }
+  /**
+   * Sorts the model on a column. The model keeps itself sorted when rows change.
+   *
+   * @param {string | null} column The column, or `null` to stop sorting.
+   * @param {number} [order] One of `SortOrder`. `SortOrder.NONE` stops sorting.
+   */
+  sortByColumn(_column, _order = SortOrder.ASCENDING) {
+    throw new Error(`${this.constructor.name} does not implement sortByColumn().`);
+  }
+  /**
+   * Compares two rows on a column, using `columnsInfo`.
+   *
+   * @param {number} firstIndex
+   * @param {number} secondIndex
+   * @param {string} column
+   * @returns {number} -1, 0 or 1.
+   */
+  compareRows(firstIndex, secondIndex, column) {
+    return this._compareColumn(this.getRow(firstIndex), this.getRow(secondIndex), column);
+  }
+  /**
+   * Compares two rows on a column by row id.
+   *
+   * @param {unknown} firstId
+   * @param {unknown} secondId
+   * @param {string} column
+   * @returns {number} -1, 0 or 1.
+   */
+  compareRowsById(firstId, secondId, column) {
+    return this._compareColumn(this.getRowById(firstId), this.getRowById(secondId), column);
+  }
+  /**
+   * Compares two values the way the model sorts them. Values that are not values of the type
+   * (such as `null`, `undefined` and `NaN`) come after all other values.
+   *
+   * @param {unknown} first
+   * @param {unknown} second
+   * @param {string} [type] One of {@link COLUMN_TYPES}.
+   * @param {boolean} [caseSensitive]
+   * @returns {number} -1, 0 or 1.
+   */
+  compareValues(first, second, type = "auto", caseSensitive = true) {
+    return this._compareTyped(
+      first,
+      second,
+      type,
+      caseSensitive,
+      1,
+      this._getCollator(caseSensitive)
+    );
+  }
+  /**
+   * Returns the info of a column (see `columnsInfo`).
+   *
+   * @param {string} column
+   * @returns {ColumnInfo}
+   */
+  getColumnInfo(column) {
+    return this.columnsInfo[column] || {};
+  }
+  /**
+   * Sets the info of a single column, keeping the other columns' info.
+   *
+   * @param {string} column
+   * @param {ColumnInfo} info
+   */
+  setColumnInfo(column, info) {
+    this.columnsInfo = { ...this.columnsInfo, [column]: info };
+  }
+  /**
+   * Returns the id index, building it when the rows changed.
+   *
+   * @protected
+   * @returns {Map<unknown, number>}
+   */
+  _getIndexById() {
+    const idColumn = this.idColumn;
+    if (!idColumn) {
+      throw new Error("The model has no id column.");
+    }
+    if (this._indexDirty || !this._indexById) {
+      const index = /* @__PURE__ */ new Map();
+      const rows = this.rows;
+      for (let i = 0; i < rows.length; ++i) {
+        const id = rows[i][idColumn];
+        if (index.has(id)) {
+          throw new Error(`Duplicate row id ${String(id)}.`);
+        }
+        index.set(id, i);
+      }
+      this._indexById = index;
+      this._indexDirty = false;
+    }
+    return this._indexById;
+  }
+  /**
+   * Marks the id index as outdated.
+   *
+   * @protected
+   */
+  _invalidateIndex() {
+    this._indexDirty = true;
+  }
+  _compareColumn(firstRow, secondRow, column) {
+    const info = this.getColumnInfo(column);
+    const first = firstRow[column];
+    const second = secondRow[column];
+    if (info.compare) {
+      return Math.sign(info.compare(first, second)) || 0;
+    }
+    return this.compareValues(first, second, info.type || "auto", isCaseSensitive(info));
+  }
+  /**
+   * Creates the comparison function of rows for the current sort column and order. Values that
+   * are not values always come last, in both orders.
+   *
+   * @protected
+   * @returns {((first: object, second: object) => number) | null}
+   */
+  _createSortComparator() {
+    const column = this.sortColumn;
+    if (!column || this.sortOrder === SortOrder.NONE) {
+      return null;
+    }
+    const info = this.getColumnInfo(column);
+    const factor = this.sortOrder === SortOrder.DESCENDING ? -1 : 1;
+    if (info.compare) {
+      const compare = info.compare;
+      return (first, second) => factor * (Math.sign(compare(first[column], second[column])) || 0);
+    }
+    const type = info.type || "auto";
+    const caseSensitive = isCaseSensitive(info);
+    const collator = this._getCollator(caseSensitive);
+    return (first, second) => this._compareTyped(
+      first[column],
+      second[column],
+      type,
+      caseSensitive,
+      factor,
+      collator
+    );
+  }
+  /**
+   * Finds the index where a row goes in the sorted rows: after all rows it is equal to, so
+   * sorting stays stable.
+   *
+   * @protected
+   * @param {object[]} rows Sorted rows.
+   * @param {object} row
+   * @param {(first: object, second: object) => number} compare
+   * @returns {number}
+   */
+  _findInsertIndex(rows, row, compare) {
+    let low = 0;
+    let high = rows.length;
+    while (low < high) {
+      const middle = low + high >>> 1;
+      if (compare(row, rows[middle]) < 0) {
+        high = middle;
+      } else {
+        low = middle + 1;
+      }
+    }
+    return low;
+  }
+  /**
+   * Returns the collator for string comparisons, or `null` to compare by character code.
+   *
+   * @param {boolean} caseSensitive
+   * @returns {Intl.Collator | null}
+   */
+  _getCollator(caseSensitive) {
+    return this.localeAware ? getCollator(getLocaleManager().locale, caseSensitive) : null;
+  }
+  /**
+   * Compares two values of a type, multiplying the result by `factor` (-1 to sort descending).
+   * Values that are not values of the type come last, whatever the factor.
+   *
+   * @param {unknown} first
+   * @param {unknown} second
+   * @param {string} type
+   * @param {boolean} caseSensitive
+   * @param {number} factor
+   * @param {Intl.Collator | null} collator
+   * @returns {number}
+   */
+  _compareTyped(first, second, type, caseSensitive, factor, collator) {
+    let kind = type;
+    if (type === "auto") {
+      if (typeof first === "string" && typeof second === "string") {
+        kind = "string";
+      } else if (first instanceof Date || second instanceof Date) {
+        kind = "date";
+      } else if (typeof first === "boolean" && typeof second === "boolean") {
+        kind = "boolean";
+      } else {
+        kind = "number";
+      }
+    }
+    let a;
+    let b;
+    let aIsValue;
+    let bIsValue;
+    let text = false;
+    if (NUMBER_TYPES.has(kind)) {
+      a = typeof first === "number" ? first : parseFloat(first);
+      b = typeof second === "number" ? second : parseFloat(second);
+      aIsValue = Number.isFinite(a);
+      bIsValue = Number.isFinite(b);
+    } else if (DATE_TYPES.has(kind)) {
+      a = toTimestamp(first);
+      b = toTimestamp(second);
+      aIsValue = Number.isFinite(a);
+      bIsValue = Number.isFinite(b);
+    } else if (kind === "bool" || kind === "boolean") {
+      a = first ? 1 : 0;
+      b = second ? 1 : 0;
+      aIsValue = first !== null && first !== void 0 && !Number.isNaN(first);
+      bIsValue = second !== null && second !== void 0 && !Number.isNaN(second);
+    } else {
+      text = true;
+      aIsValue = typeof first === "string" || typeof first === "number" && Number.isFinite(first);
+      bIsValue = typeof second === "string" || typeof second === "number" && Number.isFinite(second);
+      a = aIsValue ? String(first) : "";
+      b = bIsValue ? String(second) : "";
+      if (!caseSensitive && !collator) {
+        a = a.toLowerCase();
+        b = b.toLowerCase();
+      }
+    }
+    if (!aIsValue) {
+      return bIsValue ? 1 : 0;
+    }
+    if (!bIsValue) {
+      return -1;
+    }
+    if (text && collator) {
+      return factor * Math.sign(collator.compare(a, b));
+    }
+    return a === b ? 0 : factor * (a < b ? -1 : 1);
+  }
+};
+defineProperties(AbstractModel, {
+  /**
+   * The rows, in order. Do not modify the array; setting it replaces all rows (the array is
+   * copied, the row objects are not).
+   */
+  rows: {
+    signal: false,
+    get() {
+      return this._rows;
+    },
+    set(rows) {
+      this._setRows(rows);
+    }
+  },
+  /**
+   * The number of rows.
+   */
+  rowsCount: {
+    readOnly: true,
+    get() {
+      return this.rows.length;
+    }
+  },
+  /**
+   * Information about columns that helps sorting and filtering, keyed by column name. See
+   * {@link ColumnInfo}: e.g. `{ price: { type: 'number' }, name: { caseSensitive: false } }`.
+   */
+  columnsInfo: {
+    value: null,
+    get() {
+      return this._columnsInfo;
+    },
+    set(columnsInfo) {
+      if (columnsInfo !== null && typeof columnsInfo !== "object") {
+        throw new TypeError("Columns info must be an object.");
+      }
+      for (const [column, info] of Object.entries(columnsInfo || {})) {
+        if (info.type && !COLUMN_TYPES.includes(info.type)) {
+          throw new RangeError(`Unknown type '${info.type}' of column '${column}'.`);
+        }
+      }
+      this._columnsInfo = { ...columnsInfo };
+      this._onSortingChange();
+    }
+  },
+  /**
+   * The column that identifies rows, or `null`. With an id column, rows can be addressed by
+   * id, and selections keep rows selected while they are sorted or filtered. Ids must be
+   * unique.
+   */
+  idColumn: {
+    value: null,
+    changed() {
+      this._invalidateIndex();
+      if (this._idColumn) {
+        this._getIndexById();
+      }
+    }
+  },
+  /**
+   * The column the rows are sorted on, or `null`. Setting a column while the order is
+   * `SortOrder.NONE` sorts ascending; setting `null` sets the order to `SortOrder.NONE`.
+   */
+  sortColumn: {
+    value: null,
+    set(column) {
+      this.sortByColumn(
+        column,
+        !column ? SortOrder.NONE : this.sortOrder === SortOrder.NONE ? SortOrder.ASCENDING : this.sortOrder
+      );
+      return false;
+    }
+  },
+  /**
+   * The sort order: one of `SortOrder`. Setting `SortOrder.NONE` also sets `sortColumn` to
+   * `null`.
+   */
+  sortOrder: {
+    value: SortOrder.NONE,
+    set(order) {
+      this.sortByColumn(order === SortOrder.NONE ? null : this.sortColumn, order);
+      return false;
+    }
+  },
+  /**
+   * Whether strings are compared with the rules of the current locale (`Intl.Collator`), so
+   * `'é'` sorts next to `'e'`. When `false`, strings are compared by character code, like the
+   * original toolkit.
+   */
+  localeAware: {
+    value: true,
+    changed() {
+      this._onSortingChange();
+    }
+  }
+});
+
+// src/data/selection.js
+var Selection = class extends Instance {
+  static {
+    __name(this, "Selection");
+  }
+  _initialize() {
+    super._initialize();
+    this._keys = /* @__PURE__ */ new Set();
+    this._batch = 0;
+    this._batchChanged = false;
+  }
+  destroy() {
+    this._connectModel(null);
+    this._keys.clear();
+    super.destroy();
+  }
+  /**
+   * Whether rows are selected by id (the model has an id column).
+   *
+   * @type {boolean}
+   */
+  get byId() {
+    return Boolean(this._model?.idColumn);
+  }
+  /**
+   * Returns the key of the row at an index: its id, or the index itself.
+   *
+   * @param {number} index
+   * @returns {unknown}
+   */
+  getKey(index) {
+    const model = this._requireModel();
+    return this.byId ? model.getRowIdByIndex(index) : (model.getRow(index), index);
+  }
+  /**
+   * Returns the index of the row with a key, or -1 if it is not in the model.
+   *
+   * @param {unknown} key
+   * @returns {number}
+   */
+  getIndex(key) {
+    const model = this._model;
+    if (!model) {
+      return -1;
+    }
+    if (this.byId) {
+      return model.hasRowId(key) ? model.getRowIndexById(key) : -1;
+    }
+    return Number.isInteger(key) && key >= 0 && key < model.rowsCount ? key : -1;
+  }
+  /**
+   * Selects a row by key. With `SelectionModes.SINGLE`, the other rows are unselected.
+   *
+   * @param {unknown} key
+   * @returns {boolean} Whether the selection changed.
+   */
+  selectRow(key) {
+    this._checkKey(key);
+    if (!this._modes) {
+      return false;
+    }
+    if (this._isSingle()) {
+      return this.selectOnlyRow(key);
+    }
+    return this._run(() => this._add(key));
+  }
+  /**
+   * Selects only one row, unselecting all others.
+   *
+   * @param {unknown} key
+   * @returns {boolean} Whether the selection changed.
+   */
+  selectOnlyRow(key) {
+    this._checkKey(key);
+    if (!this._modes) {
+      return false;
+    }
+    return this._run(() => {
+      for (const other of [...this._keys]) {
+        if (!Object.is(other, key)) {
+          this._delete(other);
+        }
+      }
+      this._add(key);
+    });
+  }
+  /**
+   * Selects all rows. With `SelectionModes.SINGLE`, this does nothing.
+   *
+   * @returns {boolean} Whether the selection changed.
+   */
+  selectAllRows() {
+    const model = this._requireModel();
+    if (!(this._modes & SelectionModes.MULTI)) {
+      return false;
+    }
+    return this._run(() => {
+      for (let i = 0; i < model.rowsCount; ++i) {
+        this._add(this.getKey(i));
+      }
+    });
+  }
+  /**
+   * Unselects a row by key.
+   *
+   * @param {unknown} key
+   * @returns {boolean} Whether the selection changed.
+   */
+  deselectRow(key) {
+    return this._run(() => this._delete(key));
+  }
+  /**
+   * Unselects all rows.
+   *
+   * @returns {boolean} Whether the selection changed.
+   */
+  deselectAllRows() {
+    return this._run(() => {
+      for (const key of [...this._keys]) {
+        this._delete(key);
+      }
+    });
+  }
+  /**
+   * Toggles the selection of a row by key.
+   *
+   * @param {unknown} key
+   * @returns {boolean} Whether the selection changed.
+   */
+  toggleRow(key) {
+    return this._keys.has(key) ? this.deselectRow(key) : this.selectRow(key);
+  }
+  /**
+   * Whether a row is selected, by key.
+   *
+   * @param {unknown} key
+   * @returns {boolean}
+   */
+  isRowSelected(key) {
+    return this._keys.has(key);
+  }
+  /**
+   * Calls a function for every selected row key, in selection order.
+   *
+   * @param {(key: unknown, index: number) => void} method Receives the key and its position in
+   *     the selection.
+   * @param {object} [context]
+   */
+  forEachRow(method, context) {
+    let i = 0;
+    for (const key of [...this._keys]) {
+      method.call(context, key, i++);
+    }
+  }
+  /**
+   * Returns a selected row key, in selection order.
+   *
+   * @param {number} [index]
+   * @returns {unknown}
+   * @throws {RangeError} If there is no such selected row.
+   */
+  getSelectedRowId(index = 0) {
+    if (!Number.isInteger(index) || index < 0 || index >= this._keys.size) {
+      throw new RangeError("The selected row could not be found.");
+    }
+    let i = 0;
+    for (const key of this._keys) {
+      if (i++ === index) {
+        return key;
+      }
+    }
+    return void 0;
+  }
+  /**
+   * Returns a selected row, in selection order.
+   *
+   * @param {number} [index]
+   * @returns {object}
+   */
+  getSelectedRow(index = 0) {
+    return this._rowOf(this.getSelectedRowId(index));
+  }
+  /**
+   * Selects the row at an index.
+   *
+   * @param {number} index
+   * @returns {boolean} Whether the selection changed.
+   */
+  select(index) {
+    return this.selectRow(this.getKey(index));
+  }
+  /**
+   * Selects only the row at an index.
+   *
+   * @param {number} index
+   * @returns {boolean} Whether the selection changed.
+   */
+  selectOnly(index) {
+    return this.selectOnlyRow(this.getKey(index));
+  }
+  /**
+   * Unselects the row at an index.
+   *
+   * @param {number} index
+   * @returns {boolean} Whether the selection changed.
+   */
+  unselect(index) {
+    return this.deselectRow(this.getKey(index));
+  }
+  /**
+   * Toggles the selection of the row at an index.
+   *
+   * @param {number} index
+   * @returns {boolean} Whether the selection changed.
+   */
+  toggle(index) {
+    return this.toggleRow(this.getKey(index));
+  }
+  /**
+   * Whether the row at an index is selected.
+   *
+   * @param {number} index
+   * @returns {boolean}
+   */
+  isSelected(index) {
+    const model = this._model;
+    if (!model || !this._keys.size || !Number.isInteger(index) || index < 0 || index >= model.rowsCount) {
+      return false;
+    }
+    return this._keys.has(this.byId ? model.getRowIdByIndex(index) : index);
+  }
+  /**
+   * Selects the rows from one index to another (in either order). With `SelectionModes.SINGLE`,
+   * only the row at `to` is selected.
+   *
+   * @param {number} from
+   * @param {number} to
+   * @param {boolean} [extend] Whether to keep the rows that are already selected.
+   * @returns {boolean} Whether the selection changed.
+   */
+  selectRange(from, to, extend = false) {
+    const model = this._requireModel();
+    const count = model.rowsCount;
+    if (!Number.isInteger(from) || !Number.isInteger(to)) {
+      throw new TypeError("Range indices must be integers.");
+    }
+    if (from < 0 || to < 0 || from >= count || to >= count) {
+      throw new RangeError(`Invalid row range ${from} to ${to}.`);
+    }
+    if (!this._modes) {
+      return false;
+    }
+    if (!(this._modes & SelectionModes.MULTI)) {
+      return this.selectOnly(to);
+    }
+    const start = Math.min(from, to);
+    const end = Math.max(from, to);
+    return this._run(() => {
+      if (!extend) {
+        const keep = /* @__PURE__ */ new Set();
+        for (let i = start; i <= end; ++i) {
+          keep.add(this.getKey(i));
+        }
+        for (const key of [...this._keys]) {
+          if (!keep.has(key)) {
+            this._delete(key);
+          }
+        }
+      }
+      for (let i = start; i <= end; ++i) {
+        this._add(this.getKey(i));
+      }
+    });
+  }
+  /**
+   * Selects all rows.
+   *
+   * @returns {boolean} Whether the selection changed.
+   */
+  selectAll() {
+    return this.selectAllRows();
+  }
+  /**
+   * Unselects all rows.
+   *
+   * @returns {boolean} Whether the selection changed.
+   */
+  unselectAll() {
+    return this.deselectAllRows();
+  }
+  _requireModel() {
+    if (!this._model) {
+      throw new Error("The selection is not connected to a model.");
+    }
+    return this._model;
+  }
+  _checkKey(key) {
+    if (this.getIndex(key) < 0) {
+      this._requireModel();
+      throw new RangeError(`There is no row ${String(key)}.`);
+    }
+  }
+  _rowOf(key) {
+    const model = this._requireModel();
+    return this.byId ? model.getRowById(key) : model.getRow(key);
+  }
+  _isSingle() {
+    return Boolean(this._modes & SelectionModes.SINGLE) && !(this._modes & SelectionModes.MULTI);
+  }
+  /**
+   * Runs a change, emitting `change` once at the end if anything changed.
+   *
+   * @param {() => void} method
+   * @returns {boolean} Whether the selection changed.
+   */
+  _run(method) {
+    this._batch += 1;
+    const before = this._batchChanged;
+    this._batchChanged = false;
+    let changed;
+    try {
+      method();
+    } finally {
+      changed = this._batchChanged;
+      this._batchChanged = before || changed;
+      this._batch -= 1;
+    }
+    if (!this._batch && this._batchChanged) {
+      this._batchChanged = false;
+      this.emit("change", this);
+    }
+    return changed;
+  }
+  _add(key) {
+    if (this._keys.has(key)) {
+      return;
+    }
+    this._keys.add(key);
+    this._batchChanged = true;
+    this.emit("row-select", this, key);
+  }
+  _delete(key) {
+    if (!this._keys.delete(key)) {
+      return;
+    }
+    this._batchChanged = true;
+    this.emit("row-deselect", this, key);
+  }
+  _connectModel(model) {
+    const old = this._model;
+    if (old) {
+      old.disconnect("row-insert", this._onRowInsert, this);
+      old.disconnect("row-remove", this._onRowRemove, this);
+      old.disconnect("row-move", this._onRowMove, this);
+      old.disconnect("row-update", this._onRowUpdate, this);
+      old.disconnect("rows-reorder", this._onRowsReorder, this);
+      old.disconnect("id-column-change", this._onIdColumnChange, this);
+      old.disconnect("destroy", this._onModelDestroy, this);
+    }
+    this._model = model;
+    if (model) {
+      model.connect("row-insert", this._onRowInsert, this);
+      model.connect("row-remove", this._onRowRemove, this);
+      model.connect("row-move", this._onRowMove, this);
+      model.connect("row-update", this._onRowUpdate, this);
+      model.connect("rows-reorder", this._onRowsReorder, this);
+      model.connect("id-column-change", this._onIdColumnChange, this);
+      model.connect("destroy", this._onModelDestroy, this);
+    }
+  }
+  /**
+   * Replaces the index keys after rows shifted, without selecting or unselecting anything.
+   *
+   * @param {(index: number) => number} map Returns the new index, or -1 to drop the key.
+   */
+  _remapIndices(map) {
+    const keys = /* @__PURE__ */ new Set();
+    const dropped = [];
+    for (const key of this._keys) {
+      const index = map(key);
+      if (index < 0) {
+        dropped.push(key);
+      } else {
+        keys.add(index);
+      }
+    }
+    this._keys = keys;
+    if (dropped.length) {
+      this._run(() => {
+        this._batchChanged = true;
+        for (const key of dropped) {
+          this.emit("row-deselect", this, key);
+        }
+      });
+    }
+  }
+  _onRowInsert(_model, index) {
+    if (!this.byId && this._keys.size) {
+      this._remapIndices((key) => key >= index ? key + 1 : key);
+    }
+  }
+  _onRowRemove(_model, index, id) {
+    if (this.byId) {
+      this.deselectRow(id);
+    } else if (this._keys.size) {
+      this._remapIndices((key) => key === index ? -1 : key > index ? key - 1 : key);
+    }
+  }
+  _onRowMove(_model, from, to) {
+    if (this.byId || !this._keys.size) {
+      return;
+    }
+    this._remapIndices((key) => {
+      if (key === from) {
+        return to;
+      }
+      if (from < to && key > from && key <= to) {
+        return key - 1;
+      }
+      if (to < from && key >= to && key < from) {
+        return key + 1;
+      }
+      return key;
+    });
+  }
+  _onRowUpdate(_model, _index, id, oldId) {
+    if (!this.byId || Object.is(id, oldId) || !this._keys.has(oldId)) {
+      return;
+    }
+    this._keys = new Set([...this._keys].map((key) => Object.is(key, oldId) ? id : key));
+    this._run(() => {
+      this._batchChanged = true;
+      this.emit("row-deselect", this, oldId);
+      this.emit("row-select", this, id);
+    });
+  }
+  _onRowsReorder() {
+    if (!this._keys.size) {
+      return;
+    }
+    if (this.byId) {
+      this._run(() => {
+        for (const key of [...this._keys]) {
+          if (!this._model.hasRowId(key)) {
+            this._delete(key);
+          }
+        }
+      });
+    } else {
+      this.deselectAllRows();
+    }
+  }
+  _onIdColumnChange() {
+    this.deselectAllRows();
+  }
+  _onModelDestroy() {
+    this.model = null;
+  }
+};
+defineProperties(Selection, {
+  /**
+   * The model the selection is of. Changing it clears the selection.
+   */
+  model: {
+    value: null,
+    set(model) {
+      if (model !== null && !(model instanceof AbstractModel)) {
+        throw new TypeError("A selection needs a model.");
+      }
+      this.deselectAllRows();
+      this._connectModel(model);
+    }
+  },
+  /**
+   * The selection modes: a mask of `SelectionModes`. With `NONE` nothing can be selected; with
+   * `SINGLE` at most one row. `TOGGLE` affects how tables handle clicks. Reducing the modes
+   * reduces the selection accordingly.
+   */
+  modes: {
+    value: SelectionModes.MULTI,
+    changed(modes) {
+      if (!modes) {
+        this.deselectAllRows();
+      } else if (this._isSingle() && this._keys.size > 1) {
+        const last = [...this._keys].pop();
+        this.selectOnlyRow(last);
+      }
+    }
+  },
+  /**
+   * The keys (ids, or indices without an id column) of the selected rows, in selection order.
+   * Setting it selects exactly those rows.
+   */
+  selectedRowIds: {
+    signal: false,
+    get() {
+      return [...this._keys];
+    },
+    set(keys) {
+      if (!Array.isArray(keys)) {
+        throw new TypeError("Selected row ids must be an array.");
+      }
+      keys.forEach((key) => this._checkKey(key));
+      const wanted = this._modes ? this._isSingle() ? keys.slice(-1) : keys : [];
+      this._run(() => {
+        const keep = new Set(wanted);
+        for (const key of [...this._keys]) {
+          if (!keep.has(key)) {
+            this._delete(key);
+          }
+        }
+        for (const key of wanted) {
+          this._add(key);
+        }
+      });
+      return false;
+    }
+  },
+  /**
+   * The selected rows, in selection order.
+   */
+  selectedRows: {
+    readOnly: true,
+    get() {
+      return [...this._keys].map((key) => this._rowOf(key));
+    }
+  },
+  /**
+   * The indices of the selected rows, in ascending order.
+   */
+  selectedIndices: {
+    readOnly: true,
+    get() {
+      const indices = [...this._keys].map((key) => this.getIndex(key)).filter((x) => x >= 0);
+      return indices.sort((first, second) => first - second);
+    }
+  },
+  /**
+   * The number of selected rows.
+   */
+  selectedRowsCount: {
+    readOnly: true,
+    get() {
+      return this._keys.size;
+    }
+  }
+});
+registerType("selection", Selection);
+registerType("selection-model", Selection);
+
+// src/widgets/table.js
+var ROW_BUFFER = 8;
+var TYPE_AHEAD_TIMEOUT2 = 1e3;
+var INITIAL_MEASURE_ROWS = 200;
+var AUTO_SIZE_ROWS = 2e4;
+var SORT_ARROW_WIDTH = 14;
+var HORIZONTAL_STEP = 20;
+var ARIA_SORT = Object.freeze({
+  [SortIndicator.NONE]: "none",
+  [SortIndicator.ASCENDING]: "ascending",
+  [SortIndicator.DESCENDING]: "descending"
+});
+var measureContext = null;
+function measureText(text, font) {
+  if (!text) {
+    return 0;
+  }
+  if (!measureContext) {
+    measureContext = document.createElement("canvas").getContext("2d");
+  }
+  if (measureContext.font !== font) {
+    measureContext.font = font;
+  }
+  return Math.ceil(measureContext.measureText(text).width);
+}
+__name(measureText, "measureText");
+function getFont(style) {
+  return style.font || `${style.fontStyle} ${style.fontWeight} ${style.fontSize} / ${style.lineHeight} ${style.fontFamily}`;
+}
+__name(getFont, "getFont");
+function getHorizontalFrame(style) {
+  return parseFloat(style.paddingLeft) + parseFloat(style.paddingRight) + parseFloat(style.borderLeftWidth) + parseFloat(style.borderRightWidth);
+}
+__name(getHorizontalFrame, "getHorizontalFrame");
+var Table = class extends Widget {
+  static {
+    __name(this, "Table");
+  }
+  _initialize() {
+    this._columns = [];
+    this._visibleColumns = [];
+    this._rowEls = /* @__PURE__ */ new Map();
+    this._freeRowEls = [];
+    this._headerEls = /* @__PURE__ */ new Map();
+    this._rowHeight = 0;
+    this._headerHeight = 0;
+    this._cellPadding = 0;
+    this._headerPadding = 0;
+    this._cellFont = "";
+    this._headerFont = "";
+    this._metricsDirty = true;
+    this._structureDirty = true;
+    this._headerDirty = true;
+    this._widthsDirty = true;
+    this._dirtyAll = true;
+    this._dirtyStart = Infinity;
+    this._dirtyEnd = -1;
+    this._totalWidth = 0;
+    this._lastCount = 0;
+    this._anchor = -1;
+    this._anchorKey = void 0;
+    this._cursorKey = void 0;
+    this._searchText = "";
+    this._searchTime = 0;
+    this._pendingScroll = null;
+    this._syncingAdjustments = false;
+    this._resizing = null;
+    this._pressedHeader = null;
+    this._rowCounter = 0;
+    this._lastResizerPress = null;
+    super._initialize();
+    this._id = uniqueId("wy-table");
+    this._selection = new Selection({ modes: SelectionModes.NONE });
+    this._selection.connect("change", this._onSelectionChange, this);
+    this._hAdjustment = new Adjustment({ stepIncrement: HORIZONTAL_STEP });
+    this._vAdjustment = new Adjustment();
+    this._hAdjustment.connect("value-change", this._onAdjustmentValueChange, this);
+    this._vAdjustment.connect("value-change", this._onAdjustmentValueChange, this);
+    this._measureCellText = (text) => measureText(text, this._cellFont);
+    this.el.addEventListener("pointerdown", (event) => this._onPointerDown(event));
+    this.el.addEventListener("pointermove", (event) => this._onPointerMove(event));
+    this.el.addEventListener("pointerup", (event) => this._onPointerUp(event, false));
+    this.el.addEventListener("pointercancel", (event) => this._onPointerUp(event, true));
+    this.el.addEventListener("click", (event) => this._onClick(event));
+    this.el.addEventListener("dblclick", (event) => this._onDoubleClick(event));
+    this.el.addEventListener("keydown", (event) => this._onKeyDown(event));
+    this._viewEl.addEventListener("scroll", () => this._onScroll(), { passive: true });
+    this._viewObserver = new ResizeObserver(() => this._onViewResize());
+    this._viewObserver.observe(this._viewEl);
+    this._viewObserver.observe(this._probeRowEl);
+    this._viewObserver.observe(this._probeHeaderEl);
+    this._themeObserver = new MutationObserver(() => this._onThemeChange());
+    this._themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-wy-theme", "class", "style"]
+    });
+    this._disconnectLocale = getLocaleManager().connect(
+      "locale-change",
+      this._onLocaleChange,
+      this
+    );
+    this._refreshExpand();
+    this._queueLayout();
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-table wy-has-frame wy-alternating" role="grid" aria-rowcount="1">
+                <div class="wy-table-view">
+                    <div class="wy-table-header" role="row" aria-rowindex="1"></div>
+                    <div class="wy-table-body" role="rowgroup"></div>
+                </div>
+                <div class="wy-table-placeholder" hidden></div>
+                <div class="wy-table-probe" aria-hidden="true">
+                    <div class="wy-table-header">
+                        <div class="wy-table-column-header">
+                            <span class="wy-table-column-label">X</span>
+                        </div>
+                    </div>
+                    <div class="wy-table-row"><div class="wy-table-cell">X</div></div>
+                </div>
+            </div>
+        `);
+    this._viewEl = element.querySelector(".wy-table-view");
+    this._headerEl = this._viewEl.querySelector(".wy-table-header");
+    this._bodyEl = element.querySelector(".wy-table-body");
+    this._placeholderEl = element.querySelector(".wy-table-placeholder");
+    this._probeHeaderEl = element.querySelector(".wy-table-probe .wy-table-column-header");
+    this._probeRowEl = element.querySelector(".wy-table-probe .wy-table-row");
+    return element;
+  }
+  /**
+   * Adds a column at the end.
+   *
+   * @param {AbstractColumn} column
+   * @returns {AbstractColumn} The column.
+   */
+  addColumn(column) {
+    return this.insertColumn(column, this._columns.length);
+  }
+  /**
+   * Adds a column at the start.
+   *
+   * @param {AbstractColumn} column
+   * @returns {AbstractColumn} The column.
+   */
+  prependColumn(column) {
+    return this.insertColumn(column, 0);
+  }
+  /**
+   * Inserts a column at an index. A column can only be in one table.
+   *
+   * @param {AbstractColumn} column
+   * @param {number} index Between 0 and `columnsCount`.
+   * @returns {AbstractColumn} The column.
+   */
+  insertColumn(column, index) {
+    if (!(column instanceof AbstractColumn)) {
+      throw new TypeError("Only columns can be added to a table.");
+    }
+    if (column.table) {
+      throw new Error("The column has already been added to a table.");
+    }
+    if (!Number.isInteger(index) || index < 0 || index > this._columns.length) {
+      throw new RangeError(`Invalid column index ${index}.`);
+    }
+    column._setTable(this);
+    column.connect("destroy", this._onColumnDestroy, this);
+    this._columns.splice(index, 0, column);
+    this._measureColumns([column], this._getSampleIndices());
+    this._onColumnsChange();
+    this.emit("column-add", this, column);
+    return column;
+  }
+  /**
+   * Removes a column.
+   *
+   * @param {AbstractColumn} column
+   * @returns {number} The index the column had.
+   * @throws {Error} If the column is not in this table.
+   */
+  removeColumn(column) {
+    const index = this._columns.indexOf(column);
+    if (index < 0) {
+      throw new Error("The column is not in this table.");
+    }
+    this._columns.splice(index, 1);
+    column.disconnect("destroy", this._onColumnDestroy, this);
+    column._setTable(null);
+    this._onColumnsChange();
+    this.emit("column-remove", this, column);
+    return index;
+  }
+  /**
+   * Removes the column at an index.
+   *
+   * @param {number} index
+   * @returns {AbstractColumn} The removed column.
+   */
+  removeColumnByIndex(index) {
+    const column = this.getColumn(index);
+    this.removeColumn(column);
+    return column;
+  }
+  /**
+   * Removes and destroys all columns, like the original toolkit.
+   */
+  removeAllColumns() {
+    for (const column of [...this._columns].reverse()) {
+      this.removeColumn(column);
+      column.destroy();
+    }
+  }
+  /**
+   * Moves a column to another index.
+   *
+   * @param {AbstractColumn} column
+   * @param {number} index
+   */
+  reorderColumn(column, index) {
+    const oldIndex = this._columns.indexOf(column);
+    if (oldIndex < 0) {
+      throw new Error("The column is not in this table.");
+    }
+    this._columns.splice(oldIndex, 1);
+    this._columns.splice(clamp(index, 0, this._columns.length), 0, column);
+    this._onColumnsChange();
+  }
+  /**
+   * Returns the column at an index.
+   *
+   * @param {number} index
+   * @returns {AbstractColumn}
+   * @throws {RangeError} If there is no such column.
+   */
+  getColumn(index) {
+    const column = this._columns[index];
+    if (!column) {
+      throw new RangeError(`There is no column at index ${index}.`);
+    }
+    return column;
+  }
+  /**
+   * Returns the index of a column, or -1.
+   *
+   * @param {AbstractColumn} column
+   * @returns {number}
+   */
+  indexOfColumn(column) {
+    return this._columns.indexOf(column);
+  }
+  /**
+   * Returns the first data column showing a model column, or `null`.
+   *
+   * @param {string} name
+   * @returns {DataColumn | null}
+   */
+  getColumnByName(name) {
+    return this._columns.find((column) => column instanceof DataColumn && column.name === name) || null;
+  }
+  /**
+   * Sizes a column to fit its header and its cells (at most the first rows and the rendered
+   * rows are measured, for large models).
+   *
+   * @param {AbstractColumn} column
+   */
+  autoSizeColumn(column) {
+    if (!this._columns.includes(column)) {
+      throw new Error("The column is not in this table.");
+    }
+    this._measureMetrics();
+    const count = Math.min(this.model?.rowsCount || 0, AUTO_SIZE_ROWS);
+    const indices = [...Array(count).keys(), ...this._rowEls.keys()];
+    const measure = this._measureCellText;
+    let content = 0;
+    for (const index of new Set(indices)) {
+      content = Math.max(
+        content,
+        column._measureCell(this.model.getRow(index), index, measure)
+      );
+    }
+    column._userResized = false;
+    column.width = Math.max(
+      column.minWidth,
+      this._getHeaderWidth(column),
+      content + this._cellPadding
+    );
+  }
+  /**
+   * Scrolls a row into view.
+   *
+   * @param {number} index
+   * @param {'start' | 'center' | 'end' | null} [align] Where to show the row; by default the
+   *     table scrolls as little as possible.
+   */
+  scrollToRow(index, align = null) {
+    const count = this.model?.rowsCount || 0;
+    if (!Number.isInteger(index) || index < 0 || index >= count) {
+      throw new RangeError(`There is no row at index ${index}.`);
+    }
+    if (!this._rowHeight || !this._viewEl.clientHeight) {
+      this._pendingScroll = { index, align };
+      this._queueLayout();
+      return;
+    }
+    const height = this._rowHeight;
+    const top = index * height;
+    const view = this._viewEl;
+    const page = Math.max(height, view.clientHeight - this._headerHeight);
+    let scrollTop = view.scrollTop;
+    if (align === "start") {
+      scrollTop = top;
+    } else if (align === "end") {
+      scrollTop = top + height - page;
+    } else if (align === "center") {
+      scrollTop = top - (page - height) / 2;
+    } else if (top < scrollTop) {
+      scrollTop = top;
+    } else if (top + height > scrollTop + page) {
+      scrollTop = top + height - page;
+    }
+    if (scrollTop !== view.scrollTop) {
+      view.scrollTop = Math.max(0, scrollTop);
+      this._renderRows();
+    }
+  }
+  /**
+   * Returns the index of the row at a point, or -1.
+   *
+   * @param {number} x The page x coordinate.
+   * @param {number} y The page y coordinate.
+   * @returns {number}
+   */
+  getRowAtPosition(x, y) {
+    const clientX = x - window.scrollX;
+    const clientY = y - window.scrollY;
+    const view = this._viewEl.getBoundingClientRect();
+    if (!this._rowHeight || clientX < view.left || clientX >= view.right || clientY < view.top + this._headerHeight || clientY >= view.bottom) {
+      return -1;
+    }
+    const index = Math.floor(
+      (clientY - this._bodyEl.getBoundingClientRect().top) / this._rowHeight
+    );
+    return index >= 0 && index < (this.model?.rowsCount || 0) ? index : -1;
+  }
+  /**
+   * Activates a row, as if it was double clicked: emits `row-activate`.
+   *
+   * @param {number} index
+   */
+  activateRow(index) {
+    const row = this._requireModel().getRow(index);
+    this.emit("row-activate", this, index, row);
+  }
+  destroy() {
+    this._viewObserver.disconnect();
+    this._themeObserver.disconnect();
+    this._disconnectLocale();
+    if (this._resizing) {
+      getCursor().popShape("table-resize");
+      this._resizing = null;
+    }
+    this._connectModel(null);
+    for (const column of [...this._columns]) {
+      column.disconnect("destroy", this._onColumnDestroy, this);
+      column._setTable(null);
+      column.destroy();
+    }
+    this._columns = [];
+    this._selection.destroy();
+    this._hAdjustment.destroy();
+    this._vAdjustment.destroy();
+    super.destroy();
+  }
+  _updateLayout() {
+    if (this.destroyed) {
+      return;
+    }
+    if (this._metricsDirty) {
+      this._measureMetrics();
+    }
+    if (this._structureDirty) {
+      this._buildStructure();
+    }
+    if (this._headerDirty) {
+      this._updateHeaders();
+    }
+    if (this._widthsDirty) {
+      this._updateWidths();
+    }
+    this._renderRows();
+  }
+  _requireModel() {
+    if (!this._model) {
+      throw new Error("The table has no model.");
+    }
+    return this._model;
+  }
+  /**
+   * Measures the row height, header height, fonts and paddings from the probe elements.
+   *
+   * @returns {boolean} Whether the metrics are known (the table is rendered).
+   */
+  _measureMetrics() {
+    const rowHeight = this._probeRowEl.getBoundingClientRect().height;
+    if (!rowHeight) {
+      return false;
+    }
+    this._metricsDirty = false;
+    const cellStyle = getComputedStyle(this._probeRowEl.firstElementChild);
+    const headerStyle = getComputedStyle(this._probeHeaderEl);
+    const metrics = {
+      rowHeight,
+      headerHeight: this._probeHeaderEl.parentElement.getBoundingClientRect().height,
+      cellFont: getFont(cellStyle),
+      headerFont: getFont(getComputedStyle(this._probeHeaderEl.firstElementChild)),
+      cellPadding: getHorizontalFrame(cellStyle),
+      headerPadding: getHorizontalFrame(headerStyle)
+    };
+    const changed = metrics.rowHeight !== this._rowHeight || metrics.headerHeight !== this._probeHeaderHeight || metrics.cellFont !== this._cellFont || metrics.headerFont !== this._headerFont || metrics.cellPadding !== this._cellPadding || metrics.headerPadding !== this._headerPadding;
+    if (!changed) {
+      return true;
+    }
+    this._rowHeight = metrics.rowHeight;
+    this._probeHeaderHeight = metrics.headerHeight;
+    this._headerHeight = this._headerVisible ? metrics.headerHeight : 0;
+    this._cellFont = metrics.cellFont;
+    this._headerFont = metrics.headerFont;
+    this._cellPadding = metrics.cellPadding;
+    this._headerPadding = metrics.headerPadding;
+    this.el.style.setProperty("--wy-table-header-height", `${this._headerHeight}px`);
+    this._resetContentWidths();
+    this._dirtyAll = true;
+    return true;
+  }
+  _getSampleIndices() {
+    const count = Math.min(this.model?.rowsCount || 0, INITIAL_MEASURE_ROWS);
+    return [.../* @__PURE__ */ new Set([...Array(count).keys(), ...this._rowEls.keys()])];
+  }
+  _resetContentWidths() {
+    for (const column of this._columns) {
+      column._contentWidth = 0;
+    }
+    this._measureColumns(this._columns, this._getSampleIndices());
+  }
+  /**
+   * Grows the measured content widths of auto-width columns to fit the given rows.
+   *
+   * @param {AbstractColumn[]} columns
+   * @param {Iterable<number>} indices
+   * @returns {boolean} Whether a width grew.
+   */
+  _measureColumns(columns, indices) {
+    const model = this.model;
+    if (!model || !this._cellFont) {
+      return false;
+    }
+    const autoColumns = columns.filter((column) => column.visible && column.isAutoWidth);
+    if (!autoColumns.length) {
+      return false;
+    }
+    const measure = this._measureCellText;
+    const count = model.rowsCount;
+    let grown = false;
+    for (const index of indices) {
+      if (index >= count) {
+        continue;
+      }
+      const row = model.getRow(index);
+      for (const column of autoColumns) {
+        const width = column._measureCell(row, index, measure);
+        if (width > column._contentWidth) {
+          column._contentWidth = width;
+          grown = true;
+        }
+      }
+    }
+    if (grown) {
+      this._widthsDirty = true;
+    }
+    return grown;
+  }
+  _getHeaderWidth(column) {
+    const label = measureText(column.label, this._headerFont);
+    return Math.ceil(label + this._headerPadding + (column.isSortable ? SORT_ARROW_WIDTH : 0));
+  }
+  _onColumnsChange() {
+    this._structureDirty = true;
+    this._widthsDirty = true;
+    this._queueLayout();
+  }
+  /**
+   * Creates the header cells and drops the row elements, whose cells no longer match.
+   */
+  _buildStructure() {
+    this._structureDirty = false;
+    this._visibleColumns = this._columns.filter((column) => column.visible);
+    this._headerEls.clear();
+    this._headerEl.replaceChildren();
+    this._visibleColumns.forEach((column, index) => {
+      const cell = createElement(`
+                <div class="wy-table-column-header" role="columnheader" tabindex="-1">
+                    <span class="wy-table-column-label"></span>
+                    <span class="wy-table-sort-arrow" aria-hidden="true"></span>
+                    <div class="wy-table-resizer" aria-hidden="true"></div>
+                </div>
+            `);
+      cell.setAttribute("aria-colindex", String(index + 1));
+      cell.wyColumn = column;
+      this._headerEls.set(column, cell);
+      this._headerEl.append(cell);
+    });
+    this._fillerEl = createElement(
+      '<div class="wy-table-column-header wy-filler" aria-hidden="true"></div>'
+    );
+    this._headerEl.append(this._fillerEl);
+    this._rowEls.clear();
+    this._freeRowEls = [];
+    this._bodyEl.replaceChildren();
+    this.el.setAttribute("aria-colcount", String(this._visibleColumns.length));
+    this._headerDirty = true;
+    this._widthsDirty = true;
+    this._dirtyAll = true;
+  }
+  _updateHeaders() {
+    this._headerDirty = false;
+    for (const [column, cell] of this._headerEls) {
+      const indicator = column instanceof DataColumn ? column.sortIndicator : SortIndicator.NONE;
+      cell.firstElementChild.textContent = column.label;
+      cell.title = column.label;
+      cell.className = `wy-table-column-header wy-align-${column.alignment}` + (column.isSortable ? " wy-sortable" : "") + (column.resizable ? " wy-resizable" : "") + (indicator !== SortIndicator.NONE ? ` wy-sorted wy-sort-${indicator}` : "") + (this._pressedHeader?.cell === cell && this._pressedHeader.inside ? " wy-pressed" : "");
+      if (column.isSortable) {
+        cell.setAttribute("aria-sort", ARIA_SORT[indicator]);
+      } else {
+        cell.removeAttribute("aria-sort");
+      }
+    }
+  }
+  _updateWidths() {
+    this._widthsDirty = false;
+    const columns = this._visibleColumns;
+    const tracks = [];
+    let total = 0;
+    let expands = false;
+    for (const column of columns) {
+      let width = column.width;
+      if (width < 0) {
+        width = Math.max(
+          this._getHeaderWidth(column),
+          column._contentWidth + this._cellPadding
+        );
+      }
+      width = Math.max(width, column.minWidth);
+      total += width;
+      if (column.expand && !column._userResized) {
+        expands = true;
+        tracks.push(`minmax(${width}px, 1fr)`);
+      } else {
+        tracks.push(`${width}px`);
+      }
+      column._allocatedWidth = width;
+    }
+    if (!expands) {
+      tracks.push("minmax(0, 1fr)");
+    }
+    this._fillerEl.hidden = expands;
+    this._totalWidth = total;
+    this.el.style.setProperty("--wy-table-columns", tracks.join(" "));
+    this._headerEl.style.minWidth = `${total}px`;
+    this._bodyEl.style.minWidth = `${total}px`;
+    if (expands && columns.some((column) => column.ellipsize === "middle")) {
+      for (const column of columns) {
+        const cell = this._headerEls.get(column);
+        column._allocatedWidth = cell ? cell.getBoundingClientRect().width : column._allocatedWidth;
+      }
+      this._dirtyAll = true;
+    }
+  }
+  _invalidateRows(start, end) {
+    this._dirtyStart = Math.min(this._dirtyStart, start);
+    this._dirtyEnd = Math.max(this._dirtyEnd, end);
+    this._queueLayout();
+  }
+  /**
+   * Renders the rows in view, reusing the elements of rows that scrolled out of view.
+   */
+  _renderRows() {
+    if (this.destroyed || this._structureDirty) {
+      return;
+    }
+    const model = this.model;
+    const count = model ? model.rowsCount : 0;
+    const height = this._rowHeight;
+    this._bodyEl.style.height = `${count * height}px`;
+    this.el.setAttribute("aria-rowcount", String(count + 1));
+    const placeholder = !count && Boolean(this._placeholderText);
+    this._placeholderEl.hidden = !placeholder;
+    this._placeholderEl.textContent = this._placeholderText;
+    if (!height) {
+      return;
+    }
+    const view = this._viewEl;
+    const scrollTop = view.scrollTop;
+    const bodyHeight = Math.max(0, view.clientHeight - this._headerHeight);
+    const first = Math.max(0, Math.floor(scrollTop / height) - ROW_BUFFER);
+    const last = Math.min(count - 1, Math.ceil((scrollTop + bodyHeight) / height) + ROW_BUFFER);
+    for (const [index, element] of this._rowEls) {
+      if (index < first || index > last) {
+        this._rowEls.delete(index);
+        element.hidden = true;
+        element.wyIndex = -1;
+        this._freeRowEls.push(element);
+      }
+    }
+    const added = [];
+    for (let index = first; index <= last; ++index) {
+      let element = this._rowEls.get(index);
+      if (!element) {
+        element = this._freeRowEls.pop() || this._createRowElement();
+        element.hidden = false;
+        this._rowEls.set(index, element);
+        this._bindRow(element, index);
+        added.push(index);
+      } else if (this._dirtyAll || index >= this._dirtyStart && index <= this._dirtyEnd) {
+        this._bindRow(element, index);
+      }
+    }
+    this._dirtyAll = false;
+    this._dirtyStart = Infinity;
+    this._dirtyEnd = -1;
+    const measured = count !== this._lastCount ? [...this._rowEls.keys()] : added;
+    this._lastCount = count;
+    if (this._measureColumns(this._visibleColumns, measured)) {
+      this._updateWidths();
+      if (this._dirtyAll) {
+        this._dirtyAll = false;
+        for (const [index, element] of this._rowEls) {
+          this._bindRow(element, index);
+        }
+      }
+    }
+    this._updateActiveDescendant();
+    this._syncAdjustments();
+    if (this._pendingScroll && view.clientHeight) {
+      const { index, align } = this._pendingScroll;
+      this._pendingScroll = null;
+      if (index < count) {
+        this.scrollToRow(index, align);
+      }
+    }
+  }
+  _createRowElement() {
+    const element = document.createElement("div");
+    element.className = "wy-table-row";
+    element.id = `${this._id}-row-${++this._rowCounter}`;
+    element.setAttribute("role", "row");
+    for (const column of this._visibleColumns) {
+      const cell = column._createCell();
+      cell.classList.add("wy-table-cell");
+      element.append(cell);
+    }
+    this._bodyEl.append(element);
+    return element;
+  }
+  _bindRow(element, index) {
+    const row = this.model.getRow(index);
+    const selected = this._selection.isSelected(index);
+    element.wyIndex = index;
+    element.style.transform = `translateY(${index * this._rowHeight}px)`;
+    element.setAttribute("aria-rowindex", String(index + 2));
+    element.className = this._getRowClassName(index, selected);
+    if (this._selectionModes) {
+      element.setAttribute("aria-selected", String(selected));
+    } else {
+      element.removeAttribute("aria-selected");
+    }
+    const cells = element.children;
+    this._visibleColumns.forEach((column, columnIndex) => {
+      const cell = cells[columnIndex];
+      const className = column._getCellClassName(row, index);
+      if (cell.wyClassName !== className) {
+        cell.wyClassName = className;
+        cell.className = className;
+      }
+      column._renderCell(cell, row, index);
+    });
+  }
+  _getRowClassName(index, selected) {
+    return "wy-table-row" + (index & 1 ? " wy-odd" : "") + (selected ? " wy-selected" : "") + (index === this._cursor ? " wy-cursor" : "");
+  }
+  /**
+   * Updates the selected and cursor states of the rendered rows.
+   */
+  _updateRowStates() {
+    const count = this.model?.rowsCount || 0;
+    for (const [index, element] of this._rowEls) {
+      if (index >= count) {
+        continue;
+      }
+      const selected = this._selection.isSelected(index);
+      element.className = this._getRowClassName(index, selected);
+      if (this._selectionModes) {
+        element.setAttribute("aria-selected", String(selected));
+      }
+    }
+    this._updateActiveDescendant();
+  }
+  _updateActiveDescendant() {
+    const element = this._cursor >= 0 ? this._rowEls.get(this._cursor) : null;
+    if (element) {
+      this.el.setAttribute("aria-activedescendant", element.id);
+    } else {
+      this.el.removeAttribute("aria-activedescendant");
+    }
+  }
+  _syncAdjustments() {
+    const view = this._viewEl;
+    const count = this.model?.rowsCount || 0;
+    const page = Math.max(0, view.clientHeight - this._headerHeight);
+    this._syncingAdjustments = true;
+    try {
+      this._vAdjustment.set({
+        lower: 0,
+        upper: count * this._rowHeight,
+        pageSize: page,
+        stepIncrement: this._rowHeight,
+        pageIncrement: Math.max(this._rowHeight, page - this._rowHeight),
+        value: view.scrollTop
+      });
+      this._hAdjustment.set({
+        lower: 0,
+        upper: Math.max(view.clientWidth, this._totalWidth),
+        pageSize: view.clientWidth,
+        pageIncrement: view.clientWidth,
+        value: view.scrollLeft
+      });
+    } finally {
+      this._syncingAdjustments = false;
+    }
+  }
+  _onAdjustmentValueChange(adjustment) {
+    if (this._syncingAdjustments) {
+      return;
+    }
+    if (adjustment === this._vAdjustment) {
+      this._viewEl.scrollTop = adjustment.value;
+    } else {
+      this._viewEl.scrollLeft = adjustment.value;
+    }
+    this._renderRows();
+  }
+  _onScroll() {
+    this._renderRows();
+  }
+  _onViewResize() {
+    if (this.destroyed) {
+      return;
+    }
+    this._metricsDirty = true;
+    this._updateLayout();
+  }
+  _onThemeChange() {
+    this._metricsDirty = true;
+    this._queueLayout();
+  }
+  _onLocaleChange() {
+    this._resetContentWidths();
+    this._widthsDirty = true;
+    this._dirtyAll = true;
+    this._queueLayout();
+  }
+  _onColumnChange(column, change) {
+    switch (change) {
+      case ColumnChange.STRUCTURE:
+        this._measureColumns([column], this._getSampleIndices());
+        this._onColumnsChange();
+        break;
+      case ColumnChange.WIDTH:
+        this._measureColumns([column], this._getSampleIndices());
+        this._widthsDirty = true;
+        break;
+      case ColumnChange.HEADER:
+        this._headerDirty = true;
+        this._widthsDirty = true;
+        break;
+      default:
+        this._measureColumns([column], this._getSampleIndices());
+        this._dirtyAll = true;
+        break;
+    }
+    this._queueLayout();
+  }
+  _onColumnDestroy(column) {
+    if (this._columns.includes(column)) {
+      this.removeColumn(column);
+    }
+  }
+  _connectModel(model) {
+    const old = this._model;
+    if (old) {
+      old.disconnect("rows-change", this._onModelRowsChange, this);
+      old.disconnect("row-insert", this._onModelRowInsert, this);
+      old.disconnect("row-remove", this._onModelRowRemove, this);
+      old.disconnect("row-move", this._onModelRowMove, this);
+      old.disconnect("rows-reorder", this._onModelRowsReorder, this);
+      old.disconnect("sort-column-change", this._onModelSortChange, this);
+      old.disconnect("sort-order-change", this._onModelSortChange, this);
+      old.disconnect("destroy", this._onModelDestroy, this);
+    }
+    this._model = model;
+    if (model) {
+      model.connect("rows-change", this._onModelRowsChange, this);
+      model.connect("row-insert", this._onModelRowInsert, this);
+      model.connect("row-remove", this._onModelRowRemove, this);
+      model.connect("row-move", this._onModelRowMove, this);
+      model.connect("rows-reorder", this._onModelRowsReorder, this);
+      model.connect("sort-column-change", this._onModelSortChange, this);
+      model.connect("sort-order-change", this._onModelSortChange, this);
+      model.connect("destroy", this._onModelDestroy, this);
+    }
+    if (!this._selection.destroyed) {
+      this._selection.model = model;
+    }
+  }
+  _onModelRowsChange(_model, start, end) {
+    this._invalidateRows(start, end < start ? Infinity : end);
+  }
+  /**
+   * Moves the cursor and the selection anchor along with a row change.
+   *
+   * @param {(index: number) => number} map Returns the new index of a row.
+   */
+  _followRows(map) {
+    const count = this.model?.rowsCount || 0;
+    if (this._anchor >= 0) {
+      this._anchor = clamp(map(this._anchor), -1, count - 1);
+      this._rememberAnchorKey();
+    }
+    if (this._cursor >= 0) {
+      this.cursor = clamp(map(this._cursor), -1, count - 1);
+    }
+  }
+  _onModelRowInsert(_model, index) {
+    this._followRows((x) => x >= index ? x + 1 : x);
+  }
+  _onModelRowRemove(_model, index) {
+    this._followRows((x) => x > index ? x - 1 : x);
+  }
+  _onModelRowMove(_model, from, to) {
+    this._followRows((x) => {
+      if (x === from) {
+        return to;
+      }
+      if (from < to && x > from && x <= to) {
+        return x - 1;
+      }
+      return to < from && x >= to && x < from ? x + 1 : x;
+    });
+  }
+  _onModelRowsReorder() {
+    const cursor = this._findKey(this._cursorKey, this._cursor);
+    const anchor = this._findKey(this._anchorKey, this._anchor);
+    this._anchor = anchor;
+    this._rememberAnchorKey();
+    this.cursor = cursor;
+    this._resetContentWidths();
+    this._widthsDirty = true;
+    this._dirtyAll = true;
+    this._queueLayout();
+  }
+  _findKey(key, index) {
+    const count = this.model?.rowsCount || 0;
+    if (index < 0) {
+      return -1;
+    }
+    if (this._selection.byId && key !== void 0) {
+      return this._selection.getIndex(key);
+    }
+    return Math.min(index, count - 1);
+  }
+  _rememberAnchorKey() {
+    this._anchorKey = this._anchor >= 0 && this._selection.byId ? this.model.getRowIdByIndex(this._anchor) : void 0;
+  }
+  _onModelSortChange() {
+    this._headerDirty = true;
+    this._queueLayout();
+  }
+  _onModelDestroy() {
+    this.model = null;
+  }
+  _onSelectionChange() {
+    this._updateRowStates();
+  }
+  /**
+   * Handles a press on a row, selecting according to the selection modes.
+   *
+   * @param {number} index
+   * @param {boolean} extend Whether to select a range from the anchor (Shift).
+   * @param {boolean} toggle Whether to toggle the row (Control).
+   */
+  _pressRow(index, extend, toggle) {
+    const modes = this._selectionModes;
+    const selection = this._selection;
+    this.cursor = index;
+    if (!modes) {
+      return;
+    }
+    if (modes & SelectionModes.MULTI) {
+      if (extend && this._anchor >= 0) {
+        selection.selectRange(this._anchor, index, toggle);
+        return;
+      }
+      if (toggle || modes & SelectionModes.TOGGLE) {
+        selection.toggle(index);
+      } else {
+        selection.selectOnly(index);
+      }
+    } else if ((toggle || modes & SelectionModes.TOGGLE) && selection.isSelected(index)) {
+      selection.unselectAll();
+    } else {
+      selection.selectOnly(index);
+    }
+    this._anchor = index;
+    this._rememberAnchorKey();
+  }
+  /**
+   * Moves the cursor with the keyboard.
+   *
+   * @param {number} index
+   * @param {boolean} extend Whether to extend the selection from the anchor (Shift).
+   * @param {boolean} cursorOnly Whether to move only the cursor (Control).
+   */
+  _moveCursor(index, extend, cursorOnly) {
+    const count = this.model?.rowsCount || 0;
+    if (!count) {
+      return;
+    }
+    index = clamp(index, 0, count - 1);
+    if (extend && this._selectionModes & SelectionModes.MULTI) {
+      if (this._anchor < 0) {
+        this._anchor = this._cursor >= 0 ? this._cursor : index;
+        this._rememberAnchorKey();
+      }
+      this.cursor = index;
+      this._selection.selectRange(this._anchor, index, cursorOnly);
+    } else if (cursorOnly) {
+      this.cursor = index;
+    } else {
+      this.cursor = index;
+      if (this._selectionModes) {
+        this._selection.selectOnly(index);
+      }
+      this._anchor = index;
+      this._rememberAnchorKey();
+    }
+    this.scrollToRow(index);
+  }
+  _getRowIndex(target) {
+    const element = target instanceof Element ? target.closest(".wy-table-row") : null;
+    return element && element.parentElement === this._bodyEl && element.wyIndex >= 0 ? element.wyIndex : -1;
+  }
+  _getCellColumn(target) {
+    const cell = target instanceof Element ? target.closest(".wy-table-cell") : null;
+    const element = cell?.parentElement;
+    if (!element || element.parentElement !== this._bodyEl) {
+      return null;
+    }
+    const column = this._visibleColumns[Array.prototype.indexOf.call(element.children, cell)];
+    return column ? { cell, column } : null;
+  }
+  _onPointerDown(event) {
+    const header = event.target.closest?.(".wy-table-column-header");
+    if (header && this._headerEl.contains(header)) {
+      this._onHeaderPointerDown(event, header);
+      return;
+    }
+    const index = this._getRowIndex(event.target);
+    if (index < 0 || event.button !== 0 && event.button !== 2) {
+      return;
+    }
+    const toggle = event.ctrlKey || event.metaKey;
+    if (event.button === 2) {
+      if (!this._selection.isSelected(index)) {
+        this._pressRow(index, false, false);
+      } else {
+        this.cursor = index;
+      }
+      return;
+    }
+    this._pressRow(index, event.shiftKey, toggle);
+  }
+  _onHeaderPointerDown(event, header) {
+    const column = header.wyColumn;
+    if (event.button !== 0 || !column) {
+      return;
+    }
+    if (event.target.closest(".wy-table-resizer") && column.resizable) {
+      event.preventDefault();
+      const last = this._lastResizerPress;
+      const now = event.timeStamp;
+      this._lastResizerPress = { column, time: now };
+      if (last?.column === column && now - last.time <= settings.multiplePressInterval) {
+        this._lastResizerPress = null;
+        this.autoSizeColumn(column);
+        return;
+      }
+      this._resizing = {
+        column,
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startWidth: header.getBoundingClientRect().width
+      };
+      header.setPointerCapture?.(event.pointerId);
+      getCursor().pushShape(CursorShape.RESIZE_H, "table-resize");
+      return;
+    }
+    if (column.isSortable) {
+      this._pressedHeader = {
+        cell: header,
+        column,
+        pointerId: event.pointerId,
+        inside: true
+      };
+      header.classList.add("wy-pressed");
+      header.setPointerCapture?.(event.pointerId);
+    }
+  }
+  _onPointerMove(event) {
+    const resizing = this._resizing;
+    if (resizing && event.pointerId === resizing.pointerId) {
+      const width = Math.round(resizing.startWidth + event.clientX - resizing.startX);
+      resizing.column._userResized = true;
+      resizing.column.width = Math.max(resizing.column.minWidth, width);
+      return;
+    }
+    const pressed = this._pressedHeader;
+    if (pressed && event.pointerId === pressed.pointerId) {
+      const rect = pressed.cell.getBoundingClientRect();
+      pressed.inside = event.clientX >= rect.left && event.clientX < rect.right && event.clientY >= rect.top && event.clientY < rect.bottom;
+      pressed.cell.classList.toggle("wy-pressed", pressed.inside);
+    }
+  }
+  _onPointerUp(event, canceled) {
+    if (this._resizing && event.pointerId === this._resizing.pointerId) {
+      this._resizing = null;
+      getCursor().popShape("table-resize");
+      return;
+    }
+    const pressed = this._pressedHeader;
+    if (pressed && event.pointerId === pressed.pointerId) {
+      this._pressedHeader = null;
+      pressed.cell.classList.remove("wy-pressed");
+      if (pressed.inside && !canceled) {
+        this._cycleSort(pressed.column);
+      }
+    }
+  }
+  _onClick(event) {
+    if (event.button !== 0 || event.shiftKey || event.ctrlKey || event.metaKey) {
+      return;
+    }
+    const index = this._getRowIndex(event.target);
+    const target = this._getCellColumn(event.target);
+    if (index >= 0 && target && target.column._onCellClick(target.cell, index, event)) {
+      event.preventDefault();
+    }
+  }
+  _onDoubleClick(event) {
+    if (event.target.closest?.(".wy-table-header")) {
+      return;
+    }
+    const index = this._getRowIndex(event.target);
+    if (index < 0 || event.button !== 0) {
+      return;
+    }
+    const target = this._getCellColumn(event.target);
+    if (target?.column instanceof CheckBoxColumn && target.column.editable) {
+      return;
+    }
+    this.activateRow(index);
+  }
+  /**
+   * Sorts on a column, cycling ascending, descending and (with `allowUnsorted`) unsorted.
+   *
+   * @param {AbstractColumn} column
+   */
+  _cycleSort(column) {
+    if (!column.isSortable || !this.model) {
+      return;
+    }
+    if (column.sortIndicator === SortIndicator.DESCENDING && this._allowUnsorted) {
+      column.sort(SortOrder.NONE);
+    } else {
+      column.sort();
+    }
+  }
+  _onKeyDown(event) {
+    if (event.defaultPrevented || event.altKey) {
+      return;
+    }
+    const header = event.target.closest?.(".wy-table-column-header");
+    if (header && this._headerEl.contains(header)) {
+      if (this._onHeaderKeyDown(event, header)) {
+        event.preventDefault();
+      }
+      return;
+    }
+    if (this._handleKey(event)) {
+      event.preventDefault();
+    }
+  }
+  _handleKey(event) {
+    const count = this.model?.rowsCount || 0;
+    const cursor = this._cursor;
+    const shift = event.shiftKey;
+    const control = event.ctrlKey || event.metaKey;
+    const page = Math.max(
+      1,
+      Math.floor((this._viewEl.clientHeight - this._headerHeight) / (this._rowHeight || 1)) - 1
+    );
+    switch (event.key) {
+      case Key.UP:
+        if (cursor <= 0 && !shift && !control && this._focusHeader()) {
+          return true;
+        }
+        this._moveCursor(cursor - 1, shift, control);
+        return true;
+      case Key.DOWN:
+        this._moveCursor(cursor < 0 ? 0 : cursor + 1, shift, control);
+        return true;
+      case Key.PAGE_UP:
+        this._moveCursor(Math.max(0, cursor) - page, shift, control);
+        return true;
+      case Key.PAGE_DOWN:
+        this._moveCursor(Math.max(0, cursor) + page, shift, control);
+        return true;
+      case Key.HOME:
+        this._moveCursor(0, shift, control);
+        return true;
+      case Key.END:
+        this._moveCursor(count - 1, shift, control);
+        return true;
+      case Key.LEFT:
+      case Key.RIGHT:
+        this._viewEl.scrollLeft += event.key === Key.LEFT ? -HORIZONTAL_STEP : HORIZONTAL_STEP;
+        return true;
+      case Key.ENTER:
+        if (cursor >= 0) {
+          this.activateRow(cursor);
+          return true;
+        }
+        return false;
+      case Key.SPACE:
+        if (cursor < 0) {
+          this._moveCursor(0, false, false);
+          return count > 0;
+        }
+        if (!shift && !control && this._visibleColumns.some((column) => column._onCellKeyActivate(cursor))) {
+          return true;
+        }
+        this._pressRow(cursor, shift, control);
+        return true;
+    }
+    if (control && !shift && event.key.toLowerCase() === Key.A) {
+      if (this._selectionModes & SelectionModes.MULTI) {
+        this._selection.selectAll();
+      }
+      return true;
+    }
+    if (this._enableSearch && event.key.length === 1 && !control && event.key !== " ") {
+      return this._typeAhead(event.key);
+    }
+    return false;
+  }
+  _onHeaderKeyDown(event, header) {
+    const columns = this._visibleColumns;
+    const index = columns.indexOf(header.wyColumn);
+    const column = header.wyColumn;
+    switch (event.key) {
+      case Key.LEFT:
+      case Key.RIGHT: {
+        const direction = event.key === Key.LEFT ? -1 : 1;
+        if (event.shiftKey) {
+          if (column.resizable) {
+            const width = header.getBoundingClientRect().width + direction * HORIZONTAL_STEP / 2;
+            column._userResized = true;
+            column.width = Math.max(column.minWidth, Math.round(width));
+          }
+          return true;
+        }
+        this._focusHeader(columns[clamp(index + direction, 0, columns.length - 1)]);
+        return true;
+      }
+      case Key.HOME:
+      case Key.END:
+        this._focusHeader(columns[event.key === Key.HOME ? 0 : columns.length - 1]);
+        return true;
+      case Key.ENTER:
+      case Key.SPACE:
+        this._cycleSort(column);
+        return true;
+      case Key.DOWN:
+      case Key.ESCAPE:
+        this.el.focus({ preventScroll: true });
+        if (event.key === Key.DOWN && this._cursor < 0 && this.model?.rowsCount) {
+          this._moveCursor(0, false, false);
+        }
+        return true;
+    }
+    return false;
+  }
+  /**
+   * Moves the focus to a column header: the given column, the sorted column or the first.
+   *
+   * @param {AbstractColumn} [column]
+   * @returns {boolean} Whether a header got the focus.
+   */
+  _focusHeader(column) {
+    if (!this._headerVisible || !this._visibleColumns.length) {
+      return false;
+    }
+    if (!column) {
+      column = this._visibleColumns.find(
+        (x) => x instanceof DataColumn && x.sortIndicator !== SortIndicator.NONE
+      ) || this._visibleColumns[0];
+    }
+    const cell = this._headerEls.get(column);
+    if (!cell) {
+      return false;
+    }
+    cell.focus({ preventScroll: true });
+    cell.scrollIntoView?.({ block: "nearest", inline: "nearest" });
+    return true;
+  }
+  _getSearchColumn() {
+    const columns = this._visibleColumns.filter(
+      (column) => column instanceof DataColumn && !(column instanceof CheckBoxColumn)
+    );
+    if (this._searchColumn) {
+      return columns.find((column) => column.name === this._searchColumn) || null;
+    }
+    const sortColumn = this.model?.sortColumn;
+    return sortColumn && columns.find((column) => column._getSortKey() === sortColumn) || columns.find((column) => column instanceof TextColumn) || columns[0] || null;
+  }
+  /**
+   * Moves the cursor to the next row whose search column starts with the typed text.
+   *
+   * @param {string} character
+   * @returns {boolean} Whether the key was used.
+   */
+  _typeAhead(character) {
+    const model = this.model;
+    const column = this._getSearchColumn();
+    if (!model || !model.rowsCount || !column) {
+      return false;
+    }
+    const now = performance.now();
+    if (now - this._searchTime > TYPE_AHEAD_TIMEOUT2) {
+      this._searchText = "";
+    }
+    this._searchTime = now;
+    const locale = getLocaleManager().locale;
+    this._searchText += character.toLocaleLowerCase(locale);
+    const text = this._searchText;
+    const repeated = [...text].every((x) => x === text[0]);
+    const search = repeated ? text[0] : text;
+    const count = model.rowsCount;
+    const start = this._cursor < 0 ? 0 : repeated ? this._cursor + 1 : this._cursor;
+    for (let offset = 0; offset < count; ++offset) {
+      const index = (start + offset) % count;
+      const cellText = column.getCellText(model.getRow(index), index).toLocaleLowerCase(locale);
+      if (cellText.startsWith(search)) {
+        this._moveCursor(index, false, false);
+        return true;
+      }
+    }
+    return true;
+  }
+};
+defineProperties(Table, {
+  canFocus: { value: true },
+  hExpand: { value: true },
+  vExpand: { value: true },
+  /**
+   * The model: a `ListModel`, a `FilteredListModel` or another `AbstractModel`, or `null`.
+   */
+  model: {
+    value: null,
+    set(model) {
+      if (model !== null && !(model instanceof AbstractModel)) {
+        throw new TypeError("The model of a table must be a model.");
+      }
+      this._connectModel(model);
+      this._cursor = -1;
+      this._cursorKey = void 0;
+      this._anchor = -1;
+      this._anchorKey = void 0;
+      this._viewEl.scrollTop = 0;
+      this._resetContentWidths();
+      this._headerDirty = true;
+      this._widthsDirty = true;
+      this._dirtyAll = true;
+      this._queueLayout();
+    }
+  },
+  /**
+   * The `Selection` of the rows.
+   */
+  selection: {
+    readOnly: true,
+    get() {
+      return this._selection;
+    }
+  },
+  /**
+   * How rows can be selected: a mask of `SelectionModes`. `NONE` (the default) disables
+   * selecting.
+   */
+  selectionModes: {
+    value: SelectionModes.NONE,
+    changed(modes) {
+      this._selection.modes = modes;
+      if (modes & SelectionModes.MULTI) {
+        this.el.setAttribute("aria-multiselectable", "true");
+      } else {
+        this.el.removeAttribute("aria-multiselectable");
+      }
+      this._dirtyAll = true;
+      this._queueLayout();
+    }
+  },
+  /**
+   * The row with the keyboard cursor, or -1. It is distinct from the selection: Control with
+   * the arrow keys moves only the cursor.
+   */
+  cursor: {
+    value: -1,
+    coerce(index) {
+      if (!Number.isInteger(index)) {
+        throw new TypeError("The cursor must be a row index.");
+      }
+      const count = this.model?.rowsCount || 0;
+      return index < 0 || !count ? -1 : Math.min(index, count - 1);
+    },
+    changed(index) {
+      this._cursorKey = index >= 0 && this._selection.byId ? this.model.getRowIdByIndex(index) : void 0;
+      this._updateRowStates();
+    }
+  },
+  /**
+   * The columns, in order. Do not modify the array.
+   */
+  columns: {
+    readOnly: true,
+    get() {
+      return this._columns;
+    }
+  },
+  /**
+   * The number of columns.
+   */
+  columnsCount: {
+    readOnly: true,
+    get() {
+      return this._columns.length;
+    }
+  },
+  /**
+   * Whether the column headers are shown.
+   */
+  headerVisible: {
+    value: true,
+    changed(visible) {
+      this.el.classList.toggle("wy-headers-hidden", !visible);
+      this._metricsDirty = true;
+      this._probeHeaderHeight = -1;
+      this._queueLayout();
+    }
+  },
+  /**
+   * Another name of `headerVisible`.
+   */
+  showHeaders: {
+    signal: false,
+    get() {
+      return this._headerVisible;
+    },
+    set(show) {
+      this.headerVisible = show;
+      return false;
+    }
+  },
+  /**
+   * Whether every other row has a slightly darker background.
+   */
+  alternatingRowColors: {
+    value: true,
+    changed(alternating) {
+      this.el.classList.toggle("wy-alternating", alternating);
+    }
+  },
+  /**
+   * Whether the table has a border.
+   */
+  hasFrame: {
+    value: true,
+    changed(hasFrame) {
+      this.el.classList.toggle("wy-has-frame", hasFrame);
+    }
+  },
+  /**
+   * The text shown when the model has no rows (or there is no model).
+   */
+  placeholderText: {
+    value: "",
+    coerce(text) {
+      return text === null || text === void 0 ? "" : String(text);
+    },
+    changed() {
+      this._queueLayout();
+    }
+  },
+  /**
+   * The model column that type-ahead search uses, or `null` for the sort column (or else the
+   * first text column).
+   */
+  searchColumn: { value: null },
+  /**
+   * Whether typing searches the rows.
+   */
+  enableSearch: { value: true },
+  /**
+   * Whether clicking the header of a column sorted descending removes the sorting, instead of
+   * sorting ascending again.
+   */
+  allowUnsorted: { value: false },
+  /**
+   * The height of every row in pixels, from `--wy-row-height` (0 until the table is shown).
+   */
+  rowHeight: {
+    readOnly: true,
+    get() {
+      return this._rowHeight;
+    }
+  },
+  /**
+   * The horizontal `Adjustment` of the scroll position, in pixels. Only change its value; the
+   * table sets the rest.
+   */
+  hAdjustment: {
+    readOnly: true,
+    get() {
+      return this._hAdjustment;
+    }
+  },
+  /**
+   * The vertical `Adjustment` of the scroll position, in pixels. Only change its value; the
+   * table sets the rest.
+   */
+  vAdjustment: {
+    readOnly: true,
+    get() {
+      return this._vAdjustment;
+    }
+  }
+});
+Table.builderProperties = {
+  columns(builder, table, columns) {
+    if (!Array.isArray(columns)) {
+      throw new Error("Table columns must be an array.");
+    }
+    for (const column of builder.build(columns)) {
+      table.addColumn(column);
+    }
+  }
+};
+registerType("table", Table);
+
+// src/widgets/text-view.js
+var WrapMode = Object.freeze({
+  NONE: "none",
+  // Do not wrap; scroll horizontally instead.
+  CHAR: "char",
+  // Wrap between any two characters.
+  WORD: "word",
+  // Wrap between words; a word longer than a line overflows.
+  WORD_CHAR: "word-char"
+  // Wrap between words, and within words that do not fit on a line.
+});
+var TextView = class extends Widget {
+  static {
+    __name(this, "TextView");
+  }
+  _initialize() {
+    super._initialize();
+    this._textAreaEl.addEventListener("input", () => {
+      this.text = this._textAreaEl.value;
+    });
+    this._textAreaEl.addEventListener("keydown", (event) => this._onKeyDown(event));
+    this._updateEditable();
+    this._updateWrapMode();
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-text-view wy-entry">
+                <textarea class="wy-text-view-input" rows="4" cols="32" spellcheck="false"></textarea>
+            </div>
+        `);
+    this._textAreaEl = element.querySelector("textarea");
+    return element;
+  }
+  /**
+   * The native textarea element.
+   *
+   * @type {HTMLTextAreaElement}
+   */
+  get focusElement() {
+    return this._textAreaEl;
+  }
+  /**
+   * Selects a range of characters.
+   *
+   * @param {number} start
+   * @param {number} [end] The character after the last one, or -1 (the default) for the end.
+   */
+  selectRegion(start, end = -1) {
+    const length = this._textAreaEl.value.length;
+    start = Math.max(0, Math.min(start, length));
+    end = end < 0 ? length : Math.min(end, length);
+    if (end < start) {
+      this._textAreaEl.setSelectionRange(end, start, "backward");
+    } else {
+      this._textAreaEl.setSelectionRange(start, end);
+    }
+  }
+  /**
+   * Selects all text.
+   */
+  selectAll() {
+    this.selectRegion(0, -1);
+  }
+  /**
+   * Returns the selected range, or `null` if nothing is selected.
+   *
+   * @returns {{start: number, end: number} | null}
+   */
+  getSelectionBounds() {
+    const start = this._textAreaEl.selectionStart;
+    const end = this._textAreaEl.selectionEnd;
+    return start === end ? null : { start, end };
+  }
+  /**
+   * Returns the selected text, or `''`.
+   *
+   * @returns {string}
+   */
+  getSelectedText() {
+    const bounds = this.getSelectionBounds();
+    return bounds ? this._textAreaEl.value.slice(bounds.start, bounds.end) : "";
+  }
+  /**
+   * Inserts text at the cursor, replacing the selection, as if typed.
+   *
+   * @param {string} text
+   */
+  insertAtCursor(text) {
+    const area = this._textAreaEl;
+    area.setRangeText(String(text), area.selectionStart, area.selectionEnd, "end");
+    this.text = area.value;
+  }
+  _updateEditable() {
+    const editable = this._editable && this.isSensitive;
+    this._textAreaEl.readOnly = !editable;
+    this.el.classList.toggle("wy-read-only", !this._editable);
+    if (editable !== this._isEditable) {
+      this._isEditable = editable;
+      this.emit("is-editable-change", this);
+    }
+  }
+  _updateWrapMode() {
+    const mode = this._wrapMode;
+    this._textAreaEl.wrap = mode === WrapMode.NONE ? "off" : "soft";
+    this.el.dataset.wrap = mode;
+  }
+  _onIsSensitiveChange(isSensitive) {
+    super._onIsSensitiveChange(isSensitive);
+    this._updateEditable();
+  }
+  _onKeyDown(event) {
+    if (event.key !== Key.TAB || !this._acceptsTab || !this._isEditable || event.ctrlKey || event.altKey || event.metaKey || event.shiftKey) {
+      return;
+    }
+    event.preventDefault();
+    this.insertAtCursor("	");
+  }
+};
+defineProperties(TextView, {
+  canFocus: { value: true },
+  /**
+   * The text.
+   */
+  text: {
+    value: "",
+    coerce(text) {
+      return text === null || text === void 0 ? "" : String(text).replace(/\r\n?/g, "\n");
+    },
+    changed(text) {
+      const area = this._textAreaEl;
+      if (area.value !== text) {
+        const start = area.selectionStart;
+        const end = area.selectionEnd;
+        area.value = text;
+        if (document.activeElement === area) {
+          area.setSelectionRange(
+            Math.min(start, text.length),
+            Math.min(end, text.length)
+          );
+        }
+      }
+      this.emit("change", this);
+    }
+  },
+  /**
+   * Text shown while the text view is empty, as a hint.
+   */
+  placeholder: {
+    value: "",
+    changed(placeholder) {
+      this._textAreaEl.placeholder = placeholder || "";
+    }
+  },
+  /**
+   * Whether the user can change the text. A text view that is not sensitive is never editable.
+   */
+  editable: {
+    value: true,
+    coerce: Boolean,
+    changed() {
+      this._updateEditable();
+    }
+  },
+  /**
+   * Whether the user can currently change the text: it is `editable` and sensitive.
+   */
+  isEditable: { value: true, readOnly: true },
+  /**
+   * How long lines wrap: one of `WrapMode`.
+   */
+  wrapMode: {
+    value: WrapMode.WORD_CHAR,
+    coerce(mode) {
+      if (!Object.values(WrapMode).includes(mode)) {
+        throw new RangeError(`Invalid wrap mode '${mode}'.`);
+      }
+      return mode;
+    },
+    changed() {
+      this._updateWrapMode();
+    }
+  },
+  /**
+   * Whether the text uses a monospace font, e.g. for code.
+   */
+  monospace: {
+    value: false,
+    coerce: Boolean,
+    changed(monospace) {
+      this.el.classList.toggle("wy-monospace", monospace);
+    }
+  },
+  /**
+   * Whether Tab inserts a tab character instead of moving the focus. Shift+Tab always moves the
+   * focus backward.
+   */
+  acceptsTab: { value: false, coerce: Boolean },
+  /**
+   * Whether the text view has a frame.
+   */
+  hasFrame: {
+    value: true,
+    coerce: Boolean,
+    changed(hasFrame) {
+      this.el.classList.toggle("wy-no-frame", !hasFrame);
+    }
+  },
+  /**
+   * The accessible name of the text area, for text views without a visible label.
+   */
+  accessibleName: {
+    value: "",
+    changed(name) {
+      if (name) {
+        this._textAreaEl.setAttribute("aria-label", name);
+      } else {
+        this._textAreaEl.removeAttribute("aria-label");
+      }
+    }
+  }
+});
+registerType("text-view", TextView);
+
+// src/widgets/throbber.js
+var Throbber = class extends Widget {
+  static {
+    __name(this, "Throbber");
+  }
+  _initialize() {
+    super._initialize();
+    this._applyActive();
+  }
+  _render() {
+    return createElement('<div class="wy-throbber" role="progressbar"></div>');
+  }
+  /**
+   * Starts spinning. The same as setting `active` to `true`.
+   */
+  start() {
+    this.active = true;
+  }
+  /**
+   * Stops spinning. The same as setting `active` to `false`.
+   */
+  stop() {
+    this.active = false;
+  }
+  _applyActive() {
+    const active = this._active;
+    this.el.classList.toggle("wy-active", active);
+    this.el.setAttribute("aria-busy", String(active));
+    if (active) {
+      this.el.removeAttribute("aria-hidden");
+    } else {
+      this.el.setAttribute("aria-hidden", "true");
+    }
+  }
+};
+defineProperties(Throbber, {
+  /**
+   * Whether the throbber spins.
+   */
+  active: {
+    value: false,
+    coerce: Boolean,
+    changed() {
+      this._applyActive();
+    }
+  },
+  /**
+   * The size in pixels, or 0 for the default of 32 pixels.
+   */
+  pixelSize: {
+    value: 0,
+    coerce(size) {
+      if (!Number.isFinite(size) || size < 0) {
+        throw new Error(`Invalid pixel size ${size}.`);
+      }
+      return size;
+    },
+    changed(size) {
+      this.el.style.setProperty("--wy-throbber-size", size > 0 ? `${size}px` : null);
+    }
+  }
+});
+var Spinner = Throbber;
+registerType("throbber", Throbber);
+registerType("spinner", Throbber);
+
+// src/widgets/tool-bar.js
+var OVERFLOWED_CLASS = "wy-tool-bar-overflowed";
+var ToolBar = class extends Box {
+  static {
+    __name(this, "ToolBar");
+  }
+  _initialize() {
+    super._initialize();
+    this._overflowItems = [];
+    this._overflowMenu = null;
+    this._focusItem = null;
+    this._resizeObserver = null;
+    if (typeof ResizeObserver !== "undefined") {
+      this._resizeObserver = new ResizeObserver(() => this._updateOverflow());
+      this._resizeObserver.observe(this.el);
+    }
+    this.el.addEventListener("keydown", (event) => this._onKeyDown(event));
+    this.el.addEventListener("focusin", (event) => this._onFocusIn(event));
+    this._overflowEl.addEventListener("pointerdown", (event) => {
+      if (event.button === 0 && this.isSensitive) {
+        this._toggleOverflowMenu(false);
+      }
+    });
+    this._overflowEl.addEventListener("keydown", (event) => {
+      if (event.key === Key.ENTER || event.key === Key.SPACE || event.key === Key.DOWN) {
+        event.preventDefault();
+        event.stopPropagation();
+        this._toggleOverflowMenu(true);
+      }
+    });
+    this.el.classList.toggle("wy-show-arrow", this._showArrow);
+    this._applyStyle();
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-tool-bar" role="toolbar">
+                <div class="wy-tool-bar-body"></div>
+                <div class="wy-tool-bar-overflow" role="button" tabindex="-1" aria-haspopup="menu"
+                    aria-expanded="false" aria-label="More" hidden></div>
+            </div>
+        `);
+    this._bodyEl = element.querySelector(".wy-tool-bar-body");
+    this._overflowEl = element.querySelector(".wy-tool-bar-overflow");
+    return element;
+  }
+  /**
+   * The items that did not fit and are in the overflow menu.
+   *
+   * @type {import('./widget.js').Widget[]}
+   */
+  get overflowItems() {
+    return [...this._overflowItems];
+  }
+  destroy() {
+    this._resizeObserver?.disconnect();
+    this._overflowMenu?.destroy();
+    super.destroy();
+  }
+  _updateLayout() {
+    super._updateLayout();
+    this.el.setAttribute("aria-orientation", this._orientation);
+    this._updateOverflow();
+  }
+  _layoutChild(child, horizontal) {
+    super._layoutChild(child, horizontal);
+    const expands = horizontal ? child.isHExpand : child.isVExpand;
+    if (!expands) {
+      child._setLayoutStyle("flex", "0 0 auto");
+    }
+  }
+  _applyStyle() {
+    this.el.dataset.style = this._style;
+    this.el.style.setProperty("--wy-tool-bar-icon-size", `${this._iconSize}px`);
+    for (const child of this._children) {
+      if (child instanceof AbstractToolItem) {
+        child._onToolBarChange();
+      }
+    }
+    this._queueLayout();
+  }
+  /**
+   * Hides the items that do not fit and shows the overflow button for them.
+   *
+   * @protected
+   */
+  _updateOverflow() {
+    if (this.destroyed) {
+      return;
+    }
+    const horizontal = this._orientation !== Orientation.VERTICAL;
+    const body = this._bodyEl;
+    for (const child of this._children) {
+      child.el.classList.remove(OVERFLOWED_CLASS);
+    }
+    this._overflowItems = [];
+    const size = /* @__PURE__ */ __name(() => horizontal ? body.clientWidth : body.clientHeight, "size");
+    const contentSize = /* @__PURE__ */ __name(() => horizontal ? body.scrollWidth : body.scrollHeight, "contentSize");
+    if (!this._showArrow || !this.el.isConnected || contentSize() <= size() + 1) {
+      this._setOverflowVisible(false);
+      return;
+    }
+    this._setOverflowVisible(true);
+    const available = size();
+    const bodyRect = body.getBoundingClientRect();
+    const origin = horizontal ? bodyRect.left : bodyRect.top;
+    let overflowing = false;
+    let lastShown = null;
+    for (const child of this._children) {
+      if (!child.visible) {
+        continue;
+      }
+      if (!overflowing) {
+        const rect = child.el.getBoundingClientRect();
+        const end = (horizontal ? rect.right : rect.bottom) - origin;
+        overflowing = end > available + 0.5;
+      }
+      if (overflowing) {
+        this._overflowItems.push(child);
+      } else {
+        lastShown = child;
+      }
+    }
+    let index = lastShown ? this._children.indexOf(lastShown) : -1;
+    while (index >= 0 && this._children[index] instanceof SeparatorToolItem) {
+      this._overflowItems.unshift(this._children[index]);
+      index -= 1;
+      while (index >= 0 && !this._children[index].visible) {
+        index -= 1;
+      }
+    }
+    for (const child of this._overflowItems) {
+      child.el.classList.add(OVERFLOWED_CLASS);
+    }
+    if (this._focusItem && this._overflowItems.includes(this._focusItem)) {
+      this._focusItem = null;
+    }
+  }
+  _setOverflowVisible(visible) {
+    this._overflowEl.hidden = !visible;
+    this.el.classList.toggle("wy-overflowing", visible);
+    if (!visible) {
+      this._overflowMenu?.hide();
+    }
+  }
+  _toggleOverflowMenu(keyboard) {
+    if (this._overflowMenu?.visible) {
+      this._overflowMenu.hide();
+      return;
+    }
+    const menu = new Menu();
+    for (const child of this._overflowItems) {
+      const proxy = child instanceof AbstractToolItem ? child._createMenuProxy() : null;
+      if (proxy) {
+        menu.addChild(proxy);
+      }
+    }
+    const isSeparator = /* @__PURE__ */ __name((index) => menu.getChild(index) instanceof SeparatorMenuItem, "isSeparator");
+    while (menu.childrenCount && isSeparator(0)) {
+      menu.getChild(0).destroy();
+    }
+    while (menu.childrenCount && isSeparator(menu.childrenCount - 1)) {
+      menu.getChild(menu.childrenCount - 1).destroy();
+    }
+    this._overflowMenu = menu;
+    this._overflowEl.classList.add("wy-active");
+    this._overflowEl.setAttribute("aria-expanded", "true");
+    menu.connect("visible-change", () => {
+      if (menu.visible) {
+        return;
+      }
+      this._overflowEl.classList.remove("wy-active");
+      this._overflowEl.setAttribute("aria-expanded", "false");
+      if (this._overflowMenu === menu) {
+        this._overflowMenu = null;
+      }
+      setTimeout(() => menu.destroyed || menu.destroy());
+    });
+    const horizontal = this._orientation !== Orientation.VERTICAL;
+    menu.popup(this._overflowEl, {
+      side: horizontal ? "bottom" : "right",
+      align: "end",
+      owner: this._overflowEl,
+      selectFirst: keyboard
+    });
+  }
+  /**
+   * The focusable tool items that are shown, and the overflow button when shown, in order.
+   *
+   * @returns {HTMLElement[]}
+   */
+  _getNavigationElements() {
+    const elements = this._children.filter(
+      (x) => x instanceof AbstractToolItem && x.canFocus && x.isVisible && x.isSensitive && !this._overflowItems.includes(x)
+    ).map((x) => x.focusElement);
+    if (!this._overflowEl.hidden) {
+      elements.push(this._overflowEl);
+    }
+    return elements;
+  }
+  _onKeyDown(event) {
+    if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) {
+      return;
+    }
+    const horizontal = this._orientation !== Orientation.VERTICAL;
+    const next = horizontal ? Key.RIGHT : Key.DOWN;
+    const previous = horizontal ? Key.LEFT : Key.UP;
+    if (![next, previous, Key.HOME, Key.END].includes(event.key)) {
+      return;
+    }
+    const elements = this._getNavigationElements();
+    const index = elements.indexOf(
+      /** @type {HTMLElement} */
+      event.target
+    );
+    if (index < 0 || !elements.length) {
+      return;
+    }
+    let target;
+    if (event.key === Key.HOME) {
+      target = 0;
+    } else if (event.key === Key.END) {
+      target = elements.length - 1;
+    } else {
+      const delta = event.key === next ? 1 : -1;
+      target = (index + delta + elements.length) % elements.length;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    elements[target].focus({ preventScroll: true });
+  }
+  _onFocusIn(event) {
+    for (const child of this._children) {
+      if (child instanceof AbstractToolItem && child.focusElement === event.target) {
+        this._focusItem = child;
+        return;
+      }
+    }
+  }
+  _getFocusChain() {
+    const items = this._children.filter(
+      (x) => x instanceof AbstractToolItem && x.canFocus && x.isVisible && x.isSensitive && !this._overflowItems.includes(x)
+    );
+    const current = items.includes(this._focusItem) ? this._focusItem : items[0];
+    const chain = [];
+    for (const child of this._children) {
+      if (!child.isVisible || !child.isSensitive || this._overflowItems.includes(child)) {
+        continue;
+      }
+      if (child instanceof AbstractToolItem) {
+        if (child === current) {
+          chain.push(child);
+        }
+        continue;
+      }
+      if (child.canFocus) {
+        chain.push(child);
+      }
+      if (child instanceof Container) {
+        chain.push(...child._getFocusChain());
+      }
+    }
+    return chain;
+  }
+};
+defineProperties(ToolBar, {
+  vExpand: { value: false },
+  orientation: {
+    value: Orientation.HORIZONTAL,
+    changed() {
+      this._applyStyle();
+    }
+  },
+  /**
+   * Whether this is a tool bar.
+   */
+  isToolBar: { value: true, readOnly: true },
+  /**
+   * What the items show: one of `ToolBarStyle`.
+   */
+  style: {
+    value: ToolBarStyle.BOTH,
+    coerce(style) {
+      if (!Object.values(ToolBarStyle).includes(style)) {
+        throw new RangeError(`Invalid tool bar style '${style}'.`);
+      }
+      return style;
+    },
+    changed() {
+      this._applyStyle();
+    }
+  },
+  /**
+   * The size of the items' icons in pixels.
+   */
+  iconSize: {
+    value: 24,
+    coerce(size) {
+      const value = Number(size);
+      if (!Number.isFinite(value) || value <= 0) {
+        throw new RangeError(`Invalid icon size '${size}'.`);
+      }
+      return value;
+    },
+    changed() {
+      this._applyStyle();
+    }
+  },
+  /**
+   * Whether items that do not fit go to an overflow menu behind a » button. Without it they
+   * are cut off.
+   */
+  showArrow: {
+    value: true,
+    changed(showArrow) {
+      this.el.classList.toggle("wy-show-arrow", showArrow);
+      this._queueLayout();
+    }
+  }
+});
+registerType("tool-bar", ToolBar);
+
+// src/widgets/tooltip.js
+var CURSOR_HEIGHT = 20;
+var BROWSE_MODE_TIMEOUT = 500;
+var TooltipPlacement = Object.freeze({
+  POINTER: "pointer",
+  // Below the pointer, like the original toolkit.
+  WIDGET: "widget"
+  // Below the widget.
+});
+var shownTooltip = null;
+var lastDisappearTime = -Infinity;
+var Tooltip = class extends Bin {
+  static {
+    __name(this, "Tooltip");
+  }
+  _initialize() {
+    super._initialize();
+    this._widget = null;
+    this._pointer = null;
+    this._appearTimer = 0;
+    this._disappearTimer = 0;
+    this._listening = false;
+    this.el.id = uniqueId("wy-tooltip");
+    this._onDocumentEvent = () => this._disappearNow();
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-tooltip" role="tooltip" ${POPUP_ATTRIBUTE}>
+                <span class="wy-tooltip-label"></span>
+            </div>
+        `);
+    this._labelEl = element.querySelector(".wy-tooltip-label");
+    return element;
+  }
+  /**
+   * The tooltip that is currently shown, or `null`.
+   *
+   * @type {Tooltip | null}
+   */
+  static get shown() {
+    return shownTooltip;
+  }
+  /**
+   * Makes the tooltip appear for a widget after the delay, or right away when another tooltip is
+   * shown or just disappeared.
+   *
+   * @param {import('./widget.js').Widget} widget
+   * @param {PointerEvent | MouseEvent} [event] The pointer event, for placing the tooltip at the
+   *     pointer.
+   */
+  appearAt(widget, event) {
+    if (this.destroyed || !widget) {
+      return;
+    }
+    this._setWidget(widget);
+    this._updatePointer(event);
+    clearTimeout(this._disappearTimer);
+    this._disappearTimer = 0;
+    if (this._visible) {
+      this._place();
+      return;
+    }
+    clearTimeout(this._appearTimer);
+    this._appearTimer = 0;
+    const delay = this._appearDelay < 0 ? settings.tooltipAppearDelay : this._appearDelay;
+    const browsing = shownTooltip && shownTooltip !== this || performance.now() - lastDisappearTime < BROWSE_MODE_TIMEOUT;
+    if (delay <= 0 || browsing) {
+      this._appear();
+    } else {
+      this._appearTimer = setTimeout(() => this._appear(), delay);
+    }
+  }
+  /**
+   * Follows the pointer moving over the widget: while the tooltip waits to appear, the pointer
+   * must rest again for the full delay; once shown, it moves along if `followPointer` is set.
+   *
+   * @param {import('./widget.js').Widget} widget
+   * @param {PointerEvent | MouseEvent} [event]
+   */
+  follow(widget, event) {
+    if (this.destroyed || widget !== this._widget) {
+      return;
+    }
+    this._updatePointer(event);
+    if (this._visible) {
+      if (this._followPointer) {
+        this._place();
+      }
+      return;
+    }
+    if (this._appearTimer) {
+      clearTimeout(this._appearTimer);
+      const delay = this._appearDelay < 0 ? settings.tooltipAppearDelay : this._appearDelay;
+      this._appearTimer = setTimeout(() => this._appear(), delay);
+    }
+  }
+  /**
+   * Makes the tooltip disappear after `disappearDelay`, and cancels a pending appearance.
+   */
+  disappear() {
+    clearTimeout(this._appearTimer);
+    this._appearTimer = 0;
+    if (!this._visible) {
+      return;
+    }
+    const delay = this._disappearDelay < 0 ? settings.tooltipDisappearDelay : this._disappearDelay;
+    clearTimeout(this._disappearTimer);
+    if (delay <= 0) {
+      this._disappearNow();
+    } else {
+      this._disappearTimer = setTimeout(() => this._disappearNow(), delay);
+    }
+  }
+  /**
+   * Destroys the tooltip, removing it from the screen and from its widget's description.
+   */
+  destroy() {
+    this._disappearNow();
+    this._setWidget(null);
+    super.destroy();
+  }
+  _appear() {
+    this._appearTimer = 0;
+    const widget = this._widget;
+    if (this.destroyed || !widget || widget.destroyed || !widget.isVisible || !widget.isSensitive || !this._label && !this._children.length) {
+      return;
+    }
+    if (shownTooltip && shownTooltip !== this) {
+      shownTooltip._disappearNow();
+    }
+    shownTooltip = this;
+    this.visible = true;
+    this._listen(true);
+  }
+  _disappearNow() {
+    clearTimeout(this._appearTimer);
+    clearTimeout(this._disappearTimer);
+    this._appearTimer = 0;
+    this._disappearTimer = 0;
+    this._listen(false);
+    if (shownTooltip === this) {
+      shownTooltip = null;
+    }
+    if (this._visible) {
+      this.visible = false;
+      lastDisappearTime = performance.now();
+    }
+  }
+  _listen(listen) {
+    if (listen === this._listening) {
+      return;
+    }
+    this._listening = listen;
+    const method = listen ? "addEventListener" : "removeEventListener";
+    document[method]("keydown", this._onDocumentEvent, true);
+    document[method]("wheel", this._onDocumentEvent, { capture: true, passive: true });
+  }
+  _updatePointer(event) {
+    if (event && typeof event.clientX === "number") {
+      this._pointer = { x: event.clientX, y: event.clientY };
+    }
+  }
+  _setWidget(widget) {
+    const old = this._widget;
+    if (old === widget) {
+      return;
+    }
+    if (old && !old.destroyed) {
+      const element = old.focusElement;
+      const ids = (element.getAttribute("aria-describedby") || "").split(/\s+/).filter((x) => x && x !== this.el.id);
+      if (ids.length) {
+        element.setAttribute("aria-describedby", ids.join(" "));
+      } else {
+        element.removeAttribute("aria-describedby");
+      }
+    }
+    this._widget = widget;
+    if (widget) {
+      const element = widget.focusElement;
+      const ids = (element.getAttribute("aria-describedby") || "").split(/\s+/);
+      if (!ids.includes(this.el.id)) {
+        element.setAttribute("aria-describedby", [...ids, this.el.id].join(" ").trim());
+      }
+      if (!this.el.isConnected) {
+        getScreen().layer.append(this.el);
+      }
+    }
+  }
+  _onVisibleChange(visible) {
+    this.el.hidden = !visible;
+    if (visible) {
+      const screen = getScreen();
+      if (!this.el.isConnected) {
+        screen.layer.append(this.el);
+      }
+      this.el.style.zIndex = String(screen.nextZIndex());
+    }
+    this._recalculateVisibility();
+    this._recalculateSensitivity();
+    if (visible) {
+      this._place();
+    }
+  }
+  _place() {
+    if (!this._visible) {
+      return;
+    }
+    this.el.style.left = "0px";
+    this.el.style.top = "0px";
+    if (this._fixedPosition) {
+      const { x, y } = this._fixedPosition;
+      placePopup(this.el, { x, y, width: 0, height: 0 }, { side: "bottom", align: "start" });
+      return;
+    }
+    const widget = this._widget;
+    const pointer = this._pointer;
+    if (this._placement === TooltipPlacement.WIDGET || !pointer) {
+      placePopup(this.el, widget.el, { side: "bottom", align: "start", offset: 2 });
+    } else {
+      placePopup(
+        this.el,
+        { x: pointer.x, y: pointer.y, width: 1, height: CURSOR_HEIGHT },
+        { side: "bottom", align: "start" }
+      );
+    }
+  }
+  _updateContent() {
+    this._labelEl.hidden = !this._label || this._children.length > 0;
+  }
+  _onChildrenChange() {
+    super._onChildrenChange();
+    this._updateContent();
+  }
+};
+defineProperties(Tooltip, {
+  isTopLevel: { value: true, readOnly: true },
+  visible: {
+    value: false,
+    changed(visible) {
+      this._onVisibleChange(visible);
+    }
+  },
+  /**
+   * The text of the tooltip.
+   */
+  label: {
+    value: "",
+    coerce(label) {
+      return label === null || label === void 0 ? "" : String(label);
+    },
+    changed(label) {
+      this._labelEl.textContent = label;
+      this._updateContent();
+      if (!label && !this._children.length) {
+        this._disappearNow();
+      }
+    }
+  },
+  /**
+   * A custom widget shown instead of the label, or `null`. The same as `child`.
+   */
+  content: {
+    signal: false,
+    get() {
+      return this.child;
+    },
+    set(widget) {
+      this.child = widget;
+      return false;
+    }
+  },
+  /**
+   * The widget the tooltip was last shown (or asked to appear) for, or `null`.
+   */
+  widget: {
+    readOnly: true,
+    get() {
+      return this._widget;
+    }
+  },
+  /**
+   * The delay in milliseconds before the tooltip appears, or -1 for the default
+   * (`settings.tooltipAppearDelay`).
+   */
+  appearDelay: { value: -1 },
+  /**
+   * The delay in milliseconds before the tooltip disappears, or -1 for the default
+   * (`settings.tooltipDisappearDelay`).
+   */
+  disappearDelay: { value: -1 },
+  /**
+   * Where the tooltip appears: one of `TooltipPlacement`.
+   */
+  placement: {
+    value: TooltipPlacement.POINTER,
+    coerce(placement) {
+      if (!Object.values(TooltipPlacement).includes(placement)) {
+        throw new RangeError(`Invalid tooltip placement '${placement}'.`);
+      }
+      return placement;
+    }
+  },
+  /**
+   * Whether a shown tooltip moves along with the pointer.
+   */
+  followPointer: { value: false },
+  /**
+   * The position of the shown tooltip in viewport coordinates, as `{x, y}`. Setting it pins the
+   * tooltip there (kept on screen); set `null` to place it automatically again.
+   */
+  position: {
+    signal: false,
+    get() {
+      return { x: this.el.offsetLeft, y: this.el.offsetTop };
+    },
+    set(position) {
+      if (position && (typeof position.x !== "number" || typeof position.y !== "number")) {
+        throw new TypeError("A position must have numeric x and y.");
+      }
+      this._fixedPosition = position ? { x: position.x, y: position.y } : null;
+      this._place();
+      return false;
+    }
+  },
+  /**
+   * The x position of the tooltip. Does not signal.
+   */
+  x: {
+    signal: false,
+    get() {
+      return this.position.x;
+    },
+    set(x) {
+      this.position = { x, y: this.position.y };
+      return false;
+    }
+  },
+  /**
+   * The y position of the tooltip. Does not signal.
+   */
+  y: {
+    signal: false,
+    get() {
+      return this.position.y;
+    },
+    set(y) {
+      this.position = { x: this.position.x, y };
+      return false;
+    }
+  }
+});
+registerType("tooltip", Tooltip);
+
+// src/data/matrix.js
+var Matrix = class _Matrix {
+  static {
+    __name(this, "Matrix");
+  }
+  /**
+   * @param {number} [m11] Row 1, column 1 (horizontal scaling).
+   * @param {number} [m21] Row 2, column 1 (vertical skewing).
+   * @param {number} [m12] Row 1, column 2 (horizontal skewing).
+   * @param {number} [m22] Row 2, column 2 (vertical scaling).
+   * @param {number} [m13] Row 1, column 3 (horizontal translation).
+   * @param {number} [m23] Row 2, column 3 (vertical translation).
+   */
+  constructor(m11 = 1, m21 = 0, m12 = 0, m22 = 1, m13 = 0, m23 = 0) {
+    const values = [m11, m21, m12, m22, m13, m23];
+    if (!values.every((value) => typeof value === "number" && Number.isFinite(value))) {
+      throw new TypeError("Matrix values must be finite numbers.");
+    }
+    this.m11 = m11;
+    this.m21 = m21;
+    this.m12 = m12;
+    this.m22 = m22;
+    this.m13 = m13;
+    this.m23 = m23;
+    Object.freeze(this);
+  }
+  /**
+   * The identity matrix, which transforms nothing.
+   *
+   * @type {Matrix}
+   */
+  static get identity() {
+    return IDENTITY;
+  }
+  /**
+   * Returns the identity matrix, like the original toolkit.
+   *
+   * @returns {Matrix}
+   */
+  static getIdentity() {
+    return IDENTITY;
+  }
+  /**
+   * Creates a translation.
+   *
+   * @param {Point} vector
+   * @returns {Matrix}
+   */
+  static fromTranslation(vector) {
+    return new _Matrix(1, 0, 0, 1, vector.x, vector.y);
+  }
+  /**
+   * Creates a rotation.
+   *
+   * @param {number} angle In radians, clockwise on screen (where y points down).
+   * @param {Point} [point] The point to rotate around. Defaults to the origin.
+   * @returns {Matrix}
+   */
+  static fromRotation(angle, point) {
+    const x = point?.x || 0;
+    const y = point?.y || 0;
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    return new _Matrix(cos, sin, -sin, cos, x - x * cos + y * sin, y - x * sin - y * cos);
+  }
+  /**
+   * Creates a scaling.
+   *
+   * @param {number} sx The horizontal factor.
+   * @param {number} [sy] The vertical factor. Defaults to `sx`.
+   * @param {Point} [point] The point to scale around. Defaults to the origin.
+   * @returns {Matrix}
+   */
+  static fromScaling(sx, sy = sx, point) {
+    const x = point?.x || 0;
+    const y = point?.y || 0;
+    return new _Matrix(sx, 0, 0, sy, x - x * sx, y - y * sy);
+  }
+  /**
+   * Creates a skew.
+   *
+   * @param {number} angleX The horizontal skew angle in radians.
+   * @param {number} [angleY] The vertical skew angle in radians.
+   * @returns {Matrix}
+   */
+  static fromSkew(angleX, angleY = 0) {
+    return new _Matrix(1, Math.tan(angleY), Math.tan(angleX), 1, 0, 0);
+  }
+  /**
+   * Parses the SVG/CSS form `matrix(a, b, c, d, e, f)`.
+   *
+   * @param {string} text
+   * @returns {Matrix}
+   * @throws {Error} If the text is not a matrix.
+   */
+  static parse(text) {
+    const match = /^\s*matrix\(([^)]*)\)\s*$/.exec(text);
+    const values = match ? match[1].split(/[\s,]+/).filter(Boolean).map(Number) : [];
+    if (values.length !== 6) {
+      throw new Error(`Invalid matrix '${text}'.`);
+    }
+    return new _Matrix(...values);
+  }
+  /**
+   * The determinant. A matrix can be inverted when it is not zero.
+   *
+   * @type {number}
+   */
+  get determinant() {
+    return this.m11 * this.m22 - this.m12 * this.m21;
+  }
+  /**
+   * Whether this is the identity matrix.
+   *
+   * @type {boolean}
+   */
+  get isIdentity() {
+    return this.equals(IDENTITY);
+  }
+  /**
+   * Rotates, after this transformation.
+   *
+   * @param {number} angle In radians.
+   * @param {Point} [point] The point to rotate around.
+   * @returns {Matrix}
+   */
+  rotate(angle, point) {
+    return this.multiply(_Matrix.fromRotation(angle, point));
+  }
+  /**
+   * Translates, after this transformation.
+   *
+   * @param {Point | number} vector A vector, or the horizontal distance.
+   * @param {number} [dy] The vertical distance, when `vector` is a number.
+   * @returns {Matrix}
+   */
+  translate(vector, dy = 0) {
+    const x = typeof vector === "number" ? vector : vector.x;
+    const y = typeof vector === "number" ? dy : vector.y;
+    return new _Matrix(this.m11, this.m21, this.m12, this.m22, this.m13 + x, this.m23 + y);
+  }
+  /**
+   * Scales, after this transformation.
+   *
+   * @param {number} sx
+   * @param {number} [sy] Defaults to `sx`.
+   * @param {Point} [point] The point to scale around.
+   * @returns {Matrix}
+   */
+  scale(sx, sy = sx, point) {
+    return this.multiply(_Matrix.fromScaling(sx, sy, point));
+  }
+  /**
+   * Skews, after this transformation.
+   *
+   * @param {number} angleX
+   * @param {number} [angleY]
+   * @returns {Matrix}
+   */
+  skew(angleX, angleY = 0) {
+    return this.multiply(_Matrix.fromSkew(angleX, angleY));
+  }
+  /**
+   * Combines this transformation with another one, which is applied after this one (the other
+   * matrix is pre-multiplied).
+   *
+   * @param {Matrix} matrix
+   * @returns {Matrix}
+   */
+  multiply(matrix) {
+    const a = matrix;
+    const b = this;
+    return new _Matrix(
+      a.m11 * b.m11 + a.m12 * b.m21,
+      a.m21 * b.m11 + a.m22 * b.m21,
+      a.m11 * b.m12 + a.m12 * b.m22,
+      a.m21 * b.m12 + a.m22 * b.m22,
+      a.m11 * b.m13 + a.m12 * b.m23 + a.m13,
+      a.m21 * b.m13 + a.m22 * b.m23 + a.m23
+    );
+  }
+  /**
+   * Returns the inverse transformation.
+   *
+   * @returns {Matrix}
+   * @throws {Error} If the matrix cannot be inverted.
+   */
+  invert() {
+    const determinant = this.determinant;
+    if (Math.abs(determinant) < 1e-12) {
+      throw new Error("The matrix cannot be inverted.");
+    }
+    const { m11, m21, m12, m22, m13, m23 } = this;
+    return new _Matrix(
+      m22 / determinant,
+      -m21 / determinant,
+      -m12 / determinant,
+      m11 / determinant,
+      (m12 * m23 - m22 * m13) / determinant,
+      (m21 * m13 - m11 * m23) / determinant
+    );
+  }
+  /**
+   * Transforms a point.
+   *
+   * @param {Point} point
+   * @returns {Point}
+   */
+  transform(point) {
+    const { x, y } = point;
+    return {
+      x: x * this.m11 + y * this.m12 + this.m13,
+      y: x * this.m21 + y * this.m22 + this.m23
+    };
+  }
+  /**
+   * Whether another matrix is (almost) the same.
+   *
+   * @param {Matrix} matrix
+   * @param {number} [tolerance]
+   * @returns {boolean}
+   */
+  equals(matrix, tolerance = 1e-12) {
+    return ["m11", "m21", "m12", "m22", "m13", "m23"].every(
+      (name) => Math.abs(this[name] - matrix[name]) <= tolerance
+    );
+  }
+  /**
+   * Returns the SVG and CSS form, `matrix(m11, m21, m12, m22, m13, m23)`.
+   *
+   * @returns {string}
+   */
+  toString() {
+    return `matrix(${this.m11}, ${this.m21}, ${this.m12}, ${this.m22}, ${this.m13}, ${this.m23})`;
+  }
+};
+var IDENTITY = new Matrix();
+registerType(
+  "matrix",
+  Matrix,
+  (properties) => new Matrix(
+    properties.m11 ?? 1,
+    properties.m21 ?? 0,
+    properties.m12 ?? 0,
+    properties.m22 ?? 1,
+    properties.m13 ?? 0,
+    properties.m23 ?? 0
+  )
+);
+
+// src/sprites/sprite.js
+var SVG_NAMESPACE = "http://www.w3.org/2000/svg";
+var StrokeStyle = Object.freeze({
+  SOLID: 0,
+  DASHED: 1,
+  DOTTED: 2
+});
+var SPRITE_BY_ELEMENT = /* @__PURE__ */ new WeakMap();
+var SPRITE_EVENT_TYPES = /* @__PURE__ */ new Set([
+  EventType.MOTION,
+  EventType.SCROLL,
+  EventType.BUTTON_PRESS,
+  EventType.BUTTON_RELEASE,
+  EventType.ENTER,
+  EventType.LEAVE
+]);
+var GRAB_MASK2 = Events.MOTION | Events.CAPTURE_MOTION | Events.BUTTON_RELEASE | Events.CAPTURE_BUTTON_RELEASE;
+var DOM_TO_TOOLKIT_BUTTON2 = Object.freeze({
+  0: MouseButton.PRIMARY,
+  1: MouseButton.MIDDLE,
+  2: MouseButton.SECONDARY
+});
+function toPoint(point) {
+  if (!point || typeof point !== "object") {
+    throw new TypeError("A position must be an object with x and y.");
+  }
+  const x = Number(point.x ?? 0);
+  const y = Number(point.y ?? 0);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) {
+    throw new TypeError("A position must have finite coordinates.");
+  }
+  return Object.freeze({ x, y });
+}
+__name(toPoint, "toPoint");
+function toFraction(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0 || number > 1) {
+    throw new RangeError("An opacity must be a number from 0 to 1.");
+  }
+  return number;
+}
+__name(toFraction, "toFraction");
+var Sprite = class _Sprite extends Instance {
+  static {
+    __name(this, "Sprite");
+  }
+  _initialize() {
+    super._initialize();
+    this._parent = null;
+    this._isVisibleCache = false;
+    this._domListeners = /* @__PURE__ */ new Map();
+    this.el = this._render();
+    this.el.classList.add("wy-sprite");
+    SPRITE_BY_ELEMENT.set(this.el, this);
+    this._titleEl = null;
+    this._applyShape();
+    this._applyPosition();
+    this._applyTransform();
+    this._applyPaint();
+  }
+  /**
+   * Finds the sprite an element belongs to.
+   *
+   * @param {Node | null} node
+   * @returns {Sprite | null}
+   */
+  static fromElement(node) {
+    while (node) {
+      const sprite = SPRITE_BY_ELEMENT.get(
+        /** @type {Element} */
+        node
+      );
+      if (sprite) {
+        return sprite;
+      }
+      node = node.parentNode;
+    }
+    return null;
+  }
+  /**
+   * Shows the sprite. The same as setting `visible` to `true`.
+   */
+  show() {
+    this.visible = true;
+  }
+  /**
+   * Hides the sprite. The same as setting `visible` to `false`.
+   */
+  hide() {
+    this.visible = false;
+  }
+  /**
+   * Adds a CSS class to the element.
+   *
+   * @param {string} className
+   */
+  addStyleClass(className) {
+    this.el.classList.add(className);
+  }
+  /**
+   * Removes a CSS class from the element.
+   *
+   * @param {string} className
+   */
+  removeStyleClass(className) {
+    this.el.classList.remove(className);
+  }
+  /**
+   * Whether the element has a CSS class.
+   *
+   * @param {string} className
+   * @returns {boolean}
+   */
+  hasStyleClass(className) {
+    return this.el.classList.contains(className);
+  }
+  /**
+   * Enables event signals. The same as `sprite.events |= events`.
+   *
+   * @param {number} events One or more `Events`.
+   */
+  enableEvents(events) {
+    this.events = this._events | events;
+  }
+  /**
+   * Disables event signals. The same as `sprite.events &= ~events`.
+   *
+   * @param {number} events One or more `Events`.
+   */
+  disableEvents(events) {
+    this.events = this._events & ~events;
+  }
+  /**
+   * Draws the sprite above all sprites with the same `zIndex`.
+   */
+  raise() {
+    this._requireParent().raiseSprite(this);
+  }
+  /**
+   * Draws the sprite below all sprites with the same `zIndex`.
+   */
+  lower() {
+    this._requireParent().lowerSprite(this);
+  }
+  /**
+   * Returns the bounding box of the shape, before the transformation, in canvas units.
+   *
+   * @returns {{x: number, y: number, width: number, height: number}}
+   */
+  getBounds() {
+    try {
+      const box = this.el.getBBox();
+      return { x: box.x, y: box.y, width: box.width, height: box.height };
+    } catch (_error) {
+      return { x: 0, y: 0, width: 0, height: 0 };
+    }
+  }
+  /**
+   * Destroys the sprite, removing it from its canvas.
+   */
+  destroy() {
+    super.destroy();
+    if (this._parent) {
+      this._parent.removeSprite(this);
+    }
+    this.el.remove();
+  }
+  /**
+   * Creates the SVG element. Subclasses implement this.
+   *
+   * @protected
+   * @returns {SVGGraphicsElement}
+   */
+  _render() {
+    throw new Error(`${this.constructor.name} must implement _render().`);
+  }
+  /**
+   * Creates an SVG element.
+   *
+   * @protected
+   * @param {string} tagName
+   * @param {Record<string, string | number>} [attributes]
+   * @returns {SVGGraphicsElement}
+   */
+  _createShape(tagName, attributes = {}) {
+    const element = (
+      /** @type {SVGGraphicsElement} */
+      document.createElementNS(SVG_NAMESPACE, tagName)
+    );
+    for (const [name, value] of Object.entries(attributes)) {
+      element.setAttribute(name, String(value));
+    }
+    return element;
+  }
+  /**
+   * Writes the shape's own attributes. Subclasses implement this.
+   *
+   * @protected
+   */
+  _applyShape() {
+  }
+  /**
+   * Writes the position. By default as the `x` and `y` attributes.
+   *
+   * @protected
+   */
+  _applyPosition() {
+    this.el.setAttribute("x", String(this._position.x));
+    this.el.setAttribute("y", String(this._position.y));
+  }
+  /**
+   * Whether the position is part of the transform (for shapes without `x` and `y`).
+   *
+   * @protected
+   * @returns {boolean}
+   */
+  _isPositionInTransform() {
+    return false;
+  }
+  /**
+   * Writes the `transform` attribute from the transformation (and the position, for shapes
+   * that have no position attributes).
+   *
+   * @protected
+   */
+  _applyTransform() {
+    const parts = [];
+    const { x, y } = this._position;
+    if (this._isPositionInTransform() && (x || y)) {
+      parts.push(`translate(${x} ${y})`);
+    }
+    if (!this._transformation.isIdentity) {
+      parts.push(String(this._transformation));
+    }
+    if (parts.length) {
+      this.el.setAttribute("transform", parts.join(" "));
+    } else {
+      this.el.removeAttribute("transform");
+    }
+  }
+  /**
+   * Writes the fill and stroke attributes.
+   *
+   * @protected
+   */
+  _applyPaint() {
+    const element = this.el;
+    const width = this._strokeWidth;
+    element.setAttribute("fill", this._fill || "none");
+    element.setAttribute("fill-opacity", String(this._fillOpacity));
+    element.setAttribute("stroke", width > 0 && this._strokeColor ? this._strokeColor : "none");
+    element.setAttribute("stroke-width", String(width));
+    element.setAttribute("stroke-opacity", String(this._strokeOpacity));
+    if (this._strokeStyle === StrokeStyle.DASHED) {
+      element.setAttribute("stroke-dasharray", `${4 * width} ${2 * width}`);
+    } else if (this._strokeStyle === StrokeStyle.DOTTED) {
+      element.setAttribute("stroke-dasharray", `${width} ${1.5 * width}`);
+    } else {
+      element.removeAttribute("stroke-dasharray");
+    }
+    if (this._opacity < 1) {
+      element.setAttribute("opacity", String(this._opacity));
+    } else {
+      element.removeAttribute("opacity");
+    }
+  }
+  _requireParent() {
+    if (!this._parent) {
+      throw new Error("The sprite is not on a canvas.");
+    }
+    return this._parent;
+  }
+  /**
+   * Sets the parent. Called by the canvas.
+   *
+   * @protected
+   * @param {import('../widgets/vector-canvas.js').VectorCanvas | null} parent
+   */
+  _setParent(parent) {
+    if (parent && this._parent && this._parent !== parent) {
+      throw new Error("The sprite has already been added to a canvas.");
+    }
+    this._parent = parent;
+    this._recalculateVisibility();
+    this.emit("parent-change", this);
+  }
+  /**
+   * Recomputes `isVisible` from `visible` and the parent.
+   *
+   * @protected
+   */
+  _recalculateVisibility() {
+    const isVisible = this._visible && Boolean(this._parent?.isVisible);
+    if (isVisible === this._isVisibleCache) {
+      return;
+    }
+    this._isVisibleCache = isVisible;
+    this.emit("is-visible-change", this);
+  }
+  _syncEventListeners() {
+    for (const [bubbleMask, captureMask, domName, type] of EVENT_BINDINGS) {
+      if (!SPRITE_EVENT_TYPES.has(type)) {
+        continue;
+      }
+      for (const capture of [false, true]) {
+        const mask = capture ? captureMask : bubbleMask;
+        const wanted = Boolean(mask && this._events & mask) || !capture && domName === "pointerdown" && Boolean(this._events & GRAB_MASK2);
+        const key = `${domName}:${capture}`;
+        const existing = this._domListeners.get(key);
+        if (wanted && !existing) {
+          const listener = /* @__PURE__ */ __name((event) => this._onDomEvent(event, type, capture), "listener");
+          this.el.addEventListener(domName, listener, { capture, passive: false });
+          this._domListeners.set(key, listener);
+        } else if (!wanted && existing) {
+          this.el.removeEventListener(domName, existing, { capture });
+          this._domListeners.delete(key);
+        }
+      }
+    }
+  }
+  _onDomEvent(nativeEvent, type, capture) {
+    if (type === EventType.BUTTON_PRESS && !capture && this._events & GRAB_MASK2) {
+      try {
+        this.el.setPointerCapture?.(nativeEvent.pointerId);
+      } catch (_error) {
+      }
+    }
+    const mask = EVENT_BINDINGS.find((x) => x[3] === type)[capture ? 1 : 0];
+    if (!(this._events & mask) || !this._parent?.isSensitive) {
+      return;
+    }
+    const event = this._createEvent(nativeEvent, type);
+    const prefix = capture ? "capture-" : "";
+    const handled = this.emit(`${prefix}${type}-event`, this, event) || this.emit(`${prefix}event`, this, event);
+    if (handled) {
+      nativeEvent.stopPropagation();
+      if (type !== EventType.BUTTON_PRESS && type !== EventType.BUTTON_RELEASE) {
+        nativeEvent.preventDefault();
+      }
+    }
+  }
+  _createEvent(nativeEvent, type) {
+    const modifiers = getModifiers(nativeEvent);
+    const x = nativeEvent.pageX ?? 0;
+    const y = nativeEvent.pageY ?? 0;
+    switch (type) {
+      case EventType.MOTION:
+        return new MotionEvent(this, modifiers, x, y, nativeEvent);
+      case EventType.SCROLL: {
+        let lines = nativeEvent.deltaY || nativeEvent.deltaX;
+        if (nativeEvent.deltaMode === 0) {
+          lines /= 33.3;
+        } else if (nativeEvent.deltaMode === 2) {
+          lines *= 20;
+        }
+        return new ScrollEvent(this, modifiers, x, y, -lines, nativeEvent);
+      }
+      case EventType.BUTTON_PRESS:
+      case EventType.BUTTON_RELEASE: {
+        const press = type === EventType.BUTTON_PRESS;
+        if (press && nativeEvent.wySpritePressCount === void 0) {
+          nativeEvent.wySpritePressCount = countPress(nativeEvent);
+        }
+        const button = DOM_TO_TOOLKIT_BUTTON2[nativeEvent.button] || MouseButton.PRIMARY;
+        const count = press ? nativeEvent.wySpritePressCount : getPressCount();
+        return new ButtonEvent(this, modifiers, x, y, press, button, count, nativeEvent);
+      }
+      default: {
+        const related = _Sprite.fromElement(nativeEvent.relatedTarget);
+        return new CrossingEvent(
+          this,
+          modifiers,
+          x,
+          y,
+          type === EventType.ENTER,
+          related,
+          nativeEvent
+        );
+      }
+    }
+  }
+};
+defineProperties(Sprite, {
+  /**
+   * Whether the sprite is shown. Set last when passing several properties.
+   */
+  visible: {
+    value: true,
+    late: true,
+    changed(visible) {
+      if (visible) {
+        this.el.removeAttribute("display");
+      } else {
+        this.el.setAttribute("display", "none");
+      }
+      this._recalculateVisibility();
+    }
+  },
+  /**
+   * Whether the sprite is effectively visible: it is `visible` and on a visible canvas.
+   */
+  isVisible: {
+    readOnly: true,
+    get() {
+      return this._isVisibleCache;
+    }
+  },
+  /**
+   * The canvas the sprite is on, or `null`.
+   */
+  parent: {
+    readOnly: true,
+    get() {
+      return this._parent;
+    }
+  },
+  /**
+   * The window of the canvas, or `null`.
+   */
+  window: {
+    readOnly: true,
+    get() {
+      return this._parent?.window || null;
+    }
+  },
+  /**
+   * Whether this is a top-level object. Sprites never are.
+   */
+  isTopLevel: { value: false, readOnly: true },
+  /**
+   * A name for finding the sprite, also set as the `data-name` attribute.
+   */
+  name: {
+    value: "",
+    changed(name) {
+      if (name) {
+        this.el.dataset.name = name;
+      } else {
+        delete this.el.dataset.name;
+      }
+    }
+  },
+  /**
+   * A title, shown as the native tooltip and used as the accessible name, or `''`.
+   */
+  title: {
+    value: "",
+    changed(title) {
+      if (!title) {
+        this._titleEl?.remove();
+        this._titleEl = null;
+        return;
+      }
+      if (!this._titleEl) {
+        this._titleEl = document.createElementNS(SVG_NAMESPACE, "title");
+        this.el.prepend(this._titleEl);
+      }
+      this._titleEl.textContent = title;
+    }
+  },
+  /**
+   * The mask of `Events` whose signals the sprite emits. Only pointer events apply.
+   */
+  events: {
+    value: Events.NONE,
+    changed() {
+      this._syncEventListeners();
+    }
+  },
+  /**
+   * The stacking order: sprites with a higher `zIndex` are drawn on top. Sprites with the same
+   * `zIndex` are drawn in the order of the canvas.
+   */
+  zIndex: {
+    value: 0,
+    coerce(zIndex) {
+      if (!Number.isFinite(zIndex)) {
+        throw new TypeError("The z-index must be a number.");
+      }
+      return zIndex;
+    },
+    changed() {
+      this._parent?._updateOrder();
+    }
+  },
+  /**
+   * The position of the sprite, as `{x, y}` in canvas units.
+   */
+  position: {
+    value: Object.freeze({ x: 0, y: 0 }),
+    coerce: toPoint,
+    set(position) {
+      if (position.x === this._position.x && position.y === this._position.y) {
+        return false;
+      }
+      this._position = position;
+      this._applyPosition();
+      this._applyTransform();
+    }
+  },
+  /**
+   * The horizontal position.
+   */
+  x: {
+    signal: false,
+    get() {
+      return this._position.x;
+    },
+    set(x) {
+      this.position = { x, y: this._position.y };
+      return false;
+    }
+  },
+  /**
+   * The vertical position.
+   */
+  y: {
+    signal: false,
+    get() {
+      return this._position.y;
+    },
+    set(y) {
+      this.position = { x: this._position.x, y };
+      return false;
+    }
+  },
+  /**
+   * The transformation of the sprite, a `Matrix`.
+   */
+  transformation: {
+    value: Matrix.identity,
+    coerce(matrix) {
+      if (!(matrix instanceof Matrix)) {
+        throw new TypeError("A transformation must be a Matrix.");
+      }
+      return matrix;
+    },
+    changed() {
+      this._applyTransform();
+    }
+  },
+  /**
+   * The fill: a CSS color (or `currentColor`), a paint server reference such as
+   * `url(#gradient)`, or `''` for no fill.
+   */
+  fill: {
+    value: "",
+    changed() {
+      this._applyPaint();
+    }
+  },
+  /**
+   * The fill opacity, from 0 to 1.
+   */
+  fillOpacity: {
+    value: 1,
+    coerce: toFraction,
+    changed() {
+      this._applyPaint();
+    }
+  },
+  /**
+   * The stroke color. The default, `currentColor`, is the text color of the theme.
+   */
+  strokeColor: {
+    value: "currentColor",
+    changed() {
+      this._applyPaint();
+    }
+  },
+  /**
+   * The stroke width. 0 draws no stroke.
+   */
+  strokeWidth: {
+    value: 1,
+    coerce(width) {
+      const number = Number(width);
+      if (!Number.isFinite(number) || number < 0) {
+        throw new RangeError("A stroke width must be a non-negative number.");
+      }
+      return number;
+    },
+    changed() {
+      this._applyPaint();
+    }
+  },
+  /**
+   * The stroke style: one of {@link StrokeStyle}.
+   */
+  strokeStyle: {
+    value: StrokeStyle.SOLID,
+    coerce(style) {
+      if (!Object.values(StrokeStyle).includes(style)) {
+        throw new RangeError(`Invalid stroke style ${style}.`);
+      }
+      return style;
+    },
+    changed() {
+      this._applyPaint();
+    }
+  },
+  /**
+   * The stroke opacity, from 0 to 1.
+   */
+  strokeOpacity: {
+    value: 1,
+    coerce: toFraction,
+    changed() {
+      this._applyPaint();
+    }
+  },
+  /**
+   * The opacity of the whole sprite, from 0 to 1.
+   */
+  opacity: {
+    value: 1,
+    coerce: toFraction,
+    changed() {
+      this._applyPaint();
+    }
+  }
+});
+
+// src/widgets/vector-canvas.js
+function toViewBox(viewBox) {
+  if (viewBox === null || viewBox === void 0) {
+    return null;
+  }
+  const values = typeof viewBox === "string" ? viewBox.trim().split(/[\s,]+/).map(Number) : [viewBox.x ?? 0, viewBox.y ?? 0, viewBox.width, viewBox.height].map(Number);
+  if (values.length !== 4 || !values.every(Number.isFinite) || values[2] <= 0 || values[3] <= 0) {
+    throw new TypeError("A view box needs x, y and a positive width and height.");
+  }
+  const [x, y, width, height] = values;
+  return Object.freeze({ x, y, width, height });
+}
+__name(toViewBox, "toViewBox");
+var VectorCanvas = class extends Widget {
+  static {
+    __name(this, "VectorCanvas");
+  }
+  _initialize() {
+    this._sprites = [];
+    super._initialize();
+  }
+  _render() {
+    const element = createElement(`
+            <div class="wy-vector-canvas">
+                <svg class="wy-vector-canvas-surface" xmlns="${SVG_NAMESPACE}" role="img" aria-hidden="true">
+                    <g class="wy-vector-canvas-content"></g>
+                </svg>
+            </div>
+        `);
+    this._svgEl = element.querySelector("svg");
+    this._contentEl = element.querySelector("g");
+    return element;
+  }
+  /**
+   * The SVG element, e.g. to add gradient definitions.
+   *
+   * @type {SVGSVGElement}
+   */
+  get svgElement() {
+    return this._svgEl;
+  }
+  /**
+   * Adds a sprite on top.
+   *
+   * @param {Sprite} sprite
+   * @returns {Sprite} The sprite.
+   */
+  addSprite(sprite) {
+    return this.insertSprite(sprite, this._sprites.length);
+  }
+  /**
+   * Adds a sprite below the others.
+   *
+   * @param {Sprite} sprite
+   * @returns {Sprite} The sprite.
+   */
+  prependSprite(sprite) {
+    return this.insertSprite(sprite, 0);
+  }
+  /**
+   * Inserts a sprite at an index in the drawing order.
+   *
+   * @param {Sprite} sprite
+   * @param {number} index Between 0 and `spritesCount`.
+   * @returns {Sprite} The sprite.
+   */
+  insertSprite(sprite, index) {
+    if (!(sprite instanceof Sprite)) {
+      throw new TypeError("Only sprites can be added to a vector canvas.");
+    }
+    if (sprite.parent) {
+      throw new Error("The sprite has already been added to a canvas.");
+    }
+    if (!Number.isInteger(index) || index < 0 || index > this._sprites.length) {
+      throw new RangeError(`Invalid sprite index ${index}.`);
+    }
+    this._sprites.splice(index, 0, sprite);
+    sprite._setParent(this);
+    this._updateOrder();
+    this.emit("sprite-add", this, sprite);
+    return sprite;
+  }
+  /**
+   * Removes a sprite (without destroying it).
+   *
+   * @param {Sprite} sprite
+   * @returns {number} The index the sprite had.
+   * @throws {Error} If the sprite is not on this canvas.
+   */
+  removeSprite(sprite) {
+    const index = this._sprites.indexOf(sprite);
+    if (index < 0) {
+      throw new Error("The sprite is not on this canvas.");
+    }
+    this._sprites.splice(index, 1);
+    sprite.el.remove();
+    sprite._setParent(null);
+    this.emit("sprite-remove", this, sprite);
+    return index;
+  }
+  /**
+   * Removes the sprite at an index (without destroying it).
+   *
+   * @param {number} index
+   * @returns {Sprite} The removed sprite.
+   */
+  removeSpriteByIndex(index) {
+    const sprite = this.getSprite(index);
+    this.removeSprite(sprite);
+    return sprite;
+  }
+  /**
+   * Removes and destroys all sprites, like the original toolkit.
+   */
+  removeAllSprites() {
+    for (const sprite of [...this._sprites].reverse()) {
+      sprite.destroy();
+    }
+  }
+  /**
+   * Returns the sprite at an index.
+   *
+   * @param {number} index
+   * @returns {Sprite}
+   * @throws {RangeError} If there is no such sprite.
+   */
+  getSprite(index) {
+    const sprite = this._sprites[index];
+    if (!sprite) {
+      throw new RangeError(`There is no sprite at index ${index}.`);
+    }
+    return sprite;
+  }
+  /**
+   * Returns the index of a sprite, or -1.
+   *
+   * @param {Sprite} sprite
+   * @returns {number}
+   */
+  indexOfSprite(sprite) {
+    return this._sprites.indexOf(sprite);
+  }
+  /**
+   * Moves a sprite to another index in the drawing order.
+   *
+   * @param {Sprite} sprite
+   * @param {number} index
+   */
+  reorderSprite(sprite, index) {
+    const oldIndex = this._sprites.indexOf(sprite);
+    if (oldIndex < 0) {
+      throw new Error("The sprite is not on this canvas.");
+    }
+    this._sprites.splice(oldIndex, 1);
+    this._sprites.splice(clamp(index, 0, this._sprites.length), 0, sprite);
+    this._updateOrder();
+  }
+  /**
+   * Draws a sprite above the others (with the same `zIndex`).
+   *
+   * @param {Sprite} sprite
+   */
+  raiseSprite(sprite) {
+    this.reorderSprite(sprite, this._sprites.length);
+  }
+  /**
+   * Draws a sprite below the others (with the same `zIndex`).
+   *
+   * @param {Sprite} sprite
+   */
+  lowerSprite(sprite) {
+    this.reorderSprite(sprite, 0);
+  }
+  /**
+   * Returns the topmost visible sprite whose painted shape is at a point, or `null`.
+   *
+   * @param {number} x The page x coordinate.
+   * @param {number} y The page y coordinate.
+   * @returns {Sprite | null}
+   */
+  getSpriteAtPosition(x, y) {
+    const elements = document.elementsFromPoint(x - window.scrollX, y - window.scrollY);
+    for (const element of elements) {
+      if (!this._contentEl.contains(element)) {
+        continue;
+      }
+      const sprite = Sprite.fromElement(element);
+      if (sprite && sprite.parent === this && sprite.isVisible) {
+        return sprite;
+      }
+    }
+    return null;
+  }
+  /**
+   * Converts a page point to canvas coordinates: the units of the view box, before the
+   * transformation, which are the coordinates sprites use.
+   *
+   * @param {number} x The page x coordinate.
+   * @param {number} y The page y coordinate.
+   * @returns {{x: number, y: number}}
+   */
+  getCanvasPoint(x, y) {
+    const matrix = this._contentEl.getScreenCTM();
+    if (!matrix) {
+      return { x: 0, y: 0 };
+    }
+    const point = new DOMPoint(x - window.scrollX, y - window.scrollY).matrixTransform(
+      matrix.inverse()
+    );
+    return { x: point.x, y: point.y };
+  }
+  /**
+   * Zooms around a point, by changing the transformation.
+   *
+   * @param {number} factor Greater than 1 to zoom in.
+   * @param {{x: number, y: number}} [point] The point that stays in place, in canvas
+   *     coordinates after the transformation. Defaults to the origin.
+   */
+  zoom(factor, point) {
+    if (!Number.isFinite(factor) || factor <= 0) {
+      throw new RangeError("A zoom factor must be a positive number.");
+    }
+    this.transformation = this._transformation.scale(factor, factor, point);
+  }
+  /**
+   * Moves all sprites, by changing the transformation.
+   *
+   * @param {number} dx
+   * @param {number} dy
+   */
+  pan(dx, dy) {
+    this.transformation = this._transformation.translate(dx, dy);
+  }
+  destroy() {
+    for (const sprite of [...this._sprites].reverse()) {
+      sprite.destroy();
+    }
+    super.destroy();
+  }
+  _onIsVisibleChange(isVisible) {
+    super._onIsVisibleChange(isVisible);
+    for (const sprite of this._sprites) {
+      sprite._recalculateVisibility();
+    }
+  }
+  /**
+   * Puts the sprite elements in drawing order: by `zIndex`, then in sprite order.
+   *
+   * @protected
+   */
+  _updateOrder() {
+    const ordered = this._sprites.map((sprite, index) => ({ sprite, index })).sort(
+      (first, second) => first.sprite.zIndex - second.sprite.zIndex || first.index - second.index
+    );
+    let previous = null;
+    for (const { sprite } of ordered) {
+      const expected = previous ? previous.nextSibling : this._contentEl.firstChild;
+      if (sprite.el !== expected) {
+        this._contentEl.insertBefore(sprite.el, expected);
+      }
+      previous = sprite.el;
+    }
+  }
+};
+defineProperties(VectorCanvas, {
+  /**
+   * The sprites, in order. Do not modify the array.
+   */
+  sprites: {
+    readOnly: true,
+    get() {
+      return this._sprites;
+    }
+  },
+  /**
+   * The number of sprites.
+   */
+  spritesCount: {
+    readOnly: true,
+    get() {
+      return this._sprites.length;
+    }
+  },
+  /**
+   * The coordinate system, as `{x, y, width, height}` (or the SVG text `'0 0 100 100'`), or
+   * `null` for pixels.
+   */
+  viewBox: {
+    value: null,
+    coerce: toViewBox,
+    changed(viewBox) {
+      if (viewBox) {
+        this._svgEl.setAttribute(
+          "viewBox",
+          `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`
+        );
+      } else {
+        this._svgEl.removeAttribute("viewBox");
+      }
+    }
+  },
+  /**
+   * How the view box fits the canvas: an SVG `preserveAspectRatio` value.
+   */
+  preserveAspectRatio: {
+    value: "xMidYMid meet",
+    changed(value) {
+      this._svgEl.setAttribute("preserveAspectRatio", value);
+    }
+  },
+  /**
+   * The transformation of all sprites, a `Matrix`, e.g. for panning and zooming.
+   */
+  transformation: {
+    value: Matrix.identity,
+    coerce(matrix) {
+      if (!(matrix instanceof Matrix)) {
+        throw new TypeError("A transformation must be a Matrix.");
+      }
+      return matrix;
+    },
+    changed(matrix) {
+      if (matrix.isIdentity) {
+        this._contentEl.removeAttribute("transform");
+      } else {
+        this._contentEl.setAttribute("transform", String(matrix));
+      }
+    }
+  },
+  /**
+   * A description of the drawing, for assistive technologies, or `''` if it is decorative.
+   */
+  label: {
+    value: "",
+    changed(label) {
+      if (label) {
+        this._svgEl.setAttribute("aria-label", label);
+        this._svgEl.removeAttribute("aria-hidden");
+      } else {
+        this._svgEl.removeAttribute("aria-label");
+        this._svgEl.setAttribute("aria-hidden", "true");
+      }
+    }
+  }
+});
+VectorCanvas.builderProperties = {
+  sprites(builder, canvas, sprites) {
+    if (!Array.isArray(sprites)) {
+      throw new Error("Vector canvas sprites must be an array.");
+    }
+    for (const sprite of builder.build(sprites)) {
+      canvas.addSprite(sprite);
+    }
+  }
+};
+registerType("vector-canvas", VectorCanvas);
+
+// src/columns/date-column.js
+var DATE_FORMATS = Object.freeze({
+  date: Object.freeze({ dateStyle: "medium" }),
+  "long-date": Object.freeze({
+    weekday: "short",
+    year: "numeric",
+    month: "short",
+    day: "numeric"
+  }),
+  "short-date": Object.freeze({ dateStyle: "short" }),
+  time: Object.freeze({ timeStyle: "short" }),
+  "date-time": Object.freeze({ dateStyle: "medium", timeStyle: "short" })
+});
+function toDate(value) {
+  let date = null;
+  if (value instanceof Date) {
+    date = value;
+  } else if (typeof value === "number") {
+    date = new Date(value);
+  } else if (typeof value === "string" && value.trim()) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+    date = match ? new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])) : new Date(value);
+  }
+  return date && !Number.isNaN(date.getTime()) ? date : null;
+}
+__name(toDate, "toDate");
+var DateColumn = class extends DataColumn {
+  static {
+    __name(this, "DateColumn");
+  }
+  _initialize() {
+    super._initialize();
+    this._dateFormat = null;
+    this._dateFormatLocale = null;
+  }
+  /**
+   * The `Intl.DateTimeFormat` of the column for the current locale.
+   *
+   * @type {Intl.DateTimeFormat}
+   */
+  get dateFormat() {
+    const locale = getLocaleManager().locale;
+    if (!this._dateFormat || this._dateFormatLocale !== locale) {
+      const options = typeof this._format === "string" ? DATE_FORMATS[this._format] : this._format;
+      this._dateFormat = new Intl.DateTimeFormat(locale, options);
+      this._dateFormatLocale = locale;
+    }
+    return this._dateFormat;
+  }
+  _formatValue(value) {
+    const date = toDate(value);
+    return date ? this.dateFormat.format(date) : "";
+  }
+  _getTypeClassName() {
+    return "wy-table-date-cell";
+  }
+};
+defineProperties(DateColumn, {
+  alignment: { value: Justification.END },
+  /**
+   * The format: a name from {@link DATE_FORMATS} or `Intl.DateTimeFormat` options.
+   */
+  format: {
+    value: "date-time",
+    coerce(format) {
+      if (typeof format === "string") {
+        if (!(format in DATE_FORMATS)) {
+          throw new RangeError(`Unknown date format '${format}'.`);
+        }
+      } else if (format === null || typeof format !== "object") {
+        throw new TypeError("A date format must be a name or Intl.DateTimeFormat options.");
+      }
+      return format;
+    },
+    changed() {
+      this._dateFormat = null;
+      this._contentWidth = 0;
+      this._invalidate(ColumnChange.CELLS);
+      this._invalidate(ColumnChange.WIDTH);
+    }
+  }
+});
+registerType("date-column", DateColumn);
+
+// src/columns/index-column.js
+var IndexColumn = class extends AbstractColumn {
+  static {
+    __name(this, "IndexColumn");
+  }
+  getCellText(_row, index) {
+    return String(index + this._offset);
+  }
+  _getTypeClassName() {
+    return "wy-table-index-cell";
+  }
+  _measureCell(_row, _index, measureText2) {
+    const count = this.model?.rowsCount || 0;
+    return measureText2(String(Math.max(1, count - 1 + this._offset)).replace(/\d/g, "0"));
+  }
+};
+defineProperties(IndexColumn, {
+  label: { value: "#" },
+  alignment: { value: Justification.END },
+  /**
+   * The number of the first row.
+   */
+  offset: {
+    value: 1,
+    coerce(offset) {
+      if (!Number.isInteger(offset)) {
+        throw new TypeError("The offset must be an integer.");
+      }
+      return offset;
+    },
+    changed() {
+      this._contentWidth = 0;
+      this._invalidate(ColumnChange.CELLS);
+    }
+  }
+});
+registerType("index-column", IndexColumn);
+
+// src/columns/number-column.js
+var NUMBER_STYLES = Object.freeze(["decimal", "percent", "currency", "unit"]);
+function fractionDigits(value) {
+  const digits = Number(value);
+  if (!Number.isInteger(digits) || digits < 0 || digits > 20) {
+    throw new RangeError("Fraction digits must be an integer from 0 to 20.");
+  }
+  return digits;
+}
+__name(fractionDigits, "fractionDigits");
+var NumberColumn = class extends DataColumn {
+  static {
+    __name(this, "NumberColumn");
+  }
+  _initialize() {
+    super._initialize();
+    this._numberFormat = null;
+    this._numberFormatLocale = null;
+  }
+  /**
+   * The `Intl.NumberFormat` of the column for the current locale.
+   *
+   * @type {Intl.NumberFormat}
+   */
+  get numberFormat() {
+    const locale = getLocaleManager().locale;
+    if (!this._numberFormat || this._numberFormatLocale !== locale) {
+      const options = {
+        style: this._style,
+        useGrouping: this._useGrouping,
+        minimumFractionDigits: this._minimumFractionDigits,
+        maximumFractionDigits: Math.max(
+          this._minimumFractionDigits,
+          this._maximumFractionDigits
+        )
+      };
+      if (this._style === "currency") {
+        options.currency = this._currency;
+      }
+      this._numberFormat = new Intl.NumberFormat(locale, {
+        ...options,
+        ...this._formatOptions
+      });
+      this._numberFormatLocale = locale;
+    }
+    return this._numberFormat;
+  }
+  _formatValue(value) {
+    const number = typeof value === "number" ? value : typeof value === "string" && value.trim() ? Number(value) : NaN;
+    return Number.isFinite(number) ? this.numberFormat.format(number) : "";
+  }
+  _getTypeClassName() {
+    return "wy-table-number-cell";
+  }
+  _onFormatChange() {
+    this._numberFormat = null;
+    this._contentWidth = 0;
+    this._invalidate(ColumnChange.CELLS);
+    this._invalidate(ColumnChange.WIDTH);
+  }
+};
+defineProperties(NumberColumn, {
+  alignment: { value: Justification.END },
+  /**
+   * The number of fraction digits, setting both the minimum and the maximum. Reading returns
+   * the maximum.
+   */
+  digits: {
+    signal: false,
+    get() {
+      return this._maximumFractionDigits;
+    },
+    set(digits) {
+      this.set({ minimumFractionDigits: digits, maximumFractionDigits: digits });
+      return false;
+    }
+  },
+  /**
+   * The minimum number of fraction digits.
+   */
+  minimumFractionDigits: {
+    value: 2,
+    coerce: fractionDigits,
+    changed() {
+      this._onFormatChange();
+    }
+  },
+  /**
+   * The maximum number of fraction digits. It is at least the minimum.
+   */
+  maximumFractionDigits: {
+    value: 2,
+    coerce: fractionDigits,
+    changed() {
+      this._onFormatChange();
+    }
+  },
+  /**
+   * The number style: `'decimal'`, `'percent'`, `'currency'` or `'unit'` (with a `unit` in
+   * `formatOptions`).
+   */
+  style: {
+    value: "decimal",
+    coerce(style) {
+      if (!NUMBER_STYLES.includes(style)) {
+        throw new RangeError(`Invalid number style '${style}'.`);
+      }
+      return style;
+    },
+    changed() {
+      this._onFormatChange();
+    }
+  },
+  /**
+   * The currency of the `'currency'` style, as an ISO 4217 code.
+   */
+  currency: {
+    value: "EUR",
+    changed() {
+      this._onFormatChange();
+    }
+  },
+  /**
+   * Whether digits are grouped, e.g. `1,234,567`.
+   */
+  useGrouping: {
+    value: true,
+    changed() {
+      this._onFormatChange();
+    }
+  },
+  /**
+   * More `Intl.NumberFormat` options, which override the other properties, or `null`.
+   */
+  formatOptions: {
+    value: null,
+    changed() {
+      this._onFormatChange();
+    }
+  }
+});
+registerType("number-column", NumberColumn);
+
+// src/sprites/circle.js
+var Circle = class extends Sprite {
+  static {
+    __name(this, "Circle");
+  }
+  _render() {
+    return this._createShape("circle", { class: "wy-sprite-circle" });
+  }
+  _applyShape() {
+    this.el.setAttribute("r", String(this._radius));
+  }
+  _applyPosition() {
+    this.el.setAttribute("cx", String(this._position.x));
+    this.el.setAttribute("cy", String(this._position.y));
+  }
+};
+defineProperties(Circle, {
+  /**
+   * The radius.
+   */
+  radius: {
+    value: 0,
+    coerce(radius) {
+      const number = Number(radius);
+      if (!Number.isFinite(number) || number < 0) {
+        throw new RangeError("A radius must be a non-negative number.");
+      }
+      return number;
+    },
+    changed() {
+      this._applyShape();
+    }
+  }
+});
+registerType("circle-sprite", Circle);
+
+// src/sprites/image.js
+var MISSING_IMAGE = "data:image/svg+xml," + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect x="1.5" y="1.5" width="13" height="13" rx="1.5" fill="#f7f5f1" stroke="#a9a08e"/><path d="M5 5l6 6M11 5l-6 6" stroke="#c01c28" stroke-width="1.6" stroke-linecap="round"/></svg>'
+);
+var MISSING_SIZE = 16;
+function toDimension2(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) {
+    throw new TypeError("An image size must be a number.");
+  }
+  return number < 0 ? -1 : number;
+}
+__name(toDimension2, "toDimension");
+var ImageSprite = class extends Sprite {
+  static {
+    __name(this, "ImageSprite");
+  }
+  _initialize() {
+    this._image = null;
+    this._failed = false;
+    super._initialize();
+  }
+  /**
+   * The natural size of the loaded image, or zero.
+   *
+   * @type {{width: number, height: number}}
+   */
+  get naturalSize() {
+    const image = this._image;
+    return image && !this._failed ? { width: image.naturalWidth, height: image.naturalHeight } : { width: 0, height: 0 };
+  }
+  /**
+   * Whether the image could not be loaded.
+   *
+   * @type {boolean}
+   */
+  get failed() {
+    return this._failed;
+  }
+  _render() {
+    return this._createShape("image", {
+      class: "wy-sprite-image",
+      preserveAspectRatio: "none"
+    });
+  }
+  _applyShape() {
+    const natural = this._failed ? { width: MISSING_SIZE, height: MISSING_SIZE } : this.naturalSize;
+    const width = this._size.width >= 0 ? this._size.width : natural.width;
+    const height = this._size.height >= 0 ? this._size.height : natural.height;
+    this.el.setAttribute("width", String(width));
+    this.el.setAttribute("height", String(height));
+  }
+  _load(source) {
+    if (this._image) {
+      this._image.onload = null;
+      this._image.onerror = null;
+    }
+    this._failed = false;
+    this.el.classList.remove("wy-image-missing");
+    if (!source) {
+      this._image = null;
+      this.el.removeAttribute("href");
+      this._applyShape();
+      return;
+    }
+    const image = new window.Image();
+    this._image = image;
+    image.onload = () => {
+      if (this._image !== image || this.destroyed) {
+        return;
+      }
+      this.el.setAttribute("href", source);
+      this._applyShape();
+      this.emit("load", this);
+    };
+    image.onerror = () => {
+      if (this._image !== image || this.destroyed) {
+        return;
+      }
+      this._failed = true;
+      this.el.setAttribute("href", MISSING_IMAGE);
+      this.el.classList.add("wy-image-missing");
+      this._applyShape();
+      this.emit("error", this);
+    };
+    image.src = source;
+  }
+};
+defineProperties(ImageSprite, {
+  /**
+   * The URL of the image.
+   */
+  source: {
+    value: "",
+    coerce(source) {
+      return source === null || source === void 0 ? "" : String(source);
+    },
+    changed(source) {
+      this._load(source);
+    }
+  },
+  /**
+   * The size, as `{width, height}`. A component of -1 uses the natural size.
+   */
+  size: {
+    value: Object.freeze({ width: -1, height: -1 }),
+    coerce(size) {
+      if (!size || typeof size !== "object") {
+        throw new TypeError("A size must be an object with width and height.");
+      }
+      return Object.freeze({
+        width: toDimension2(size.width ?? -1),
+        height: toDimension2(size.height ?? -1)
+      });
+    },
+    set(size) {
+      if (size.width === this._size.width && size.height === this._size.height) {
+        return false;
+      }
+      this._size = size;
+      this._applyShape();
+    }
+  },
+  /**
+   * The width, or -1 for the natural width.
+   */
+  width: {
+    signal: false,
+    get() {
+      return this._size.width;
+    },
+    set(width) {
+      this.size = { width, height: this._size.height };
+      return false;
+    }
+  },
+  /**
+   * The height, or -1 for the natural height.
+   */
+  height: {
+    signal: false,
+    get() {
+      return this._size.height;
+    },
+    set(height) {
+      this.size = { width: this._size.width, height };
+      return false;
+    }
+  },
+  fill: { value: "" },
+  strokeWidth: { value: 0 }
+});
+registerType("image-sprite", ImageSprite);
+
+// src/sprites/label.js
+var LabelAnchor = Object.freeze({
+  START: 0,
+  MIDDLE: 1,
+  END: 2
+});
+var TEXT_ANCHORS = Object.freeze({
+  [LabelAnchor.START]: "start",
+  [LabelAnchor.MIDDLE]: "middle",
+  [LabelAnchor.END]: "end"
+});
+var BASELINES = Object.freeze([
+  "auto",
+  "middle",
+  "central",
+  "hanging",
+  "text-top",
+  "text-bottom"
+]);
+var LabelSprite = class extends Sprite {
+  static {
+    __name(this, "LabelSprite");
+  }
+  _render() {
+    return this._createShape("text", { class: "wy-sprite-label" });
+  }
+  _applyShape() {
+    const textNode = [...this.el.childNodes].find((x) => x.nodeType === Node.TEXT_NODE);
+    if (textNode) {
+      textNode.data = this._text;
+    } else {
+      this.el.append(this._text);
+    }
+    this.el.setAttribute("text-anchor", TEXT_ANCHORS[this._anchor]);
+    this.el.setAttribute("dominant-baseline", this._baseline);
+    this.el.style.font = this._font;
+  }
+};
+defineProperties(LabelSprite, {
+  fill: { value: "currentColor" },
+  strokeWidth: { value: 0 },
+  /**
+   * The text.
+   */
+  text: {
+    value: "",
+    coerce(text) {
+      return text === null || text === void 0 ? "" : String(text);
+    },
+    changed() {
+      this._applyShape();
+    }
+  },
+  /**
+   * The horizontal anchor: one of {@link LabelAnchor}.
+   */
+  anchor: {
+    value: LabelAnchor.MIDDLE,
+    coerce(anchor) {
+      if (!(anchor in TEXT_ANCHORS)) {
+        throw new RangeError(`Invalid label anchor ${anchor}.`);
+      }
+      return Number(anchor);
+    },
+    changed() {
+      this._applyShape();
+    }
+  },
+  /**
+   * The vertical alignment on the position: an SVG `dominant-baseline` value such as
+   * `'auto'` (the alphabetic baseline), `'middle'` or `'hanging'`.
+   */
+  baseline: {
+    value: "auto",
+    coerce(baseline) {
+      if (!BASELINES.includes(baseline)) {
+        throw new RangeError(`Invalid baseline '${baseline}'.`);
+      }
+      return baseline;
+    },
+    changed() {
+      this._applyShape();
+    }
+  },
+  /**
+   * A CSS font, e.g. `'bold 12px sans-serif'`, or `''` for the canvas font.
+   */
+  font: {
+    value: "",
+    changed() {
+      this._applyShape();
+    }
+  }
+});
+registerType("label-sprite", LabelSprite);
+
+// src/sprites/path.js
+var Path = class extends Sprite {
+  static {
+    __name(this, "Path");
+  }
+  _render() {
+    return this._createShape("path", { class: "wy-sprite-path" });
+  }
+  _applyShape() {
+    if (this._path) {
+      this.el.setAttribute("d", this._path);
+    } else {
+      this.el.removeAttribute("d");
+    }
+  }
+  _applyPosition() {
+  }
+  _isPositionInTransform() {
+    return true;
+  }
+};
+defineProperties(Path, {
+  /**
+   * The SVG path data.
+   */
+  path: {
+    value: "",
+    coerce(path) {
+      return path === null || path === void 0 ? "" : String(path);
+    },
+    changed() {
+      this._applyShape();
+    }
+  }
+});
+registerType("path-sprite", Path);
+
+// src/sprites/rectangle.js
+function toLength(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number < 0) {
+    throw new RangeError("A length must be a non-negative number.");
+  }
+  return number;
+}
+__name(toLength, "toLength");
+var Rectangle = class extends Sprite {
+  static {
+    __name(this, "Rectangle");
+  }
+  _render() {
+    return this._createShape("rect", { class: "wy-sprite-rectangle" });
+  }
+  _applyShape() {
+    this.el.setAttribute("width", String(this._size.width));
+    this.el.setAttribute("height", String(this._size.height));
+    this.el.setAttribute("rx", String(this._cornerRadius));
+    this.el.setAttribute("ry", String(this._cornerRadius));
+  }
+};
+defineProperties(Rectangle, {
+  /**
+   * The size, as `{width, height}`.
+   */
+  size: {
+    value: Object.freeze({ width: 0, height: 0 }),
+    coerce(size) {
+      if (!size || typeof size !== "object") {
+        throw new TypeError("A size must be an object with width and height.");
+      }
+      return Object.freeze({
+        width: toLength(size.width ?? 0),
+        height: toLength(size.height ?? 0)
+      });
+    },
+    set(size) {
+      if (size.width === this._size.width && size.height === this._size.height) {
+        return false;
+      }
+      this._size = size;
+      this._applyShape();
+    }
+  },
+  /**
+   * The width.
+   */
+  width: {
+    signal: false,
+    get() {
+      return this._size.width;
+    },
+    set(width) {
+      this.size = { width, height: this._size.height };
+      return false;
+    }
+  },
+  /**
+   * The height.
+   */
+  height: {
+    signal: false,
+    get() {
+      return this._size.height;
+    },
+    set(height) {
+      this.size = { width: this._size.width, height };
+      return false;
+    }
+  },
+  /**
+   * The radius of the corners.
+   */
+  cornerRadius: {
+    value: 0,
+    coerce: toLength,
+    changed() {
+      this._applyShape();
+    }
+  }
+});
+registerType("rectangle-sprite", Rectangle);
+
+// src/data/filters/filter.js
+var Filter = class extends Instance {
+  static {
+    __name(this, "Filter");
+  }
+  /**
+   * Checks whether a row passes the filter.
+   *
+   * @param {object} row
+   * @returns {boolean}
+   */
+  isVisibleRow(_row) {
+    throw new Error(`${this.constructor.name} does not implement isVisibleRow().`);
+  }
+  /**
+   * Emits `change`. Subclasses call this when a property that affects the outcome changed.
+   *
+   * @protected
+   */
+  _changed() {
+    this.emit("change", this);
+  }
+};
+
+// src/data/filtered-list-model.js
+var INCREMENTAL_LIMIT = 200;
+var PROXY_SIGNALS = [
+  "columns-info-change",
+  "id-column-change",
+  "sort-column-change",
+  "sort-order-change",
+  "locale-aware-change"
+];
+var FilteredListModel = class extends AbstractModel {
+  static {
+    __name(this, "FilteredListModel");
+  }
+  /**
+   * @param {AbstractModel | Record<string, unknown>} [model] The source model (followed by the
+   *     filters, like the original toolkit), or property values.
+   * @param {...Filter} filters
+   */
+  constructor(model, ...filters) {
+    super(model instanceof AbstractModel ? { model, filters } : model);
+  }
+  _initialize() {
+    super._initialize();
+    this._sourceIndices = [];
+    this._filters = [];
+    this._proxyDisconnectors = [];
+  }
+  /**
+   * Converts an index of this model to the index of the row in the source model.
+   *
+   * @param {number} index
+   * @returns {number}
+   * @throws {RangeError} If there is no row at the index.
+   */
+  toSourceIndex(index) {
+    if (!Number.isInteger(index) || index < 0 || index >= this._rows.length) {
+      throw new RangeError(`There is no row at index ${index}.`);
+    }
+    return this._sourceIndices[index];
+  }
+  /**
+   * Converts an index of the source model to the index of the row in this model.
+   *
+   * @param {number} sourceIndex
+   * @returns {number} The index, or -1 if the row does not pass the filters.
+   */
+  fromSourceIndex(sourceIndex) {
+    const position = this._lowerBound(sourceIndex);
+    return this._sourceIndices[position] === sourceIndex ? position : -1;
+  }
+  /**
+   * Adds a filter.
+   *
+   * @param {Filter} filter
+   * @throws {Error} If the filter was already added.
+   */
+  addFilter(filter) {
+    if (!(filter instanceof Filter)) {
+      throw new TypeError("Only filters can be added to a filtered model.");
+    }
+    if (this._filters.includes(filter)) {
+      throw new Error("The filter has already been added.");
+    }
+    this._filters.push(filter);
+    filter.connect("change", this._onFilterChange, this);
+    filter.connect("destroy", this._onFilterDestroy, this);
+    this._refilter();
+    this.emit("filters-change", this);
+  }
+  /**
+   * Removes a filter.
+   *
+   * @param {Filter} filter
+   * @throws {Error} If the filter was not added.
+   */
+  removeFilter(filter) {
+    const index = this._filters.indexOf(filter);
+    if (index < 0) {
+      throw new Error("The filter has not been added.");
+    }
+    this._filters.splice(index, 1);
+    filter.disconnect("change", this._onFilterChange, this);
+    filter.disconnect("destroy", this._onFilterDestroy, this);
+    this._refilter();
+    this.emit("filters-change", this);
+  }
+  /**
+   * Removes all filters, so all rows of the source are shown.
+   */
+  removeAllFilters() {
+    this.filters = [];
+  }
+  /**
+   * Refilters all rows. Filters signal their changes themselves; call this when a filter
+   * depends on outside state that changed.
+   */
+  refilter() {
+    this._refilter();
+  }
+  /**
+   * Checks whether a row passes all filters.
+   *
+   * @param {object} row
+   * @returns {boolean}
+   */
+  isVisibleRow(row) {
+    const filters = this._filters;
+    for (let i = 0; i < filters.length; ++i) {
+      if (!filters[i].isVisibleRow(row)) {
+        return false;
+      }
+    }
+    return true;
+  }
+  destroy() {
+    this._setSource(null);
+    for (const filter of [...this._filters]) {
+      filter.disconnect("change", this._onFilterChange, this);
+      filter.disconnect("destroy", this._onFilterDestroy, this);
+      if (!filter.destroyed) {
+        filter.destroy();
+      }
+    }
+    this._filters = [];
+    super.destroy();
+  }
+  insertRow(index, row) {
+    const count = this._rows.length;
+    if (!Number.isInteger(index) || index < 0 || index > count) {
+      throw new RangeError(`Invalid row insertion index ${index}.`);
+    }
+    const sourceIndex = index < count ? this._sourceIndices[index] : count ? this._sourceIndices[count - 1] + 1 : this._requireSource().rowsCount;
+    return this.fromSourceIndex(this._requireSource().insertRow(sourceIndex, row));
+  }
+  appendRow(row) {
+    return this.fromSourceIndex(this._requireSource().appendRow(row));
+  }
+  prependRow(row) {
+    return this.fromSourceIndex(this._requireSource().prependRow(row));
+  }
+  insertRows(index, rows) {
+    const count = this._rows.length;
+    if (!Number.isInteger(index) || index < 0 || index > count) {
+      throw new RangeError(`Invalid row insertion index ${index}.`);
+    }
+    const sourceIndex = index < count ? this._sourceIndices[index] : this._requireSource().rowsCount;
+    this._requireSource().insertRows(sourceIndex, rows);
+  }
+  removeRow(index) {
+    return this._requireSource().removeRow(this.toSourceIndex(index));
+  }
+  /**
+   * Removes all rows of the source model, like the original toolkit.
+   */
+  removeAllRows() {
+    this._requireSource().removeAllRows();
+  }
+  replaceRow(index, row) {
+    return this.fromSourceIndex(
+      this._requireSource().replaceRow(this.toSourceIndex(index), row)
+    );
+  }
+  updateRow(index, changes) {
+    return this.fromSourceIndex(
+      this._requireSource().updateRow(this.toSourceIndex(index), changes)
+    );
+  }
+  sortByColumn(column, order = SortOrder.ASCENDING) {
+    this._requireSource().sortByColumn(column, order);
+  }
+  compareValues(first, second, type, caseSensitive) {
+    return this._model ? this._model.compareValues(first, second, type, caseSensitive) : super.compareValues(first, second, type, caseSensitive);
+  }
+  _requireSource() {
+    if (!this._model) {
+      throw new Error("The filtered model has no source model.");
+    }
+    return this._model;
+  }
+  _setSource(model) {
+    const old = this._model;
+    if (old) {
+      old.disconnect("row-insert", this._onSourceRowInsert, this);
+      old.disconnect("row-remove", this._onSourceRowRemove, this);
+      old.disconnect("row-move", this._onSourceRowMove, this);
+      old.disconnect("row-update", this._onSourceRowUpdate, this);
+      old.disconnect("cell-change", this._onSourceCellChange, this);
+      old.disconnect("rows-reorder", this._onSourceRowsReorder, this);
+      old.disconnect("destroy", this._onSourceDestroy, this);
+    }
+    for (const disconnect of this._proxyDisconnectors) {
+      disconnect();
+    }
+    this._proxyDisconnectors = [];
+    this._model = model;
+    if (model) {
+      model.connect("row-insert", this._onSourceRowInsert, this);
+      model.connect("row-remove", this._onSourceRowRemove, this);
+      model.connect("row-move", this._onSourceRowMove, this);
+      model.connect("row-update", this._onSourceRowUpdate, this);
+      model.connect("cell-change", this._onSourceCellChange, this);
+      model.connect("rows-reorder", this._onSourceRowsReorder, this);
+      model.connect("destroy", this._onSourceDestroy, this);
+      for (const signal of PROXY_SIGNALS) {
+        this._proxyDisconnectors.push(
+          model.connect(signal, () => {
+            this._invalidateIndex();
+            this.emit(signal, this);
+          })
+        );
+      }
+    }
+  }
+  /**
+   * Finds the first position in `_sourceIndices` whose source index is at least `sourceIndex`.
+   *
+   * @param {number} sourceIndex
+   * @returns {number}
+   */
+  _lowerBound(sourceIndex) {
+    const indices = this._sourceIndices;
+    let low = 0;
+    let high = indices.length;
+    while (low < high) {
+      const middle = low + high >>> 1;
+      if (indices[middle] < sourceIndex) {
+        low = middle + 1;
+      } else {
+        high = middle;
+      }
+    }
+    return low;
+  }
+  _shiftIndices(from, delta) {
+    const indices = this._sourceIndices;
+    for (let i = from; i < indices.length; ++i) {
+      indices[i] += delta;
+    }
+  }
+  _getId(row) {
+    const idColumn = this.idColumn;
+    return idColumn ? row[idColumn] : null;
+  }
+  /**
+   * Computes the visible rows from scratch.
+   *
+   * @returns {{rows: object[], indices: number[]}}
+   */
+  _computeRows() {
+    const rows = [];
+    const indices = [];
+    const sourceRows = this._model ? this._model.rows : [];
+    for (let i = 0; i < sourceRows.length; ++i) {
+      const row = sourceRows[i];
+      if (this.isVisibleRow(row)) {
+        rows.push(row);
+        indices.push(i);
+      }
+    }
+    return { rows, indices };
+  }
+  _resetRows() {
+    const { rows, indices } = this._computeRows();
+    this._rows = rows;
+    this._sourceIndices = indices;
+    this._invalidateIndex();
+    this.emit("rows-reorder", this);
+    this.emit("rows-change", this, 0, rows.length - 1);
+  }
+  /**
+   * Applies a filter change, signaling only the rows that appear or disappear.
+   */
+  _refilter() {
+    const { indices } = this._computeRows();
+    const old = this._sourceIndices;
+    let changes = 0;
+    for (let i = 0, j = 0; i < old.length || j < indices.length; ) {
+      if (j >= indices.length || i < old.length && old[i] < indices[j]) {
+        ++changes;
+        ++i;
+      } else if (i >= old.length || indices[j] < old[i]) {
+        ++changes;
+        ++j;
+      } else {
+        ++i;
+        ++j;
+      }
+      if (changes > INCREMENTAL_LIMIT) {
+        this._resetRows();
+        return;
+      }
+    }
+    if (!changes) {
+      return;
+    }
+    const sourceRows = this._model.rows;
+    const oldIndices = [...old];
+    let first = -1;
+    let position = 0;
+    for (let i = 0, j = 0; i < oldIndices.length || j < indices.length; ) {
+      if (j >= indices.length || i < oldIndices.length && oldIndices[i] < indices[j]) {
+        const row = this._rows[position];
+        this._rows.splice(position, 1);
+        this._sourceIndices.splice(position, 1);
+        this._invalidateIndex();
+        first = first < 0 ? position : first;
+        this.emit("row-remove", this, position, this._getId(row), row);
+        ++i;
+      } else if (i >= oldIndices.length || indices[j] < oldIndices[i]) {
+        const row = sourceRows[indices[j]];
+        this._rows.splice(position, 0, row);
+        this._sourceIndices.splice(position, 0, indices[j]);
+        this._invalidateIndex();
+        first = first < 0 ? position : first;
+        this.emit("row-insert", this, position, this._getId(row));
+        ++position;
+        ++j;
+      } else {
+        ++position;
+        ++i;
+        ++j;
+      }
+    }
+    this.emit("rows-change", this, first, this._rows.length - 1);
+  }
+  _onFilterChange() {
+    this._refilter();
+  }
+  _onFilterDestroy(filter) {
+    if (this._filters.includes(filter)) {
+      this.removeFilter(filter);
+    }
+  }
+  _onSourceDestroy() {
+    this.destroy();
+  }
+  _onSourceRowsReorder() {
+    this._resetRows();
+  }
+  _onSourceRowInsert(model, sourceIndex, id) {
+    const position = this._lowerBound(sourceIndex);
+    this._shiftIndices(position, 1);
+    const row = model.getRow(sourceIndex);
+    if (!this.isVisibleRow(row)) {
+      return;
+    }
+    this._rows.splice(position, 0, row);
+    this._sourceIndices.splice(position, 0, sourceIndex);
+    this._invalidateIndex();
+    this.emit("row-insert", this, position, id);
+    this.emit("rows-change", this, position, this._rows.length - 1);
+  }
+  _onSourceRowRemove(model, sourceIndex, id, row) {
+    const position = this._lowerBound(sourceIndex);
+    const visible = this._sourceIndices[position] === sourceIndex;
+    if (visible) {
+      this._rows.splice(position, 1);
+      this._sourceIndices.splice(position, 1);
+      this._invalidateIndex();
+    }
+    this._shiftIndices(position, -1);
+    if (visible) {
+      this.emit("row-remove", this, position, id, row);
+      this.emit("rows-change", this, position, this._rows.length - 1);
+    }
+  }
+  _onSourceRowMove(model, fromIndex, toIndex, id) {
+    const from = this._lowerBound(fromIndex);
+    const visible = this._sourceIndices[from] === fromIndex;
+    let row = null;
+    if (visible) {
+      row = this._rows.splice(from, 1)[0];
+      this._sourceIndices.splice(from, 1);
+    }
+    this._shiftIndices(from, -1);
+    const to = this._lowerBound(toIndex);
+    this._shiftIndices(to, 1);
+    if (!visible) {
+      return;
+    }
+    this._rows.splice(to, 0, row);
+    this._sourceIndices.splice(to, 0, toIndex);
+    this._invalidateIndex();
+    if (to !== from) {
+      this.emit("row-move", this, from, to, id);
+      this.emit("rows-change", this, Math.min(from, to), Math.max(from, to));
+    }
+  }
+  _onSourceRowUpdate(model, sourceIndex, id, oldId) {
+    const position = this._lowerBound(sourceIndex);
+    const wasVisible = this._sourceIndices[position] === sourceIndex;
+    const row = model.getRow(sourceIndex);
+    const visible = this.isVisibleRow(row);
+    if (wasVisible && visible) {
+      this._rows[position] = row;
+      this._invalidateIndex();
+      this.emit("row-update", this, position, id, oldId);
+      this.emit("rows-change", this, position, position);
+    } else if (visible) {
+      this._rows.splice(position, 0, row);
+      this._sourceIndices.splice(position, 0, sourceIndex);
+      this._invalidateIndex();
+      this.emit("row-insert", this, position, id);
+      this.emit("rows-change", this, position, this._rows.length - 1);
+    } else if (wasVisible) {
+      this._rows.splice(position, 1);
+      this._sourceIndices.splice(position, 1);
+      this._invalidateIndex();
+      this.emit("row-remove", this, position, oldId, row);
+      this.emit("rows-change", this, position, this._rows.length - 1);
+    }
+  }
+  _onSourceCellChange(model, sourceIndex, column) {
+    const position = this.fromSourceIndex(sourceIndex);
+    if (position >= 0) {
+      this.emit("cell-change", this, position, column);
+    }
+  }
+};
+function sourceProperty(name, fallback) {
+  return {
+    signal: false,
+    get() {
+      return this._model ? this._model[name] : fallback;
+    },
+    set(value) {
+      this._requireSource()[name] = value;
+      return false;
+    }
+  };
+}
+__name(sourceProperty, "sourceProperty");
+defineProperties(FilteredListModel, {
+  /**
+   * The rows that pass the filters, in the order of the source. Do not modify the array.
+   */
+  rows: {
+    readOnly: true,
+    get() {
+      return this._rows;
+    }
+  },
+  /**
+   * The source model.
+   */
+  model: {
+    value: null,
+    set(model) {
+      if (model !== null && !(model instanceof AbstractModel)) {
+        throw new TypeError("The source of a filtered model must be a model.");
+      }
+      if (model === this) {
+        throw new Error("A filtered model cannot filter itself.");
+      }
+      this._setSource(model);
+      this._resetRows();
+    }
+  },
+  /**
+   * The filters. A row is shown when it passes all of them. Setting an array replaces them.
+   */
+  filters: {
+    signal: false,
+    get() {
+      return this._filters;
+    },
+    set(filters) {
+      if (!Array.isArray(filters)) {
+        throw new TypeError("Filters must be an array.");
+      }
+      for (const filter of filters) {
+        if (!(filter instanceof Filter)) {
+          throw new TypeError("Only filters can be added to a filtered model.");
+        }
+      }
+      for (const filter of this._filters) {
+        filter.disconnect("change", this._onFilterChange, this);
+        filter.disconnect("destroy", this._onFilterDestroy, this);
+      }
+      this._filters = [...new Set(filters)];
+      for (const filter of this._filters) {
+        filter.connect("change", this._onFilterChange, this);
+        filter.connect("destroy", this._onFilterDestroy, this);
+      }
+      this._refilter();
+      this.emit("filters-change", this);
+    }
+  },
+  /**
+   * The number of filters.
+   */
+  filtersCount: {
+    readOnly: true,
+    get() {
+      return this._filters.length;
+    }
+  },
+  columnsInfo: sourceProperty("columnsInfo", {}),
+  idColumn: sourceProperty("idColumn", null),
+  sortColumn: sourceProperty("sortColumn", null),
+  sortOrder: sourceProperty("sortOrder", SortOrder.NONE),
+  localeAware: sourceProperty("localeAware", true)
+});
+FilteredListModel.builderProperties = {
+  filters(builder, model, filters) {
+    if (!Array.isArray(filters)) {
+      throw new Error("Filtered model filters must be an array.");
+    }
+    model.filters = builder.build(filters);
+  }
+};
+registerType("filtered-list-model", FilteredListModel);
+
+// src/data/filters/condition-filter.js
+var ConditionOperator = Object.freeze({
+  EQUALS: 1,
+  LESS_THAN: 2,
+  GREATER_THAN: 3,
+  LESS_THAN_EQUAL: 4,
+  GREATER_THAN_EQUAL: 5,
+  CONTAINS: 6,
+  STARTS_WITH: 7,
+  ENDS_WITH: 8,
+  NOT_EQUALS: 9,
+  // No column equals the value.
+  MATCHES: 10
+  // The value is a regular expression (or its source) that a column matches.
+});
+function toText(value) {
+  return value === null || value === void 0 ? "" : String(value);
+}
+__name(toText, "toText");
+function toOrderable(value) {
+  if (typeof value === "number") {
+    return Number.isNaN(value) ? null : value;
+  }
+  if (value instanceof Date) {
+    const time = value.getTime();
+    return Number.isNaN(time) ? null : time;
+  }
+  return null;
+}
+__name(toOrderable, "toOrderable");
+var ConditionFilter = class extends Filter {
+  static {
+    __name(this, "ConditionFilter");
+  }
+  isVisibleRow(row) {
+    const columns = this._columns ?? Object.keys(row);
+    if (this._operator === ConditionOperator.NOT_EQUALS) {
+      return !columns.some((column) => column in row && this._isEqual(row[column]));
+    }
+    return columns.some((column) => column in row && this.compareValues(row[column]));
+  }
+  /**
+   * Checks whether a value satisfies the condition. `NOT_EQUALS` is checked per value here; for
+   * a row it means that no column equals the value.
+   *
+   * @param {unknown} value
+   * @returns {boolean}
+   */
+  compareValues(value) {
+    const operator = this._operator;
+    const target = this._value;
+    switch (operator) {
+      case ConditionOperator.EQUALS:
+        return this._isEqual(value);
+      case ConditionOperator.NOT_EQUALS:
+        return !this._isEqual(value);
+      case ConditionOperator.CONTAINS:
+      case ConditionOperator.STARTS_WITH:
+      case ConditionOperator.ENDS_WITH: {
+        let text = toText(value);
+        let search = toText(target);
+        if (!this._caseSensitive) {
+          text = text.toLowerCase();
+          search = search.toLowerCase();
+        }
+        if (operator === ConditionOperator.CONTAINS) {
+          return text.includes(search);
+        }
+        return operator === ConditionOperator.STARTS_WITH ? text.startsWith(search) : text.endsWith(search);
+      }
+      case ConditionOperator.MATCHES:
+        return this._getRegExp().test(toText(value));
+    }
+    const first = toOrderable(value);
+    const second = toOrderable(target);
+    if (first === null || second === null) {
+      return false;
+    }
+    switch (operator) {
+      case ConditionOperator.LESS_THAN:
+        return first < second;
+      case ConditionOperator.GREATER_THAN:
+        return first > second;
+      case ConditionOperator.LESS_THAN_EQUAL:
+        return first <= second;
+      default:
+        return first >= second;
+    }
+  }
+  _isEqual(value) {
+    let first = typeof value === "number" ? String(value) : value;
+    let second = typeof this._value === "number" ? String(this._value) : this._value;
+    if (!this._caseSensitive && typeof first === "string" && typeof second === "string") {
+      first = first.toLowerCase();
+      second = second.toLowerCase();
+    }
+    return areEqual(first, second);
+  }
+  _getRegExp() {
+    if (!this._regExp) {
+      const value = this._value;
+      const source = value instanceof RegExp ? value.source : toText(value);
+      let flags = value instanceof RegExp ? value.flags.replace(/[gy]/g, "") : "";
+      if (!this._caseSensitive && !flags.includes("i")) {
+        flags += "i";
+      }
+      this._regExp = new RegExp(source, flags);
+    }
+    return this._regExp;
+  }
+};
+defineProperties(ConditionFilter, {
+  /**
+   * The operator: one of {@link ConditionOperator}.
+   */
+  operator: {
+    value: ConditionOperator.CONTAINS,
+    coerce(operator) {
+      if (!Object.values(ConditionOperator).includes(operator)) {
+        throw new RangeError(`Invalid condition operator ${operator}.`);
+      }
+      return operator;
+    },
+    changed() {
+      this._changed();
+    }
+  },
+  /**
+   * The value the operator compares with. For `MATCHES`, a `RegExp` or a pattern string.
+   */
+  value: {
+    value: null,
+    changed() {
+      this._regExp = null;
+      this._changed();
+    }
+  },
+  /**
+   * The columns to check, or `null` for all columns of a row.
+   */
+  columns: {
+    value: null,
+    coerce(columns) {
+      if (columns !== null && !Array.isArray(columns)) {
+        throw new TypeError("Filter columns must be an array or null.");
+      }
+      return columns && [...columns];
+    },
+    changed() {
+      this._changed();
+    }
+  },
+  /**
+   * Whether the text operators (and `EQUALS` on strings) distinguish upper and lower case.
+   */
+  caseSensitive: {
+    value: true,
+    changed() {
+      this._regExp = null;
+      this._changed();
+    }
+  }
+});
+registerType("condition-filter", ConditionFilter);
+
+// src/data/filters/search-filter.js
+function removeAccents(text) {
+  return text.normalize("NFD").replace(/\p{Diacritic}/gu, "");
+}
+__name(removeAccents, "removeAccents");
+var SearchFilter = class extends Filter {
+  static {
+    __name(this, "SearchFilter");
+  }
+  _initialize() {
+    super._initialize();
+    this._keywords = [];
+  }
+  /**
+   * The keywords of the query, prepared for matching.
+   *
+   * @type {string[]}
+   */
+  get keywords() {
+    return [...this._keywords];
+  }
+  isVisibleRow(row) {
+    const keywords = this._keywords;
+    if (!keywords.length) {
+      return true;
+    }
+    const columns = this._columns ?? Object.keys(row);
+    const remaining = new Set(keywords);
+    for (const column of columns) {
+      if (!(column in row)) {
+        continue;
+      }
+      const value = this._prepareValue(row[column]);
+      for (const keyword of remaining) {
+        if (value.includes(keyword)) {
+          remaining.delete(keyword);
+        }
+      }
+      if (!remaining.size) {
+        return true;
+      }
+    }
+    return false;
+  }
+  /**
+   * Prepares a value (or the query) for matching: text with single spaces, in lower case and
+   * optionally without accents.
+   *
+   * @protected
+   * @param {unknown} value
+   * @returns {string}
+   */
+  _prepareValue(value) {
+    const text = value === null || value === void 0 ? "" : String(value);
+    const lower = text.replace(/\s+/g, " ").toLocaleLowerCase(getLocaleManager().locale);
+    return this._ignoreAccents ? removeAccents(lower) : lower;
+  }
+  _updateKeywords() {
+    const query = this._prepareValue(this._query).replace(/[,\s]+/g, " ").trim();
+    this._keywords = query ? [...new Set(query.split(" "))] : [];
+  }
+};
+defineProperties(SearchFilter, {
+  /**
+   * The search text.
+   */
+  query: {
+    value: "",
+    coerce(query) {
+      return query === null || query === void 0 ? "" : String(query);
+    },
+    changed() {
+      this._updateKeywords();
+      this._changed();
+    }
+  },
+  /**
+   * The columns to search, or `null` for all columns of a row.
+   */
+  columns: {
+    value: null,
+    coerce(columns) {
+      if (columns !== null && !Array.isArray(columns)) {
+        throw new TypeError("Filter columns must be an array or null.");
+      }
+      return columns && [...columns];
+    },
+    changed() {
+      this._changed();
+    }
+  },
+  /**
+   * Whether accents are ignored, so the keyword `'cafe'` finds `'Café'`.
+   */
+  ignoreAccents: {
+    value: false,
+    changed() {
+      this._updateKeywords();
+      this._changed();
+    }
+  }
+});
+registerType("search-filter", SearchFilter);
+
+// src/data/list-model.js
+function checkRow(row) {
+  if (row === null || typeof row !== "object") {
+    throw new TypeError("A row must be an object.");
+  }
+}
+__name(checkRow, "checkRow");
+var ListModel = class extends AbstractModel {
+  static {
+    __name(this, "ListModel");
+  }
+  insertRow(index, row) {
+    checkRow(row);
+    const rows = this._rows;
+    if (!Number.isInteger(index) || index < 0 || index > rows.length) {
+      throw new RangeError(`Invalid row insertion index ${index}.`);
+    }
+    const idColumn = this.idColumn;
+    const id = idColumn ? row[idColumn] : null;
+    if (idColumn && this.hasRowId(id)) {
+      throw new Error(`Duplicate row id ${String(id)}.`);
+    }
+    const compare = this._createSortComparator();
+    if (compare) {
+      index = this._findInsertIndex(rows, row, compare);
+    }
+    rows.splice(index, 0, row);
+    this._afterInsert(index, id);
+    return index;
+  }
+  insertRows(index, newRows) {
+    if (!Array.isArray(newRows)) {
+      throw new TypeError("Rows must be an array.");
+    }
+    if (newRows.length === 1) {
+      this.insertRow(index, newRows[0]);
+      return;
+    }
+    const rows = this._rows;
+    if (!Number.isInteger(index) || index < 0 || index > rows.length) {
+      throw new RangeError(`Invalid row insertion index ${index}.`);
+    }
+    newRows.forEach(checkRow);
+    if (!newRows.length) {
+      return;
+    }
+    const updated = [...rows.slice(0, index), ...newRows, ...rows.slice(index)];
+    this._validateIds(updated);
+    const compare = this._createSortComparator();
+    if (compare) {
+      updated.sort(compare);
+    }
+    this._rows = updated;
+    this._invalidateIndex();
+    this.emit("rows-reorder", this);
+    this.emit("rows-change", this, 0, updated.length - 1);
+  }
+  removeRow(index) {
+    const row = this.getRow(index);
+    const id = this.idColumn ? row[this.idColumn] : null;
+    this._rows.splice(index, 1);
+    this._invalidateIndex();
+    this.emit("row-remove", this, index, id, row);
+    this.emit("rows-change", this, index, this._rows.length - 1);
+    return row;
+  }
+  removeAllRows() {
+    this._rows = [];
+    this._invalidateIndex();
+    this.emit("rows-reorder", this);
+    this.emit("rows-change", this, 0, -1);
+  }
+  replaceRow(index, row) {
+    checkRow(row);
+    const oldRow = this.getRow(index);
+    const idColumn = this.idColumn;
+    const oldId = idColumn ? oldRow[idColumn] : null;
+    const id = idColumn ? row[idColumn] : null;
+    if (idColumn && !Object.is(id, oldId) && this.hasRowId(id)) {
+      throw new Error(`Duplicate row id ${String(id)}.`);
+    }
+    this._rows[index] = row;
+    return this._afterChange(index, row, Object.keys({ ...oldRow, ...row }), id, oldId);
+  }
+  updateRow(index, changes) {
+    const row = this.getRow(index);
+    if (changes === null || typeof changes !== "object") {
+      throw new TypeError("Row changes must be an object.");
+    }
+    const columns = Object.keys(changes).filter(
+      (column) => !Object.is(row[column], changes[column])
+    );
+    if (!columns.length) {
+      return index;
+    }
+    const idColumn = this.idColumn;
+    const oldId = idColumn ? row[idColumn] : null;
+    const id = idColumn && columns.includes(idColumn) ? changes[idColumn] : oldId;
+    if (idColumn && !Object.is(id, oldId) && this.hasRowId(id)) {
+      throw new Error(`Duplicate row id ${String(id)}.`);
+    }
+    for (const column of columns) {
+      row[column] = changes[column];
+    }
+    return this._afterChange(index, row, columns, id, oldId);
+  }
+  sortByColumn(column, order = SortOrder.ASCENDING) {
+    if (order !== SortOrder.NONE && order !== SortOrder.ASCENDING && order !== SortOrder.DESCENDING) {
+      throw new RangeError(`Invalid sort order ${order}.`);
+    }
+    if (!column) {
+      column = null;
+      order = SortOrder.NONE;
+    } else if (order === SortOrder.NONE) {
+      column = null;
+    }
+    const columnChanged = this._sortColumn !== column;
+    const orderChanged = this._sortOrder !== order;
+    this._sortColumn = column;
+    this._sortOrder = order;
+    if (columnChanged) {
+      this.emit("sort-column-change", this);
+    }
+    if (orderChanged) {
+      this.emit("sort-order-change", this);
+    }
+    if (columnChanged || orderChanged) {
+      this._sortRows();
+    }
+  }
+  _setRows(rows) {
+    if (!Array.isArray(rows)) {
+      throw new TypeError("Rows must be an array.");
+    }
+    rows.forEach(checkRow);
+    const updated = [...rows];
+    this._validateIds(updated);
+    const compare = this._createSortComparator();
+    if (compare) {
+      updated.sort(compare);
+    }
+    this._rows = updated;
+    this._invalidateIndex();
+    this.emit("rows-reorder", this);
+    this.emit("rows-change", this, 0, updated.length - 1);
+  }
+  _onSortingChange() {
+    this._sortRows();
+  }
+  _sortRows() {
+    const compare = this._createSortComparator();
+    if (!compare) {
+      return;
+    }
+    this._rows.sort(compare);
+    this._invalidateIndex();
+    this.emit("rows-reorder", this);
+    this.emit("rows-change", this, 0, this._rows.length - 1);
+  }
+  _validateIds(rows) {
+    const idColumn = this.idColumn;
+    if (!idColumn) {
+      return;
+    }
+    const ids = /* @__PURE__ */ new Set();
+    for (const row of rows) {
+      const id = row[idColumn];
+      if (ids.has(id)) {
+        throw new Error(`Duplicate row id ${String(id)}.`);
+      }
+      ids.add(id);
+    }
+  }
+  _afterInsert(index, id) {
+    this._invalidateIndex();
+    this.emit("row-insert", this, index, id);
+    this.emit("rows-change", this, index, this._rows.length - 1);
+  }
+  /**
+   * Keeps the rows sorted after a row changed, and emits the signals.
+   *
+   * @param {number} index
+   * @param {object} row
+   * @param {string[]} columns The changed columns.
+   * @param {unknown} id
+   * @param {unknown} oldId
+   * @returns {number} The new index.
+   */
+  _afterChange(index, row, columns, id, oldId) {
+    const rows = this._rows;
+    let newIndex = index;
+    const compare = this._createSortComparator();
+    if (compare && (columns.includes(this.sortColumn) || this.getColumnInfo(this.sortColumn).compare)) {
+      rows.splice(index, 1);
+      newIndex = this._findInsertIndex(rows, row, compare);
+      rows.splice(newIndex, 0, row);
+    }
+    if (newIndex !== index || !Object.is(id, oldId)) {
+      this._invalidateIndex();
+    }
+    if (newIndex !== index) {
+      this.emit("row-move", this, index, newIndex, oldId);
+    }
+    for (const column of columns) {
+      this.emit("cell-change", this, newIndex, column);
+    }
+    this.emit("row-update", this, newIndex, id, oldId);
+    this.emit("rows-change", this, Math.min(index, newIndex), Math.max(index, newIndex));
+    return newIndex;
+  }
+};
+registerType("list-model", ListModel);
+
+// src/i18n/locale-aware.js
+var LocaleAware = class extends Instance {
+  static {
+    __name(this, "LocaleAware");
+  }
+  _initialize() {
+    super._initialize();
+    this._ownLocaleManager = null;
+    this._disconnectLocaleManager = null;
+  }
+  /**
+   * The locale manager this object uses: its own one when `locale` is set, otherwise
+   * `localeManager`, otherwise the singleton.
+   *
+   * @type {LocaleManagerClass}
+   */
+  get effectiveLocaleManager() {
+    return this._ownLocaleManager || this._localeManager || getLocaleManager();
+  }
+  /**
+   * The locale this object uses, e.g. `'en-US'`.
+   *
+   * @type {string}
+   */
+  get effectiveLocale() {
+    return this.effectiveLocaleManager.locale;
+  }
+  /**
+   * The time zone of the followed locale manager. A fixed `locale` does not fix the time zone.
+   *
+   * @protected
+   * @returns {string}
+   */
+  _getDefaultTimeZone() {
+    return (this._localeManager || getLocaleManager()).timeZone;
+  }
+  connect(name, method, context) {
+    const disconnect = super.connect(name, method, context);
+    if (name === "effective-locale-change") {
+      this._watchLocaleManager();
+    }
+    return disconnect;
+  }
+  destroy() {
+    this._unwatchLocaleManager();
+    super.destroy();
+  }
+  /**
+   * Starts listening to the locale changes of the followed locale manager, so
+   * `effective-locale-change` is emitted. Subclasses call this when they need the signal
+   * themselves.
+   *
+   * @protected
+   */
+  _watchLocaleManager() {
+    if (this._disconnectLocaleManager) {
+      return;
+    }
+    const manager = this._localeManager || getLocaleManager();
+    this._disconnectLocaleManager = manager.connect("locale-change", () => {
+      if (!this._ownLocaleManager) {
+        this._onEffectiveLocaleChange();
+      }
+    });
+  }
+  _unwatchLocaleManager() {
+    this._disconnectLocaleManager?.();
+    this._disconnectLocaleManager = null;
+  }
+  /**
+   * Called when the locale this object uses changed. Subclasses that override it must call the
+   * base implementation, which emits `effective-locale-change`.
+   *
+   * @protected
+   */
+  _onEffectiveLocaleChange() {
+    this.emit("effective-locale-change", this);
+  }
+};
+defineProperties(LocaleAware, {
+  /**
+   * A fixed locale as a BCP 47 tag (such as `'nl-NL'`), or `null` (the default) to follow the
+   * locale manager.
+   */
+  locale: {
+    value: null,
+    coerce(locale) {
+      if (locale === null || locale === void 0 || locale === "") {
+        return null;
+      }
+      return Intl.getCanonicalLocales(String(locale).replace(/_/g, "-"))[0];
+    },
+    changed(locale) {
+      this._ownLocaleManager = locale ? new LocaleManagerClass({ locale }) : null;
+      this._onEffectiveLocaleChange();
+    }
+  },
+  /**
+   * The locale manager to follow, or `null` (the default) for the singleton.
+   */
+  localeManager: {
+    value: null,
+    coerce(manager) {
+      if (manager && !(manager instanceof LocaleManagerClass)) {
+        throw new TypeError("The locale manager must be a LocaleManagerClass.");
+      }
+      return manager || null;
+    },
+    changed() {
+      if (this._disconnectLocaleManager) {
+        this._unwatchLocaleManager();
+        this._watchLocaleManager();
+      }
+      if (!this._ownLocaleManager) {
+        this._onEffectiveLocaleChange();
+      }
+    }
+  }
+});
+
+// src/i18n/number-parser.js
+var ZERO_CODE_POINTS = [1632, 1776, 2406, 2534, 3664, 65296];
+var NON_LATIN_DIGIT_REGEXP = new RegExp(
+  `[${ZERO_CODE_POINTS.map((zero) => `\\u{${zero.toString(16)}}-\\u{${(zero + 9).toString(16)}}`).join("")}]`,
+  "gu"
+);
+var MINUS_REGEXP = /[\u2212\uff0d\ufe63]/g;
+var WHITESPACE_REGEXP = /\s+/gu;
+var PLACEHOLDERS = { group: "", decimal: "" };
+function toLatinDigits(text) {
+  return text.replace(NON_LATIN_DIGIT_REGEXP, (digit) => {
+    const code = digit.codePointAt(0);
+    const zero = ZERO_CODE_POINTS.find((x) => code >= x && code <= x + 9);
+    return String(code - zero);
+  });
+}
+__name(toLatinDigits, "toLatinDigits");
+var NumberParser = class extends LocaleAware {
+  static {
+    __name(this, "NumberParser");
+  }
+  /**
+   * Parses a text to a number.
+   *
+   * @param {string} input
+   * @returns {number | null} The number, or `null` if the text is not a valid number.
+   * @throws {TypeError} If the input is not a string.
+   */
+  parse(input) {
+    const normalized = this.normalize(input);
+    return normalized === null ? null : this._toNumber(normalized);
+  }
+  /**
+   * Checks whether a text is a valid number.
+   *
+   * @param {string} input
+   * @returns {boolean}
+   */
+  isValid(input) {
+    return this.parse(input) !== null;
+  }
+  /**
+   * Converts a text to the canonical notation of JavaScript: without group separators, with a
+   * period as decimal separator and Latin digits, e.g. `'-1234.5'` for `'-1.234,5'` in Dutch.
+   *
+   * @param {string} input
+   * @returns {string | null} The canonical text, or `null` if the text is not a valid number.
+   * @throws {TypeError} If the input is not a string.
+   */
+  normalize(input) {
+    if (typeof input !== "string") {
+      throw new TypeError("The input must be a string.");
+    }
+    const manager = this.effectiveLocaleManager;
+    const group = manager.groupSeparator;
+    const decimal = manager.decimalSeparator;
+    let text = toLatinDigits(input.trim()).replace(MINUS_REGEXP, "-");
+    if (/^\s$/u.test(group)) {
+      text = text.replace(WHITESPACE_REGEXP, PLACEHOLDERS.group);
+    } else if (this._lenient) {
+      text = text.replace(WHITESPACE_REGEXP, "");
+    }
+    if (group === "\u2019") {
+      text = text.replace(/'/g, PLACEHOLDERS.group);
+    }
+    text = text.replace(new RegExp(escapeRegExp(group), "g"), PLACEHOLDERS.group).replace(new RegExp(escapeRegExp(decimal), "g"), PLACEHOLDERS.decimal);
+    const canonical = this._toCanonical(text, false);
+    if (canonical !== null) {
+      return canonical;
+    }
+    if (!this._lenient) {
+      return null;
+    }
+    return this._toCanonical(text, true);
+  }
+  _toCanonical(text, swap) {
+    let candidate = text.replaceAll(PLACEHOLDERS.group, ",").replaceAll(PLACEHOLDERS.decimal, ".");
+    if (swap) {
+      candidate = candidate.replace(/[.,]/g, (x) => x === "." ? "," : ".");
+    }
+    if (!this._lenient && /[.,]/.test(text)) {
+      return null;
+    }
+    if (!this._getRegExp().test(candidate)) {
+      return null;
+    }
+    return candidate.replace(/,/g, "");
+  }
+  /**
+   * Returns the regular expression a canonical candidate (with `,` for groups and `.` as
+   * decimal separator) must match.
+   *
+   * @protected
+   * @abstract
+   * @returns {RegExp}
+   */
+  _getRegExp() {
+    throw new Error(`${this.constructor.name} does not implement '_getRegExp'.`);
+  }
+  /**
+   * Converts a canonical text to a number, or `null` if it is out of range.
+   *
+   * @protected
+   * @abstract
+   * @param {string} _text
+   * @returns {number | null}
+   */
+  _toNumber(_text) {
+    throw new Error(`${this.constructor.name} does not implement '_toNumber'.`);
+  }
+};
+defineProperties(NumberParser, {
+  /**
+   * Whether whitespace is ignored and swapped decimal and group separators are accepted.
+   */
+  lenient: { value: true, coerce: Boolean }
+});
+var INTEGER_DIGITS_PATTERN = "(?:\\d+|\\d{1,3}(?:,\\d{3})+|\\d{1,2}(?:,\\d{2})+,\\d{3})";
+
+// src/i18n/double-parser.js
+var DOUBLE_REGEXP = new RegExp(
+  `^[+-]?(?:${INTEGER_DIGITS_PATTERN}(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?$`
+);
+var DoubleParser = class extends NumberParser {
+  static {
+    __name(this, "DoubleParser");
+  }
+  _getRegExp() {
+    return DOUBLE_REGEXP;
+  }
+  _toNumber(text) {
+    const value = Number(text);
+    return Number.isFinite(value) ? value : null;
+  }
+};
+var getDoubleParser = lazySingleton(() => new DoubleParser());
+function parseDouble(input) {
+  return getDoubleParser().parse(input);
+}
+__name(parseDouble, "parseDouble");
+
+// src/i18n/intl-util.js
+var MINUTE = 60 * 1e3;
+var DAY = 24 * 60 * MINUTE;
+var CACHE = /* @__PURE__ */ new Map();
+function getCached(cls, locale, options) {
+  const key = `${cls.name}|${locale}|${JSON.stringify(options)}`;
+  let result = CACHE.get(key);
+  if (!result) {
+    result = new cls(locale, options);
+    CACHE.set(key, result);
+  }
+  return result;
+}
+__name(getCached, "getCached");
+function getDateTimeFormat(locale, options = {}) {
+  return (
+    /** @type {Intl.DateTimeFormat} */
+    getCached(Intl.DateTimeFormat, locale, options)
+  );
+}
+__name(getDateTimeFormat, "getDateTimeFormat");
+function getNumberFormat(locale, options = {}) {
+  return (
+    /** @type {Intl.NumberFormat} */
+    getCached(Intl.NumberFormat, locale, options)
+  );
+}
+__name(getNumberFormat, "getNumberFormat");
+function getPluralRules(locale, options = {}) {
+  return (
+    /** @type {Intl.PluralRules} */
+    getCached(Intl.PluralRules, locale, options)
+  );
+}
+__name(getPluralRules, "getPluralRules");
+function getRelativeTimeFormat(locale, options = {}) {
+  return (
+    /** @type {Intl.RelativeTimeFormat} */
+    getCached(Intl.RelativeTimeFormat, locale, options)
+  );
+}
+__name(getRelativeTimeFormat, "getRelativeTimeFormat");
+function toIntlTimeZone(timeZone) {
+  return timeZone === "local" ? void 0 : timeZone;
+}
+__name(toIntlTimeZone, "toIntlTimeZone");
+function utcTimestamp(year, month, day, hours = 0, minutes = 0, seconds = 0, milliseconds = 0) {
+  const date = /* @__PURE__ */ new Date(0);
+  date.setUTCFullYear(year, month, day);
+  date.setUTCHours(hours, minutes, seconds, milliseconds);
+  return date.getTime();
+}
+__name(utcTimestamp, "utcTimestamp");
+function getDaysInMonth2(year, month) {
+  return new Date(utcTimestamp(year, month + 1, 0)).getUTCDate();
+}
+__name(getDaysInMonth2, "getDaysInMonth");
+function getZonedFields(timestamp, timeZone) {
+  const date = new Date(timestamp);
+  if (timeZone === "local") {
+    return {
+      year: date.getFullYear(),
+      month: date.getMonth(),
+      day: date.getDate(),
+      hours: date.getHours(),
+      minutes: date.getMinutes(),
+      seconds: date.getSeconds(),
+      milliseconds: date.getMilliseconds(),
+      weekDay: date.getDay(),
+      offset: -date.getTimezoneOffset()
+    };
+  }
+  if (timeZone === "UTC") {
+    return getUtcFields(date);
+  }
+  const format = getDateTimeFormat("en-US", {
+    timeZone,
+    hourCycle: "h23",
+    era: "short",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+    calendar: "gregory",
+    numberingSystem: "latn"
+  });
+  const parts = {};
+  for (const part of format.formatToParts(date)) {
+    parts[part.type] = part.value;
+  }
+  const year = parts.era === "BC" ? 1 - Number(parts.year) : Number(parts.year);
+  const milliseconds = date.getUTCMilliseconds();
+  const wallClock = utcTimestamp(
+    year,
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour),
+    Number(parts.minute),
+    Number(parts.second),
+    milliseconds
+  );
+  return {
+    ...getUtcFields(new Date(wallClock)),
+    offset: Math.round((wallClock - timestamp) / MINUTE)
+  };
+}
+__name(getZonedFields, "getZonedFields");
+function getUtcFields(date) {
+  return {
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth(),
+    day: date.getUTCDate(),
+    hours: date.getUTCHours(),
+    minutes: date.getUTCMinutes(),
+    seconds: date.getUTCSeconds(),
+    milliseconds: date.getUTCMilliseconds(),
+    weekDay: date.getUTCDay(),
+    offset: 0
+  };
+}
+__name(getUtcFields, "getUtcFields");
+function getTimeZoneOffset(timestamp, timeZone) {
+  return getZonedFields(timestamp, timeZone).offset;
+}
+__name(getTimeZoneOffset, "getTimeZoneOffset");
+function fromZonedFields(fields, timeZone) {
+  const wallClock = utcTimestamp(
+    fields.year,
+    fields.month,
+    fields.day,
+    fields.hours || 0,
+    fields.minutes || 0,
+    fields.seconds || 0,
+    fields.milliseconds || 0
+  );
+  if (timeZone === "UTC") {
+    return wallClock;
+  }
+  const earlyOffset = getTimeZoneOffset(wallClock - DAY, timeZone);
+  const lateOffset = getTimeZoneOffset(wallClock + DAY, timeZone);
+  for (const offset of [earlyOffset, lateOffset]) {
+    const timestamp = wallClock - offset * MINUTE;
+    if (getTimeZoneOffset(timestamp, timeZone) === offset) {
+      return timestamp;
+    }
+  }
+  return wallClock - earlyOffset * MINUTE;
+}
+__name(fromZonedFields, "fromZonedFields");
+
+// src/i18n/string-formatter.js
+var PLACEHOLDER_REGEXP = /(?:(\d+)\$)?((?:[-+ 0]|'.)*)(\d+)?(?:\.(\d+))?([%bcdeEufFgGosxX])/uy;
+var UNSIGNED_SPECIFIERS = /* @__PURE__ */ new Set(["%", "c", "s", "F"]);
+var UPPERCASE_SPECIFIERS = /* @__PURE__ */ new Set(["E", "G", "X"]);
+var MAXIMUM_FRACTION_DIGITS = 20;
+function toInteger(value) {
+  if (typeof value === "bigint") {
+    return value;
+  }
+  return Math.trunc(toFloat(value));
+}
+__name(toInteger, "toInteger");
+function toFloat(value) {
+  if (typeof value === "string") {
+    return parseFloat(value);
+  }
+  return Number(value);
+}
+__name(toFloat, "toFloat");
+function toAbsolute(value) {
+  return typeof value === "bigint" ? value < 0n ? -value : value : Math.abs(value);
+}
+__name(toAbsolute, "toAbsolute");
+var StringFormatter = class extends LocaleAware {
+  static {
+    __name(this, "StringFormatter");
+  }
+  /**
+   * Formats a string by replacing the placeholders in it.
+   *
+   * @param {string} format
+   * @param {...unknown} args The arguments of the placeholders.
+   * @returns {string}
+   * @throws {TypeError} If the format is not a string.
+   * @throws {RangeError} If an argument is missing.
+   */
+  format(format, ...args) {
+    if (typeof format !== "string") {
+      throw new TypeError("The format must be a string.");
+    }
+    const output = [];
+    let index = 0;
+    let position = 0;
+    while (position < format.length) {
+      const percent = format.indexOf("%", position);
+      if (percent < 0) {
+        output.push(format.slice(position));
+        break;
+      }
+      output.push(format.slice(position, percent));
+      PLACEHOLDER_REGEXP.lastIndex = percent + 1;
+      const matches = PLACEHOLDER_REGEXP.exec(format);
+      if (!matches) {
+        output.push("%");
+        position = percent + 1;
+        continue;
+      }
+      const [placeholder, argumentNumber, flags, width, precision, specifier] = matches;
+      let argument;
+      if (specifier !== "%") {
+        let argumentIndex;
+        if (argumentNumber === void 0) {
+          argumentIndex = index;
+          index += 1;
+        } else {
+          argumentIndex = Number(argumentNumber) - 1;
+        }
+        if (argumentIndex < 0 || argumentIndex >= args.length) {
+          throw new RangeError(
+            `Missing argument ${argumentIndex + 1} for '%${placeholder}' in format '${format}'.`
+          );
+        }
+        argument = args[argumentIndex];
+      }
+      output.push(
+        this._formatPlaceholder(
+          argument,
+          flags,
+          width === void 0 ? 0 : Number(width),
+          precision === void 0 ? -1 : Number(precision),
+          specifier
+        )
+      );
+      position = percent + 1 + placeholder.length;
+    }
+    return output.join("");
+  }
+  /**
+   * Formats a number in the locale, with its decimal and group separators (as set in the locale
+   * manager) and digit grouping.
+   *
+   * @param {number | bigint} value
+   * @param {Intl.NumberFormatOptions & {decimals?: number}} [options] `Intl.NumberFormat`
+   *     options. `decimals` is a shortcut for an exact number of fraction digits.
+   * @returns {string}
+   * @throws {TypeError} If the value is not a number.
+   */
+  formatNumber(value, options = {}) {
+    if (typeof value !== "number" && typeof value !== "bigint") {
+      throw new TypeError("The value must be a number.");
+    }
+    const { decimals, ...intlOptions } = options;
+    if (decimals !== void 0) {
+      if (!Number.isInteger(decimals) || decimals < 0 || decimals > 100) {
+        throw new RangeError("The number of decimals must be an integer from 0 to 100.");
+      }
+      intlOptions.minimumFractionDigits = decimals;
+      intlOptions.maximumFractionDigits = decimals;
+    }
+    const manager = this.effectiveLocaleManager;
+    const parts = getNumberFormat(manager.locale, intlOptions).formatToParts(value);
+    return parts.map((part) => {
+      if (part.type === "group") {
+        return manager.groupSeparator;
+      }
+      if (part.type === "decimal") {
+        return manager.decimalSeparator;
+      }
+      return part.value;
+    }).join("");
+  }
+  _formatPlaceholder(argument, flags, width, precision, specifier) {
+    let text;
+    switch (specifier) {
+      case "%":
+        text = "%";
+        break;
+      case "b":
+        text = toInteger(argument).toString(2);
+        break;
+      case "c":
+        text = String.fromCodePoint(Number(toInteger(argument)));
+        break;
+      case "d":
+        text = String(toInteger(argument));
+        break;
+      case "u":
+        text = String(toAbsolute(toInteger(argument)));
+        break;
+      case "e":
+      case "E": {
+        const value = toFloat(argument);
+        text = precision >= 0 ? value.toExponential(precision) : value.toExponential();
+        break;
+      }
+      case "f": {
+        const value = toFloat(argument);
+        text = precision >= 0 ? value.toFixed(precision) : String(value);
+        break;
+      }
+      case "F": {
+        const value = toFloat(argument);
+        text = this.formatNumber(value, {
+          minimumFractionDigits: precision >= 0 ? precision : 0,
+          maximumFractionDigits: precision >= 0 ? precision : MAXIMUM_FRACTION_DIGITS,
+          signDisplay: flags.includes("+") ? "always" : "auto"
+        });
+        break;
+      }
+      case "g":
+      case "G": {
+        const value = toFloat(argument);
+        const fixed = precision >= 0 ? value.toFixed(precision) : String(value);
+        const exponential = precision >= 0 ? value.toExponential(precision) : value.toExponential();
+        text = fixed.length <= exponential.length ? fixed : exponential;
+        break;
+      }
+      case "o":
+        text = toInteger(argument).toString(8);
+        break;
+      case "s":
+        text = String(argument);
+        if (precision >= 0) {
+          text = Array.from(text).slice(0, precision).join("");
+        }
+        break;
+      case "x":
+      case "X":
+        text = toInteger(argument).toString(16);
+        break;
+    }
+    if (flags.includes("+") && !UNSIGNED_SPECIFIERS.has(specifier) && !text.startsWith("-") && text !== "NaN") {
+      text = "+" + text;
+    }
+    if (UPPERCASE_SPECIFIERS.has(specifier)) {
+      text = text.toUpperCase();
+    }
+    return this._pad(text, flags, width, specifier);
+  }
+  _pad(text, flags, width, specifier) {
+    const length = Array.from(text).length;
+    if (width <= length) {
+      return text;
+    }
+    let paddingCharacter = " ";
+    for (const flag of flags.match(/'.|[ 0]/gu) || []) {
+      paddingCharacter = flag.length > 1 ? Array.from(flag)[1] : flag;
+    }
+    const padding = paddingCharacter.repeat(width - length);
+    if (flags.includes("-")) {
+      return text + padding;
+    }
+    const numeric = !["%", "c", "s"].includes(specifier);
+    if (paddingCharacter === "0" && numeric && /^[-+\u2212]/.test(text)) {
+      return text[0] + padding + text.slice(1);
+    }
+    return padding + text;
+  }
+};
+var getStringFormatter = lazySingleton(() => new StringFormatter());
+function formatString(format, ...args) {
+  return getStringFormatter().format(format, ...args);
+}
+__name(formatString, "formatString");
+function formatNumber(value, options) {
+  return getStringFormatter().formatNumber(value, options);
+}
+__name(formatNumber, "formatNumber");
+
+// src/i18n/translator.js
+var PLURAL_CATEGORIES = /* @__PURE__ */ new Set(["zero", "one", "two", "few", "many", "other"]);
+var SOURCE_LANGUAGE = "en";
+function isPlainObject(value) {
+  if (value === null || typeof value !== "object") {
+    return false;
+  }
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+__name(isPlainObject, "isPlainObject");
+function checkEntry(id, entry) {
+  if (typeof entry === "string") {
+    return;
+  }
+  if (!isPlainObject(entry)) {
+    throw new TypeError(`The translation of '${id}' must be a string or an object.`);
+  }
+  for (const [key, form] of Object.entries(entry)) {
+    if (!PLURAL_CATEGORIES.has(key) && !/^=\d+$/.test(key)) {
+      throw new TypeError(`Invalid plural form '${key}' in the translation of '${id}'.`);
+    }
+    if (typeof form !== "string") {
+      throw new TypeError(`The plural forms of '${id}' must be strings.`);
+    }
+  }
+  if (entry.other === void 0) {
+    throw new TypeError(`The translation of '${id}' has no 'other' plural form.`);
+  }
+}
+__name(checkEntry, "checkEntry");
+function canonicalizeLanguage(language) {
+  if (typeof language !== "string" || !language) {
+    throw new TypeError("The language must be a non-empty string.");
+  }
+  return Intl.getCanonicalLocales(language.replace(/_/g, "-"))[0];
+}
+__name(canonicalizeLanguage, "canonicalizeLanguage");
+function getTagChain(tag) {
+  const subtags = tag.split("-");
+  return subtags.map((_x, i) => subtags.slice(0, subtags.length - i).join("-"));
+}
+__name(getTagChain, "getTagChain");
+var Translator = class extends LocaleAware {
+  static {
+    __name(this, "Translator");
+  }
+  _initialize() {
+    super._initialize();
+    this._dictionaries = /* @__PURE__ */ new Map();
+    this._requestedLanguages = /* @__PURE__ */ new Set();
+    this._pendingLoads = /* @__PURE__ */ new Map();
+    this._formatter = new StringFormatter();
+    this._watchLocaleManager();
+  }
+  /**
+   * The languages of the loaded dictionaries.
+   *
+   * @type {string[]}
+   */
+  get languages() {
+    return [...this._dictionaries.keys()];
+  }
+  /**
+   * Gets a translation with its placeholders replaced, like the original toolkit's `getEntry`.
+   *
+   * @param {string} id The identifier: a key or the source text.
+   * @param {unknown[]} [args] The arguments of the placeholders. The first one chooses the
+   *     plural form.
+   * @returns {string} The translation, or the identifier if there is none.
+   */
+  getEntry(id, args = []) {
+    if (typeof id !== "string") {
+      throw new TypeError("The identifier must be a string.");
+    }
+    if (!Array.isArray(args)) {
+      throw new TypeError("The arguments must be an array.");
+    }
+    const found = this._lookup(id);
+    if (!found) {
+      return this._format(id, args);
+    }
+    return this._format(this._choosePluralForm(found.entry, found.language, args[0]), args);
+  }
+  /**
+   * Translates a text.
+   *
+   * @param {string} id
+   * @param {...unknown} args
+   * @returns {string}
+   */
+  translate(id, ...args) {
+    return this.getEntry(id, args);
+  }
+  /**
+   * Translates a text with a singular and a plural form, like gettext's `ngettext`. The
+   * translation of `singular` (which should have plural forms) is used; without one, `singular`
+   * is used for a count of 1 and `plural` otherwise. The count is the first argument of the
+   * placeholders.
+   *
+   * @param {string} singular
+   * @param {string} plural
+   * @param {number} count
+   * @param {...unknown} args More arguments.
+   * @returns {string}
+   */
+  translatePlural(singular, plural, count, ...args) {
+    if (typeof singular !== "string" || typeof plural !== "string") {
+      throw new TypeError("The singular and plural texts must be strings.");
+    }
+    if (typeof count !== "number") {
+      throw new TypeError("The count must be a number.");
+    }
+    const found = this._lookup(singular);
+    if (found) {
+      return this.getEntry(singular, [count, ...args]);
+    }
+    const category = getPluralRules(SOURCE_LANGUAGE).select(count);
+    return this._format(category === "one" ? singular : plural, [count, ...args]);
+  }
+  /**
+   * Checks whether there is a translation for an identifier in the current language chain.
+   *
+   * @param {string} id
+   * @returns {boolean}
+   */
+  hasEntry(id) {
+    return this._lookup(id) !== null;
+  }
+  /**
+   * Adds entries to the dictionary of a language, replacing entries with the same identifier.
+   *
+   * @param {Record<string, TranslationEntry>} entries
+   * @param {string} [language] A language or locale tag. Defaults to the current language.
+   * @throws {TypeError} If the entries are malformed.
+   */
+  addEntries(entries, language = this.effectiveLocaleManager.language) {
+    if (!isPlainObject(entries)) {
+      throw new TypeError("The entries must be an object.");
+    }
+    for (const [id, entry] of Object.entries(entries)) {
+      checkEntry(id, entry);
+    }
+    const tag = canonicalizeLanguage(language);
+    this._dictionaries.set(tag, { ...this._dictionaries.get(tag), ...entries });
+    this.emit("entries-change", this, tag);
+    this.emit("change", this);
+  }
+  /**
+   * Removes the dictionary of a language.
+   *
+   * @param {string} language
+   */
+  removeEntries(language) {
+    const tag = canonicalizeLanguage(language);
+    if (this._dictionaries.delete(tag)) {
+      this.emit("entries-change", this, tag);
+      this.emit("change", this);
+    }
+  }
+  /**
+   * Returns a promise that settles when the dictionaries being loaded by the `loader` are
+   * loaded. It rejects if one failed to load.
+   *
+   * @returns {Promise<void>}
+   */
+  whenLoaded() {
+    this._requestDictionaries();
+    return Promise.all(this._pendingLoads.values()).then(() => void 0);
+  }
+  _onEffectiveLocaleChange() {
+    super._onEffectiveLocaleChange();
+    this._requestDictionaries();
+    this.emit("language-change", this);
+    this.emit("change", this);
+  }
+  /**
+   * Returns the tags that are searched for entries, most specific first.
+   *
+   * @returns {string[]}
+   */
+  _getLanguageChain() {
+    const chain = getTagChain(canonicalizeLanguage(this.effectiveLocale));
+    if (this._fallbackLanguage) {
+      for (const tag of getTagChain(this._fallbackLanguage)) {
+        if (!chain.includes(tag)) {
+          chain.push(tag);
+        }
+      }
+    }
+    return chain;
+  }
+  _lookup(id) {
+    this._requestDictionaries();
+    for (const language of this._getLanguageChain()) {
+      const dictionary = this._dictionaries.get(language);
+      if (dictionary && Object.hasOwn(dictionary, id)) {
+        return { entry: dictionary[id], language };
+      }
+    }
+    return null;
+  }
+  _choosePluralForm(entry, language, count) {
+    if (typeof entry === "string") {
+      return entry;
+    }
+    if (typeof count !== "number") {
+      return entry.other;
+    }
+    const exact = entry["=" + count];
+    if (exact !== void 0) {
+      return exact;
+    }
+    return entry[getPluralRules(language).select(count)] ?? entry.other;
+  }
+  _format(text, args) {
+    this._formatter.localeManager = this.effectiveLocaleManager;
+    return this._formatter.format(text, ...args);
+  }
+  _requestDictionaries() {
+    if (!this._loader) {
+      return;
+    }
+    for (const language of this._getLanguageChain()) {
+      if (this._requestedLanguages.has(language)) {
+        continue;
+      }
+      this._requestedLanguages.add(language);
+      this.emit("load-entries", this, language);
+      const result = this._loader(language);
+      if (result && typeof result.then === "function") {
+        const promise = Promise.resolve(result).then((entries) => {
+          if (entries) {
+            this.addEntries(entries, language);
+          }
+        }).catch((error) => {
+          this._requestedLanguages.delete(language);
+          this.emit("load-error", this, language, error);
+          throw error;
+        }).finally(() => {
+          this._pendingLoads.delete(language);
+        });
+        promise.catch(() => {
+        });
+        this._pendingLoads.set(language, promise);
+      } else if (result) {
+        this.addEntries(result, language);
+      }
+    }
+  }
+};
+defineProperties(Translator, {
+  /**
+   * The dictionary of the current language (as in `getLocaleManager().language`). Setting it
+   * replaces that dictionary. Do not modify the returned object; use `addEntries()`.
+   */
+  entries: {
+    get() {
+      return this._dictionaries.get(this.effectiveLocaleManager.language) || {};
+    },
+    set(entries) {
+      const language = this.effectiveLocaleManager.language;
+      this._dictionaries.delete(language);
+      this.addEntries(entries, language);
+    },
+    signal: false
+  },
+  /**
+   * The language to use when the current language has no translation, e.g. `'en'` when
+   * identifiers are keys and the English dictionary has the source texts. `null` (the default)
+   * falls back to the identifier.
+   */
+  fallbackLanguage: {
+    value: null,
+    coerce(language) {
+      return language ? canonicalizeLanguage(language) : null;
+    },
+    changed() {
+      this._requestDictionaries();
+      this.emit("change", this);
+    }
+  },
+  /**
+   * A function that loads the dictionary of a language on demand: `(language) => entries`, where
+   * the result may also be a promise, or `null` for no dictionary. It is called once per
+   * language (and locale tag) that is needed, such as `'nl-BE'` and `'nl'`.
+   */
+  loader: {
+    value: null,
+    coerce(loader) {
+      if (loader !== null && typeof loader !== "function") {
+        throw new TypeError("The loader must be a function.");
+      }
+      return loader;
+    },
+    changed() {
+      this._requestedLanguages.clear();
+    }
+  }
+});
+var getTranslator = lazySingleton(() => new Translator());
+function translate(id, ...args) {
+  return getTranslator().getEntry(id, args);
+}
+__name(translate, "translate");
+var tr = translate;
+function translatePlural(singular, plural, count, ...args) {
+  return getTranslator().translatePlural(singular, plural, count, ...args);
+}
+__name(translatePlural, "translatePlural");
+var trn = translatePlural;
+
+// src/data/validators/validator.js
+var Validator = class extends LocaleAware {
+  static {
+    __name(this, "Validator");
+  }
+  connect(name, method, context) {
+    const disconnect = super.connect(name, method, context);
+    if (name === "change") {
+      this._watchLocaleManager();
+    }
+    return disconnect;
+  }
+  /**
+   * Checks whether a text is valid.
+   *
+   * @param {string} text
+   * @returns {boolean}
+   * @throws {TypeError} If the text is not a string.
+   */
+  validate(text) {
+    if (typeof text !== "string") {
+      throw new TypeError("The text to validate must be a string.");
+    }
+    if (!text.trim()) {
+      return this._allowEmpty;
+    }
+    return this._validate(text);
+  }
+  /**
+   * Checks whether a text is valid; the name of the original toolkit for
+   * {@link Validator#validate}.
+   *
+   * @param {string} text
+   * @returns {boolean}
+   */
+  isValid(text) {
+    return this.validate(text);
+  }
+  /**
+   * Normalizes a text, e.g. to the locale's notation of a number. The default returns the text
+   * unchanged. The result is not necessarily valid.
+   *
+   * @param {string} text
+   * @returns {string}
+   * @throws {TypeError} If the text is not a string.
+   */
+  fixup(text) {
+    if (typeof text !== "string") {
+      throw new TypeError("The text to fix up must be a string.");
+    }
+    return text;
+  }
+  /**
+   * Checks a non-empty text.
+   *
+   * @protected
+   * @abstract
+   * @param {string} _text
+   * @returns {boolean}
+   */
+  _validate(_text) {
+    throw new Error(`${this.constructor.name} does not implement '_validate'.`);
+  }
+  /**
+   * Returns the message used when `message` is not set.
+   *
+   * @protected
+   * @returns {string}
+   */
+  _getDefaultMessage() {
+    return translate("The value is not valid.");
+  }
+  _onEffectiveLocaleChange() {
+    super._onEffectiveLocaleChange();
+    this.emit("change", this);
+  }
+  /**
+   * Emits `change`. Used as the `changed` hook of properties that affect validation.
+   *
+   * @protected
+   */
+  _emitChange() {
+    this.emit("change", this);
+  }
+};
+defineProperties(Validator, {
+  /**
+   * Whether an empty (or whitespace-only) text is valid.
+   */
+  allowEmpty: {
+    value: false,
+    coerce: Boolean,
+    changed() {
+      this._emitChange();
+    }
+  },
+  /**
+   * A description of the valid input, e.g. `'Enter a whole number.'`. By default a translated
+   * message that fits the validator's settings; setting it overrides that, and setting `null`
+   * restores it.
+   */
+  message: {
+    value: null,
+    get() {
+      return this._message ?? this._getDefaultMessage();
+    },
+    coerce(message) {
+      if (message !== null && typeof message !== "string") {
+        throw new TypeError("The message must be a string or null.");
+      }
+      return message;
+    }
+  }
+});
+
+// src/data/validators/number-validator.js
+function checkBound(bound) {
+  if (bound === null || bound === void 0) {
+    return null;
+  }
+  if (typeof bound !== "number" || Number.isNaN(bound)) {
+    throw new TypeError("A bound must be a number or null.");
+  }
+  return bound;
+}
+__name(checkBound, "checkBound");
+var NumberValidator = class extends Validator {
+  static {
+    __name(this, "NumberValidator");
+  }
+  _initialize() {
+    super._initialize();
+    this._parser = this._createParser();
+    this._formatter = new StringFormatter();
+  }
+  /**
+   * Parses a text to its number, if it is valid.
+   *
+   * @param {string} text
+   * @returns {number | null} The number, or `null` if the text is not valid (or empty).
+   */
+  parse(text) {
+    if (!this.validate(text) || !text.trim()) {
+      return null;
+    }
+    return this._parseNumber(text);
+  }
+  /**
+   * Rewrites a number in the locale's notation, limited to the range (and rounded, for
+   * doubles). Texts that are no number are returned unchanged.
+   *
+   * @param {string} text
+   * @returns {string}
+   */
+  fixup(text) {
+    super.fixup(text);
+    const value = this._parseNumber(text);
+    if (value === null) {
+      return text;
+    }
+    let fixed = this._round(value);
+    if (this._minimum !== null && fixed < this._minimum) {
+      fixed = this._minimum;
+    }
+    if (this._maximum !== null && fixed > this._maximum) {
+      fixed = this._maximum;
+    }
+    return this._format(fixed);
+  }
+  _validate(text) {
+    const value = this._parseNumber(text);
+    return value !== null && this._isInRange(value) && this._hasValidPrecision(text);
+  }
+  _parseNumber(text) {
+    this._parser.localeManager = this.effectiveLocaleManager;
+    this._parser.lenient = this._lenient;
+    return this._parser.parse(text);
+  }
+  _isInRange(value) {
+    return (this._minimum === null || value >= this._minimum) && (this._maximum === null || value <= this._maximum);
+  }
+  _hasValidPrecision(_text) {
+    return true;
+  }
+  _round(value) {
+    return value;
+  }
+  _format(value) {
+    this._formatter.localeManager = this.effectiveLocaleManager;
+    return this._formatter.formatNumber(value, this._getFormatOptions());
+  }
+  _formatBound(value) {
+    this._formatter.localeManager = this.effectiveLocaleManager;
+    return this._formatter.formatNumber(value, { maximumFractionDigits: 20 });
+  }
+  /**
+   * Returns the message for a range: for the four combinations of bounds.
+   *
+   * @protected
+   * @param {{any: string, between: string, minimum: string, maximum: string}} messages
+   *     Untranslated messages, with `%s` placeholders for the bounds.
+   * @returns {string}
+   */
+  _getRangeMessage(messages) {
+    const minimum = this._minimum === null ? null : this._formatBound(this._minimum);
+    const maximum = this._maximum === null ? null : this._formatBound(this._maximum);
+    if (minimum !== null && maximum !== null) {
+      return translate(messages.between, minimum, maximum);
+    }
+    if (minimum !== null) {
+      return translate(messages.minimum, minimum);
+    }
+    if (maximum !== null) {
+      return translate(messages.maximum, maximum);
+    }
+    return translate(messages.any);
+  }
+  /**
+   * Creates the parser.
+   *
+   * @protected
+   * @abstract
+   * @returns {import('../../i18n/number-parser.js').NumberParser}
+   */
+  _createParser() {
+    throw new Error(`${this.constructor.name} does not implement '_createParser'.`);
+  }
+  /**
+   * Returns the `Intl.NumberFormat` options of `fixup()`.
+   *
+   * @protected
+   * @returns {Intl.NumberFormatOptions}
+   */
+  _getFormatOptions() {
+    return {};
+  }
+};
+defineProperties(NumberValidator, {
+  /**
+   * The smallest valid number, or `null` for no minimum.
+   */
+  minimum: {
+    value: null,
+    coerce: checkBound,
+    changed() {
+      this._emitChange();
+    }
+  },
+  /**
+   * The largest valid number, or `null` for no maximum.
+   */
+  maximum: {
+    value: null,
+    coerce: checkBound,
+    changed() {
+      this._emitChange();
+    }
+  },
+  /**
+   * Whether the parser is lenient (see {@link NumberParser}): it ignores whitespace and accepts
+   * swapped decimal and group separators.
+   */
+  lenient: {
+    value: true,
+    coerce: Boolean,
+    changed() {
+      this._emitChange();
+    }
+  }
+});
+
+// src/data/validators/double-validator.js
+function countDecimals(canonical) {
+  const [mantissa, exponent = "0"] = canonical.toLowerCase().split("e");
+  const fraction = mantissa.split(".")[1] || "";
+  return Math.max(0, fraction.replace(/0+$/, "").length - Number(exponent));
+}
+__name(countDecimals, "countDecimals");
+var DoubleValidator = class extends NumberValidator {
+  static {
+    __name(this, "DoubleValidator");
+  }
+  _createParser() {
+    return new DoubleParser();
+  }
+  _hasValidPrecision(text) {
+    if (this._decimals === null) {
+      return true;
+    }
+    this._parser.localeManager = this.effectiveLocaleManager;
+    this._parser.lenient = this._lenient;
+    return countDecimals(this._parser.normalize(text)) <= this._decimals;
+  }
+  _round(value) {
+    if (this._decimals === null) {
+      return value;
+    }
+    return Number(value.toFixed(this._decimals));
+  }
+  _getFormatOptions() {
+    return { maximumFractionDigits: this._decimals ?? 20 };
+  }
+  _getDefaultMessage() {
+    const message = this._getRangeMessage({
+      any: "Enter a number.",
+      between: "Enter a number from %s to %s.",
+      minimum: "Enter a number of at least %s.",
+      maximum: "Enter a number of at most %s."
+    });
+    if (this._decimals === null) {
+      return message;
+    }
+    const decimals = translatePlural(
+      "At most %d decimal is allowed.",
+      "At most %d decimals are allowed.",
+      this._decimals
+    );
+    return `${message} ${decimals}`;
+  }
+};
+defineProperties(DoubleValidator, {
+  /**
+   * The maximum number of decimals, or `null` (the default) for any number.
+   */
+  decimals: {
+    value: null,
+    coerce(decimals) {
+      if (decimals === null || decimals === void 0) {
+        return null;
+      }
+      if (!Number.isInteger(decimals) || decimals < 0 || decimals > 20) {
+        throw new RangeError("The number of decimals must be an integer from 0 to 20.");
+      }
+      return decimals;
+    },
+    changed() {
+      this._emitChange();
+    }
+  }
+});
+registerType("double-validator", DoubleValidator);
+
+// src/i18n/integer-parser.js
+var INTEGER_REGEXP = new RegExp(`^[+-]?${INTEGER_DIGITS_PATTERN}(?:[eE]\\+?\\d+)?$`);
+var IntegerParser = class extends NumberParser {
+  static {
+    __name(this, "IntegerParser");
+  }
+  _getRegExp() {
+    return INTEGER_REGEXP;
+  }
+  _toNumber(text) {
+    const value = Number(text);
+    return Number.isSafeInteger(value) ? value + 0 : null;
+  }
+};
+var getIntegerParser = lazySingleton(() => new IntegerParser());
+function parseInteger(input) {
+  return getIntegerParser().parse(input);
+}
+__name(parseInteger, "parseInteger");
+
+// src/data/validators/integer-validator.js
+var IntegerValidator = class extends NumberValidator {
+  static {
+    __name(this, "IntegerValidator");
+  }
+  _createParser() {
+    return new IntegerParser();
+  }
+  _getDefaultMessage() {
+    return this._getRangeMessage({
+      any: "Enter a whole number.",
+      between: "Enter a whole number from %s to %s.",
+      minimum: "Enter a whole number of at least %s.",
+      maximum: "Enter a whole number of at most %s."
+    });
+  }
+};
+registerType("integer-validator", IntegerValidator);
+
+// src/data/validators/regexp-validator.js
+var RegexpValidator = class extends Validator {
+  static {
+    __name(this, "RegexpValidator");
+  }
+  _initialize() {
+    super._initialize();
+    this._anchoredRegexp = null;
+  }
+  _validate(text) {
+    if (!this._anchoredRegexp) {
+      throw new Error("The regular expression validator has no regular expression.");
+    }
+    return this._anchoredRegexp.test(text);
+  }
+  _getDefaultMessage() {
+    return translate("The text does not have the right format.");
+  }
+};
+defineProperties(RegexpValidator, {
+  /**
+   * The regular expression, as a `RegExp` or a pattern string. It must match the whole text, so
+   * it does not need `^` and `$`. The `g` and `y` flags are ignored.
+   */
+  regexp: {
+    value: null,
+    coerce(regexp) {
+      if (regexp === null || regexp instanceof RegExp) {
+        return regexp;
+      }
+      if (typeof regexp !== "string") {
+        throw new TypeError("The regular expression must be a RegExp, a string or null.");
+      }
+      return new RegExp(regexp);
+    },
+    changed(regexp) {
+      this._anchoredRegexp = regexp ? new RegExp(`^(?:${regexp.source})$`, regexp.flags.replace(/[gy]/g, "")) : null;
+      this._emitChange();
+    }
+  }
+});
+registerType("regexp-validator", RegexpValidator);
+
+// src/i18n/date-time-formatter.js
+var DateTimeStyle = Object.freeze({
+  SHORT: "short",
+  // 8/10/13, 2:05 PM.
+  MEDIUM: "medium",
+  // Aug 10, 2013, 2:05:09 PM.
+  LONG: "long",
+  // August 10, 2013, 2:05:09 PM UTC.
+  FULL: "full"
+  // Saturday, August 10, 2013, 2:05:09 PM Coordinated Universal Time.
+});
+var COMPOSITES = {
+  r: "%I:%M:%S %p",
+  R: "%H:%M",
+  T: "%H:%M:%S",
+  D: "%m/%d/%y",
+  F: "%Y-%m-%d"
+};
+var SPECIFIER_REGEXP = /([-_0^]*)([aAdejuwUVWbBhmCgGyYHkIlMLpPSzZsntcxXrRTDF%])/y;
+var PADDING = {
+  d: [2, "0"],
+  e: [2, " "],
+  j: [3, "0"],
+  U: [2, "0"],
+  V: [2, "0"],
+  W: [2, "0"],
+  m: [2, "0"],
+  C: [2, "0"],
+  g: [2, "0"],
+  G: [4, "0"],
+  y: [2, "0"],
+  Y: [4, "0"],
+  H: [2, "0"],
+  k: [2, " "],
+  I: [2, "0"],
+  l: [2, " "],
+  M: [2, "0"],
+  S: [2, "0"],
+  L: [3, "0"]
+};
+function checkStyle(style) {
+  if (!Object.values(DateTimeStyle).includes(style)) {
+    throw new RangeError(`Invalid date-time style '${style}'.`);
+  }
+}
+__name(checkStyle, "checkStyle");
+function toTimestamp2(timestamp) {
+  let value;
+  if (timestamp instanceof Date) {
+    value = timestamp.getTime();
+  } else if (typeof timestamp === "number") {
+    value = timestamp;
+  } else if (typeof timestamp === "string" && /^\s*[-+]?\d+\s*$/.test(timestamp)) {
+    value = Number(timestamp);
+  } else {
+    throw new TypeError("The timestamp must be a number, a numeric string or a Date.");
+  }
+  if (!Number.isFinite(value)) {
+    throw new RangeError("The timestamp must be finite.");
+  }
+  return Math.trunc(value);
+}
+__name(toTimestamp2, "toTimestamp");
+function getDayOfYear(year, month, day) {
+  return Math.round((utcTimestamp(year, month, day) - utcTimestamp(year, 0, 1)) / DAY) + 1;
+}
+__name(getDayOfYear, "getDayOfYear");
+function getIsoWeek2(timestamp) {
+  const date = new Date(toTimestamp2(timestamp));
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth();
+  const day = date.getUTCDate();
+  return getIsoWeekOfDate(year, month, day, date.getUTCDay());
+}
+__name(getIsoWeek2, "getIsoWeek");
+function getIsoWeekOfDate(year, month, day, weekDay) {
+  const thursday = new Date(utcTimestamp(year, month, day + 4 - (weekDay || 7)));
+  const thursdayYear = thursday.getUTCFullYear();
+  const dayOfYear = getDayOfYear(thursdayYear, thursday.getUTCMonth(), thursday.getUTCDate());
+  return { year: thursdayYear, week: Math.ceil(dayOfYear / 7) };
+}
+__name(getIsoWeekOfDate, "getIsoWeekOfDate");
+var DateTimeFormatter = class extends LocaleAware {
+  static {
+    __name(this, "DateTimeFormatter");
+  }
+  /**
+   * The time zone used for formatting: `timeZone`, or else the locale manager's.
+   *
+   * @type {string}
+   */
+  get effectiveTimeZone() {
+    return this._timeZone || this._getDefaultTimeZone();
+  }
+  /**
+   * Formats a date-time with a format.
+   *
+   * @param {string} format
+   * @param {number | string | Date} timestamp Milliseconds since the Unix epoch, or a `Date`.
+   * @returns {string}
+   * @throws {TypeError} If the format is not a string or the timestamp is not a time.
+   */
+  format(format, timestamp) {
+    if (typeof format !== "string") {
+      throw new TypeError("The format must be a string.");
+    }
+    const time = toTimestamp2(timestamp);
+    const timeZone = this.effectiveTimeZone;
+    const fields = getZonedFields(time, timeZone);
+    const output = [];
+    let position = 0;
+    while (position < format.length) {
+      const percent = format.indexOf("%", position);
+      if (percent < 0) {
+        output.push(format.slice(position));
+        break;
+      }
+      output.push(format.slice(position, percent));
+      SPECIFIER_REGEXP.lastIndex = percent + 1;
+      const matches = SPECIFIER_REGEXP.exec(format);
+      if (!matches) {
+        output.push("%");
+        position = percent + 1;
+        continue;
+      }
+      const [specifier, flags, character] = matches;
+      output.push(this._formatSpecifier(character, flags, time, fields, timeZone));
+      position = percent + 1 + specifier.length;
+    }
+    return output.join("");
+  }
+  /**
+   * Formats the date of a timestamp in a preferred format of the locale.
+   *
+   * @param {number | string | Date} timestamp
+   * @param {string} [style] Defaults to `dateStyle`.
+   * @returns {string}
+   */
+  formatDate(timestamp, style = this._dateStyle) {
+    checkStyle(style);
+    return this._formatIntl(timestamp, { dateStyle: style });
+  }
+  /**
+   * Formats the time of a timestamp in a preferred format of the locale.
+   *
+   * @param {number | string | Date} timestamp
+   * @param {string} [style] Defaults to `timeStyle`.
+   * @returns {string}
+   */
+  formatTime(timestamp, style = this._timeStyle) {
+    checkStyle(style);
+    return this._formatIntl(timestamp, { timeStyle: style });
+  }
+  /**
+   * Formats the date and time of a timestamp in a preferred format of the locale.
+   *
+   * @param {number | string | Date} timestamp
+   * @param {string} [dateStyle] Defaults to the `dateStyle` property.
+   * @param {string} [timeStyle] Defaults to the `timeStyle` property.
+   * @returns {string}
+   */
+  formatDateTime(timestamp, dateStyle = this._dateStyle, timeStyle = this._timeStyle) {
+    checkStyle(dateStyle);
+    checkStyle(timeStyle);
+    return this._formatIntl(timestamp, { dateStyle, timeStyle });
+  }
+  _formatIntl(timestamp, options) {
+    const format = getDateTimeFormat(this.effectiveLocale, {
+      ...options,
+      timeZone: toIntlTimeZone(this.effectiveTimeZone),
+      calendar: "gregory"
+    });
+    return format.format(toTimestamp2(timestamp));
+  }
+  _formatSpecifier(character, flags, time, fields, timeZone) {
+    if (COMPOSITES[character]) {
+      return this.format(COMPOSITES[character], time);
+    }
+    const manager = this.effectiveLocaleManager;
+    const { year, month, day, hours, weekDay } = fields;
+    let value;
+    switch (character) {
+      case "a":
+        value = manager.shortDayNames[weekDay];
+        break;
+      case "A":
+        value = manager.longDayNames[weekDay];
+        break;
+      case "d":
+      case "e":
+        value = day;
+        break;
+      case "j":
+        value = getDayOfYear(year, month, day);
+        break;
+      case "u":
+        value = weekDay || 7;
+        break;
+      case "w":
+        value = weekDay;
+        break;
+      case "U":
+        value = Math.floor((getDayOfYear(year, month, day) - 1 + 7 - weekDay) / 7);
+        break;
+      case "W":
+        value = Math.floor(
+          (getDayOfYear(year, month, day) - 1 + 7 - (weekDay + 6) % 7) / 7
+        );
+        break;
+      case "V":
+        value = getIsoWeekOfDate(year, month, day, weekDay).week;
+        break;
+      case "b":
+      case "h":
+        value = manager.shortMonthNames[month];
+        break;
+      case "B":
+        value = manager.longMonthNames[month];
+        break;
+      case "m":
+        value = month + 1;
+        break;
+      case "C":
+        value = Math.floor(year / 100);
+        break;
+      case "g":
+        value = getIsoWeekOfDate(year, month, day, weekDay).year % 100;
+        break;
+      case "G":
+        value = getIsoWeekOfDate(year, month, day, weekDay).year;
+        break;
+      case "y":
+        value = (year % 100 + 100) % 100;
+        break;
+      case "Y":
+        value = year;
+        break;
+      case "H":
+      case "k":
+        value = hours;
+        break;
+      case "I":
+      case "l":
+        value = hours % 12 || 12;
+        break;
+      case "M":
+        value = fields.minutes;
+        break;
+      case "S":
+        value = fields.seconds;
+        break;
+      case "L":
+        value = fields.milliseconds;
+        break;
+      case "p":
+        value = hours < 12 ? manager.amDesignator : manager.pmDesignator;
+        break;
+      case "P":
+        value = (hours < 12 ? manager.amDesignator : manager.pmDesignator).toLowerCase();
+        break;
+      case "z": {
+        const offset = Math.abs(fields.offset);
+        const sign = fields.offset < 0 ? "-" : "+";
+        value = sign + String(Math.floor(offset / 60)).padStart(2, "0") + String(offset % 60).padStart(2, "0");
+        break;
+      }
+      case "Z":
+        value = this._getTimeZoneName(time, timeZone);
+        break;
+      case "s":
+        value = Math.floor(time / 1e3);
+        break;
+      case "c":
+        value = this.formatDate(time);
+        break;
+      case "x":
+        value = this.formatDateTime(time);
+        break;
+      case "X":
+        value = this.formatTime(time);
+        break;
+      case "n":
+        value = "\n";
+        break;
+      case "t":
+        value = "	";
+        break;
+      case "%":
+        value = "%";
+        break;
+    }
+    let text = PADDING[character] ? this._pad(value, PADDING[character], flags) : String(value);
+    if (flags.includes("^")) {
+      text = text.toLocaleUpperCase(manager.locale);
+    }
+    return text;
+  }
+  _pad(value, [width, character], flags) {
+    for (const flag of flags) {
+      if (flag === "-") {
+        width = 0;
+      } else if (flag === "_") {
+        character = " ";
+      } else if (flag === "0") {
+        character = "0";
+      }
+    }
+    const digits = String(Math.abs(value)).padStart(width - (value < 0 ? 1 : 0), character);
+    return value < 0 ? "-" + digits : digits;
+  }
+  _getTimeZoneName(time, timeZone) {
+    if (timeZone === "UTC") {
+      return "UTC";
+    }
+    const format = getDateTimeFormat(this.effectiveLocale, {
+      timeZone: toIntlTimeZone(timeZone),
+      timeZoneName: "short"
+    });
+    return format.formatToParts(time).find((x) => x.type === "timeZoneName")?.value || "";
+  }
+};
+defineProperties(DateTimeFormatter, {
+  /**
+   * The time zone to format in (an IANA name, `'UTC'` or `'local'`), or `null` (the default) for
+   * the time zone of the locale manager.
+   */
+  timeZone: {
+    value: null,
+    coerce(timeZone) {
+      if (timeZone === null || timeZone === void 0 || timeZone === "local") {
+        return timeZone ?? null;
+      }
+      return new Intl.DateTimeFormat("en-US", { timeZone }).resolvedOptions().timeZone;
+    }
+  },
+  /**
+   * The style of preferred date formats: of `%c`, `%x` and {@link DateTimeFormatter#formatDate}.
+   */
+  dateStyle: {
+    value: DateTimeStyle.MEDIUM,
+    coerce(style) {
+      checkStyle(style);
+      return style;
+    }
+  },
+  /**
+   * The style of preferred time formats: of `%X`, `%x` and {@link DateTimeFormatter#formatTime}.
+   */
+  timeStyle: {
+    value: DateTimeStyle.MEDIUM,
+    coerce(style) {
+      checkStyle(style);
+      return style;
+    }
+  }
+});
+var getDateTimeFormatter = lazySingleton(() => new DateTimeFormatter());
+function formatDateTimePattern(format, timestamp) {
+  return getDateTimeFormatter().format(format, timestamp);
+}
+__name(formatDateTimePattern, "formatDateTimePattern");
+function formatDate(timestamp, style) {
+  return getDateTimeFormatter().formatDate(timestamp, style);
+}
+__name(formatDate, "formatDate");
+function formatTime(timestamp, style) {
+  return getDateTimeFormatter().formatTime(timestamp, style);
+}
+__name(formatTime, "formatTime");
+function formatDateTime(timestamp, dateStyle, timeStyle) {
+  return getDateTimeFormatter().formatDateTime(timestamp, dateStyle, timeStyle);
+}
+__name(formatDateTime, "formatDateTime");
+
+// src/i18n/date-time-parser.js
+var ENGLISH_MONTH_NAMES = [
+  "january",
+  "february",
+  "march",
+  "april",
+  "may",
+  "june",
+  "july",
+  "august",
+  "september",
+  "october",
+  "november",
+  "december"
+];
+var ENGLISH_DAY_NAMES = [
+  "sunday",
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday"
+];
+var MONTH_PREFIX_LENGTH = 3;
+var DAY_PREFIX_LENGTH = 2;
+var ORDINAL_SUFFIXES = /* @__PURE__ */ new Set(["st", "nd", "rd", "th", "er", "e", "ste", "de"]);
+var MARKERS = { \u5E74: "y", \u6708: "m", \u65E5: "d", \uB144: "y", \uC6D4: "m", \uC77C: "d", \u0433: "y" };
+var FILLER_WORDS = /* @__PURE__ */ new Set(["of", "the", "de", "del", "den", "der", "le"]);
+var UNITS = ["day", "week", "month", "year"];
+var ENGLISH_RELATIVE_DAYS = [
+  [/^(the )?day before (y(ester)?day|(the )?(past|last) day)$/, -2],
+  [/^(y(ester)?day|(the )?(past|prev(ious)?|last) day)$/, -1],
+  [/^(today|(the )?(present|current) day)$/, 0],
+  [/^(tom+or+ow|(the )?(next|coming) day)$/, 1],
+  [/^(the )?day after (tom+or+ow|(the )?(next|coming) day)$/, 2]
+];
+var ENGLISH_DIRECTIONS = [
+  [/^(the )?(past|prev(ious)?|last) (.+)$/, -1],
+  [/^(the )?(next|coming) (.+)$/, 1],
+  [/^(this|the (present|current)) (.+)$/, 0]
+];
+var ENGLISH_COUNTED = [
+  [/^(\d+) (day|week|month|year)s? ago$/, -1],
+  [/^in (\d+) (day|week|month|year)s?$/, 1],
+  [/^(\d+) (day|week|month|year)s? from now$/, 1]
+];
+var ENGLISH_TIMES = { noon: 12 * 60, midday: 12 * 60, midnight: 0 };
+var ISO_REGEXP = /^(\d{4})-(\d{2})-(\d{2})(?:[t ](\d{2}):(\d{2})(?::(\d{2})(?:[.,](\d+))?)?\s*(z|[+-]\d{2}(?::?\d{2})?)?)?$/;
+var TOKEN_REGEXP = /(\d+)|('\d{2})|((?:\p{L}+\.?)+)|([-/.\\:])|(\s+)|(.)/gu;
+var LOCALE_DATA = /* @__PURE__ */ new Map();
+function normalizeText(text, locale) {
+  return normalizeFragment(text, locale).trim();
+}
+__name(normalizeText, "normalizeText");
+function normalizeFragment(text, locale) {
+  return text.toLocaleLowerCase(locale).normalize("NFD").replace(/\p{M}/gu, "").normalize("NFC").replace(/[,\s\u200e\u200f]+/gu, " ");
+}
+__name(normalizeFragment, "normalizeFragment");
+function escapePattern(text) {
+  return text.replace(/[\\^$.*+?()[\]{}|/]/g, "\\$&");
+}
+__name(escapePattern, "escapePattern");
+function normalizeName(name, locale) {
+  return normalizeText(name, locale).replace(/\./g, "");
+}
+__name(normalizeName, "normalizeName");
+function getLocaleData(locale) {
+  let data = LOCALE_DATA.get(locale);
+  if (data) {
+    return data;
+  }
+  const sample = utcTimestamp(2013, 7, 10, 14, 5, 9);
+  const options = { timeZone: "UTC", calendar: "gregory", numberingSystem: "latn" };
+  const dateOrder = getDateTimeFormat(locale, { ...options, dateStyle: "short" }).formatToParts(sample).map((part) => ({ day: "d", month: "m", year: "y" })[part.type]).filter(Boolean).join("");
+  const monthNames = Array.from({ length: 12 }, () => []);
+  for (const month of ["long", "short"]) {
+    const format = getDateTimeFormat(locale, { ...options, day: "numeric", month });
+    for (let i = 0; i < 12; i++) {
+      const part = format.formatToParts(utcTimestamp(2013, i, 10)).find((x) => x.type === "month");
+      if (part && !/\d/.test(part.value)) {
+        monthNames[i].push(normalizeName(part.value, locale));
+      }
+    }
+  }
+  data = {
+    dateOrder: dateOrder.length === 3 ? dateOrder : "mdy",
+    monthNames,
+    ...getRelativeData(locale),
+    ...getTimeData(locale, sample, options)
+  };
+  LOCALE_DATA.set(locale, data);
+  return data;
+}
+__name(getLocaleData, "getLocaleData");
+function getRelativeData(locale) {
+  const relativeWords = /* @__PURE__ */ new Map();
+  const automatic = getRelativeTimeFormat(locale, { numeric: "auto" });
+  relativeWords.set(normalizeText(automatic.format(0, "second"), locale), {
+    unit: "now",
+    offset: 0
+  });
+  for (const unit of UNITS) {
+    for (const offset of unit === "day" ? [-2, -1, 0, 1, 2] : [-1, 0, 1]) {
+      const phrase = normalizeText(automatic.format(offset, unit), locale);
+      if (!/\d/.test(phrase) && !relativeWords.has(phrase)) {
+        relativeWords.set(phrase, { unit, offset });
+      }
+    }
+  }
+  const relativeTemplates = [];
+  const sources = /* @__PURE__ */ new Set();
+  const numeric = getRelativeTimeFormat(locale, { numeric: "always" });
+  for (const unit of UNITS) {
+    for (const sign of [-1, 1]) {
+      for (const count of [1, 2, 3, 5, 11, 21, 22, 100, 101]) {
+        const pattern = numeric.formatToParts(sign * count, unit).map(
+          (part) => part.type === "integer" ? "(\\d+)" : escapePattern(normalizeFragment(part.value, locale))
+        ).join("");
+        const source = `^${pattern.trim().replace(/ /g, "\\s?")}$`;
+        if (!sources.has(source)) {
+          sources.add(source);
+          relativeTemplates.push({ regexp: new RegExp(source, "u"), unit, sign });
+        }
+      }
+    }
+  }
+  return { relativeWords, relativeTemplates };
+}
+__name(getRelativeData, "getRelativeData");
+function getTimeData(locale, sample, options) {
+  const timeParts = getDateTimeFormat(locale, { ...options, timeStyle: "short" }).formatToParts(
+    sample
+  );
+  const hourIndex = timeParts.findIndex((x) => x.type === "hour");
+  const separator = timeParts[hourIndex + 1]?.value.trim();
+  const timeSeparators = [":"];
+  if (separator && separator.length === 1 && separator !== ":") {
+    timeSeparators.push(separator);
+  }
+  const connectors = ["at"];
+  const dateTimeParts = getDateTimeFormat(locale, {
+    ...options,
+    dateStyle: "long",
+    timeStyle: "short"
+  }).formatToParts(sample);
+  for (const part of dateTimeParts) {
+    const word = normalizeName(part.value, locale);
+    if (part.type === "literal" && /^\p{L}+$/u.test(word) && !connectors.includes(word)) {
+      connectors.push(word);
+    }
+  }
+  return { timeSeparators, connectors };
+}
+__name(getTimeData, "getTimeData");
+function matchName(word, names, prefixLength) {
+  const exact = names.findIndex((list) => list.includes(word));
+  if (exact >= 0 || word.length < prefixLength) {
+    return exact;
+  }
+  const matches = /* @__PURE__ */ new Set();
+  names.forEach((list, index) => {
+    if (list.some((name) => name.startsWith(word))) {
+      matches.add(index);
+    }
+  });
+  return matches.size === 1 ? [...matches][0] : -1;
+}
+__name(matchName, "matchName");
+function tokenize(text) {
+  const tokens = [];
+  for (const match of text.matchAll(TOKEN_REGEXP)) {
+    const [value, number, shortYear, word, separator, space] = match;
+    if (number !== void 0) {
+      tokens.push({ type: "number", value: Number(number), digits: number.length });
+    } else if (shortYear !== void 0) {
+      tokens.push({ type: "short-year", value: Number(shortYear.slice(1)) });
+    } else if (word !== void 0) {
+      tokens.push({ type: "word", text: word.replace(/\./g, "") });
+    } else if (separator !== void 0) {
+      tokens.push({ type: "separator", text: separator });
+    } else if (space !== void 0) {
+      tokens.push({ type: "space" });
+    } else {
+      tokens.push({ type: "other", text: value });
+    }
+  }
+  return tokens;
+}
+__name(tokenize, "tokenize");
+var DateTimeParser = class extends LocaleAware {
+  static {
+    __name(this, "DateTimeParser");
+  }
+  /**
+   * The time zone dates are in: `timeZone`, or else the locale manager's.
+   *
+   * @type {string}
+   */
+  get effectiveTimeZone() {
+    return this._timeZone || this._getDefaultTimeZone();
+  }
+  /**
+   * Parses a date.
+   *
+   * @param {string} input
+   * @returns {Date | null} The date at midnight (or the current time for `now`), or `null` if the
+   *     text is not a valid date.
+   * @throws {TypeError} If the input is not a string.
+   */
+  parseDate(input) {
+    const text = this._prepareInput(input);
+    if (this._isNow(text)) {
+      return new Date(this._getNow());
+    }
+    const date = this._parseDateText(text);
+    return date ? this._toDate(date, 0) : null;
+  }
+  /**
+   * Parses a time of day.
+   *
+   * @param {string} input
+   * @returns {number | null} The time as milliseconds since midnight, or `null` if the text is
+   *     not a valid time.
+   * @throws {TypeError} If the input is not a string.
+   */
+  parseTime(input) {
+    const text = this._prepareInput(input);
+    if (this._isNow(text)) {
+      const fields = getZonedFields(this._getNow(), this.effectiveTimeZone);
+      return ((fields.hours * 60 + fields.minutes) * 60 + fields.seconds) * 1e3 + fields.milliseconds;
+    }
+    return this._parseTimeText(text, true);
+  }
+  /**
+   * Parses a date and a time, in either order (`10 aug 2013 14:05` or `2 pm tomorrow`), or only
+   * one of them: a date alone is at midnight, and a time alone is today. ISO 8601 date-times
+   * (`2013-08-10T14:05:09Z`) are understood too, including their time zone.
+   *
+   * @param {string} input
+   * @returns {Date | null}
+   * @throws {TypeError} If the input is not a string.
+   */
+  parseDateTime(input) {
+    const text = this._prepareInput(input);
+    if (this._isNow(text)) {
+      return new Date(this._getNow());
+    }
+    const iso = this._parseIso(text);
+    if (iso !== void 0) {
+      return iso;
+    }
+    const data = getLocaleData(this.effectiveLocale);
+    const words = text.split(" ");
+    for (let count = 1; count <= Math.min(words.length, 3); count++) {
+      for (const timeAtEnd of [true, false]) {
+        const timeWords = timeAtEnd ? words.slice(-count) : words.slice(0, count);
+        const dateWords = timeAtEnd ? words.slice(0, -count) : words.slice(count);
+        const time = this._parseTimeText(timeWords.join(" "), false);
+        if (time === null) {
+          continue;
+        }
+        const connectorIndex = timeAtEnd ? dateWords.length - 1 : 0;
+        if (data.connectors.includes(dateWords[connectorIndex]?.replace(/\./g, ""))) {
+          dateWords.splice(connectorIndex, 1);
+        }
+        const date2 = dateWords.length ? this._parseDateText(dateWords.join(" ")) : this._getToday();
+        if (date2) {
+          return this._toDate(date2, time);
+        }
+      }
+    }
+    const date = this._parseDateText(text);
+    return date ? this._toDate(date, 0) : null;
+  }
+  /**
+   * Parses a text in a `strftime` format of the {@link DateTimeFormatter}, e.g. `'%d-%m-%Y'`.
+   * Numbers may omit their padding, names may be abbreviated and whitespace may vary. Fields
+   * missing from the format are taken from today (when the format has no date at all) or are
+   * the first month and day. The preferred formats `%c`, `%x` and `%X` can only be used alone;
+   * they parse like {@link DateTimeParser#parseDate}, {@link DateTimeParser#parseDateTime} and
+   * a time today.
+   *
+   * @param {string} input
+   * @param {string} format
+   * @returns {Date | null}
+   * @throws {TypeError} If the input or format is not a string.
+   * @throws {Error} If the format uses `%c`, `%x` or `%X` with other specifiers.
+   */
+  parseExact(input, format) {
+    if (typeof format !== "string") {
+      throw new TypeError("The format must be a string.");
+    }
+    const text = this._prepareInput(input);
+    if (format === "%c") {
+      return this.parseDate(input);
+    }
+    if (format === "%x") {
+      return this.parseDateTime(input);
+    }
+    if (format === "%X") {
+      const time = this.parseTime(input);
+      return time === null ? null : this._toDate(this._getToday(), time);
+    }
+    const { regexp, fields } = this._compileFormat(format);
+    const matches = regexp.exec(text);
+    if (!matches) {
+      return null;
+    }
+    return this._buildExact(fields, matches.slice(1));
+  }
+  _prepareInput(input) {
+    if (typeof input !== "string") {
+      throw new TypeError("The input must be a string.");
+    }
+    return normalizeText(input, this.effectiveLocale);
+  }
+  _isNow(text) {
+    return text === "now" || this._getRelativeWord(text)?.unit === "now";
+  }
+  _getNow() {
+    return this._referenceTime ?? Date.now();
+  }
+  _getToday() {
+    const { year, month, day, weekDay } = getZonedFields(
+      this._getNow(),
+      this.effectiveTimeZone
+    );
+    return { year, month, day, weekDay };
+  }
+  _toDate({ year, month, day }, time) {
+    const timestamp = fromZonedFields({ year, month, day }, this.effectiveTimeZone);
+    if (!time) {
+      return new Date(timestamp);
+    }
+    const minutes = Math.floor(time / MINUTE);
+    return new Date(
+      fromZonedFields(
+        {
+          year,
+          month,
+          day,
+          hours: Math.floor(minutes / 60),
+          minutes: minutes % 60,
+          seconds: Math.floor(time % MINUTE / 1e3),
+          milliseconds: time % 1e3
+        },
+        this.effectiveTimeZone
+      )
+    );
+  }
+  _getRelativeWord(text) {
+    return getLocaleData(this.effectiveLocale).relativeWords.get(text) || null;
+  }
+  _parseIso(text) {
+    const matches = ISO_REGEXP.exec(text);
+    if (!matches) {
+      return void 0;
+    }
+    const [, year, month, day, hours, minutes, seconds, fraction, zone] = matches;
+    const fields = {
+      year: Number(year),
+      month: Number(month) - 1,
+      day: Number(day),
+      hours: Number(hours || 0),
+      minutes: Number(minutes || 0),
+      seconds: Number(seconds || 0),
+      milliseconds: fraction ? Math.floor(Number(`0.${fraction}`) * 1e3) : 0
+    };
+    if (!this._isValidDate(fields) || fields.hours > 23 || fields.minutes > 59 || fields.seconds > 59) {
+      return null;
+    }
+    if (!zone) {
+      return new Date(fromZonedFields(fields, this.effectiveTimeZone));
+    }
+    const wallClock = utcTimestamp(
+      fields.year,
+      fields.month,
+      fields.day,
+      fields.hours,
+      fields.minutes,
+      fields.seconds,
+      fields.milliseconds
+    );
+    return new Date(wallClock - this._parseOffset(zone) * MINUTE);
+  }
+  _parseOffset(zone) {
+    if (zone === "z" || zone === "utc" || zone === "gmt") {
+      return 0;
+    }
+    const matches = /^([+-])(\d{2}):?(\d{2})?$/.exec(zone);
+    if (!matches) {
+      return null;
+    }
+    const offset = Number(matches[2]) * 60 + Number(matches[3] || 0);
+    return matches[1] === "-" ? -offset : offset;
+  }
+  _isValidDate({ year, month, day }) {
+    return Number.isInteger(year) && year >= 1 && year <= 9999 && month >= 0 && month <= 11 && day >= 1 && day <= getDaysInMonth2(year, month);
+  }
+  /**
+   * Parses a normalized date text to its fields.
+   *
+   * @param {string} text
+   * @returns {{year: number, month: number, day: number} | null}
+   */
+  _parseDateText(text) {
+    if (!text) {
+      return null;
+    }
+    const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(text);
+    if (iso) {
+      const date = { year: Number(iso[1]), month: Number(iso[2]) - 1, day: Number(iso[3]) };
+      return this._isValidDate(date) ? date : null;
+    }
+    const relative = this._parseRelativeDate(text);
+    if (relative !== void 0) {
+      return relative;
+    }
+    return this._parseAbsoluteDate(tokenize(text));
+  }
+  /**
+   * Parses a relative date.
+   *
+   * @param {string} text
+   * @returns {{year: number, month: number, day: number} | null | undefined} `undefined` if
+   *     the text is not a relative date.
+   */
+  _parseRelativeDate(text) {
+    const today = this._getToday();
+    const data = getLocaleData(this.effectiveLocale);
+    for (const [regexp, offset] of ENGLISH_RELATIVE_DAYS) {
+      if (regexp.test(text)) {
+        return this._addDays(today, offset);
+      }
+    }
+    const word = this._getRelativeWord(text);
+    if (word) {
+      return this._moveToUnit(today, word.unit, word.offset);
+    }
+    for (const [regexp, sign] of ENGLISH_COUNTED) {
+      const matches = regexp.exec(text);
+      if (matches) {
+        return this._addUnits(today, matches[2], sign * Number(matches[1]));
+      }
+    }
+    for (const { regexp, unit, sign } of data.relativeTemplates) {
+      const matches = regexp.exec(text);
+      if (matches) {
+        return this._addUnits(today, unit, sign * Number(matches[1]));
+      }
+    }
+    for (const [regexp, direction] of ENGLISH_DIRECTIONS) {
+      const matches = regexp.exec(text);
+      if (!matches) {
+        continue;
+      }
+      const rest = matches[matches.length - 1];
+      if (UNITS.includes(rest)) {
+        return this._moveToUnit(today, rest, direction);
+      }
+      const named = this._parseNamedRelative(rest, today, direction);
+      return named === void 0 ? null : named;
+    }
+    return this._parseNamedRelative(text, today, 1);
+  }
+  /**
+   * Parses a day or month name relative to today: the next one (`direction` 1 or 0) or the
+   * last one (-1).
+   */
+  _parseNamedRelative(text, today, direction) {
+    if (!/^\p{L}+\.?$/u.test(text)) {
+      return void 0;
+    }
+    const word = text.replace(/\./g, "");
+    const past = direction < 0;
+    const weekDay = matchName(word, this._getDayNames(), DAY_PREFIX_LENGTH);
+    if (weekDay >= 0) {
+      let offset = weekDay - today.weekDay;
+      if (past ? offset >= 0 : offset <= 0) {
+        offset += past ? -7 : 7;
+      }
+      return this._addDays(today, offset);
+    }
+    const month = matchName(word, this._getMonthNames(), MONTH_PREFIX_LENGTH);
+    if (month >= 0) {
+      let year = today.year;
+      if (past ? month >= today.month : month <= today.month) {
+        year += past ? -1 : 1;
+      }
+      return { year, month, day: 1 };
+    }
+    return void 0;
+  }
+  _addDays({ year, month, day }, days) {
+    const date = new Date(utcTimestamp(year, month, day + days));
+    return { year: date.getUTCFullYear(), month: date.getUTCMonth(), day: date.getUTCDate() };
+  }
+  _addUnits(date, unit, count) {
+    if (unit === "day") {
+      return this._addDays(date, count);
+    }
+    if (unit === "week") {
+      return this._addDays(date, 7 * count);
+    }
+    const months = date.year * 12 + date.month + (unit === "year" ? 12 * count : count);
+    const year = Math.floor(months / 12);
+    const month = months - year * 12;
+    return { year, month, day: Math.min(date.day, getDaysInMonth2(year, month)) };
+  }
+  /**
+   * Moves to the first day of the day, week, month or year some units from today, e.g. the
+   * first day of the last month for `('month', -1)`.
+   */
+  _moveToUnit(today, unit, offset) {
+    if (unit === "now") {
+      return today;
+    }
+    if (unit === "day") {
+      return this._addDays(today, offset);
+    }
+    if (unit === "week") {
+      const firstDay = this.effectiveLocaleManager.firstDayOfWeek;
+      const start = -((today.weekDay - firstDay + 7) % 7);
+      return this._addDays(today, start + 7 * offset);
+    }
+    if (unit === "month") {
+      return this._addUnits({ ...today, day: 1 }, "month", offset);
+    }
+    return { year: today.year + offset, month: 0, day: 1 };
+  }
+  _getMonthNames() {
+    const manager = this.effectiveLocaleManager;
+    const locale = manager.locale;
+    const data = getLocaleData(locale);
+    return ENGLISH_MONTH_NAMES.map((name, i) => [
+      normalizeName(manager.longMonthNames[i], locale),
+      normalizeName(manager.shortMonthNames[i], locale),
+      ...data.monthNames[i],
+      name,
+      name.slice(0, 3)
+    ]);
+  }
+  _getDayNames() {
+    const manager = this.effectiveLocaleManager;
+    const locale = manager.locale;
+    return ENGLISH_DAY_NAMES.map((name, i) => [
+      normalizeName(manager.longDayNames[i], locale),
+      normalizeName(manager.shortDayNames[i], locale),
+      name
+    ]);
+  }
+  _expandYear(value, digits) {
+    if (digits > 2) {
+      return value;
+    }
+    return value > this._twoDigitYearMax ? 1900 + value : 2e3 + value;
+  }
+  /**
+   * Parses the tokens of an absolute date.
+   *
+   * @param {object[]} tokens
+   * @returns {{year: number, month: number, day: number} | null}
+   */
+  _parseAbsoluteDate(tokens) {
+    const date = { year: null, month: null, day: null };
+    let weekDay = null;
+    const numbers = [];
+    const components = [];
+    const monthNames = this._getMonthNames();
+    const dayNames = this._getDayNames();
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i];
+      const previous = tokens[i - 1];
+      if (token.type === "space" || token.type === "separator") {
+        continue;
+      }
+      if (token.type === "other") {
+        return null;
+      }
+      if (token.type === "number") {
+        if (token.digits > 4) {
+          return null;
+        }
+        const number = { ...token, role: null };
+        numbers.push(number);
+        components.push(number);
+        continue;
+      }
+      if (token.type === "short-year") {
+        if (date.year !== null) {
+          return null;
+        }
+        date.year = this._expandYear(token.value, 2);
+        components.push({ role: "y", digits: 2 });
+        continue;
+      }
+      const word = token.text;
+      const previousNumber = previous?.type === "number" ? numbers[numbers.length - 1] : null;
+      if (previousNumber && !previousNumber.role && ORDINAL_SUFFIXES.has(word)) {
+        previousNumber.role = "d";
+        continue;
+      }
+      const marker = MARKERS[word];
+      if (marker) {
+        const number = previousNumber || (previous?.type === "space" && tokens[i - 2]?.type === "number" ? numbers[numbers.length - 1] : null);
+        if (!number || number.role) {
+          return null;
+        }
+        number.role = marker;
+        continue;
+      }
+      if (FILLER_WORDS.has(word)) {
+        continue;
+      }
+      const month = matchName(word, monthNames, MONTH_PREFIX_LENGTH);
+      if (month >= 0) {
+        if (date.month !== null) {
+          return null;
+        }
+        date.month = month;
+        components.push({ role: "m" });
+        continue;
+      }
+      const day = matchName(word, dayNames, DAY_PREFIX_LENGTH);
+      if (day >= 0 && weekDay === null) {
+        weekDay = day;
+        continue;
+      }
+      return null;
+    }
+    if (!this._assignNumbers(date, numbers, components)) {
+      return null;
+    }
+    const today = this._getToday();
+    if (date.day === null && date.month === null) {
+      if (date.year === null) {
+        return null;
+      }
+      date.month = 0;
+      date.day = 1;
+    } else if (date.day === null) {
+      if (date.year === null) {
+        return null;
+      }
+      date.day = 1;
+    }
+    if (date.month === null) {
+      date.month = today.month;
+    }
+    if (date.year === null) {
+      date.year = today.year;
+    }
+    if (!this._isValidDate(date)) {
+      return null;
+    }
+    if (weekDay !== null && new Date(utcTimestamp(date.year, date.month, date.day)).getUTCDay() !== weekDay) {
+      return null;
+    }
+    return date;
+  }
+  _assignNumbers(date, numbers, components) {
+    const assign = /* @__PURE__ */ __name((role, number) => {
+      const key = { y: "year", m: "month", d: "day" }[role];
+      if (date[key] !== null) {
+        return false;
+      }
+      if (role === "y") {
+        date.year = this._expandYear(number.value, number.digits);
+      } else {
+        date[key] = role === "m" ? number.value - 1 : number.value;
+      }
+      return true;
+    }, "assign");
+    for (const number of numbers) {
+      if (number.role && !assign(number.role, number)) {
+        return false;
+      }
+    }
+    let unassigned = numbers.filter((x) => !x.role);
+    for (const number of unassigned) {
+      if (number.digits > 2 || number.value > 31) {
+        number.role = "y";
+        if (!assign("y", number)) {
+          return false;
+        }
+      }
+    }
+    unassigned = unassigned.filter((x) => !x.role);
+    if (!unassigned.length) {
+      return true;
+    }
+    const first = components[0];
+    let order = getLocaleData(this.effectiveLocale).dateOrder;
+    if (first?.role === "y" && first.digits > 2) {
+      order = "ymd";
+    }
+    let missing = [...order].filter((role) => {
+      return date[{ y: "year", m: "month", d: "day" }[role]] === null;
+    });
+    if (unassigned.length < missing.length && missing.includes("y")) {
+      missing = missing.filter((role) => role !== "y");
+    }
+    if (unassigned.length === 1 && date.day === null && missing.length > 1) {
+      missing = ["d"];
+    }
+    if (unassigned.length !== missing.length) {
+      return false;
+    }
+    return unassigned.every((number, i) => assign(missing[i], number));
+  }
+  _getDesignatorRegExp() {
+    const manager = this.effectiveLocaleManager;
+    const locale = manager.locale;
+    const toPattern = /* @__PURE__ */ __name((designator) => escapePattern(normalizeName(designator, locale)).replace(/ /g, "\\s?"), "toPattern");
+    return {
+      am: `(?:${toPattern(manager.amDesignator)}|a\\.?\\s?m\\.?)`,
+      pm: `(?:${toPattern(manager.pmDesignator)}|p\\.?\\s?m\\.?)`
+    };
+  }
+  /**
+   * Parses a normalized time text.
+   *
+   * @param {string} text
+   * @param {boolean} alone Whether the text is only a time, which allows more separators.
+   * @returns {number | null} Milliseconds since midnight.
+   */
+  _parseTimeText(text, alone) {
+    if (Object.hasOwn(ENGLISH_TIMES, text)) {
+      return ENGLISH_TIMES[text] * MINUTE;
+    }
+    const data = getLocaleData(this.effectiveLocale);
+    const separators = alone ? [":", ".", ...data.timeSeparators] : data.timeSeparators;
+    const separator = `(?:${separators.map(escapePattern).join("|")})`;
+    const { am, pm } = this._getDesignatorRegExp();
+    const designator = `(${am}|${pm})`;
+    const clock = `(\\d{1,2})(?:(?:${separator}|h)(\\d{2})(?:${separator}(\\d{2})(?:[.,](\\d{1,3}))?)?)?(h)?`;
+    const regexp = new RegExp(`^(?:${designator}\\s?)?${clock}(?:\\s?${designator})?$`, "u");
+    const matches = regexp.exec(text);
+    if (!matches) {
+      return null;
+    }
+    const [, before, hoursText, minutesText, secondsText, fraction, hourMark, after] = matches;
+    if (before && after || hourMark && minutesText !== void 0) {
+      return null;
+    }
+    const period = before || after;
+    if (minutesText === void 0 && !period && !hourMark) {
+      return null;
+    }
+    let hours = Number(hoursText);
+    const minutes = Number(minutesText || 0);
+    const seconds = Number(secondsText || 0);
+    const milliseconds = fraction ? Number(fraction.padEnd(3, "0")) : 0;
+    if (minutes > 59 || seconds > 59) {
+      return null;
+    }
+    if (period) {
+      if (hours < 1 || hours > 12) {
+        return null;
+      }
+      const isPm = new RegExp(`^${pm}$`, "u").test(period);
+      hours = hours % 12 + (isPm ? 12 : 0);
+    } else if (hours > 23) {
+      return null;
+    }
+    return ((hours * 60 + minutes) * 60 + seconds) * 1e3 + milliseconds;
+  }
+  _compileFormat(format) {
+    const fields = [];
+    let source = "";
+    const expanded = format.replace(/%([-_0^]*)([rRTDF])/g, (_match, _flags, character) => {
+      return {
+        r: "%I:%M:%S %p",
+        R: "%H:%M",
+        T: "%H:%M:%S",
+        D: "%m/%d/%y",
+        F: "%Y-%m-%d"
+      }[character];
+    });
+    const { am, pm } = this._getDesignatorRegExp();
+    const word = "([\\p{L}.]+)";
+    const patterns = {
+      a: word,
+      A: word,
+      b: word,
+      B: word,
+      h: word,
+      d: "(\\d{1,2})",
+      e: "(\\d{1,2})",
+      j: "(\\d{1,3})",
+      u: "(\\d)",
+      w: "(\\d)",
+      U: "(\\d{1,2})",
+      V: "(\\d{1,2})",
+      W: "(\\d{1,2})",
+      m: "(\\d{1,2})",
+      C: "(\\d{1,2})",
+      g: "(\\d{2})",
+      G: "(\\d{4})",
+      y: "(\\d{2})",
+      Y: "(\\d{4})",
+      H: "(\\d{1,2})",
+      k: "(\\d{1,2})",
+      I: "(\\d{1,2})",
+      l: "(\\d{1,2})",
+      M: "(\\d{2})",
+      S: "(\\d{2})",
+      L: "(\\d{3})",
+      p: `(${am}|${pm})`,
+      P: `(${am}|${pm})`,
+      z: "(z|[+-]\\d{2}:?\\d{2})",
+      Z: "([\\p{L}\\d+\\-:/_]+)",
+      s: "(-?\\d+)"
+    };
+    let position = 0;
+    for (const match of expanded.matchAll(/%[-_0^]*([a-zA-Z%])/g)) {
+      source += this._literalPattern(expanded.slice(position, match.index));
+      position = match.index + match[0].length;
+      const character = match[1];
+      if (character === "%") {
+        source += "%";
+      } else if (character === "n" || character === "t") {
+        source += "\\s*";
+      } else if (patterns[character]) {
+        source += (/[eklIH]/.test(character) ? "\\s?" : "") + patterns[character];
+        fields.push(character);
+      } else if ("cxX".includes(character)) {
+        throw new Error(`'%${character}' can only be used alone in a format to parse.`);
+      } else {
+        source += escapePattern("%" + match[1]);
+      }
+    }
+    source += this._literalPattern(expanded.slice(position));
+    return { regexp: new RegExp(`^${source}$`, "u"), fields };
+  }
+  _literalPattern(text) {
+    return normalizeFragment(text, this.effectiveLocale).split(" ").map((x) => escapePattern(x)).join("\\s*");
+  }
+  _buildExact(specifiers, values) {
+    const fields = { year: null, month: null, day: null };
+    let hours = 0;
+    let minutes = 0;
+    let seconds = 0;
+    let milliseconds = 0;
+    let period = null;
+    let hour12 = false;
+    let weekDay = null;
+    let offset = null;
+    let dayOfYear = null;
+    const { pm } = this._getDesignatorRegExp();
+    for (let i = 0; i < specifiers.length; i++) {
+      const character = specifiers[i];
+      const value = values[i];
+      const number = Number(value);
+      switch (character) {
+        case "a":
+        case "A": {
+          weekDay = matchName(value.replace(/\./g, ""), this._getDayNames(), 2);
+          if (weekDay < 0) {
+            return null;
+          }
+          break;
+        }
+        case "b":
+        case "B":
+        case "h": {
+          const month = matchName(value.replace(/\./g, ""), this._getMonthNames(), 3);
+          if (month < 0) {
+            return null;
+          }
+          fields.month = month;
+          break;
+        }
+        case "d":
+        case "e":
+          fields.day = number;
+          break;
+        case "j":
+          dayOfYear = number;
+          break;
+        case "u":
+          weekDay = number % 7;
+          break;
+        case "w":
+          weekDay = number;
+          break;
+        case "m":
+          fields.month = number - 1;
+          break;
+        case "y":
+          fields.year = this._expandYear(number, 2);
+          break;
+        case "Y":
+          fields.year = number;
+          break;
+        case "H":
+        case "k":
+          hours = number;
+          break;
+        case "I":
+        case "l":
+          hours = number;
+          hour12 = true;
+          break;
+        case "M":
+          minutes = number;
+          break;
+        case "S":
+          seconds = number;
+          break;
+        case "L":
+          milliseconds = number;
+          break;
+        case "p":
+        case "P":
+          period = new RegExp(`^${pm}$`, "u").test(value) ? "pm" : "am";
+          break;
+        case "z":
+          offset = this._parseOffset(value);
+          break;
+        case "Z":
+          if (value === "utc" || value === "gmt" || value === "z") {
+            offset = 0;
+          }
+          break;
+        case "s":
+          return new Date(number * 1e3);
+        // The week-based fields are checked by the other fields.
+        default:
+          break;
+      }
+    }
+    if (period !== null || hour12) {
+      if (hours < 1 || hours > 12) {
+        return null;
+      }
+      hours = hours % 12 + (period === "pm" ? 12 : 0);
+    }
+    if (hours > 23 || minutes > 59 || seconds > 59) {
+      return null;
+    }
+    const today = this._getToday();
+    if (fields.year === null && fields.month === null && fields.day === null && dayOfYear === null) {
+      Object.assign(fields, { year: today.year, month: today.month, day: today.day });
+    }
+    fields.year ??= today.year;
+    if (dayOfYear !== null && fields.month === null && fields.day === null) {
+      const date = new Date(utcTimestamp(fields.year, 0, dayOfYear));
+      if (date.getUTCFullYear() !== fields.year || dayOfYear < 1) {
+        return null;
+      }
+      fields.month = date.getUTCMonth();
+      fields.day = date.getUTCDate();
+    }
+    fields.month ??= 0;
+    fields.day ??= 1;
+    if (!this._isValidDate(fields)) {
+      return null;
+    }
+    if (weekDay !== null && new Date(utcTimestamp(fields.year, fields.month, fields.day)).getUTCDay() !== weekDay) {
+      return null;
+    }
+    const all = { ...fields, hours, minutes, seconds, milliseconds };
+    if (offset !== null) {
+      const wallClock = utcTimestamp(
+        all.year,
+        all.month,
+        all.day,
+        hours,
+        minutes,
+        seconds,
+        milliseconds
+      );
+      return new Date(wallClock - offset * MINUTE);
+    }
+    return new Date(fromZonedFields(all, this.effectiveTimeZone));
+  }
+};
+defineProperties(DateTimeParser, {
+  /**
+   * The time zone dates are parsed in (an IANA name, `'UTC'` or `'local'`), or `null` (the
+   * default) for the time zone of the locale manager.
+   */
+  timeZone: {
+    value: null,
+    coerce(timeZone) {
+      if (timeZone === null || timeZone === void 0 || timeZone === "local") {
+        return timeZone ?? null;
+      }
+      return new Intl.DateTimeFormat("en-US", { timeZone }).resolvedOptions().timeZone;
+    }
+  },
+  /**
+   * The largest two-digit year that is in this century: with 29, `'29` is 2029 and `'30` is
+   * 1930.
+   */
+  twoDigitYearMax: {
+    value: 29,
+    coerce(year) {
+      if (!Number.isInteger(year) || year < 0 || year > 99) {
+        throw new RangeError("The two-digit year maximum must be an integer from 0 to 99.");
+      }
+      return year;
+    }
+  },
+  /**
+   * The time relative dates (`today`, `next week`) are relative to, as a timestamp, or `null`
+   * (the default) for the current time.
+   */
+  referenceTime: {
+    value: null,
+    coerce(time) {
+      if (time instanceof Date) {
+        time = time.getTime();
+      }
+      if (time !== null && !Number.isFinite(time)) {
+        throw new TypeError("The reference time must be a timestamp, a Date or null.");
+      }
+      return time;
+    }
+  }
+});
+var getDateTimeParser = lazySingleton(() => new DateTimeParser());
+function parseDate(input) {
+  return getDateTimeParser().parseDate(input);
+}
+__name(parseDate, "parseDate");
+function parseDateTime(input) {
+  return getDateTimeParser().parseDateTime(input);
+}
+__name(parseDateTime, "parseDateTime");
+function parseTime(input) {
+  return getDateTimeParser().parseTime(input);
+}
+__name(parseTime, "parseTime");
+
+// src/i18n/translated-text.js
+var TranslatedText = class extends Instance {
+  static {
+    __name(this, "TranslatedText");
+  }
+  _initialize() {
+    super._initialize();
+    this._disconnectTranslator = null;
+    this._lastText = null;
+  }
+  connect(name, method, context) {
+    return this._watch(name, super.connect(name, method, context));
+  }
+  connectFirst(name, method, context) {
+    return this._watch(name, super.connectFirst(name, method, context));
+  }
+  connectLast(name, method, context) {
+    return this._watch(name, super.connectLast(name, method, context));
+  }
+  disconnect(name, method, context) {
+    super.disconnect(name, method, context);
+    this._unwatchIfUnused();
+  }
+  /**
+   * Returns the translation.
+   *
+   * @returns {string}
+   */
+  toString() {
+    return this.text;
+  }
+  /**
+   * Returns the translation, so a translated text serializes as its text.
+   *
+   * @returns {string}
+   */
+  toJSON() {
+    return this.text;
+  }
+  destroy() {
+    this._disconnectTranslator?.();
+    this._disconnectTranslator = null;
+    super.destroy();
+  }
+  _getTranslator() {
+    return this._translator || getTranslator();
+  }
+  _watch(name, disconnect) {
+    if (name !== "text-change") {
+      return disconnect;
+    }
+    if (!this._disconnectTranslator) {
+      this._lastText = this.text;
+      this._disconnectTranslator = this._getTranslator().connect(
+        "change",
+        this._onTranslatorChange,
+        this
+      );
+    }
+    return () => {
+      disconnect();
+      this._unwatchIfUnused();
+    };
+  }
+  _unwatchIfUnused() {
+    if (this._disconnectTranslator && !this._signalDispatcher?.hasHandlers("text-change")) {
+      this._disconnectTranslator();
+      this._disconnectTranslator = null;
+    }
+  }
+  _onTranslatorChange() {
+    const text = this.text;
+    if (text !== this._lastText) {
+      this._lastText = text;
+      this.emit("text-change", this);
+    }
+  }
+};
+function setOnce(name, check) {
+  const field = "_" + name;
+  return function(value) {
+    if (this[field] !== null) {
+      throw new Error(`The ${name} of a translated text cannot be changed.`);
+    }
+    this[field] = check(value);
+  };
+}
+__name(setOnce, "setOnce");
+defineProperties(TranslatedText, {
+  /**
+   * The identifier of the text, used to look up the translation: a key or the source text. It
+   * can only be set once.
+   */
+  id: {
+    value: null,
+    set: setOnce("id", (id) => {
+      if (typeof id !== "string") {
+        throw new TypeError("The id of a translated text must be a string.");
+      }
+      return id;
+    })
+  },
+  /**
+   * The source text of the plural form, or `null`. When set, `id` is the singular form and the
+   * first argument is the count, as in {@link Translator#translatePlural}. It can only be set
+   * once.
+   */
+  plural: {
+    value: null,
+    set: setOnce("plural", (plural) => {
+      if (typeof plural !== "string") {
+        throw new TypeError("The plural of a translated text must be a string.");
+      }
+      return plural;
+    })
+  },
+  /**
+   * The arguments of the placeholders in the text. It can only be set once.
+   */
+  arguments: {
+    value: null,
+    get() {
+      return this._arguments || [];
+    },
+    set: setOnce("arguments", (args) => {
+      if (!Array.isArray(args)) {
+        throw new TypeError("The arguments of a translated text must be an array.");
+      }
+      return Object.freeze([...args]);
+    })
+  },
+  /**
+   * The translator to use, or `null` (the default) for the singleton.
+   */
+  translator: {
+    value: null,
+    coerce(translator) {
+      if (translator && !(translator instanceof Translator)) {
+        throw new TypeError("The translator must be a Translator.");
+      }
+      return translator || null;
+    },
+    changed() {
+      if (this._disconnectTranslator) {
+        this._disconnectTranslator();
+        this._disconnectTranslator = this._getTranslator().connect(
+          "change",
+          this._onTranslatorChange,
+          this
+        );
+        this._onTranslatorChange();
+      }
+    }
+  },
+  /**
+   * The translated text in the current language.
+   */
+  text: {
+    readOnly: true,
+    get() {
+      if (this._id === null) {
+        return "";
+      }
+      const translator = this._getTranslator();
+      const args = this.arguments;
+      if (this._plural !== null) {
+        const [count, ...rest] = args;
+        return translator.translatePlural(this._id, this._plural, count, ...rest);
+      }
+      return translator.getEntry(this._id, [...args]);
+    }
+  }
+});
+function __(id, ...args) {
+  return new TranslatedText({ id, arguments: args });
+}
+__name(__, "__");
+function __n(singular, plural, count, ...args) {
+  return new TranslatedText({ id: singular, plural, arguments: [count, ...args] });
+}
+__name(__n, "__n");
+registerType("translated-text", TranslatedText);
+
+// src/construction/builder.js
+var RESERVED_KEYS = /* @__PURE__ */ new Set(["type", "id"]);
+var BuilderError = class extends Error {
+  static {
+    __name(this, "BuilderError");
+  }
+  /**
+   * @param {string} message
+   * @param {string} path
+   * @param {ErrorOptions} [options]
+   */
+  constructor(message, path, options) {
+    super(path ? `${path}: ${message}` : message, options);
+    this.name = "BuilderError";
+    this.path = path;
+  }
+};
+var UnresolvedReference = class extends Error {
+  static {
+    __name(this, "UnresolvedReference");
+  }
+  /**
+   * @param {string} id
+   */
+  constructor(id) {
+    super(`Object with id '${id}' could not be found.`);
+    this.id = id;
+  }
+};
+function isPlainObject2(value) {
+  if (value === null || typeof value !== "object") {
+    return false;
+  }
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+__name(isPlainObject2, "isPlainObject");
+function isReference(value) {
+  return isPlainObject2(value) && typeof value.id === "string" && Object.keys(value).length === 1;
+}
+__name(isReference, "isReference");
+function findHook(cls, name) {
+  const camelName = toCamelCase(name);
+  for (let current = cls; current && current !== Function.prototype; ) {
+    if (Object.hasOwn(current, "builderProperties")) {
+      const hooks = current.builderProperties;
+      for (const key of [name, camelName]) {
+        if (Object.hasOwn(hooks, key) && typeof hooks[key] === "function") {
+          return { hook: hooks[key], owner: hooks };
+        }
+      }
+    }
+    current = Object.getPrototypeOf(current);
+  }
+  return null;
+}
+__name(findHook, "findHook");
+var Builder = class extends Instance {
+  static {
+    __name(this, "Builder");
+  }
+  _initialize() {
+    super._initialize();
+    this._objects = [];
+    this._objectsById = /* @__PURE__ */ new Map();
+    this._path = [];
+    this._depth = 0;
+    this._deferred = [];
+    this._newIds = [];
+  }
+  /**
+   * Builds objects from a description, an array of descriptions or JSON.
+   *
+   * @param {string | object | object[]} input
+   * @returns {object[]} The root objects in the input.
+   * @throws {BuilderError} If the input is malformed.
+   */
+  build(input) {
+    if (typeof input === "string") {
+      try {
+        input = JSON.parse(input);
+      } catch (error) {
+        throw new BuilderError(`Invalid JSON: ${error.message}`, this._getPath(), {
+          cause: error
+        });
+      }
+    }
+    const outermost = this._depth === 0;
+    this._depth += 1;
+    let objects;
+    try {
+      objects = this._buildRoots(input);
+      if (outermost) {
+        this._applyDeferred();
+      }
+    } catch (error) {
+      if (outermost) {
+        for (const id of this._newIds) {
+          this._objectsById.delete(id);
+        }
+      }
+      throw error;
+    } finally {
+      this._depth -= 1;
+      if (outermost) {
+        this._deferred = [];
+        this._newIds = [];
+        this._path = [];
+      }
+    }
+    if (outermost) {
+      this._objects.push(...objects.filter((x) => !this._objects.includes(x)));
+    }
+    return objects;
+  }
+  /**
+   * Builds a single object from a description (or JSON).
+   *
+   * @param {string | object} input
+   * @returns {object}
+   * @throws {BuilderError} If the input does not describe exactly one object.
+   */
+  buildOne(input) {
+    const objects = this.build(input);
+    if (objects.length !== 1) {
+      throw new BuilderError(
+        `Expected one object, but the input describes ${objects.length}.`,
+        this._getPath()
+      );
+    }
+    return objects[0];
+  }
+  /**
+   * Builds a value: descriptions become objects, references resolve, and arrays and plain
+   * objects are built recursively. Useful for builder property hooks.
+   *
+   * @param {unknown} value
+   * @returns {unknown}
+   */
+  buildValue(value) {
+    return this._buildValue(value, false);
+  }
+  /**
+   * Gets an object by its id.
+   *
+   * @param {string} id
+   * @returns {object}
+   * @throws {Error} If there is no object with that id.
+   */
+  getObjectById(id) {
+    const object = this._objectsById.get(id);
+    if (!object) {
+      throw new Error(`Object with id '${id}' could not be found.`);
+    }
+    return object;
+  }
+  /**
+   * Checks whether an object with an id was built.
+   *
+   * @param {string} id
+   * @returns {boolean}
+   */
+  hasObject(id) {
+    return this._objectsById.has(id);
+  }
+  _buildRoots(input) {
+    if (Array.isArray(input)) {
+      return input.flatMap(
+        (item, index) => this._withPath(`[${index}]`, () => this._buildRoots(item))
+      );
+    }
+    return [this._buildObject(input)];
+  }
+  _buildObject(description) {
+    if (description instanceof Instance) {
+      return description;
+    }
+    if (!isPlainObject2(description)) {
+      this._fail("Malformed builder input: expected an object with a type.");
+    }
+    if (isReference(description)) {
+      const object = this._objectsById.get(description.id);
+      if (!object) {
+        this._fail(`Object with id '${description.id}' could not be found.`);
+      }
+      return object;
+    }
+    const { type, id } = description;
+    if (typeof type !== "string") {
+      this._fail(`Malformed builder input: the object has no type.`);
+    }
+    if (id !== void 0 && typeof id !== "string") {
+      this._fail(`The id of a '${type}' must be a string.`);
+    }
+    this._path.push(`(${type}${id ? " #" + id : ""})`);
+    try {
+      return this._createObject(description, type, id);
+    } finally {
+      this._path.pop();
+    }
+  }
+  _createObject(description, type, id) {
+    const entry = getType(type);
+    if (!entry) {
+      this._fail(`Unknown type '${type}'. Import the module that registers it first.`);
+    }
+    if (id !== void 0 && this._objectsById.has(id)) {
+      this._fail(`Duplicate id '${id}'.`);
+    }
+    const { cls, factory } = entry;
+    const { normal, special } = this._classifyKeys(description, cls, Boolean(factory));
+    let instance;
+    const properties = {};
+    if (factory) {
+      for (const [name, value] of normal) {
+        properties[toCamelCase(name)] = this._withPath(
+          `.${name}`,
+          () => this._buildValue(value, false)
+        );
+      }
+      instance = this._wrap(() => factory(properties, this));
+      if (!instance || typeof instance !== "object") {
+        this._fail(`The factory of '${type}' did not return an object.`);
+      }
+      this._register(id, instance);
+    } else {
+      instance = this._wrap(() => new cls());
+      this._register(id, instance);
+      for (const [name, value] of normal) {
+        const path = `.${name}`;
+        const built = this._withPath(path, () => this._buildValue(value, true));
+        if (built instanceof UnresolvedReference) {
+          this._deferred.push({ instance, name, value, path: this._getPath() + path });
+        } else {
+          properties[name] = built;
+        }
+      }
+      this._withPath("", () => this._wrap(() => this._setProperties(instance, properties)));
+    }
+    for (const [name, value, handler] of special) {
+      this._withPath(`.${name}`, () => this._wrap(() => handler(instance, value)));
+    }
+    return instance;
+  }
+  /**
+   * Splits the keys of a description into normal properties and special keys (builder property
+   * hooks, handlers, children and child), in input order.
+   */
+  _classifyKeys(description, cls, hasFactory) {
+    const normal = [];
+    const special = [];
+    for (const [name, value] of Object.entries(description)) {
+      if (RESERVED_KEYS.has(name)) {
+        continue;
+      }
+      const found = findHook(cls, name);
+      if (found) {
+        special.push([
+          name,
+          value,
+          (instance, input) => found.hook.call(found.owner, this, instance, input)
+        ]);
+        continue;
+      }
+      if (name === "handlers") {
+        special.push([name, value, (instance, input) => this._connect(instance, input)]);
+        continue;
+      }
+      const info = typeof cls.getPropertyInfo === "function" && cls.getPropertyInfo(name);
+      if (info && info.write) {
+        normal.push([name, value]);
+        continue;
+      }
+      if ((name === "children" || name === "child") && this._canAddChild(cls)) {
+        special.push([
+          name,
+          value,
+          name === "children" ? (instance, input) => this._addChildren(instance, input) : (instance, input) => this._addChild(instance, input)
+        ]);
+        continue;
+      }
+      if (info) {
+        this._fail(`Property '${name}' of '${description.type}' is read-only.`);
+      }
+      if (!hasFactory && cls.prototype instanceof Instance) {
+        this._fail(`'${description.type}' has no property named '${name}'.`);
+      }
+      normal.push([name, value]);
+    }
+    return { normal, special };
+  }
+  _canAddChild(cls) {
+    return typeof cls.prototype?.addChild === "function";
+  }
+  _setProperties(instance, properties) {
+    if (typeof instance.set === "function") {
+      instance.set(properties);
+    } else {
+      Object.assign(instance, properties);
+    }
+  }
+  _register(id, instance) {
+    if (id !== void 0) {
+      this._objectsById.set(id, instance);
+      this._newIds.push(id);
+    }
+  }
+  _connect(instance, handlers) {
+    if (!isPlainObject2(handlers)) {
+      throw new Error("Handlers must be an object of signal names and functions.");
+    }
+    if (typeof instance.connect !== "function") {
+      throw new Error("The object has no signals.");
+    }
+    for (const [name, handler] of Object.entries(handlers)) {
+      let method = handler;
+      if (typeof handler === "string") {
+        method = this._scope?.[handler];
+        if (typeof method !== "function") {
+          throw new Error(`Handler '${handler}' of '${name}' is not in the scope.`);
+        }
+      }
+      if (typeof method !== "function") {
+        throw new Error(`The handler of '${name}' must be a function.`);
+      }
+      instance.connect(name, method, instance);
+    }
+  }
+  _addChildren(instance, children) {
+    if (!Array.isArray(children)) {
+      throw new Error("Children must be an array.");
+    }
+    children.forEach((child, index) => {
+      this._withPath(`[${index}]`, () => {
+        const widget = this._buildObject(child);
+        this._wrap(() => instance.addChild(widget));
+      });
+    });
+  }
+  _addChild(instance, child) {
+    if (Array.isArray(child) || !child || typeof child !== "object") {
+      throw new Error("The child must be an object.");
+    }
+    instance.addChild(this._buildObject(child));
+  }
+  /**
+   * Builds a value.
+   *
+   * @param {unknown} value
+   * @param {boolean} allowForward Whether an unresolved reference returns an
+   *     {@link UnresolvedReference} (to set the value later) instead of failing.
+   * @returns {unknown}
+   */
+  _buildValue(value, allowForward) {
+    try {
+      return this._buildValueOrThrow(value);
+    } catch (error) {
+      if (error instanceof UnresolvedReference) {
+        if (allowForward && this._depth > 0) {
+          return error;
+        }
+        this._fail(error.message);
+      }
+      throw error;
+    }
+  }
+  _buildValueOrThrow(value) {
+    if (Array.isArray(value)) {
+      return value.map(
+        (item, index) => this._withPath(`[${index}]`, () => this._buildValueOrThrow(item))
+      );
+    }
+    if (!isPlainObject2(value)) {
+      return value === void 0 ? null : value;
+    }
+    if (typeof value.type === "string") {
+      return this._buildObject(value);
+    }
+    if (isReference(value)) {
+      const object = this._objectsById.get(value.id);
+      if (!object) {
+        throw new UnresolvedReference(value.id);
+      }
+      return object;
+    }
+    const result = {};
+    for (const [key, item] of Object.entries(value)) {
+      result[key] = this._withPath(`.${key}`, () => this._buildValueOrThrow(item));
+    }
+    return result;
+  }
+  _applyDeferred() {
+    for (const { instance, name, value, path } of this._deferred) {
+      let built;
+      try {
+        built = this._buildValueOrThrow(value);
+      } catch (error) {
+        throw new BuilderError(error.message, path, { cause: error });
+      }
+      try {
+        if (typeof instance.setProperty === "function") {
+          instance.setProperty(name, built);
+        } else {
+          instance[name] = built;
+        }
+      } catch (error) {
+        throw new BuilderError(error.message, path, { cause: error });
+      }
+    }
+  }
+  _withPath(segment, method) {
+    this._path.push(segment);
+    try {
+      return method();
+    } finally {
+      this._path.pop();
+    }
+  }
+  /**
+   * Runs a function, wrapping its errors (other than builder errors) in a {@link BuilderError}
+   * with the current path.
+   */
+  _wrap(method) {
+    try {
+      return method();
+    } catch (error) {
+      if (error instanceof BuilderError) {
+        throw error;
+      }
+      throw new BuilderError(error.message, this._getPath(), { cause: error });
+    }
+  }
+  _fail(message) {
+    throw new BuilderError(message, this._getPath());
+  }
+  _getPath() {
+    return this._path.join("").replace(/^\./, "");
+  }
+};
+defineProperties(Builder, {
+  /**
+   * The root objects built so far, over all calls of `build()`. Do not modify the array.
+   */
+  objects: {
+    readOnly: true,
+    get() {
+      return this._objects;
+    }
+  },
+  /**
+   * An object with handler functions, for handlers given by name in the input (as in JSON):
+   * `handlers: { activate: 'onOpen' }` connects `scope.onOpen`.
+   */
+  scope: {
+    value: null,
+    coerce(scope) {
+      if (scope !== null && typeof scope !== "object") {
+        throw new TypeError("The scope must be an object or null.");
+      }
+      return scope;
+    }
+  }
+});
+function build(input, options = {}) {
+  return new Builder(options).build(input);
+}
+__name(build, "build");
+
+// src/navigation/navigator.js
+function decode(text) {
+  try {
+    return decodeURIComponent(text);
+  } catch (_error) {
+    return text;
+  }
+}
+__name(decode, "decode");
+function checkArguments(tokenArguments) {
+  if (!Array.isArray(tokenArguments)) {
+    throw new TypeError("The token arguments must be an array.");
+  }
+  return tokenArguments.map((x) => {
+    if (x === null || x === void 0 || typeof x === "object") {
+      throw new TypeError("A token argument must be a string or a number.");
+    }
+    return String(x);
+  });
+}
+__name(checkArguments, "checkArguments");
+function composeToken(tokenName, tokenArguments = []) {
+  if (typeof tokenName !== "string") {
+    throw new TypeError("The token name must be a string.");
+  }
+  return [tokenName, ...checkArguments(tokenArguments)].map(encodeURIComponent).join("/");
+}
+__name(composeToken, "composeToken");
+function parseToken(token) {
+  const [tokenName, ...tokenArguments] = token.split("/").map(decode);
+  return { tokenName, tokenArguments };
+}
+__name(parseToken, "parseToken");
+var Navigator = class extends Instance {
+  static {
+    __name(this, "Navigator");
+  }
+  _initialize() {
+    super._initialize();
+    this._tokenName = "";
+    this._tokenArguments = Object.freeze([]);
+    this._environment = null;
+    this._onHashChange = () => {
+      this.token = this._readHash();
+    };
+  }
+  /**
+   * Sets the token name and its arguments at once.
+   *
+   * @param {string} tokenName
+   * @param {unknown[]} [tokenArguments] Strings or numbers.
+   */
+  setTokenNameAndArguments(tokenName, tokenArguments = []) {
+    this.token = composeToken(tokenName, tokenArguments);
+  }
+  /**
+   * Navigates to a token name with arguments, e.g. `navigate('user', 42)` for `#user/42`.
+   *
+   * @param {string} tokenName
+   * @param {...(string | number)} tokenArguments
+   */
+  navigate(tokenName, ...tokenArguments) {
+    this.setTokenNameAndArguments(tokenName, tokenArguments);
+  }
+  /**
+   * Goes back in the browser history.
+   */
+  back() {
+    this._getHistory().back();
+  }
+  /**
+   * Goes forward in the browser history.
+   */
+  forward() {
+    this._getHistory().forward();
+  }
+  destroy() {
+    this._environment?.removeEventListener?.("hashchange", this._onHashChange, true);
+    super.destroy();
+  }
+  _getHistory() {
+    const history = this._environment?.history;
+    if (!history) {
+      throw new Error("The navigator has no history in its environment.");
+    }
+    return history;
+  }
+  _readHash() {
+    return (this._environment?.location.hash || "").replace(/^#/, "");
+  }
+  _onTokenChange() {
+    const { tokenName, tokenArguments } = parseToken(this._token);
+    if (this._environment) {
+      const hash = this._token ? "#" + this._token : "";
+      if (hash !== this._environment.location.hash) {
+        this._environment.location.hash = hash;
+      }
+    }
+    const nameChanged = tokenName !== this._tokenName;
+    const argumentsChanged = !areEqual(tokenArguments, [...this._tokenArguments]);
+    this._tokenName = tokenName;
+    if (argumentsChanged) {
+      this._tokenArguments = Object.freeze(tokenArguments);
+    }
+    if (nameChanged) {
+      this.emit("token-name-change", this);
+    }
+    if (argumentsChanged) {
+      this.emit("token-arguments-change", this);
+    }
+  }
+};
+defineProperties(Navigator, {
+  /**
+   * Where the navigator reads and writes the hash: `window` in a browser. It can be set only
+   * once; the navigator then takes its token from the current hash and follows `hashchange`
+   * events.
+   */
+  environment: {
+    value: null,
+    set(environment) {
+      if (this._environment) {
+        throw new Error("The environment of a navigator can be set only once.");
+      }
+      if (!environment || typeof environment.location !== "object" || typeof environment.addEventListener !== "function") {
+        throw new TypeError(
+          "The environment must have a location and an addEventListener method."
+        );
+      }
+      this._environment = environment;
+      environment.addEventListener("hashchange", this._onHashChange, true);
+      this.token = this._readHash();
+    }
+  },
+  /**
+   * The token of the current location, the hash without `#`. It contains the whole (encoded)
+   * token, including the name and the arguments.
+   */
+  token: {
+    value: "",
+    coerce(token) {
+      if (typeof token !== "string") {
+        throw new TypeError("The token must be a string.");
+      }
+      return token.replace(/^#/, "");
+    },
+    changed() {
+      this._onTokenChange();
+    }
+  },
+  /**
+   * The (decoded) token name of the current location. Setting it resets the arguments.
+   */
+  tokenName: {
+    set(tokenName) {
+      this.token = composeToken(tokenName);
+      return false;
+    }
+  },
+  /**
+   * The (decoded) token arguments of the current location, as strings. Setting it keeps the
+   * name. Do not modify the returned array.
+   */
+  tokenArguments: {
+    set(tokenArguments) {
+      this.token = composeToken(this._tokenName, tokenArguments);
+      return false;
+    }
+  }
+});
+var getNavigator = lazySingleton(() => {
+  if (typeof window === "undefined") {
+    throw new Error("The navigator needs a browser window; create a Navigator instead.");
+  }
+  return new Navigator({ environment: window });
+});
+export {
+  AbstractColumn,
+  AbstractMenuItem,
+  AbstractModel,
+  AbstractSlider,
+  AbstractToolItem,
+  AbstractWindow,
+  AcceleratorGroup,
+  Adjustment,
+  Align,
+  Application,
+  ApplicationClass,
+  Bin,
+  Box,
+  Builder,
+  BuilderError,
+  Button,
+  ButtonBox,
+  ButtonBoxStyle,
+  ButtonEvent,
+  ButtonGroup,
+  ButtonsType,
+  COLUMN_TYPES,
+  CSS_CURSORS,
+  Calendar,
+  CheckBox,
+  CheckBoxColumn,
+  CheckMenuItem,
+  CheckToolItem,
+  Circle,
+  ColumnChange,
+  ComboBox,
+  ConditionFilter,
+  ConditionOperator,
+  Container,
+  CrossingEvent,
+  Cursor,
+  CursorShape,
+  DATE_FORMATS,
+  DEFAULT_DATE_FORMAT,
+  DataColumn,
+  DateColumn,
+  DateEdit,
+  DateTimeFormatter,
+  DateTimeParser,
+  DateTimeStyle,
+  Dialog,
+  DoubleParser,
+  DoubleValidator,
+  DragAction,
+  DragContext,
+  DragCrossingEvent,
+  DragDataRequestEvent,
+  DragDropEvent,
+  DragEndEvent,
+  DragEvent,
+  DragManager,
+  DragMotionEvent,
+  DragStartEvent,
+  EllipsizeMode,
+  EntryIconPosition,
+  EventType,
+  Events,
+  Expander,
+  Filter,
+  FilteredListModel,
+  Fixed,
+  FocusChangeEvent,
+  FocusDirection,
+  Frame,
+  Grid,
+  IS_MAC,
+  Image,
+  ImageSprite,
+  IndexColumn,
+  Instance,
+  IntegerParser,
+  IntegerValidator,
+  Justification,
+  Key,
+  KeyEvent,
+  Label,
+  LabelAnchor,
+  LabelSprite,
+  LabelStyles,
+  LineEdit,
+  LinkButton,
+  ListModel,
+  LocaleAware,
+  LocaleManagerClass,
+  MISSING_IMAGE,
+  MainWindow,
+  Matrix,
+  Menu,
+  MenuBar,
+  MenuButton,
+  MenuItem,
+  MenuManager,
+  MessageDialog,
+  MessageType,
+  Modifiers,
+  MotionEvent,
+  MouseButton,
+  Navigator,
+  Notebook,
+  NumberColumn,
+  NumberParser,
+  NumberValidator,
+  Orientation,
+  Paned,
+  Path,
+  PointerEvent,
+  Policy,
+  Popover,
+  PopoverCloseReason,
+  Position,
+  ProgressBar,
+  RESPONSE_LABELS,
+  RadioButton,
+  RadioMenuItem,
+  RadioToolItem,
+  Rectangle,
+  RegexpValidator,
+  Relief,
+  ResizeDirections,
+  Resizer,
+  Response,
+  SPLITTER_SIZE,
+  Screen,
+  ScrollArea,
+  ScrollBar,
+  ScrollEvent,
+  SearchFilter,
+  Selection,
+  SelectionModes,
+  Separator,
+  SeparatorMenuItem,
+  SeparatorToolItem,
+  ShadowType,
+  SignalDispatcher,
+  Slider,
+  SortIndicator,
+  SortOrder,
+  Spacer,
+  SpinButton,
+  Spinner,
+  Sprite,
+  StatusBar,
+  StringFormatter,
+  StrokeStyle,
+  TYPE_AHEAD_TIMEOUT,
+  Table,
+  TextColumn,
+  TextView,
+  Throbber,
+  ToggleButton,
+  ToolBar,
+  ToolBarStyle,
+  ToolItem,
+  ToolkitEvent,
+  Tooltip,
+  TooltipPlacement,
+  TranslatedText,
+  Translator,
+  Validator,
+  VectorCanvas,
+  Widget,
+  Window,
+  WrapMode,
+  __,
+  __n,
+  activateMnemonic,
+  alert,
+  areEqual,
+  attachAuxiliaryWidget,
+  attachButtonBehavior,
+  attachContextMenu,
+  attachPressRepeat,
+  build,
+  clamp,
+  composeToken,
+  computePopupPosition,
+  confirm,
+  createElement,
+  defineProperties,
+  dispatchThroughChain,
+  escapeHtml,
+  escapeRegExp,
+  flushLayout,
+  formatAccelerator,
+  formatDate,
+  formatDateTime,
+  formatDateTimePattern,
+  formatNumber,
+  formatString,
+  formatTime,
+  getAcceleratorGroup,
+  getAuxiliaryFocusChain,
+  getCursor,
+  getDateFieldOrder,
+  getDateTimeFormatter,
+  getDateTimeParser,
+  getDoubleParser,
+  getDragManager,
+  getIcon,
+  getIconNames,
+  getIntegerParser,
+  getIsoWeek2 as getIsoWeek,
+  getLocaleManager,
+  getMenuManager,
+  getModifiers,
+  getNavigator,
+  getScreen,
+  getStringFormatter,
+  getTranslator,
+  getType,
+  getTypeName,
+  getTypeNames,
+  getWheelNotches,
+  lazySingleton,
+  lerp,
+  matchesAccelerator,
+  parseAccelerator,
+  parseDate,
+  parseDateTime,
+  parseDouble,
+  parseInteger,
+  parseLocaleDate,
+  parseLocaleNumber,
+  parseMnemonic,
+  parsePixels,
+  parseTime,
+  parseToken,
+  placePopup,
+  pointRectangle,
+  prompt,
+  refreshAuxiliaryWidgets,
+  registerIcon,
+  registerType,
+  renderMnemonicLabel,
+  settings,
+  startAutoRepeat,
+  throttleToFrame,
+  toAriaKeyShortcuts,
+  toCamelCase,
+  toDate,
+  toKebabCase,
+  toTimestamp,
+  tr,
+  translate,
+  translatePlural,
+  trn,
+  uniqueId
+};
+//# sourceMappingURL=widgetry.js.map

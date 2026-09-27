@@ -1,0 +1,10 @@
+/* The complete Widgetry stylesheet. The build inlines these imports into dist/widgetry.css. */
+@import './base.css';
+@import './display.css';
+@import './buttons.css';
+@import './inputs.css';
+@import './containers.css';
+@import './menus.css';
+@import './toolbars.css';
+@import './table.css';
+@import './canvas.css';
