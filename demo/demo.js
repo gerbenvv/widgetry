@@ -1332,7 +1332,7 @@
             buttonsType: 'close',
             text: 'Widgetry 1.0',
             secondaryText:
-                'A desktop-style widget toolkit for the browser, in the spirit of GTK and the Clearlooks theme.\n\nWritten by Gerben van Veenendaal.\nBSD 3-Clause licensed.',
+                'A desktop-style widget toolkit for the browser, in the spirit of GTK and the Clearlooks theme.\n\nWritten by Gerben van Veenendaal.\nMIT licensed.',
             transientFor: mainWindow,
         });
 

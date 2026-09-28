@@ -10,7 +10,7 @@ authors:
 abstract: "A GTK-inspired JavaScript widget toolkit with windows, menus, toolbars, tables, dialogs and form controls, laid out like a desktop toolkit and styled after the classic Clearlooks theme."
 repository-code: "https://github.com/gerbenvv/widgetry"
 url: "https://github.com/gerbenvv/widgetry"
-license: BSD-3-Clause
+license: MIT
 version: 1.0.0
 date-released: "2026-09-27"
 keywords:
