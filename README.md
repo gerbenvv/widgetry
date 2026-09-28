@@ -366,7 +366,7 @@ If you use Widgetry in your work, please cite it:
     version = {1.0.0},
     year    = {2026},
     url     = {https://github.com/gerbenvv/widgetry},
-    license = {MIT}
+    license = {BSD-3-Clause}
 }
 ```
 
@@ -375,4 +375,4 @@ reference in other formats.
 
 ## License
 
-[MIT](LICENSE)
+[BSD 3-Clause](LICENSE)
